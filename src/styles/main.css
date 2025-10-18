@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+/* Tailwind CSS v4 不再需要 @tailwind 指令 */
+/* 自定义样式 */
+.sidebar-item {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+}
+
+.sidebar-item:hover {
+  background-color: rgb(243 244 246);
+}
+
+.sidebar-item.active {
+  background-color: rgb(240 253 244);
+  color: rgb(22 163 74);
+}
+
+.note-item {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom-width: 1px;
+  border-color: rgb(243 244 246);
+  cursor: pointer;
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+}
+
+.note-item:hover {
+  background-color: rgb(249 250 251);
+}
+
+.note-item.active {
+  background-color: rgb(239 246 255);
+  border-left-width: 4px;
+  border-left-color: rgb(34 197 94);
+}
+
+.editor-toolbar-button {
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+}
+
+.editor-toolbar-button:hover {
+  background-color: rgb(243 244 246);
+}
+
+.note-content-editable {
+  min-height: 400px;
+  outline: none;
+}
+
+.note-content-editable:focus {
+  outline: none;
+}
+
+/* 自定义类用于文本截断 */
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
