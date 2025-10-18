@@ -2,49 +2,60 @@
     <div class="flex-1 flex flex-col bg-white">
         <div v-if="activeNote" class="border-b border-gray-200">
             <div class="p-4 flex justify-between items-center">
-                <input :value="activeNote.title"
-                    @input="$emit('updateNoteTitle', ($event.target as HTMLInputElement).value)"
-                    class="text-xl font-bold w-full bg-transparent focus:outline-none" placeholder="笔记标题"
-                    :readonly="!editMode" />
+                <el-input :model-value="activeNote.title" @update:model-value="$emit('updateNoteTitle', $event)"
+                    placeholder="笔记标题" :readonly="!editMode" size="large" class="editor-title-input" />
                 <div class="flex space-x-2">
-                    <el-button v-if="!editMode" @click="$emit('toggleEditMode')">编辑</el-button>
-                    <el-button v-if="editMode" type="primary" @click="$emit('saveNote')">保存</el-button>
-                    <el-button v-if="editMode" @click="$emit('cancelEdit')">取消</el-button>
-                    <el-button type="danger" @click="$emit('deleteNote')">删除</el-button>
+                    <el-button v-if="!editMode" type="primary" @click="$emit('toggleEditMode')" :icon="Edit">
+                        编辑
+                    </el-button>
+                    <el-button v-if="editMode" type="success" @click="$emit('saveNote')" :icon="Check">
+                        保存
+                    </el-button>
+                    <el-button v-if="editMode" @click="$emit('cancelEdit')" :icon="Close">
+                        取消
+                    </el-button>
+                    <el-button type="danger" @click="$emit('deleteNote')" :icon="Delete">
+                        删除
+                    </el-button>
                 </div>
             </div>
 
-            <div v-if="editMode" class="px-4 py-2 border-t border-gray-200 flex space-x-2">
-                <el-button-group>
-                    <el-button class="editor-toolbar-button">粗体</el-button>
-                    <el-button class="editor-toolbar-button">斜体</el-button>
-                    <el-button class="editor-toolbar-button">下划线</el-button>
-                </el-button-group>
-                <el-button-group>
-                    <el-button class="editor-toolbar-button">列表</el-button>
-                    <el-button class="editor-toolbar-button">待办</el-button>
-                </el-button-group>
-                <el-button-group>
-                    <el-button class="editor-toolbar-button">链接</el-button>
-                    <el-button class="editor-toolbar-button">图片</el-button>
-                    <el-button class="editor-toolbar-button">附件</el-button>
-                </el-button-group>
-            </div>
+            <!-- TipTap 编辑器工具栏 -->
+            <TiptapToolbar v-if="editMode && editor" :editor="editor" />
         </div>
 
-        <div v-if="activeNote" class="flex-1 p-6 overflow-y-auto note-content-editable" :contenteditable="editMode"
-            @input="$emit('updateNoteContent', ($event.target as HTMLElement).innerText)">
-            {{ activeNote.content }}
+        <!-- TipTap 编辑器 -->
+        <div v-if="activeNote && editMode" class="flex-1 overflow-hidden">
+            <editor-content :editor="editor" class="tiptap-editor" />
         </div>
+
+        <!-- 预览模式 -->
+        <div v-if="activeNote && !editMode" class="flex-1 p-6 overflow-y-auto tiptap-editor"
+            v-html="activeNote.content"></div>
 
         <div v-if="!activeNote" class="flex flex-col items-center justify-center h-full text-gray-400 p-8">
-            <div class="text-5xl mb-4">📖</div>
-            <p>选择或创建一篇笔记开始编辑</p>
+            <el-icon size="80" class="mb-4">
+                <Notebook />
+            </el-icon>
+            <p class="text-lg mb-4">选择或创建一篇笔记开始编辑</p>
+            <el-button type="primary" size="large" @click="$emit('createNewNote')" :icon="Plus">
+                创建新笔记
+            </el-button>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
+import { ref, watch, onBeforeUnmount } from 'vue'
+import { useEditor, EditorContent } from '@tiptap/vue-3'
+import StarterKit from '@tiptap/starter-kit'
+import TextAlign from '@tiptap/extension-text-align'
+import { TextStyle } from '@tiptap/extension-text-style'
+import Color from '@tiptap/extension-color'
+import Highlight from '@tiptap/extension-highlight'
+import Underline from '@tiptap/extension-underline'
+import TiptapToolbar from './TiptapToolbar.vue'
+import { Edit, Check, Close, Delete, Plus, Notebook } from '@element-plus/icons-vue'
 import type { Note } from '../types'
 
 interface Props {
@@ -52,14 +63,190 @@ interface Props {
     editMode: boolean
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
 
-defineEmits<{
+const emit = defineEmits<{
     saveNote: []
     cancelEdit: []
     deleteNote: []
     toggleEditMode: []
     updateNoteTitle: [title: string]
     updateNoteContent: [content: string]
+    createNewNote: []
 }>()
+
+const headingLevel = ref('')
+
+// TipTap 编辑器实例
+const editor = useEditor({
+    extensions: [
+        StarterKit,
+        TextAlign.configure({
+            types: ['heading', 'paragraph'],
+        }),
+        TextStyle,
+        Color,
+        Highlight.configure({ multicolor: true }),
+        Underline,
+    ],
+    content: props.activeNote?.content || '',
+    onUpdate: ({ editor }) => {
+        const html = editor.getHTML()
+        emit('updateNoteContent', html)
+    },
+})
+
+// 监听活动笔记变化
+watch(() => props.activeNote, (newNote) => {
+    if (editor.value && newNote) {
+        editor.value.commands.setContent(newNote.content)
+    }
+})
+
+// 监听编辑模式变化
+watch(() => props.editMode, (newMode) => {
+    if (editor.value && newMode) {
+        // 切换到编辑模式时，编辑器自动获得焦点
+        setTimeout(() => {
+            editor.value?.commands.focus()
+        }, 100)
+    }
+})
+
+// 组件卸载时销毁编辑器
+onBeforeUnmount(() => {
+    if (editor.value) {
+        editor.value.destroy()
+    }
+})
 </script>
+
+<style scoped>
+.editor-title-input {
+    font-size: 1.25rem;
+    font-weight: bold;
+}
+
+:deep(.editor-title-input .el-input__wrapper) {
+    box-shadow: none;
+    padding: 0;
+}
+
+:deep(.editor-title-input .el-input__inner) {
+    font-size: 1.25rem;
+    font-weight: bold;
+}
+
+.tiptap-editor {
+    padding: 1.5rem;
+    min-height: 500px;
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+}
+
+.tiptap-editor:focus {
+    outline: none;
+}
+
+/* 为ProseMirror内容区域设置基本样式 */
+:deep(.ProseMirror) {
+    outline: none;
+    line-height: 1.6;
+}
+
+:deep(.ProseMirror h1) {
+    font-size: 2rem;
+    font-weight: bold;
+    margin: 1rem 0;
+    color: #1f2937;
+}
+
+:deep(.ProseMirror h2) {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 0.875rem 0;
+    color: #374151;
+}
+
+:deep(.ProseMirror h3) {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin: 0.75rem 0;
+    color: #4b5563;
+}
+
+:deep(.ProseMirror p) {
+    margin-bottom: 0.75rem;
+}
+
+:deep(.ProseMirror ul),
+:deep(.ProseMirror ol) {
+    padding-left: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+:deep(.ProseMirror li) {
+    margin-bottom: 0.25rem;
+}
+
+:deep(.ProseMirror blockquote) {
+    border-left: 4px solid #e5e7eb;
+    padding-left: 1rem;
+    margin-left: 0;
+    margin-right: 0;
+    font-style: italic;
+    margin-bottom: 0.75rem;
+    color: #6b7280;
+}
+
+:deep(.ProseMirror code) {
+    background-color: #f3f4f6;
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    font-family: 'Courier New', Courier, monospace;
+    color: #dc2626;
+}
+
+:deep(.ProseMirror pre) {
+    background-color: #1f2937;
+    color: #f9fafb;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin-bottom: 0.75rem;
+}
+
+:deep(.ProseMirror a) {
+    color: #3b82f6;
+    text-decoration: underline;
+}
+
+:deep(.ProseMirror mark) {
+    background-color: #fef08a;
+    padding: 0.125rem 0.25rem;
+}
+
+:deep(.ProseMirror table) {
+    border-collapse: collapse;
+    margin-bottom: 0.75rem;
+    width: 100%;
+}
+
+:deep(.ProseMirror th),
+:deep(.ProseMirror td) {
+    border: 1px solid #d1d5db;
+    padding: 0.5rem;
+    text-align: left;
+}
+
+:deep(.ProseMirror th) {
+    background-color: #f9fafb;
+    font-weight: 600;
+}
+
+:deep(.ProseMirror img) {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.375rem;
+}
+</style>
