@@ -571,6 +571,13 @@
     "@tauri-apps/cli-win32-ia32-msvc" "2.8.4"
     "@tauri-apps/cli-win32-x64-msvc" "2.8.4"
 
+"@tauri-apps/plugin-fs@~2":
+  version "2.4.2"
+  resolved "https://registry.npmmirror.com/@tauri-apps/plugin-fs/-/plugin-fs-2.4.2.tgz#cce4ea16dc3614f7a476988457ec4cf0024d81f6"
+  integrity sha512-YGhmYuTgXGsi6AjoV+5mh2NvicgWBfVJHHheuck6oHD+HC9bVWPaHvCP0/Aw4pHDejwrvT8hE3+zZAaWf+hrig==
+  dependencies:
+    "@tauri-apps/api" "^2.8.0"
+
 "@tauri-apps/plugin-opener@^2":
   version "2.5.0"
   resolved "https://registry.npmmirror.com/@tauri-apps/plugin-opener/-/plugin-opener-2.5.0.tgz#f4ed07559065616bf14012686f5273070a39e003"

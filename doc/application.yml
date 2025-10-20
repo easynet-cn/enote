@@ -1,0 +1,2 @@
+datasource:
+  url: mysql://root:devterry@127.0.0.1:3306/enote
