@@ -1,3 +1,15 @@
+export interface Category {
+    id: number;
+    parent_id: number;
+    name: string;
+    description: string;
+    icon: string;
+    cls: string;
+    sort_order: number;
+    create_time: string;
+    update_time: string;
+}
+
 export interface Notebook {
     id: number;
     name: string;
@@ -26,4 +38,5 @@ export interface AppState {
     activeNote: number | null;
     searchQuery: string;
     editMode: boolean;
+    loading: boolean;
 }

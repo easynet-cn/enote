@@ -1,12 +1,9 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import type { Notebook, Tag, Note, AppState } from '../types';
+import { noteApi } from '../api/note';
 
-// 模拟数据
 const notebooks = ref<Notebook[]>([
-    { id: 1, name: '工作笔记', count: 5, icon: '📒' },
-    { id: 2, name: '个人笔记', count: 3, icon: '📔' },
-    { id: 3, name: '学习笔记', count: 7, icon: '📚' },
-    { id: 4, name: '旅行计划', count: 2, icon: '✈️' }
+    { id: 0, name: '全部', count: 5, icon: '📒' },
 ]);
 
 const tags = ref<Tag[]>([
@@ -69,7 +66,8 @@ const state = reactive<AppState>({
     activeNotebook: 1,
     activeNote: null,
     searchQuery: '',
-    editMode: false
+    editMode: false,
+    loading: false
 });
 
 export function useNotes() {
@@ -182,10 +180,28 @@ export function useNotes() {
     };
 
     // 初始化
-    onMounted(() => {
-        if (filteredNotes.value.length > 0) {
-            state.activeNote = filteredNotes.value[0].id;
+    const initialize = async () => {
+        state.loading = true
+
+        try {
+            const data = await noteApi.getNotebooks();
+
+            notebooks.value = [...notebooks.value, ...data];
+
+            if (notebooks.value.length > 0) {
+                await setActiveNotebook(notebooks.value[0].id)
+            }
+
+        } catch (error) {
+            console.error('Failed to initialize:', error)
+        } finally {
+            state.loading = false
         }
+    }
+
+    // 初始化
+    onMounted(() => {
+        initialize();
     });
 
     return {

@@ -3,7 +3,6 @@ use std::time::Duration;
 use clap::Parser;
 use config::Config;
 use sea_orm::{ConnectOptions, Database, DatabaseConnection};
-use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 
 #[derive(Debug, Parser)]
