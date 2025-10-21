@@ -32,16 +32,6 @@
         <!-- 预览模式 -->
         <div v-if="activeNote && !editMode" class="flex-1 p-6 overflow-y-auto tiptap-editor"
             v-html="activeNote.content"></div>
-
-        <div v-if="!activeNote" class="flex flex-col items-center justify-center h-full text-gray-400 p-8">
-            <el-icon size="80" class="mb-4">
-                <Notebook />
-            </el-icon>
-            <p class="text-lg mb-4">选择或创建一篇笔记开始编辑</p>
-            <el-button type="primary" size="large" @click="$emit('createNewNote')" :icon="Plus">
-                创建新笔记
-            </el-button>
-        </div>
     </div>
 </template>
 
@@ -72,7 +62,6 @@ const emit = defineEmits<{
     toggleEditMode: []
     updateNoteTitle: [title: string]
     updateNoteContent: [content: string]
-    createNewNote: []
 }>()
 
 const headingLevel = ref('')

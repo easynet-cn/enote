@@ -11,9 +11,9 @@
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
-    "@tauri-apps/api": "^2",
-    "@tauri-apps/plugin-fs": "~2",
-    "@tauri-apps/plugin-opener": "^2",
+    "@tauri-apps/api": "^2.9.0",
+    "@tauri-apps/plugin-fs": "^2.4.2",
+    "@tauri-apps/plugin-opener": "^2.5.0",
     "@tiptap/extension-blockquote": "^3.7.2",
     "@tiptap/extension-bold": "^3.7.2",
     "@tiptap/extension-bullet-list": "^3.7.2",
@@ -48,12 +48,12 @@
     "vue": "^3.5.22"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.1.14",
-    "@tauri-apps/cli": "^2",
+    "@tailwindcss/vite": "^4.1.15",
+    "@tauri-apps/cli": "^2.9.0",
     "@vitejs/plugin-vue": "^6.0.1",
-    "tailwindcss": "^4.1.14",
+    "tailwindcss": "^4.1.15",
     "typescript": "~5.9.3",
-    "vite": "^7.1.10",
+    "vite": "^7.1.11",
     "vue-tsc": "^3.1.1"
   }
 }

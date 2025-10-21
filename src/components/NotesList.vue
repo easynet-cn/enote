@@ -5,11 +5,6 @@
                 <h2 class="text-lg font-semibold text-gray-800">
                     {{ activeNotebookName }}
                 </h2>
-                <button
-                    class="bg-evernote-green hover:bg-green-600 text-white px-3 py-2 rounded-lg flex items-center transition-colors duration-200"
-                    @click="$emit('createNewNote')">
-                    <span class="mr-1">+</span> 新建笔记
-                </button>
             </div>
 
             <el-input :model-value="searchQuery" placeholder="搜索笔记..." :prefix-icon="Search" clearable
@@ -20,7 +15,7 @@
             <div v-for="note in notes" :key="note.id" class="note-item" :class="{ active: activeNote === note.id }"
                 @click="$emit('setActiveNote', note.id)">
                 <div class="font-semibold text-gray-800 mb-1 truncate">{{ note.title }}</div>
-                <div class="text-sm text-gray-500 mb-2 line-clamp-2">{{ note.content }}</div>
+                <div class="text-sm text-gray-500 mb-2 line-clamp-2" v-html="note.content"></div>
                 <div class="flex justify-between items-center text-xs text-gray-400">
                     <span>{{ formatDate(note.updatedAt) }}</span>
                     <div class="flex space-x-1">
@@ -29,16 +24,6 @@
                         </span>
                     </div>
                 </div>
-            </div>
-
-            <div v-if="notes.length === 0" class="flex flex-col items-center justify-center h-full text-gray-400 p-8">
-                <div class="text-5xl mb-4">📝</div>
-                <p class="mb-4">暂无笔记</p>
-                <button
-                    class="bg-evernote-green hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors duration-200"
-                    @click="$emit('createNewNote')">
-                    创建第一篇笔记
-                </button>
             </div>
         </div>
     </div>
@@ -61,7 +46,6 @@ const props = defineProps<Props>()
 
 defineEmits<{
     setActiveNote: [id: number]
-    createNewNote: []
     updateSearchQuery: [query: string]
 }>()
 

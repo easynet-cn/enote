@@ -102,6 +102,7 @@ export function useNotes() {
     };
 
     const createNewNote = () => {
+        console.log('执行创建新笔记')
         const newNote: Note = {
             id: Date.now(),
             notebookId: state.activeNotebook,

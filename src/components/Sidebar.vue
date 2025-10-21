@@ -1,7 +1,9 @@
 <template>
     <div class="w-64 bg-gray-50 border-r border-gray-200 flex flex-col">
         <div class="p-6 border-b border-gray-200">
-            <h1 class="text-2xl font-bold text-evernote-green">易-笔记</h1>
+            <el-button type="success" size="large" @click="$emit('createNewNote')" :icon="Plus">
+                创建新笔记
+            </el-button>
         </div>
 
         <div class="p-4 border-b border-gray-200">
@@ -34,7 +36,9 @@
 </template>
 
 <script setup lang="ts">
+import { Plus } from '@element-plus/icons-vue'
 import type { Notebook, Tag } from '../types'
+
 
 defineProps<{
     notebooks: Notebook[]
@@ -44,5 +48,7 @@ defineProps<{
 
 defineEmits<{
     setActiveNotebook: [id: number]
+    createNewNote: []
 }>()
+
 </script>

@@ -2,12 +2,12 @@
   <div class="flex h-screen bg-white">
     <!-- 侧边栏组件 -->
     <Sidebar :notebooks="notebooks" :tags="tags" :active-notebook="state.activeNotebook"
-      @set-active-notebook="setActiveNotebook" />
+      @set-active-notebook="setActiveNotebook" @create-new-note="createNewNote" />
 
     <!-- 笔记列表组件 -->
     <NotesList :notebooks="notebooks" :notes="filteredNotes" :active-notebook="state.activeNotebook"
       :active-note="state.activeNote" :search-query="state.searchQuery" @set-active-note="setActiveNote"
-      @create-new-note="createNewNote" @update-search-query="state.searchQuery = $event" />
+      @update-search-query="state.searchQuery = $event" />
 
     <!-- 编辑器组件 -->
     <Editor :active-note="activeNoteData" :edit-mode="state.editMode" @save-note="saveNote" @cancel-edit="cancelEdit"
