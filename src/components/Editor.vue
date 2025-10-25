@@ -36,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onBeforeUnmount } from 'vue'
+import { watch, onBeforeUnmount } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import TextAlign from '@tiptap/extension-text-align'
@@ -45,11 +45,11 @@ import Color from '@tiptap/extension-color'
 import Highlight from '@tiptap/extension-highlight'
 import Underline from '@tiptap/extension-underline'
 import TiptapToolbar from './TiptapToolbar.vue'
-import { Edit, Check, Close, Delete, Plus, Notebook } from '@element-plus/icons-vue'
-import type { Note } from '../types'
+import { Edit, Check, Close, Delete } from '@element-plus/icons-vue'
+import type { ShowNote } from '../types'
 
 interface Props {
-    activeNote: Note | null
+    activeNote: ShowNote | null
     editMode: boolean
 }
 
@@ -63,8 +63,6 @@ const emit = defineEmits<{
     updateNoteTitle: [title: string]
     updateNoteContent: [content: string]
 }>()
-
-const headingLevel = ref('')
 
 // TipTap 编辑器实例
 const editor = useEditor({

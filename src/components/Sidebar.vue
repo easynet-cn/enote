@@ -1,7 +1,7 @@
 <template>
     <div class="w-64 bg-gray-50 border-r border-gray-200 flex flex-col">
         <div class="p-6 border-b border-gray-200">
-            <el-button type="success" size="large" @click="$emit('createNewNote')" :icon="Plus">
+            <el-button type="success" size="large" @click="$emit('createNewNote')" :icon="Plus" round>
                 创建新笔记
             </el-button>
         </div>
@@ -26,7 +26,7 @@
             <ul class="space-y-1">
                 <li v-for="tag in tags" :key="tag.id" class="sidebar-item">
                     <div class="flex items-center">
-                        <span :class="['mr-3', tag.color]">●</span>
+                        <span :class="['mr-3', tag.cls]">●</span>
                         <span>{{ tag.name }}</span>
                     </div>
                 </li>
@@ -37,17 +37,17 @@
 
 <script setup lang="ts">
 import { Plus } from '@element-plus/icons-vue'
-import type { Notebook, Tag } from '../types'
+import type { ShowNotebook, ShowTag } from '../types'
 
 
 defineProps<{
-    notebooks: Notebook[]
-    tags: Tag[]
-    activeNotebook: number
+    notebooks: ShowNotebook[]
+    tags: ShowTag[]
+    activeNotebook: string
 }>()
 
 defineEmits<{
-    setActiveNotebook: [id: number]
+    setActiveNotebook: [id: string]
     createNewNote: []
 }>()
 

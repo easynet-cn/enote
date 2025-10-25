@@ -2,8 +2,8 @@
 
 pub mod prelude;
 
-pub mod not_tags;
 pub mod note;
 pub mod note_history;
+pub mod note_tags;
 pub mod notebook;
 pub mod tag;

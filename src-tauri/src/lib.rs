@@ -30,7 +30,11 @@ pub fn run() {
                 Ok(())
             })
         })
-        .invoke_handler(tauri::generate_handler![command::find_all_notebooks])
+        .invoke_handler(tauri::generate_handler![
+            command::find_all_notebooks,
+            command::create_note,
+            command::search_page_notes
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
-    pub category_id: i64,
+    pub notebook_id: i64,
     pub title: String,
     #[sea_orm(column_type = "custom(\"LONGTEXT\")")]
     pub content: String,

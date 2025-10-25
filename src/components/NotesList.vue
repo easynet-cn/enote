@@ -7,7 +7,7 @@
                 </h2>
             </div>
 
-            <el-input :model-value="searchQuery" placeholder="搜索笔记..." :prefix-icon="Search" clearable
+            <el-input :model-value="searchQuery.keyword" placeholder="搜索笔记..." :prefix-icon="Search" clearable
                 @update:model-value="$emit('updateSearchQuery', $event)" />
         </div>
 
@@ -17,9 +17,9 @@
                 <div class="font-semibold text-gray-800 mb-1 truncate">{{ note.title }}</div>
                 <div class="text-sm text-gray-500 mb-2 line-clamp-2" v-html="note.content"></div>
                 <div class="flex justify-between items-center text-xs text-gray-400">
-                    <span>{{ formatDate(note.updatedAt) }}</span>
+                    <span>{{ note.updateTime }}</span>
                     <div class="flex space-x-1">
-                        <span v-for="tagId in note.tags" :key="tagId" :class="getTagColor(tagId)">
+                        <span v-for="tag in note.tags" :key="tag.id" :class="tag.cls">
                             ●
                         </span>
                     </div>
@@ -32,21 +32,22 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Search } from '@element-plus/icons-vue'
-import type { Notebook, Note } from '../types'
+import type { ShowNotebook, ShowNote, NoteSearchPageParam } from '../types'
+
 
 interface Props {
-    notebooks: Notebook[]
-    notes: Note[]
-    activeNotebook: number
-    activeNote: number | null
-    searchQuery: string
+    notebooks: ShowNotebook[]
+    notes: ShowNote[]
+    activeNotebook: string
+    activeNote: string | null
+    searchQuery: NoteSearchPageParam
 }
 
 const props = defineProps<Props>()
 
 defineEmits<{
-    setActiveNote: [id: number]
-    updateSearchQuery: [query: string]
+    setActiveNote: [id: string]
+    updateSearchQuery: [query: NoteSearchPageParam]
 }>()
 
 const activeNotebookName = computed(() => {
@@ -54,29 +55,4 @@ const activeNotebookName = computed(() => {
     return notebook ? notebook.name : ''
 })
 
-const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
-    const now = new Date()
-    const diffTime = Math.abs(now.getTime() - date.getTime())
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-
-    if (diffDays === 1) return '昨天'
-    if (diffDays === 2) return '前天'
-    if (diffDays <= 7) return `${diffDays}天前`
-
-    return dateStr.split(' ')[0]
-}
-
-// 模拟标签数据
-const tags = [
-    { id: 1, color: 'text-red-500' },
-    { id: 2, color: 'text-yellow-500' },
-    { id: 3, color: 'text-green-500' },
-    { id: 4, color: 'text-blue-500' }
-]
-
-const getTagColor = (tagId: number) => {
-    const tag = tags.find(t => t.id === tagId)
-    return tag ? tag.color : 'text-gray-400'
-}
 </script>

@@ -10,6 +10,7 @@ pub struct Model {
     pub id: i64,
     pub name: String,
     pub icon: String,
+    pub cls: String,
     pub sort_order: i32,
     pub create_time: DateTime,
     pub update_time: DateTime,
