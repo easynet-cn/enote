@@ -1,6 +1,7 @@
 import { ref, reactive, computed, onMounted, watchEffect } from 'vue';
 import { useDateFormat, useNow } from '@vueuse/core'
 import type { AppState, ShowNotebook, ShowTag, ShowNote } from '../types';
+import { ElNotification } from 'element-plus';
 import { noteApi } from '../api/note';
 
 const notebooks = ref<ShowNotebook[]>([
@@ -28,38 +29,76 @@ const state = reactive<AppState>({
 export function useNotes() {
     // 获取笔记本
     const getNotebookResult = async () => {
-        const notebookResult = await noteApi.getNotebooks();
-        const data = notebookResult.notebooks.map((notebook): ShowNotebook => (
-            {
-                id: String(notebook.id),
-                parentId: notebook.parentId,
-                name: notebook.name,
-                description: notebook.description,
-                icon: notebook.icon,
-                cls: notebook.cls,
-                count: notebook.count,
-                createTime: notebook.createTime,
-                updateTime: notebook.updateTime,
-            }
-        ));
+        const notification = ElNotification({
+            title: '',
+            message: '正在加载笔记本',
+            type: 'success',
+            duration: 0,
+        })
 
-        notebooks.value = [...[notebooks.value[0]], ...data];
+        try {
+            const notebookResult = await noteApi.getNotebooks();
+            const data = notebookResult.notebooks.map((notebook): ShowNotebook => (
+                {
+                    id: String(notebook.id),
+                    parentId: notebook.parentId,
+                    name: notebook.name,
+                    description: notebook.description,
+                    icon: notebook.icon,
+                    cls: notebook.cls,
+                    count: notebook.count,
+                    createTime: notebook.createTime,
+                    updateTime: notebook.updateTime,
+                }
+            ));
 
-        notebooks.value[0].count = notebookResult.totalCount;
+            notebooks.value = [...[notebooks.value[0]], ...data];
+
+            notebooks.value[0].count = notebookResult.totalCount;
+        } catch (error) {
+            ElNotification({
+                title: '',
+                message: String(error),
+                type: 'error',
+                duration: 0,
+            })
+        }
+
+        notification.close();
     }
 
     // 获取笔记
     const searchNotes = async () => {
-        return (await noteApi.searchPageNotes(state.noteSearchPageParam)).data.map((note): ShowNote => (
-            {
-                id: String(note.id),
-                notebookId: String(note.notebookId),
-                title: note.title,
-                content: note.content,
-                createTime: note.createTime,
-                updateTime: note.updateTime,
-            }
-        ));
+        const notification = ElNotification({
+            title: '',
+            message: '正在加载笔记',
+            type: 'success',
+            duration: 0,
+        })
+
+        try {
+            return (await noteApi.searchPageNotes(state.noteSearchPageParam)).data.map((note): ShowNote => (
+                {
+                    id: String(note.id),
+                    notebookId: String(note.notebookId),
+                    title: note.title,
+                    content: note.content,
+                    createTime: note.createTime,
+                    updateTime: note.updateTime,
+                }
+            ));
+        } catch (error) {
+            ElNotification({
+                title: '',
+                message: String(error),
+                type: 'error',
+                duration: 0,
+            })
+        } finally {
+            notification.close();
+        }
+
+        return new Array();
     }
 
     // 计算属性
@@ -105,6 +144,13 @@ export function useNotes() {
     const saveNote = async () => {
         if (!state.activeNote || !activeNoteData.value) return
 
+        const notification = ElNotification({
+            title: '',
+            message: '正在保存笔记',
+            type: 'success',
+            duration: 0,
+        })
+
         try {
             const noteId = state.activeNote;
             let newNoteId = noteId;
@@ -132,7 +178,14 @@ export function useNotes() {
 
             setActiveNote(newNoteId);
         } catch (error) {
-            console.error('Failed to save note:', error)
+            ElNotification({
+                title: '',
+                message: String(error),
+                type: 'error',
+                duration: 0,
+            })
+        } finally {
+            notification.close();
         }
     };
 
@@ -153,9 +206,28 @@ export function useNotes() {
                 state.activeNote = null;
             }
         } else {
-            await noteApi.deleteNote(Number.parseInt(noteId));
+            const notification = ElNotification({
+                title: '',
+                message: '正在删除笔记',
+                type: 'success',
+                duration: 0,
+            })
 
-            state.noteSearchPageParam.pageIndex = 1;
+
+            try {
+                await noteApi.deleteNote(Number.parseInt(noteId));
+
+                state.noteSearchPageParam.pageIndex = 1;
+            } catch (error) {
+                ElNotification({
+                    title: '',
+                    message: String(error),
+                    type: 'error',
+                    duration: 0,
+                })
+            } finally {
+                notification.close();
+            }
 
             await Promise.all([getNotebookResult(), searchNotes()]);
         }
@@ -187,7 +259,15 @@ export function useNotes() {
 
     // 初始化
     const initialize = async () => {
-        state.loading = true
+        state.loading = true;
+
+        const notification = ElNotification({
+            title: '',
+            message: '正在加载',
+            type: 'success',
+            duration: 0,
+        })
+
 
         try {
             await getNotebookResult();
@@ -197,9 +277,15 @@ export function useNotes() {
             }
 
         } catch (error) {
-            console.error('Failed to initialize:', error)
+            ElNotification({
+                title: '错误信息',
+                type: 'error',
+                message: String(error),
+                duration: 0,
+            })
         } finally {
             state.loading = false
+            notification.close();
         }
     }
 
