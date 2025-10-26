@@ -26,9 +26,31 @@ const state = reactive<AppState>({
 });
 
 export function useNotes() {
-    // 计算属性
-    watchEffect(async () => {
-        notes.value = (await noteApi.searchPageNotes(state.noteSearchPageParam)).data.map((note): ShowNote => (
+    // 获取笔记本
+    const getNotebookResult = async () => {
+        const notebookResult = await noteApi.getNotebooks();
+        const data = notebookResult.notebooks.map((notebook): ShowNotebook => (
+            {
+                id: String(notebook.id),
+                parentId: notebook.parentId,
+                name: notebook.name,
+                description: notebook.description,
+                icon: notebook.icon,
+                cls: notebook.cls,
+                count: notebook.count,
+                createTime: notebook.createTime,
+                updateTime: notebook.updateTime,
+            }
+        ));
+
+        notebooks.value = [...[notebooks.value[0]], ...data];
+
+        notebooks.value[0].count = notebookResult.totalCount;
+    }
+
+    // 获取笔记
+    const searchNotes = async () => {
+        return (await noteApi.searchPageNotes(state.noteSearchPageParam)).data.map((note): ShowNote => (
             {
                 id: String(note.id),
                 notebookId: String(note.notebookId),
@@ -38,6 +60,11 @@ export function useNotes() {
                 updateTime: note.updateTime,
             }
         ));
+    }
+
+    // 计算属性
+    watchEffect(async () => {
+        notes.value = await searchNotes();
     });
 
     const activeNoteData = computed(() => {
@@ -57,16 +84,17 @@ export function useNotes() {
     };
 
     const createNewNote = () => {
-        const now = useDateFormat(useNow(), 'YYYY-MM-DD HH:mm:ss').value;
+        const now = useNow();
+        const nowStr = useDateFormat(now, 'YYYY-MM-DD HH:mm:ss').value;
 
         const newNote: ShowNote = {
-            id: 0 + '-' + useNow(),
+            id: 0 + '-' + now.value.getTime(),
             notebookId: state.activeNotebook,
             title: '',
             content: '',
             tags: [],
-            createTime: now,
-            updateTime: now
+            createTime: nowStr,
+            updateTime: nowStr
         };
 
         notes.value.unshift(newNote);
@@ -78,29 +106,31 @@ export function useNotes() {
         if (!state.activeNote || !activeNoteData.value) return
 
         try {
-            const updatedNote = await noteApi.createNote(
-                Number.parseInt(state.activeNotebook),
-                activeNoteData.value.title,
-                activeNoteData.value.content,
-                []
-            )
-            const updateShowNote: ShowNote = {
-                id: String(updatedNote.id),
-                notebookId: String(updatedNote.notebookId),
-                title: updatedNote.title,
-                content: updatedNote.content,
-                createTime: updatedNote.createTime,
-                updateTime: updatedNote.updateTime,
+            const noteId = state.activeNote;
+            let newNoteId = noteId;
+
+            if (noteId.indexOf('-') < 0) {
+                await noteApi.updateNote(
+                    Number.parseInt(noteId),
+                    Number.parseInt(state.activeNotebook),
+                    activeNoteData.value.title,
+                    activeNoteData.value.content,
+                    []
+                )
+            } else {
+                let newNote = await noteApi.createNote(
+                    Number.parseInt(state.activeNotebook),
+                    activeNoteData.value.title,
+                    activeNoteData.value.content,
+                    []
+                )
+
+                newNoteId = String(newNote.id);
             }
 
-            // 更新本地数据
-            const index = notes.value.findIndex(note => note.id === state.activeNote)
+            await Promise.all([getNotebookResult(), searchNotes()]);
 
-            if (index !== -1) {
-                notes.value[index] = updateShowNote
-            }
-
-            state.editMode = false
+            setActiveNote(newNoteId);
         } catch (error) {
             console.error('Failed to save note:', error)
         }
@@ -110,13 +140,24 @@ export function useNotes() {
         state.editMode = false;
     };
 
-    const deleteNote = () => {
+    const deleteNote = async () => {
         if (!state.activeNote) return;
 
-        const noteIndex = notes.value.findIndex(note => note.id === state.activeNote);
-        if (noteIndex !== -1) {
-            notes.value.splice(noteIndex, 1);
-            state.activeNote = null;
+        const noteId = state.activeNote;
+
+        if (noteId.indexOf('-') > -1) {
+            const noteIndex = notes.value.findIndex(note => note.id === state.activeNote);
+
+            if (noteIndex !== -1) {
+                notes.value.splice(noteIndex, 1);
+                state.activeNote = null;
+            }
+        } else {
+            await noteApi.deleteNote(Number.parseInt(noteId));
+
+            state.noteSearchPageParam.pageIndex = 1;
+
+            await Promise.all([getNotebookResult(), searchNotes()]);
         }
     };
 
@@ -124,6 +165,7 @@ export function useNotes() {
         if (!state.activeNote) return;
 
         const noteIndex = notes.value.findIndex(note => note.id === state.activeNote);
+
         if (noteIndex !== -1) {
             notes.value[noteIndex].title = title;
         }
@@ -133,6 +175,7 @@ export function useNotes() {
         if (!state.activeNote) return;
 
         const noteIndex = notes.value.findIndex(note => note.id === state.activeNote);
+
         if (noteIndex !== -1) {
             notes.value[noteIndex].content = content;
         }
@@ -147,24 +190,7 @@ export function useNotes() {
         state.loading = true
 
         try {
-            const notebookResult = await noteApi.getNotebooks();
-            const data = notebookResult.notebooks.map((notebook): ShowNotebook => (
-                {
-                    id: String(notebook.id),
-                    parentId: notebook.parentId,
-                    name: notebook.name,
-                    description: notebook.description,
-                    icon: notebook.icon,
-                    cls: notebook.cls,
-                    count: notebook.count,
-                    createTime: notebook.createTime,
-                    updateTime: notebook.updateTime,
-                }
-            ));
-
-            notebooks.value = [...notebooks.value, ...data];
-
-            notebooks.value[0].count = notebookResult.totalCount;
+            await getNotebookResult();
 
             if (notebooks.value.length > 0) {
                 await setActiveNotebook(notebooks.value[0].id)

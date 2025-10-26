@@ -221,6 +221,19 @@ impl Into<entity::note::ActiveModel> for Note {
     }
 }
 
+impl Into<entity::note::ActiveModel> for &Note {
+    fn into(self) -> entity::note::ActiveModel {
+        entity::note::ActiveModel {
+            id: Set(self.id),
+            notebook_id: Set(self.notebook_id),
+            title: Set(self.title.clone()),
+            content: Set(self.content.clone()),
+            create_time: Set(self.create_time.unwrap_or_default()),
+            update_time: Set(self.update_time.unwrap_or_default()),
+        }
+    }
+}
+
 #[serde_as]
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]

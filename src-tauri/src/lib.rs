@@ -34,6 +34,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             command::find_all_notebooks,
             command::create_note,
+            command::update_note,
+            command::delete_note_by_id,
             command::search_page_notes
         ])
         .run(tauri::generate_context!())
