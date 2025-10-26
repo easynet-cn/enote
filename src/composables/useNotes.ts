@@ -1,10 +1,10 @@
 import { ref, reactive, computed, onMounted, watchEffect } from 'vue';
 import { useDateFormat, useNow } from '@vueuse/core'
-import type { Notebook, Tag, Note, AppState, ShowNotebook, ShowTag, ShowNote } from '../types';
+import type { AppState, ShowNotebook, ShowTag, ShowNote } from '../types';
 import { noteApi } from '../api/note';
 
 const notebooks = ref<ShowNotebook[]>([
-    { id: '0', name: '全部', count: 5, icon: '📒' },
+    { id: '0', name: '全部', count: 0, icon: '📒' },
 ]);
 
 const tags = ref<ShowTag[]>([
@@ -147,7 +147,8 @@ export function useNotes() {
         state.loading = true
 
         try {
-            const data = (await noteApi.getNotebooks()).map((notebook): ShowNotebook => (
+            const notebookResult = await noteApi.getNotebooks();
+            const data = notebookResult.notebooks.map((notebook): ShowNotebook => (
                 {
                     id: String(notebook.id),
                     parentId: notebook.parentId,
@@ -162,6 +163,8 @@ export function useNotes() {
             ));
 
             notebooks.value = [...notebooks.value, ...data];
+
+            notebooks.value[0].count = notebookResult.totalCount;
 
             if (notebooks.value.length > 0) {
                 await setActiveNotebook(notebooks.value[0].id)

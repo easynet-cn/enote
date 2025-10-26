@@ -9,25 +9,24 @@ use sea_orm::{
 use crate::{
     config::AppState,
     entity,
-    model::{Note, NoteSearchPageParam, Notebook, PageResult},
+    model::{Note, NoteSearchPageParam, Notebook, NotebookResult, PageResult},
+    service,
 };
 
 #[tauri::command]
 pub async fn find_all_notebooks(
     app_state: tauri::State<'_, Arc<AppState>>,
-) -> Result<Vec<Notebook>, String> {
+) -> Result<NotebookResult, String> {
     let db = &app_state.database_connection;
 
-    let categories = entity::notebook::Entity::find()
-        .order_by_desc(entity::notebook::Column::SortOrder)
-        .all(db)
+    let total_count = service::note::total_count(db)
         .await
-        .map_err(|e| e.to_string())?
-        .iter()
-        .map(Notebook::from)
-        .collect::<Vec<Notebook>>();
+        .map_err(|e| e.to_string())?;
+    let notebooks = service::notebook::find_all(db)
+        .await
+        .map_err(|e| e.to_string())?;
 
-    Ok(categories)
+    Ok(NotebookResult::new(total_count, notebooks))
 }
 
 #[tauri::command]

@@ -30,6 +30,11 @@ export interface ShowNotebook {
     updateTime?: String | null;
 }
 
+export interface NotebookResult {
+    totalCount: number,
+    notebooks: Notebook[]
+}
+
 export interface Tag {
     id: number;
     name: string;
