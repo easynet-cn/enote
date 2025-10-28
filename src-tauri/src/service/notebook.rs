@@ -1,9 +1,6 @@
 use std::collections::HashMap;
 
-use sea_orm::{
-    ColumnTrait, DatabaseConnection, EntityTrait, QueryOrder, QuerySelect, prelude::Expr,
-    sea_query::Asterisk,
-};
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryOrder, QuerySelect};
 
 use crate::{entity, model::Notebook};
 

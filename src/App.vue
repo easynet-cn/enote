@@ -6,8 +6,8 @@
 
     <!-- 笔记列表组件 -->
     <NotesList :notebooks="notebooks" :notes="notes" :active-notebook="state.activeNotebook"
-      :active-note="state.activeNote" :search-query="state.noteSearchPageParam" @set-active-note="setActiveNote"
-      @update-search-query="state.noteSearchPageParam.keyword = $event.keyword" />
+      :active-note="state.activeNote" v-model:query="query" @set-active-note="setActiveNote"
+      @update-search-query="handleUpdateSearchQuery" />
 
     <!-- 编辑器组件 -->
     <Editor :active-note="activeNoteData" :edit-mode="state.editMode" @save-note="saveNote" @cancel-edit="cancelEdit"
@@ -26,6 +26,7 @@ const {
   notebooks,
   notes,
   tags,
+  query,
   state,
   activeNoteData,
   setActiveNotebook,
@@ -35,6 +36,7 @@ const {
   cancelEdit,
   deleteNote,
   updateNoteTitle,
-  updateNoteContent
+  updateNoteContent,
+  handleUpdateSearchQuery
 } = useNotes()
 </script>

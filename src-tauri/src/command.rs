@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::{
     config::AppState,
-    model::{Note, NoteSearchPageParam, NotebookResult, PageResult},
+    model::{Note, NotePageResult, NoteSearchPageParam, NotebookResult, PageResult},
     service,
 };
 
@@ -62,7 +62,7 @@ pub async fn delete_note_by_id(
 pub async fn search_page_notes(
     app_state: tauri::State<'_, Arc<AppState>>,
     search_param: NoteSearchPageParam,
-) -> Result<PageResult<Note>, String> {
+) -> Result<NotePageResult, String> {
     let db = &app_state.database_connection;
 
     service::note::search_page(db, &search_param)

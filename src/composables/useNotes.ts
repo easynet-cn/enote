@@ -1,6 +1,6 @@
 import { ref, reactive, computed, onMounted, watchEffect } from 'vue';
 import { useDateFormat, useNow } from '@vueuse/core'
-import type { AppState, ShowNotebook, ShowTag, ShowNote } from '../types';
+import type { AppState, ShowNotebook, ShowTag, ShowNote, NotePageResult } from '../types';
 import { ElNotification } from 'element-plus';
 import { noteApi } from '../api/note';
 
@@ -16,6 +16,8 @@ const tags = ref<ShowTag[]>([
 ]);
 
 const notes = ref<ShowNote[]>([]);
+
+const query = ref<string>('');
 
 // 状态管理
 const state = reactive<AppState>({
@@ -77,7 +79,29 @@ export function useNotes() {
         })
 
         try {
-            return (await noteApi.searchPageNotes(state.noteSearchPageParam)).data.map((note): ShowNote => (
+            const pageResult: NotePageResult = await noteApi.searchPageNotes(state.noteSearchPageParam);
+
+            let countMap = new Map<number, number>();
+            let totalCount = 0;
+
+            Object.entries(pageResult.notebookCounts).forEach(([k, v]) => {
+                countMap.set(Number.parseInt(k) ?? 0, v);
+                totalCount += v;
+            })
+
+            notebooks.value.forEach(e => {
+                if (e.id == '0') {
+                    e.count = totalCount;
+                } else {
+                    const id = Number.parseInt(e.id) ?? 0;
+
+                    if (countMap.has(id)) {
+                        e.count = countMap.get(id) || 0;
+                    }
+                }
+            });
+
+            return pageResult.data.map((note): ShowNote => (
                 {
                     id: String(note.id),
                     notebookId: String(note.notebookId),
@@ -257,6 +281,12 @@ export function useNotes() {
         return tags.value.find(tag => tag.id === tagId);
     };
 
+    const handleUpdateSearchQuery = async () => {
+        state.noteSearchPageParam.keyword = query.value;
+
+        notes.value = await searchNotes();
+    }
+
     // 初始化
     const initialize = async () => {
         state.loading = true;
@@ -298,6 +328,7 @@ export function useNotes() {
         notebooks,
         tags,
         notes,
+        query,
         state,
         activeNoteData,
         setActiveNotebook,
@@ -308,6 +339,7 @@ export function useNotes() {
         deleteNote,
         updateNoteTitle,
         updateNoteContent,
-        getTagById
+        getTagById,
+        handleUpdateSearchQuery
     };
 }

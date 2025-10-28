@@ -7,8 +7,8 @@
                 </h2>
             </div>
 
-            <el-input :model-value="searchQuery.keyword" placeholder="搜索笔记..." :prefix-icon="Search" clearable
-                @update:model-value="$emit('updateSearchQuery', $event)" />
+            <el-input v-model="query" placeholder="搜索笔记..." :prefix-icon="Search" clearable
+                @keyup.enter="$emit('updateSearchQuery')" />
         </div>
 
         <div class="flex-1 overflow-y-auto">
@@ -32,7 +32,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Search } from '@element-plus/icons-vue'
-import type { ShowNotebook, ShowNote, NoteSearchPageParam } from '../types'
+import type { ShowNotebook, ShowNote } from '../types'
 
 
 interface Props {
@@ -40,18 +40,20 @@ interface Props {
     notes: ShowNote[]
     activeNotebook: string
     activeNote: string | null
-    searchQuery: NoteSearchPageParam
 }
 
 const props = defineProps<Props>()
 
+const query = defineModel<string>("query");
+
 defineEmits<{
     setActiveNote: [id: string]
-    updateSearchQuery: [query: NoteSearchPageParam]
+    updateSearchQuery: []
 }>()
 
 const activeNotebookName = computed(() => {
     const notebook = props.notebooks.find(n => n.id === props.activeNotebook)
+
     return notebook ? notebook.name : ''
 })
 

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use chrono::NaiveDateTime;
 use sea_orm::ActiveValue::Set;
 use serde::{Deserialize, Serialize};
@@ -230,6 +232,25 @@ impl Into<entity::note::ActiveModel> for &Note {
             content: Set(self.content.clone()),
             create_time: Set(self.create_time.unwrap_or_default()),
             update_time: Set(self.update_time.unwrap_or_default()),
+        }
+    }
+}
+
+#[serde_as]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct NotePageResult {
+    #[serde(flatten)]
+    page_result: PageResult<Note>,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    notebook_counts: HashMap<i64, i64>,
+}
+
+impl NotePageResult {
+    pub fn new(page_result: PageResult<Note>, notebook_counts: HashMap<i64, i64>) -> Self {
+        Self {
+            page_result: page_result,
+            notebook_counts: notebook_counts,
         }
     }
 }

@@ -74,6 +74,9 @@ export interface ShowNote {
     createTime?: string | null;
     updateTime?: string | null;
 }
+export interface NotePageResult extends PageResult<Note> {
+    notebookCounts: Map<number, number>
+}
 
 export interface NoteHistory {
     id: string;
