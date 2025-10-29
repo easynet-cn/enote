@@ -39,8 +39,7 @@ export function useNotes() {
         })
 
         try {
-            const notebookResult = await noteApi.getNotebooks();
-            const data = notebookResult.notebooks.map((notebook): ShowNotebook => (
+            const data = (await noteApi.getNotebooks()).map((notebook): ShowNotebook => (
                 {
                     id: String(notebook.id),
                     parentId: notebook.parentId,
@@ -55,8 +54,6 @@ export function useNotes() {
             ));
 
             notebooks.value = [...[notebooks.value[0]], ...data];
-
-            notebooks.value[0].count = notebookResult.totalCount;
         } catch (error) {
             ElNotification({
                 title: '',
@@ -95,9 +92,7 @@ export function useNotes() {
                 } else {
                     const id = Number.parseInt(e.id) ?? 0;
 
-                    if (countMap.has(id)) {
-                        e.count = countMap.get(id) || 0;
-                    }
+                    e.count = countMap.get(id) || 0;
                 }
             });
 
@@ -125,20 +120,17 @@ export function useNotes() {
         return new Array();
     }
 
-    // 计算属性
-    watchEffect(async () => {
-        notes.value = await searchNotes();
-    });
-
     const activeNoteData = computed(() => {
         return notes.value.find(note => note.id === state.activeNote) || null;
     });
 
     // 方法
-    const setActiveNotebook = (notebookId: string) => {
+    const setActiveNotebook = async (notebookId: string) => {
         state.activeNotebook = notebookId;
         state.activeNote = null;
         state.noteSearchPageParam.notebookId = Number.parseInt(notebookId);
+
+        notes.value = await searchNotes();
     };
 
     const setActiveNote = (noteId: string) => {
@@ -305,6 +297,9 @@ export function useNotes() {
             if (notebooks.value.length > 0) {
                 await setActiveNotebook(notebooks.value[0].id)
             }
+
+
+            notes.value = await searchNotes();
 
         } catch (error) {
             ElNotification({

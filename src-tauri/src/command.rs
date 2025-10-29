@@ -2,24 +2,21 @@ use std::sync::Arc;
 
 use crate::{
     config::AppState,
-    model::{Note, NotePageResult, NoteSearchPageParam, NotebookResult, PageResult},
+    model::{Note, NotePageResult, NoteSearchPageParam, Notebook},
     service,
 };
 
 #[tauri::command]
 pub async fn find_all_notebooks(
     app_state: tauri::State<'_, Arc<AppState>>,
-) -> Result<NotebookResult, String> {
+) -> Result<Vec<Notebook>, String> {
     let db = &app_state.database_connection;
 
-    let total_count = service::note::total_count(db)
-        .await
-        .map_err(|e| e.to_string())?;
     let notebooks = service::notebook::find_all(db)
         .await
         .map_err(|e| e.to_string())?;
 
-    Ok(NotebookResult::new(total_count, notebooks))
+    Ok(notebooks)
 }
 
 #[tauri::command]

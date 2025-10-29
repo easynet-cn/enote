@@ -105,8 +105,6 @@ pub struct Notebook {
     pub cls: String,
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub sort_order: i32,
-    #[serde_as(deserialize_as = "DefaultOnNull")]
-    pub count: i64,
     #[serde(
         serialize_with = "serialize_option_dt",
         deserialize_with = "deserialize_option_dt"
@@ -129,28 +127,8 @@ impl From<&entity::notebook::Model> for Notebook {
             icon: value.icon.clone(),
             cls: value.cls.clone(),
             sort_order: value.sort_order,
-            count: 0,
             create_time: Some(value.create_time),
             update_time: Some(value.update_time),
-        }
-    }
-}
-
-#[serde_as]
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", default)]
-pub struct NotebookResult {
-    #[serde_as(deserialize_as = "DefaultOnNull")]
-    pub total_count: i64,
-    #[serde_as(deserialize_as = "DefaultOnNull")]
-    pub notebooks: Vec<Notebook>,
-}
-
-impl NotebookResult {
-    pub fn new(total_count: i64, notebooks: Vec<Notebook>) -> Self {
-        Self {
-            total_count: total_count,
-            notebooks: notebooks,
         }
     }
 }

@@ -1,9 +1,9 @@
 import { invoke } from '@tauri-apps/api/core'
 
-import { Note, NotebookResult, NotePageResult, NoteSearchPageParam, Tag } from '../types'
+import { Note, Notebook, NotePageResult, NoteSearchPageParam, Tag } from '../types'
 
 export const noteApi = {
-    async getNotebooks(): Promise<NotebookResult> {
+    async getNotebooks(): Promise<Notebook[]> {
         return await invoke('find_all_notebooks')
     },
 
