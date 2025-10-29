@@ -1,4 +1,4 @@
-import { ref, reactive, computed, onMounted, watchEffect } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { useDateFormat, useNow } from '@vueuse/core'
 import type { AppState, ShowNotebook, ShowTag, ShowNote, NotePageResult } from '../types';
 import { ElNotification } from 'element-plus';
