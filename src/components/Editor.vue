@@ -25,13 +25,9 @@
         </div>
 
         <!-- TipTap 编辑器 -->
-        <div v-if="activeNote && editMode" class="flex-1 overflow-hidden">
+        <div v-if="activeNote" class="flex-1 overflow-hidden">
             <editor-content :editor="editor" class="tiptap-editor" />
         </div>
-
-        <!-- 预览模式 -->
-        <div v-if="activeNote && !editMode" class="flex-1 p-6 overflow-y-auto tiptap-editor"
-            v-html="activeNote.content"></div>
     </div>
 </template>
 
@@ -77,6 +73,7 @@ const editor = useEditor({
         Underline,
     ],
     content: props.activeNote?.content || '',
+    editable: false,
     onUpdate: ({ editor }) => {
         const html = editor.getHTML()
         emit('updateNoteContent', html)
@@ -96,7 +93,10 @@ watch(() => props.editMode, (newMode) => {
         // 切换到编辑模式时，编辑器自动获得焦点
         setTimeout(() => {
             editor.value?.commands.focus()
+            editor.value?.setEditable(true)
         }, 100)
+    } else {
+        editor.value?.setEditable(false)
     }
 })
 
