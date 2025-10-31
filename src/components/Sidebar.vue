@@ -1,5 +1,5 @@
 <template>
-    <div class="w-64 bg-gray-50 border-r border-gray-200 flex flex-col">
+    <el-aside>
         <div class="p-6 border-b border-gray-200">
             <el-button type="success" size="large" @click="$emit('createNewNote')" :icon="Plus" round>
                 创建新笔记
@@ -32,7 +32,7 @@
                 </li>
             </ul>
         </div>
-    </div>
+    </el-aside>
 </template>
 
 <script setup lang="ts">

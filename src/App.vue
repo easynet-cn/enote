@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-screen bg-white">
+  <el-container class="flex h-screen bg-white">
     <!-- 侧边栏组件 -->
     <Sidebar :notebooks="notebooks" :tags="tags" :active-notebook="state.activeNotebook"
       @set-active-notebook="setActiveNotebook" @create-new-note="createNewNote" />
@@ -13,7 +13,7 @@
     <Editor :active-note="activeNoteData" :edit-mode="state.editMode" @save-note="saveNote" @cancel-edit="cancelEdit"
       @delete-note="deleteNote" @toggle-edit-mode="state.editMode = !state.editMode"
       @update-note-title="updateNoteTitle" @update-note-content="updateNoteContent" />
-  </div>
+  </el-container>
 </template>
 
 <script setup lang="ts">

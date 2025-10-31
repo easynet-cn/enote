@@ -1,5 +1,5 @@
 <template>
-    <div class="w-80 bg-white border-r border-gray-200 flex flex-col">
+    <el-aside class="w-80 bg-white border-r border-gray-200 flex flex-col">
         <div class="p-4 border-b border-gray-200">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-semibold text-gray-800">
@@ -11,7 +11,7 @@
                 @keyup.enter="$emit('updateSearchQuery')" />
         </div>
 
-        <div class="flex-1 overflow-y-auto">
+        <el-scrollbar>
             <div v-for="note in notes" :key="note.id" class="note-item" :class="{ active: activeNote === note.id }"
                 @click="$emit('setActiveNote', note.id)">
                 <div class="font-semibold text-gray-800 mb-1 truncate">{{ note.title }}</div>
@@ -25,8 +25,8 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
+        </el-scrollbar>
+    </el-aside>
 </template>
 
 <script setup lang="ts">

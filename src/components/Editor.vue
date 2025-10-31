@@ -1,34 +1,42 @@
 <template>
-    <div class="flex-1 flex flex-col bg-white">
-        <div v-if="activeNote" class="border-b border-gray-200">
-            <div class="p-4 flex justify-between items-center">
-                <el-input :model-value="activeNote.title" @update:model-value="$emit('updateNoteTitle', $event)"
-                    placeholder="笔记标题" :readonly="!editMode" size="large" class="editor-title-input" />
-                <div class="flex space-x-2">
-                    <el-button v-if="!editMode" type="primary" @click="$emit('toggleEditMode')" :icon="Edit">
-                        编辑
-                    </el-button>
-                    <el-button v-if="editMode" type="success" @click="$emit('saveNote')" :icon="Check">
-                        保存
-                    </el-button>
-                    <el-button v-if="editMode" @click="$emit('cancelEdit')" :icon="Close">
-                        取消
-                    </el-button>
-                    <el-button type="danger" @click="$emit('deleteNote')" :icon="Delete">
-                        删除
-                    </el-button>
-                </div>
-            </div>
-
-            <!-- TipTap 编辑器工具栏 -->
-            <TiptapToolbar v-if="editMode && editor" :editor="editor" />
-        </div>
-
-        <!-- TipTap 编辑器 -->
-        <div v-if="activeNote" class="flex-1 overflow-hidden">
-            <editor-content :editor="editor" class="tiptap-editor" />
-        </div>
-    </div>
+    <el-container>
+        <el-main>
+            <el-row v-if="activeNote">
+                <el-col :sm="14" :lg="12" :xl="17">
+                    <el-input :model-value="activeNote.title" @update:model-value="$emit('updateNoteTitle', $event)"
+                        placeholder="笔记标题" :readonly="!editMode" size="large" class="editor-title-input" />
+                </el-col>
+                <el-col :sm="10" :lg="12" :xl="7">
+                    <div class="button-row float-right">
+                        <el-button v-if="!editMode" type="primary" @click="$emit('toggleEditMode')" :icon="Edit">
+                            编辑
+                        </el-button>
+                        <el-button v-if="editMode" type="success" @click="$emit('saveNote')" :icon="Check">
+                            保存
+                        </el-button>
+                        <el-button v-if="editMode" @click="$emit('cancelEdit')" :icon="Close">
+                            取消
+                        </el-button>
+                        <el-button type="danger" @click="$emit('deleteNote')" :icon="Delete">
+                            删除
+                        </el-button>
+                    </div>
+                </el-col>
+            </el-row>
+            <el-row>
+                <el-col :span="24">
+                    <!-- TipTap 编辑器工具栏 -->
+                    <TiptapToolbar v-if="editMode && editor" :editor="editor" />
+                </el-col>
+            </el-row>
+            <el-row>
+                <!-- TipTap 编辑器 -->
+                <el-col :span="24" v-if="activeNote" class="flex-1 overflow-hidden">
+                    <editor-content :editor="editor" class="tiptap-editor" />
+                </el-col>
+            </el-row>
+        </el-main>
+    </el-container>
 </template>
 
 <script setup lang="ts">
