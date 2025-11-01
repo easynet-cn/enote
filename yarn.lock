@@ -1072,10 +1072,10 @@ detect-libc@^2.0.3:
   resolved "https://registry.npmmirror.com/detect-libc/-/detect-libc-2.1.2.tgz#689c5dcdc1900ef5583a4cb9f6d7b473742074ad"
   integrity sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==
 
-element-plus@^2.11.5:
-  version "2.11.5"
-  resolved "https://registry.npmmirror.com/element-plus/-/element-plus-2.11.5.tgz#752c2c4f70e86d615e577686c2f08054860a0902"
-  integrity sha512-O+bIVHQCjUDm4GiIznDXRoS8ar2TpWLwfOGnN/Aam0VXf5kbuc4SxdKKJdovWNxmxeqbcwjsSZPKgtXNcqys4A==
+element-plus@^2.11.7:
+  version "2.11.7"
+  resolved "https://registry.npmmirror.com/element-plus/-/element-plus-2.11.7.tgz#ee6270cd84df7aff89fe50bb5a5c5da11e4db15f"
+  integrity sha512-Bh47wuzsqaNBNDkbtlOlZER1cGcOB8GsXp/+C9b95MOrk0wvoHUV4NKKK7xMkfYNFYdYysQ752oMhnExgAL6+g==
   dependencies:
     "@ctrl/tinycolor" "^3.4.1"
     "@element-plus/icons-vue" "^2.3.2"

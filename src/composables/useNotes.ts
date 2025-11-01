@@ -190,7 +190,7 @@ export function useNotes() {
                 newNoteId = String(newNote.id);
             }
 
-            await Promise.all([getNotebookResult(), searchNotes()]);
+            notes.value = await searchNotes();
 
             setActiveNote(newNoteId);
         } catch (error) {
@@ -245,7 +245,7 @@ export function useNotes() {
                 notification.close();
             }
 
-            await Promise.all([getNotebookResult(), searchNotes()]);
+            notes.value = await searchNotes();
         }
     };
 

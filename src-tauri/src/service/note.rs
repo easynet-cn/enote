@@ -2,8 +2,12 @@ use std::collections::HashMap;
 
 use chrono::Local;
 use sea_orm::{
-    ActiveModelTrait, ActiveValue::Set, ColumnTrait, Condition, DatabaseConnection, EntityTrait,
-    IntoActiveModel, QueryFilter, QueryOrder, QuerySelect, prelude::Expr, sea_query::Asterisk,
+    ActiveModelTrait,
+    ActiveValue::{NotSet, Set},
+    ColumnTrait, Condition, DatabaseConnection, EntityTrait, IntoActiveModel, QueryFilter,
+    QueryOrder, QuerySelect, TransactionTrait,
+    prelude::Expr,
+    sea_query::Asterisk,
 };
 
 use crate::{
@@ -24,20 +28,35 @@ pub async fn total_count(db: &DatabaseConnection) -> anyhow::Result<i64> {
 }
 
 pub async fn create(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Option<Note>> {
+    let txn = db.begin().await?;
+
     let now = Local::now().naive_local();
 
-    let mut m = note.clone();
     let mut active_model: entity::note::ActiveModel = note.into();
 
+    active_model.id = Set(0);
     active_model.create_time = Set(now);
     active_model.update_time = Set(now);
 
-    let id = entity::note::Entity::insert(active_model)
-        .exec(db)
-        .await?
-        .last_insert_id;
+    let entity = active_model.insert(&txn).await?;
 
-    m.id = id;
+    entity::note_history::ActiveModel {
+        id: NotSet,
+        note_id: Set(entity.id),
+        old_content: Set(String::default()),
+        new_content: Set(note.content.clone()),
+        operate_type: Set(1),
+        operate_time: Set(now),
+        create_time: Set(now),
+    }
+    .insert(&txn)
+    .await?;
+
+    txn.commit().await?;
+
+    let mut m = note.clone();
+
+    m.id = entity.id;
     m.create_time = Some(now);
     m.update_time = Some(now);
 
@@ -45,14 +64,37 @@ pub async fn create(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
 }
 
 pub async fn delete_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<()> {
-    entity::note::Entity::delete_by_id(id).exec(db).await?;
+    if let Some(entity) = entity::note::Entity::find_by_id(id).one(db).await? {
+        let txn = db.begin().await?;
+
+        let now = Local::now().naive_local();
+
+        entity::note_history::ActiveModel {
+            id: Set(0),
+            note_id: Set(id),
+            old_content: Set(entity.content),
+            new_content: Set(String::default()),
+            operate_type: Set(3),
+            operate_time: Set(now),
+            create_time: Set(now),
+        }
+        .insert(&txn)
+        .await?;
+
+        entity::note::Entity::delete_by_id(id).exec(&txn).await?;
+
+        txn.commit().await?;
+    }
 
     Ok(())
 }
 
 pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Option<Note>> {
     if let Some(entity) = entity::note::Entity::find_by_id(note.id).one(db).await? {
+        let txn = db.begin().await?;
+
         let mut m = note.clone();
+        let old_content = entity.content.clone();
 
         let mut active_model: entity::note::ActiveModel = entity.into_active_model();
 
@@ -64,7 +106,21 @@ pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
 
             active_model.update_time = Set(now);
 
-            active_model.update(db).await?;
+            active_model.update(&txn).await?;
+
+            entity::note_history::ActiveModel {
+                id: Set(0),
+                note_id: Set(note.id),
+                old_content: Set(old_content),
+                new_content: Set(note.content.clone()),
+                operate_type: Set(2),
+                operate_time: Set(now),
+                create_time: Set(now),
+            }
+            .insert(&txn)
+            .await?;
+
+            txn.commit().await?;
 
             m.update_time = Some(now);
         }
