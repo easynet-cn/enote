@@ -13,6 +13,8 @@ pub struct Model {
     pub old_content: String,
     #[sea_orm(column_type = "custom(\"LONGTEXT\")")]
     pub new_content: String,
+    #[sea_orm(column_type = "custom(\"LONGTEXT\")")]
+    pub extra: String,
     pub operate_type: i32,
     pub operate_time: DateTime,
     pub create_time: DateTime,

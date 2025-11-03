@@ -11,9 +11,47 @@ use sea_orm::{
 };
 
 use crate::{
-    entity,
-    model::{Note, NotePageResult, NoteSearchPageParam, PageResult},
+    entity::{self},
+    model::{Note, NoteHistoryExtra, NotePageResult, NoteSearchPageParam, PageResult, Tag},
 };
+
+pub async fn find_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<Option<Note>> {
+    if let Some(entity) = entity::note::Entity::find_by_id(id).one(db).await? {
+        let mut note = Note::from(entity);
+
+        if let Some(notebook) = entity::notebook::Entity::find_by_id(note.id)
+            .one(db)
+            .await?
+        {
+            note.notebook_name = notebook.name;
+        }
+
+        let tag_ids = entity::note_tags::Entity::find()
+            .filter(entity::note_tags::Column::NoteId.eq(id))
+            .order_by_desc(entity::note_tags::Column::SortOrder)
+            .all(db)
+            .await?
+            .iter()
+            .map(|e| e.tag_id)
+            .collect::<Vec<i64>>();
+
+        if !tag_ids.is_empty() {
+            let tags = entity::tag::Entity::find()
+                .filter(entity::tag::Column::Id.is_in(tag_ids))
+                .all(db)
+                .await?
+                .iter()
+                .map(Tag::from)
+                .collect::<Vec<Tag>>();
+
+            note.tags = tags;
+        }
+
+        Ok(Some(note))
+    } else {
+        Ok(None)
+    }
+}
 
 pub async fn total_count(db: &DatabaseConnection) -> anyhow::Result<i64> {
     let total_count = entity::note::Entity::find()
@@ -40,11 +78,38 @@ pub async fn create(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
 
     let entity = active_model.insert(&txn).await?;
 
+    if !note.tags.is_empty() {
+        let note_tags = note
+            .tags
+            .iter()
+            .map(|e| entity::note_tags::ActiveModel {
+                id: Set(0),
+                note_id: Set(entity.id),
+                tag_id: Set(e.id),
+                sort_order: Set(e.sort_order),
+                create_time: Set(now),
+                upate_time: Set(now),
+            })
+            .collect::<Vec<entity::note_tags::ActiveModel>>();
+
+        entity::note_tags::Entity::insert_many(note_tags)
+            .exec(&txn)
+            .await?;
+    }
+
+    let note_history_extra = NoteHistoryExtra {
+        title: note.title.clone(),
+        tags: note.tags.clone(),
+    };
+
+    let extra = serde_json::to_string(&note_history_extra).unwrap_or_default();
+
     entity::note_history::ActiveModel {
         id: NotSet,
         note_id: Set(entity.id),
         old_content: Set(String::default()),
         new_content: Set(note.content.clone()),
+        extra: Set(extra),
         operate_type: Set(1),
         operate_time: Set(now),
         create_time: Set(now),
@@ -54,26 +119,49 @@ pub async fn create(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
 
     txn.commit().await?;
 
-    let mut m = note.clone();
-
-    m.id = entity.id;
-    m.create_time = Some(now);
-    m.update_time = Some(now);
-
-    Ok(Some(m))
+    find_by_id(db, entity.id).await
 }
 
 pub async fn delete_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<()> {
     if let Some(entity) = entity::note::Entity::find_by_id(id).one(db).await? {
+        let tag_ids = entity::note_tags::Entity::find()
+            .filter(entity::note_tags::Column::NoteId.eq(id))
+            .order_by_desc(entity::note_tags::Column::SortOrder)
+            .all(db)
+            .await?
+            .iter()
+            .map(|e| e.tag_id)
+            .collect::<Vec<i64>>();
+
+        let mut tags = Vec::<Tag>::with_capacity(tag_ids.len());
+
+        if !tag_ids.is_empty() {
+            tags = entity::tag::Entity::find()
+                .filter(entity::tag::Column::Id.is_in(tag_ids))
+                .all(db)
+                .await?
+                .iter()
+                .map(Tag::from)
+                .collect::<Vec<Tag>>();
+        }
+
         let txn = db.begin().await?;
 
         let now = Local::now().naive_local();
+
+        let note_history_extra = NoteHistoryExtra {
+            title: entity.title.clone(),
+            tags: tags,
+        };
+
+        let extra = serde_json::to_string(&note_history_extra).unwrap_or_default();
 
         entity::note_history::ActiveModel {
             id: Set(0),
             note_id: Set(id),
             old_content: Set(entity.content),
             new_content: Set(String::default()),
+            extra: Set(extra),
             operate_type: Set(3),
             operate_time: Set(now),
             create_time: Set(now),
@@ -82,6 +170,10 @@ pub async fn delete_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<()
         .await?;
 
         entity::note::Entity::delete_by_id(id).exec(&txn).await?;
+        entity::note_tags::Entity::delete_many()
+            .filter(entity::note_tags::Column::NoteId.eq(id))
+            .exec(&txn)
+            .await?;
 
         txn.commit().await?;
     }
@@ -91,9 +183,32 @@ pub async fn delete_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<()
 
 pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Option<Note>> {
     if let Some(entity) = entity::note::Entity::find_by_id(note.id).one(db).await? {
+        let old_title = entity.title.clone();
+        let old_tag_ids = entity::note_tags::Entity::find()
+            .filter(entity::note_tags::Column::NoteId.eq(note.id))
+            .order_by_desc(entity::note_tags::Column::SortOrder)
+            .all(db)
+            .await?
+            .iter()
+            .map(|e| e.tag_id)
+            .collect::<Vec<i64>>();
+
+        let mut old_tags = Vec::<Tag>::with_capacity(old_tag_ids.len());
+
+        if !old_tag_ids.is_empty() {
+            let tags = entity::tag::Entity::find()
+                .filter(entity::tag::Column::Id.is_in(old_tag_ids.clone()))
+                .all(db)
+                .await?
+                .iter()
+                .map(Tag::from)
+                .collect::<Vec<Tag>>();
+
+            old_tags = tags;
+        }
+
         let txn = db.begin().await?;
 
-        let mut m = note.clone();
         let old_content = entity.content.clone();
 
         let mut active_model: entity::note::ActiveModel = entity.into_active_model();
@@ -101,34 +216,74 @@ pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
         active_model.title = Set(note.title.clone());
         active_model.content = Set(note.content.clone());
 
-        if active_model.is_changed() {
-            let now = Local::now().naive_local();
+        let now = Local::now().naive_local();
 
+        let note_changed = active_model.is_changed();
+
+        if active_model.is_changed() {
             active_model.update_time = Set(now);
 
             active_model.update(&txn).await?;
+        }
+
+        let tag_ids = note.tags.iter().map(|e| e.id).collect::<Vec<i64>>();
+
+        let tags_changed: bool = old_tag_ids == tag_ids;
+
+        if tags_changed {
+            if !old_tag_ids.is_empty() || note.tags.is_empty() {
+                entity::note_tags::Entity::delete_many()
+                    .filter(entity::note_tags::Column::Id.is_in(old_tag_ids))
+                    .exec(&txn)
+                    .await?;
+            }
+
+            if !note.tags.is_empty() {
+                let note_tags = note
+                    .tags
+                    .iter()
+                    .map(|e| entity::note_tags::ActiveModel {
+                        id: Set(0),
+                        note_id: Set(note.id),
+                        tag_id: Set(e.id),
+                        sort_order: Set(e.sort_order),
+                        create_time: Set(now),
+                        upate_time: Set(now),
+                    })
+                    .collect::<Vec<entity::note_tags::ActiveModel>>();
+
+                entity::note_tags::Entity::insert_many(note_tags)
+                    .exec(&txn)
+                    .await?;
+            }
+        }
+
+        if note_changed && tags_changed {
+            let note_history_extra = NoteHistoryExtra {
+                title: old_title,
+                tags: old_tags,
+            };
+
+            let extra = serde_json::to_string(&note_history_extra).unwrap_or_default();
 
             entity::note_history::ActiveModel {
                 id: Set(0),
                 note_id: Set(note.id),
                 old_content: Set(old_content),
                 new_content: Set(note.content.clone()),
+                extra: Set(extra),
                 operate_type: Set(2),
                 operate_time: Set(now),
                 create_time: Set(now),
             }
             .insert(&txn)
             .await?;
-
-            txn.commit().await?;
-
-            m.update_time = Some(now);
         }
 
-        return Ok(Some(m));
+        txn.commit().await?;
     }
 
-    Ok(None)
+    find_by_id(db, note.id).await
 }
 
 pub async fn search_page(

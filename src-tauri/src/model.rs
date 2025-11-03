@@ -244,6 +244,8 @@ pub struct Tag {
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub icon: String,
     #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub cls: String,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     pub sort_order: i32,
     #[serde(
         serialize_with = "serialize_option_dt",
@@ -255,6 +257,34 @@ pub struct Tag {
         deserialize_with = "deserialize_option_dt"
     )]
     pub update_time: Option<NaiveDateTime>,
+}
+
+impl From<entity::tag::Model> for Tag {
+    fn from(value: entity::tag::Model) -> Self {
+        Self {
+            id: value.id,
+            name: value.name,
+            icon: value.icon,
+            cls: value.cls,
+            sort_order: value.sort_order,
+            create_time: Some(value.create_time),
+            update_time: Some(value.update_time),
+        }
+    }
+}
+
+impl From<&entity::tag::Model> for Tag {
+    fn from(value: &entity::tag::Model) -> Self {
+        Self {
+            id: value.id,
+            name: value.name.clone(),
+            icon: value.icon.clone(),
+            cls: value.cls.clone(),
+            sort_order: value.sort_order,
+            create_time: Some(value.create_time),
+            update_time: Some(value.update_time),
+        }
+    }
 }
 
 #[serde_as]
@@ -269,6 +299,16 @@ pub struct NoteSearchPageParam {
     pub tag_id: i64,
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub keyword: String,
+}
+
+#[serde_as]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct NoteHistoryExtra {
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub title: String,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub tags: Vec<Tag>,
 }
 
 pub fn serialize_dt<S>(dt: &NaiveDateTime, serializer: S) -> Result<S::Ok, S::Error>
