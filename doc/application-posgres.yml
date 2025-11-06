@@ -1,0 +1,2 @@
+datasource:
+  url: postgres://enote:devterry@127.0.0.1:5432/enote

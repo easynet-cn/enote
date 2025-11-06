@@ -12,12 +12,24 @@
   resolved "https://registry.npmmirror.com/@babel/helper-validator-identifier/-/helper-validator-identifier-7.27.1.tgz#a7054dcc145a967dd4dc8fee845a57c1316c9df8"
   integrity sha512-D2hP9eA+Sqx1kBZgzxZh0y1trbuU+JoDkiEwqhQ36nodYqJwyEIhPSdMNd7lOm/4io72luTPWH20Yda0xOuUow==
 
+"@babel/helper-validator-identifier@^7.28.5":
+  version "7.28.5"
+  resolved "https://registry.npmmirror.com/@babel/helper-validator-identifier/-/helper-validator-identifier-7.28.5.tgz#010b6938fab7cb7df74aa2bbc06aa503b8fe5fb4"
+  integrity sha512-qSs4ifwzKJSV39ucNjsvc6WVHs6b7S03sOh2OcHF9UHfVPqWWALUsNUVzhSBiItjRZoLHx7nIarVjqKVusUZ1Q==
+
 "@babel/parser@^7.28.4":
   version "7.28.4"
   resolved "https://registry.npmmirror.com/@babel/parser/-/parser-7.28.4.tgz#da25d4643532890932cc03f7705fe19637e03fa8"
   integrity sha512-yZbBqeM6TkpP9du/I2pUZnJsRMGGvOuIrhjzC1AwHwW+6he4mni6Bp/m8ijn0iOuZuPI2BfkCoSRunpyjnrQKg==
   dependencies:
     "@babel/types" "^7.28.4"
+
+"@babel/parser@^7.28.5":
+  version "7.28.5"
+  resolved "https://registry.npmmirror.com/@babel/parser/-/parser-7.28.5.tgz#0b0225ee90362f030efd644e8034c99468893b08"
+  integrity sha512-KKBU1VGYR7ORr3At5HAtUQ+TV3SzRCXmA/8OdDZiLDBIZxVyzXuztPjfLd3BV1PRAQGCMWWSHYhL0F8d5uHBDQ==
+  dependencies:
+    "@babel/types" "^7.28.5"
 
 "@babel/types@^7.28.4":
   version "7.28.4"
@@ -26,6 +38,14 @@
   dependencies:
     "@babel/helper-string-parser" "^7.27.1"
     "@babel/helper-validator-identifier" "^7.27.1"
+
+"@babel/types@^7.28.5":
+  version "7.28.5"
+  resolved "https://registry.npmmirror.com/@babel/types/-/types-7.28.5.tgz#10fc405f60897c35f07e85493c932c7b5ca0592b"
+  integrity sha512-qQ5m48eI/MFLQ5PxQj4PFaprjyCTLI37ElWMmNs0K8Lk3dVeOdNpB3ks8jc7yM5CDmVC73eMVk/trk3fgmrUpA==
+  dependencies:
+    "@babel/helper-string-parser" "^7.27.1"
+    "@babel/helper-validator-identifier" "^7.28.5"
 
 "@ctrl/tinycolor@^3.4.1":
   version "3.6.1"
@@ -489,77 +509,77 @@
   resolved "https://registry.npmmirror.com/@tauri-apps/api/-/api-2.9.0.tgz#047fcbfec05a719b0cec997eee244cee453fb2fc"
   integrity sha512-qD5tMjh7utwBk9/5PrTA/aGr3i5QaJ/Mlt7p8NilQ45WgbifUNPyKWsA63iQ8YfQq6R8ajMapU+/Q8nMcPRLNw==
 
-"@tauri-apps/cli-darwin-arm64@2.9.2":
-  version "2.9.2"
-  resolved "https://registry.npmmirror.com/@tauri-apps/cli-darwin-arm64/-/cli-darwin-arm64-2.9.2.tgz#c84027ca12e79ffb263784576704c6bf206aa486"
-  integrity sha512-g1OtCXydOZFYRUEAyGYdJ2lLaE3l5jk8o+Bro8y2WOLwBLtbWjBoJIVobOKFanfjG/Xr8H/UA+umEVILPhMc2A==
+"@tauri-apps/cli-darwin-arm64@2.9.3":
+  version "2.9.3"
+  resolved "https://registry.npmmirror.com/@tauri-apps/cli-darwin-arm64/-/cli-darwin-arm64-2.9.3.tgz#2c7dd26397052f541eb1290161387232adf84bd8"
+  integrity sha512-W8FQXZXQmQ0Fmj9UJXNrm2mLdIaLLriKVY7o/FzmizyIKTPIvHjfZALTNybbpTQRbJvKoGHLrW1DNzAWVDWJYg==
 
-"@tauri-apps/cli-darwin-x64@2.9.2":
-  version "2.9.2"
-  resolved "https://registry.npmmirror.com/@tauri-apps/cli-darwin-x64/-/cli-darwin-x64-2.9.2.tgz#31188c8763b34e4c7195fc46fda875754949fe34"
-  integrity sha512-nHHIY33noUmMOyFwAJz0xQyrYIXU+bae8MNos4TGsTo491YWAF2uzr6iW+Bq0N530xDcbe7EyRvDHgK43RmmVw==
+"@tauri-apps/cli-darwin-x64@2.9.3":
+  version "2.9.3"
+  resolved "https://registry.npmmirror.com/@tauri-apps/cli-darwin-x64/-/cli-darwin-x64-2.9.3.tgz#9cc28e4ea84c0bd5bcdeb16b2bcd176f5a15243d"
+  integrity sha512-zDwu40rlshijt3TU6aRvzPUyVpapsx1sNfOlreDMTaMelQLHl6YoQzSRpLHYwrHrhimxyX2uDqnKIiuGel0Lhg==
 
-"@tauri-apps/cli-linux-arm-gnueabihf@2.9.2":
-  version "2.9.2"
-  resolved "https://registry.npmmirror.com/@tauri-apps/cli-linux-arm-gnueabihf/-/cli-linux-arm-gnueabihf-2.9.2.tgz#a3d5f584312e99f1a4e844bb7a59db16b31b4fc7"
-  integrity sha512-Dq17LBdSuzf+fWOKMIyiSao+Fcq4FiQwYYlx3Nk8oafDINc8sVBjC5gv2xp18KzYhk9teSWfmDpD1sj+D3t7uw==
+"@tauri-apps/cli-linux-arm-gnueabihf@2.9.3":
+  version "2.9.3"
+  resolved "https://registry.npmmirror.com/@tauri-apps/cli-linux-arm-gnueabihf/-/cli-linux-arm-gnueabihf-2.9.3.tgz#2f9d0170b978db62b3e463aa888dfa1b85e081fa"
+  integrity sha512-+Oc2OfcTRwYtW93VJqd/HOk77buORwC9IToj/qsEvM7bTMq6Kda4alpZprzwrCHYANSw+zD8PgjJdljTpe4p+g==
 
-"@tauri-apps/cli-linux-arm64-gnu@2.9.2":
-  version "2.9.2"
-  resolved "https://registry.npmmirror.com/@tauri-apps/cli-linux-arm64-gnu/-/cli-linux-arm64-gnu-2.9.2.tgz#99e6fd03d1380e2f1f6de5f57a38d5a247daa13c"
-  integrity sha512-Pxj5k29Rxj9xEht4gdE744t5HLXTwBojkjYDXXyJ3mE+BEg9hFX5WkStg7OkyZwH60u8NSkDSMpo7MJTH9srmA==
+"@tauri-apps/cli-linux-arm64-gnu@2.9.3":
+  version "2.9.3"
+  resolved "https://registry.npmmirror.com/@tauri-apps/cli-linux-arm64-gnu/-/cli-linux-arm64-gnu-2.9.3.tgz#ac4d1743d11f653db66f73bbe99c3bd6c8d6657d"
+  integrity sha512-59GqU/J1n9wFyAtleoQOaU0oVIo+kwQynEw4meFDoKRXszKGor6lTsbsS3r0QKLSPbc0o/yYGJhqqCtkYjb/eg==
 
-"@tauri-apps/cli-linux-arm64-musl@2.9.2":
-  version "2.9.2"
-  resolved "https://registry.npmmirror.com/@tauri-apps/cli-linux-arm64-musl/-/cli-linux-arm64-musl-2.9.2.tgz#52ea47712818450355819c2f6747d769f9362126"
-  integrity sha512-mx82BuD4q3Yj5Zw+LXveZgPaDCnmH2At2LosX1siK77kaD5Ap5FF+FN0V4y+3cwq+Hcrk9AhEUPbHqoNOx1R2g==
+"@tauri-apps/cli-linux-arm64-musl@2.9.3":
+  version "2.9.3"
+  resolved "https://registry.npmmirror.com/@tauri-apps/cli-linux-arm64-musl/-/cli-linux-arm64-musl-2.9.3.tgz#8fa45b38dbca7f891010f2bbc6a1316f84a0aa65"
+  integrity sha512-fzvG+jEn5/iYGNH6Z2IRMheYFC4pJdXa19BR9fFm6Bdn2cuajRLDKdUcEME/DCtwqclphXtFZTrT4oezY5vI/A==
 
-"@tauri-apps/cli-linux-riscv64-gnu@2.9.2":
-  version "2.9.2"
-  resolved "https://registry.npmmirror.com/@tauri-apps/cli-linux-riscv64-gnu/-/cli-linux-riscv64-gnu-2.9.2.tgz#abe1e7bddf8ee36e57c5f83e631fb4403c735ac7"
-  integrity sha512-Ypm1nnr7k+ECC1+JfDcnxROHt6BX8t/4GplxBvdY68BDXtIcBbdhPWDos7MK+3bDmoaA0WSJbW+DUjpfSkyKgw==
+"@tauri-apps/cli-linux-riscv64-gnu@2.9.3":
+  version "2.9.3"
+  resolved "https://registry.npmmirror.com/@tauri-apps/cli-linux-riscv64-gnu/-/cli-linux-riscv64-gnu-2.9.3.tgz#b23e193181040b3b6587118ea326d4e096b00b56"
+  integrity sha512-qV8DZXI/fZwawk6T3Th1g6smiNC2KeQTk7XFgKvqZ6btC01z3UTsQmNGvI602zwm3Ld1TBZb4+rEWu2QmQimmw==
 
-"@tauri-apps/cli-linux-x64-gnu@2.9.2":
-  version "2.9.2"
-  resolved "https://registry.npmmirror.com/@tauri-apps/cli-linux-x64-gnu/-/cli-linux-x64-gnu-2.9.2.tgz#1a97f3ee038d6920682d75c570112540edc3b9d0"
-  integrity sha512-tg85cGIM9PWwsbQg8m3uah3SfoNapgUr4vhWtkqgeTDZOjQuQ2duTwCH4UiM7acBpbZHNzvRrxSFpv0U53TqQQ==
+"@tauri-apps/cli-linux-x64-gnu@2.9.3":
+  version "2.9.3"
+  resolved "https://registry.npmmirror.com/@tauri-apps/cli-linux-x64-gnu/-/cli-linux-x64-gnu-2.9.3.tgz#47834e4275340da5d09552e8ed78bad3b8f3333c"
+  integrity sha512-tquyEONCNRfqEBWEe4eAHnxFN5yY5lFkCuD4w79XLIovUxVftQ684+xLp7zkhntkt4y20SMj2AgJa/+MOlx4Kg==
 
-"@tauri-apps/cli-linux-x64-musl@2.9.2":
-  version "2.9.2"
-  resolved "https://registry.npmmirror.com/@tauri-apps/cli-linux-x64-musl/-/cli-linux-x64-musl-2.9.2.tgz#852747ddb2066afef5c48f544df4da15e75cd273"
-  integrity sha512-xW8qaz9bcwR35W2gIg7fKG9e1Z34idOsGpD2zIPgxlJyF314B/1qie50hbOqt5AbbXHR4iRpxKE4kA2grqMmkg==
+"@tauri-apps/cli-linux-x64-musl@2.9.3":
+  version "2.9.3"
+  resolved "https://registry.npmmirror.com/@tauri-apps/cli-linux-x64-musl/-/cli-linux-x64-musl-2.9.3.tgz#ed965954808abc842e4a1570c066ed379956c8da"
+  integrity sha512-v2cBIB/6ji8DL+aiL5QUykU3ZO8OoJGyx50/qv2HQVzkf85KdaYSis3D/oVRemN/pcDz+vyCnnL3XnzFnDl4JQ==
 
-"@tauri-apps/cli-win32-arm64-msvc@2.9.2":
-  version "2.9.2"
-  resolved "https://registry.npmmirror.com/@tauri-apps/cli-win32-arm64-msvc/-/cli-win32-arm64-msvc-2.9.2.tgz#b7cb55ab3e556b83f2029dbf3f2015338538a734"
-  integrity sha512-A1PshB8oHdY7zYOPlLD7Om7/aD9sOUVREd765ElIzYDtptWcALwOP9jb22Wi01vDTqxf98E4ZGIcG2gxr4FhiA==
+"@tauri-apps/cli-win32-arm64-msvc@2.9.3":
+  version "2.9.3"
+  resolved "https://registry.npmmirror.com/@tauri-apps/cli-win32-arm64-msvc/-/cli-win32-arm64-msvc-2.9.3.tgz#9050caba9d81ca78bada2e7525c2f4b88e07e4b1"
+  integrity sha512-ZGvBy7nvrHPbE0HeKp/ioaiw8bNgAHxWnb7JRZ4/G0A+oFj0SeSFxl9k5uU6FKnM7bHM23Gd1oeaDex9g5Fceg==
 
-"@tauri-apps/cli-win32-ia32-msvc@2.9.2":
-  version "2.9.2"
-  resolved "https://registry.npmmirror.com/@tauri-apps/cli-win32-ia32-msvc/-/cli-win32-ia32-msvc-2.9.2.tgz#f98653646fed4bf089b3e89e4f4700b56b6e237d"
-  integrity sha512-AuCi0Vnc4qkXRLCC58das0u45SmXAjqcOjqF324CBKa1Z7jjNJESm0Sc2oc2G2q6f2eAbAfi34s2iJNaJU1hlQ==
+"@tauri-apps/cli-win32-ia32-msvc@2.9.3":
+  version "2.9.3"
+  resolved "https://registry.npmmirror.com/@tauri-apps/cli-win32-ia32-msvc/-/cli-win32-ia32-msvc-2.9.3.tgz#689f7fc0fa420c6ec7f76c13d8f0830242146515"
+  integrity sha512-UsgIwOnpCoY9NK9/65QiwgmWVIE80LE7SwRYVblGtmlY9RYfsYvpbItwsovA/AcHMTiO+OCvS/q9yLeqS3m6Sg==
 
-"@tauri-apps/cli-win32-x64-msvc@2.9.2":
-  version "2.9.2"
-  resolved "https://registry.npmmirror.com/@tauri-apps/cli-win32-x64-msvc/-/cli-win32-x64-msvc-2.9.2.tgz#11d49d18568e940a968f42970715438d22e34052"
-  integrity sha512-kDoejyfvME/mLkR4VofQnmVPTt/smJvoXuE3xgTbUwcUQKqawM8EyQvxOHQosaJYfQphHi7G0ya8UZo3PlDZig==
+"@tauri-apps/cli-win32-x64-msvc@2.9.3":
+  version "2.9.3"
+  resolved "https://registry.npmmirror.com/@tauri-apps/cli-win32-x64-msvc/-/cli-win32-x64-msvc-2.9.3.tgz#2cbb1f626298c1c794ac902fbad1aeb0ac8fdfcf"
+  integrity sha512-fmw7NrrHE5m49idCvJAx9T9bsupjdJ0a3p3DPCNCZRGANU6R1tA1L+KTlVuUtdAldX2NqU/9UPo2SCslYKgJHQ==
 
-"@tauri-apps/cli@^2.9.2":
-  version "2.9.2"
-  resolved "https://registry.npmmirror.com/@tauri-apps/cli/-/cli-2.9.2.tgz#01d2aa765fe53da464d8e207b4a61d0ed97832a8"
-  integrity sha512-aGzdVgxQW6WQ7e5nydPZ/30u8HvltHjO3Ytzf1wOxX1N5Yj2TsjKWRb/AWJlB95Huml3k3c/b6s0ijAvlSo9xw==
+"@tauri-apps/cli@^2.9.3":
+  version "2.9.3"
+  resolved "https://registry.npmmirror.com/@tauri-apps/cli/-/cli-2.9.3.tgz#a9768905c59a81b3fe55ed4674e6f8fa6672fdce"
+  integrity sha512-BQ7iLUXTQcyG1PpzLWeVSmBCedYDpnA/6Cm/kRFGtqjTf/eVUlyYO5S2ee07tLum3nWwDBWTGFZeruO8yEukfA==
   optionalDependencies:
-    "@tauri-apps/cli-darwin-arm64" "2.9.2"
-    "@tauri-apps/cli-darwin-x64" "2.9.2"
-    "@tauri-apps/cli-linux-arm-gnueabihf" "2.9.2"
-    "@tauri-apps/cli-linux-arm64-gnu" "2.9.2"
-    "@tauri-apps/cli-linux-arm64-musl" "2.9.2"
-    "@tauri-apps/cli-linux-riscv64-gnu" "2.9.2"
-    "@tauri-apps/cli-linux-x64-gnu" "2.9.2"
-    "@tauri-apps/cli-linux-x64-musl" "2.9.2"
-    "@tauri-apps/cli-win32-arm64-msvc" "2.9.2"
-    "@tauri-apps/cli-win32-ia32-msvc" "2.9.2"
-    "@tauri-apps/cli-win32-x64-msvc" "2.9.2"
+    "@tauri-apps/cli-darwin-arm64" "2.9.3"
+    "@tauri-apps/cli-darwin-x64" "2.9.3"
+    "@tauri-apps/cli-linux-arm-gnueabihf" "2.9.3"
+    "@tauri-apps/cli-linux-arm64-gnu" "2.9.3"
+    "@tauri-apps/cli-linux-arm64-musl" "2.9.3"
+    "@tauri-apps/cli-linux-riscv64-gnu" "2.9.3"
+    "@tauri-apps/cli-linux-x64-gnu" "2.9.3"
+    "@tauri-apps/cli-linux-x64-musl" "2.9.3"
+    "@tauri-apps/cli-win32-arm64-msvc" "2.9.3"
+    "@tauri-apps/cli-win32-ia32-msvc" "2.9.3"
+    "@tauri-apps/cli-win32-x64-msvc" "2.9.3"
 
 "@tauri-apps/plugin-fs@^2.4.4":
   version "2.4.4"
@@ -582,189 +602,189 @@
   dependencies:
     "@tauri-apps/api" "^2.8.0"
 
-"@tiptap/core@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/core/-/core-3.10.1.tgz#89fec750db261ee569f64926b3b9f9a509b81ea3"
-  integrity sha512-YY/u+RsjLVhcUaIn+wv6vjMx8kldO7SzFFnRu0iuC+QW57VrlqUzqz5PR6CenphwJHuqGM5b3SCr4K2ZPjN8jQ==
+"@tiptap/core@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/core/-/core-3.10.2.tgz#bcb37bb1239c01158f8ae97e3232bf8740498683"
+  integrity sha512-rWgo/9g5lSWT3/00wPvG+3EEuPqDxegYMp0v7YkSuURi43Btf+SG4yGtQ5Si9ICF0NJjeZoHLusrjeVltcrsSw==
 
-"@tiptap/extension-blockquote@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-blockquote/-/extension-blockquote-3.10.1.tgz#6f5a5f5a5248ab13c2fe6bff22471ddef0631d73"
-  integrity sha512-swBtOW1g6LMwA1LTZN2GBpdgwOD6pL/SX1GrfZJ46uQF8uBuErsUc+Iop7SX3pVPGLmQg40k0qW5k9QjEC8dGw==
+"@tiptap/extension-blockquote@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-blockquote/-/extension-blockquote-3.10.2.tgz#e5080a0022f0624c56bf1ee23efdd327e769bbaa"
+  integrity sha512-hmGnb5SYTXOeeP4+ZriOELewTMEITW6Xj2KJ8UpvCfSlOU33/SGeIlBsGvXsN3M4CU66HrK6K1LQVM8LiyEITA==
 
-"@tiptap/extension-bold@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-bold/-/extension-bold-3.10.1.tgz#78e8231cd26c8430c677323156b6142c6db91368"
-  integrity sha512-8TE9oFEonoAs0k3Vd1RGW1FiDBayJiBWyd+1eoH6EEmk1DD7quHcP1mBNZwPpjhONMITaSmizs2FjweWYibFwA==
+"@tiptap/extension-bold@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-bold/-/extension-bold-3.10.2.tgz#c2160024bcd672bf399ddb97a409c3dc6ba3ceb0"
+  integrity sha512-lgUpWuBhlZwf+/pVKfqVUpHfA5PDECDyobcXmMrRSpreM+58psZtWDZMZ21K94SmJukRidW7vdNWoTSRSEiY4Q==
 
-"@tiptap/extension-bubble-menu@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-bubble-menu/-/extension-bubble-menu-3.10.1.tgz#7be6444b561acc3c631a2199433461484bb28d40"
-  integrity sha512-oNRXAupEeDCeI4nkIhCYSUuT9eZeHDWXcC5fQeWDzCPv3hOcm7W4jqUGJhWWD6qhcbmUSKmsGDTLkBfNk4NT4Q==
+"@tiptap/extension-bubble-menu@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-bubble-menu/-/extension-bubble-menu-3.10.2.tgz#cc027da2287cc0da63b13f70e3ab2543fef08034"
+  integrity sha512-gT4PMDXWdUAdijPH35LDUsPv+YIIhEHUuvqPFBGRudrycQ2TlWMmRZ2jYNg1PGBh+/UHVR2l8TNuZ5QSr88ISQ==
   dependencies:
     "@floating-ui/dom" "^1.0.0"
 
-"@tiptap/extension-bullet-list@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-bullet-list/-/extension-bullet-list-3.10.1.tgz#7599a79a80644eb9ba8999f8605393a7a7e82205"
-  integrity sha512-SzE8u9QrpzculNmtxKJZAvNG2hGLwishk4oUocK8aAYGUhesKd4pLHE1emA54TgWP0t1aXstg49QIhmHcUND0A==
+"@tiptap/extension-bullet-list@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-bullet-list/-/extension-bullet-list-3.10.2.tgz#05d16f09017f325d23108dfee0f2ceaa256091e9"
+  integrity sha512-WVUklxiqWHpJnkGGNL3mygDKRDUuhh5HhmKUrBrNlvb+yQgglau+S94F4bobvtiwYBSHWS4HdGTXTQhdX9QfwQ==
 
-"@tiptap/extension-code-block-lowlight@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-code-block-lowlight/-/extension-code-block-lowlight-3.10.1.tgz#f813ac4b397bea658adc82ee104e9a2911fdfec9"
-  integrity sha512-CGYedJGkE++nuBD+hA1sNbTwKxKbpr8TBxtZKSYWM5UrEFcZy0rrUDlJBdiPzKcUsktRDgmCIyr7vEIL1ChB2w==
+"@tiptap/extension-code-block-lowlight@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-code-block-lowlight/-/extension-code-block-lowlight-3.10.2.tgz#eb57b2111a8f37362062c6502212cd0ef9ce1ccd"
+  integrity sha512-VUQIhtOE5oBqA0sS7Gy5KyOS3hjWjthAL5p9wwzE5H1Bsu2wrEJK51Ma5eYuCSigjSGi3Ofuo88FW4McJZlw7w==
 
-"@tiptap/extension-code-block@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-code-block/-/extension-code-block-3.10.1.tgz#4b3a03f0136b2ed54fabc61f447ef677c47449fe"
-  integrity sha512-Yy7XREi27aUE3S1NMihq0j4vM9rNLa3AQVHWFx1Ze2Jec2MUK7ef8WUkMs28cX76M+yB4P63Q2z8meH6HUAzyA==
+"@tiptap/extension-code-block@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-code-block/-/extension-code-block-3.10.2.tgz#c1a542a21c96897e72f6aae9cc5bf30a0254f3de"
+  integrity sha512-1EmR8NYBEvIHOQml98XqzGj7pnosm4w/pSwZMPskhDn/3S737lo22vxoTOMmTL+HVdhDuwY66RBF8rELLVioHA==
 
-"@tiptap/extension-code@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-code/-/extension-code-3.10.1.tgz#a88c3b978084eae6dd587a7f745a292739ece6ff"
-  integrity sha512-jeStJuFR5jpwHw/jdnqc1sVNe73dJcqDhcjmNV8cxy86BBadSGynUL1O1/vIyGbF1BFkU69UDBAOLptPH/M2Xg==
+"@tiptap/extension-code@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-code/-/extension-code-3.10.2.tgz#11a057d9a649dc9e914e32fbfb23e7748a1f1d67"
+  integrity sha512-+oA2fuQPQDzZb3q0pQeObPrhWXPh9JxybnAAGFoGenZsMsoUdN8x/KdtrXGWDMoB9XIg7XwE1xO6EZAH+eLe8Q==
 
-"@tiptap/extension-color@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-color/-/extension-color-3.10.1.tgz#dc0fb17a766c156a0d2ffa1ee1870dba2fc65a51"
-  integrity sha512-bQ8RacGr9rk4DJLI+w8wCBEJXmr9gDwrXcfuGYu+JA0nfgKTlz0ITNkziVVmlw7P2rpNPuzGe0DVxWD9DQhtdA==
+"@tiptap/extension-color@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-color/-/extension-color-3.10.2.tgz#bc5ac2f3f395ec880caba018f03105ce37e19b2c"
+  integrity sha512-RjytiIn6s68BB705yXtpqSC0KPndN/DOSrynXHEryRj+YsbDk2qm1bZVryuuOikQQewmPLG4jQpusKQPsia61Q==
 
-"@tiptap/extension-details@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-details/-/extension-details-3.10.1.tgz#56856964d9ce9afc3d6a741c308e6b510157e72b"
-  integrity sha512-WR0pHj5JD51Bkn+3gzrR5/z9JF14uGxDon66K8s1f0ADXKHOEm1/ZyEIx4FxSRoQqIQQm5FF6E/lAgp2vbWWBg==
+"@tiptap/extension-details@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-details/-/extension-details-3.10.2.tgz#642073eb1a29a410f942fbb26b6e7a4ab7a0007d"
+  integrity sha512-3ZW+rHlqP/6tXBem4TQ9hYa4VumJPP4yrd/4rPMODZuN7IhChRaaTQKIURZ4R2xnnbxVQhOZUGnHpAs9upm9Vg==
 
-"@tiptap/extension-document@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-document/-/extension-document-3.10.1.tgz#7fe4de3b4bfe7ce7d3f525bc73d625cb057ff0b8"
-  integrity sha512-HM9lmPGKX1s9NJYQh1BD6oLqwh0gWylNmgkT6hEI7lm7DANxaYyMZue9anCDae+K6tln22BauXGAfbRb6Bs0Lw==
+"@tiptap/extension-document@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-document/-/extension-document-3.10.2.tgz#07190858136abfee8887f5947339c762e945cc36"
+  integrity sha512-+H+H/8OMgTK59QSQeWRqiBB2nufh4rglVCP/RW+iZ8GTH5P5w3dObXVp2OBLdtUG2BRKIVmGcuCxLBI2jer+Tg==
 
-"@tiptap/extension-dropcursor@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-dropcursor/-/extension-dropcursor-3.10.1.tgz#f1543cb46ae6eb6915f9cc796542e3cc176ce15f"
-  integrity sha512-fF3h2Oac8vr21uJh+tiUEz/XUoEzXqx5JpoyWj6BmrTulaMY5uw+SUbh1MxN2EeZ+dUvoc8wPATvn0TTq/3GpA==
+"@tiptap/extension-dropcursor@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-dropcursor/-/extension-dropcursor-3.10.2.tgz#819f23f2455352433f77d91a83461170b9e39edc"
+  integrity sha512-fwb4beHPRdUhnLjdwNfcLa90NAYMzWfE4zwR6hdCHWbamAuAgb0g2O1bU89PcCVeYcFeKPC+TquOG8q8cxeE7A==
 
-"@tiptap/extension-floating-menu@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-floating-menu/-/extension-floating-menu-3.10.1.tgz#f15f4a9a57e41d90545bb8fe43aa2213c907242a"
-  integrity sha512-D5ociNnOI3OP4NxS8eKiiqjUdO7geOguK4ZhJo1CFiIXXoLyV20wqqu4fe8Hq9+4gbEyyJ55Tz/AzLiaXw/GPQ==
+"@tiptap/extension-floating-menu@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-floating-menu/-/extension-floating-menu-3.10.2.tgz#cd5d17b9b71fec17d3375887cef1636c2c79ea6f"
+  integrity sha512-B14/MFffhyowF4/OIive8Z/pL0LWxZxehVBMm4eGG09O01s9/oTc2pDkhMUxbR/1ip81Se1/i+KlTbxogcuduA==
 
-"@tiptap/extension-font-family@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-font-family/-/extension-font-family-3.10.1.tgz#d7710b839089fd11eea7df00652894c401353d93"
-  integrity sha512-B8ycp3F/kstViE9yum3NPufue+fUA1xMaHBcmDwBe/H5SUDVlGR7Rgp4t5qC/S0RfUiP+Jb2kYI0i0oNwkYP5g==
+"@tiptap/extension-font-family@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-font-family/-/extension-font-family-3.10.2.tgz#1f7e77339eacc799c7aae7db91f306145d12efad"
+  integrity sha512-ik/Wq9ft0MRoc/NEz83ui4fJMenxEO6AJpBUtbtYP+cBjwwAJG89mljDavBB0pevpQSL1TJxgtAVohZrPglJiQ==
 
-"@tiptap/extension-gapcursor@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-gapcursor/-/extension-gapcursor-3.10.1.tgz#0e74ebf5a421f47fa761349fc91d6a80b824cfc4"
-  integrity sha512-Tg43PHL21ZgVXiQZrXmMWCx8jZGEfxB7xxamEkl0CdRFGkcXRmARXuNKT72NtCI3t7/QSlKbpyD/2/9RFGvyeA==
+"@tiptap/extension-gapcursor@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-gapcursor/-/extension-gapcursor-3.10.2.tgz#d9b66196cae2ebfe7e1747a67b21713463832697"
+  integrity sha512-sBCu8enXm3W3BjnvvGBrzAiSuQSVZyhbQAgaFKjHJKBQRbek55EEbRA0ETUmHcSQbYf0D8hmDt2++HAyEASEsQ==
 
-"@tiptap/extension-hard-break@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-hard-break/-/extension-hard-break-3.10.1.tgz#37bcf2dd3925355cc3be1ec926ec4ba63a4ae954"
-  integrity sha512-kCz/ILEVr3jd4/adOfl9d62dEe9PQrHXAB5rBy1ZFoNC+C7Trq8cgpyqUYFAK7Z500nKmUgQh1GtqGN2vy338Q==
+"@tiptap/extension-hard-break@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-hard-break/-/extension-hard-break-3.10.2.tgz#490a4e7ff920011472bdddbe614bd79ea67ee44c"
+  integrity sha512-gQdfzTcDb43JNxqpj83v/XAzIRlgsX2oSf5WPPtSoHj9xpgSbFv87W2PnVxUbzlTYH6Cb44iED+jwI1Sexn6LA==
 
-"@tiptap/extension-heading@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-heading/-/extension-heading-3.10.1.tgz#f3e767dce7dc8da48644965d1c9fc8c1769d944f"
-  integrity sha512-udG4cG1pmumECEb6WDW/qYtuHcHscTMPCR6mG8hz0WpYk1S+LQWGPaQPdvHK6qYrMo/3YwQcYZv5vuQiB3dpjg==
+"@tiptap/extension-heading@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-heading/-/extension-heading-3.10.2.tgz#7406c6240510cbdfffcf0241bcc6e9c1a7b7a1a8"
+  integrity sha512-f4NaJHYejn88IN8Q7yeGT2sdS+jb5fLUhj5zKiqC4fWqVeXa4Sh4TpA8Be13Un8KBRY4KSrVLBjcuF121hEYCw==
 
-"@tiptap/extension-highlight@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-highlight/-/extension-highlight-3.10.1.tgz#571239bbdd2ff031bb416d01fe0c2373c8ab7a03"
-  integrity sha512-NulZzAnPjyHOYbK1lIZM4WyqkgpmMPqPfmGzJcxFcHrZiN0wllAO7KpEBOHUe2QmxMetbsNTzVgFxm4hen2iFg==
+"@tiptap/extension-highlight@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-highlight/-/extension-highlight-3.10.2.tgz#4c7e36bf8d984da01e532f40dff88884d05f42b8"
+  integrity sha512-LGPzI+tQvDwDD609qasA7RzYS/vN4KiCgVQsI7vfAvwzZsqDGKumABdziHXTPB/mMTtyZ4LD6FIj9G9xEkk0qw==
 
-"@tiptap/extension-horizontal-rule@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-horizontal-rule/-/extension-horizontal-rule-3.10.1.tgz#35d97e3a85807a4386f226af1e67fb6f087de8ed"
-  integrity sha512-P9dJrVnVlYTESmXWMDmAMHw1TLHZwKQV8Yfz1f8mCuuIHTR++hoWVgjZ70MYZzdAMCug3FWsmDjo+sxGCWOTpg==
+"@tiptap/extension-horizontal-rule@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-horizontal-rule/-/extension-horizontal-rule-3.10.2.tgz#4250f704bb5da0e9c05f0930cd3adc63571a7066"
+  integrity sha512-EkVomzUGfhTp6LF/6jKXKAHiR3bDnZRBVbegocGn5mAZB+5nItxafa7s37zzcPdPI+prnw/C9DRGsZf6pVb4dQ==
 
-"@tiptap/extension-image@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-image/-/extension-image-3.10.1.tgz#b866fa69a7d77e6bde752dbed3229c8ba6174af3"
-  integrity sha512-89NU8LAcSW49mwKDW86I6jf4M9vWbHKMAo6Pj4cees5FPjCk/6XAImjlC3WPr+CfjmM1Lmy7+BnOrVayyUHyVg==
+"@tiptap/extension-image@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-image/-/extension-image-3.10.2.tgz#8c3d17e524e8f52c73963a9ae0a12d4621de235f"
+  integrity sha512-+EeEOwUCQ4K7wFw0xkVPCwrzRMj5lEW7VdtRj+0zVtAMI+HxO4B6/+ZXyuDybBjtGBgZKdg5DP3pOz0XUCA+vw==
 
-"@tiptap/extension-italic@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-italic/-/extension-italic-3.10.1.tgz#65c433c8ab6283bf33123da3a8f498330e2871c6"
-  integrity sha512-/VbABhC20z/KWhKjcFUk7jJuOgD8Hp2V5lr6fOLFJaRpptoJhmbCRrPJzEZhs/Z55nv6aF7ZxVxtjzO0FpKneQ==
+"@tiptap/extension-italic@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-italic/-/extension-italic-3.10.2.tgz#c6fd3676ba5e2cc63266135ea7a01120a0ca8417"
+  integrity sha512-MnRbTSNtjLE56E7k0CFprIIfr2yaT0Yd0dwYH7pvWePmSYeVFQDwu9CcVOzF58iv5BasyXc3sO2yhWlXRTY7Ig==
 
-"@tiptap/extension-link@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-link/-/extension-link-3.10.1.tgz#94a040dfd2e33fe122e63b9d2d2120eca26d955b"
-  integrity sha512-87OBwlU/ylPCDNhNyKPQaM0KiT0FscyAqh8/oErmI7gKVdrUNfO4zcqIOKHql32lEu9KsmpSum/jSeeUJMR4pA==
+"@tiptap/extension-link@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-link/-/extension-link-3.10.2.tgz#46d7f6647c555ac660c29b93d1952936033cd45c"
+  integrity sha512-c7ZvinwECBEn3IVI9XpUJKEwvrLtZDiEaYNAjBQgShF1EUCf7JVcNK9wcrFm/oDw9es1cq0yrKqsbBh/bvGO2Q==
   dependencies:
     linkifyjs "^4.3.2"
 
-"@tiptap/extension-list-item@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-list-item/-/extension-list-item-3.10.1.tgz#e94edce3f52148d85c530b0de9d78eb7dce7840f"
-  integrity sha512-YCK2N2RJGnvMTolwMD3kutnN4x1duBhUH14SdigJuPQLhDi02ck6jjTCNTjQRgDfpL9qfSLpPdn0ou7+NbFu3g==
+"@tiptap/extension-list-item@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-list-item/-/extension-list-item-3.10.2.tgz#e51dc50b9e6cc936426667d522f40dca4a8feadf"
+  integrity sha512-lG3qyk49BEYWiwoqc/7Cy0A+T13rgld3e//X3YYb7AFygn9oDKK13QlzoGdurgk7JGF0e5bYUHwh/D7eK9xg3g==
 
-"@tiptap/extension-list-keymap@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-list-keymap/-/extension-list-keymap-3.10.1.tgz#ae27c0a649f0a580868cb341cf9d97bdbe912879"
-  integrity sha512-EPFZtv4yzuCRXqyIQ6v7xvDFGb9L4O+r6NpQ/Aim6fgQmElxHKs75iDet0dFWGQ/Re/o1Q7zgW3mhBcl1MLszw==
+"@tiptap/extension-list-keymap@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-list-keymap/-/extension-list-keymap-3.10.2.tgz#75d2364a23c8e03149633a5143dc62fc4f953560"
+  integrity sha512-tD9OdW1YhvIjFEyarDfoFd1gm0gRMo2FEI3B50VLg45LTb9IzDQwBMDVeqU2hft+Ve4VVZFUEJN+ovHjG6UueA==
 
-"@tiptap/extension-list@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-list/-/extension-list-3.10.1.tgz#cbad33af57b63b6110c96121eb580af1aa482797"
-  integrity sha512-v1TqDqNq3RXwKXyCoObv+42qrxAEtpac3BRZKWwwUcxM55oP5HxeaiEo2usheLs3+fEFkKtWKof2I9gUW0HLvA==
+"@tiptap/extension-list@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-list/-/extension-list-3.10.2.tgz#33445564c39627de8be2eae3c667480cc715ddc3"
+  integrity sha512-4IGOQRcy/REuaskha5z29Vb5Hn3l5jTgfT7+aUO5cwAGZFOlEzSgOGBCq2sH4gVSfBqzdG5mGSH4+LEdwfpW8g==
 
-"@tiptap/extension-ordered-list@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-ordered-list/-/extension-ordered-list-3.10.1.tgz#d368ce9f0bf8e1af099230e2ee795091204b936e"
-  integrity sha512-dpKNFFF8QqfwSuXYoTktb3Woeqqjc3pZ4Vx4F4JSyzIlgBPLim0Wkn18ClJFIC2But/FcLm6NQrlpnimExfFlQ==
+"@tiptap/extension-ordered-list@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-ordered-list/-/extension-ordered-list-3.10.2.tgz#cf8bc8794d01ad9cbca8a9e2ed31d80065aae16f"
+  integrity sha512-zs8wK1GNVedGENZPJOYUMtiLLPPASvJtabS2HTLPQGnpVeXfF0toftdVYDhGRGoQBBDLDjNyyW5ARzJwwXbTzQ==
 
-"@tiptap/extension-paragraph@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-paragraph/-/extension-paragraph-3.10.1.tgz#a13b361b928fd68556d8f92211dc08ea12322c12"
-  integrity sha512-ocxyg947q5yOSyripEingN7SnsJ/4cYuxOg8BdNlSao8HzUTw5298/81Almf2pT0FNAJHMp8R4Xsii2oMlJ/yQ==
+"@tiptap/extension-paragraph@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-paragraph/-/extension-paragraph-3.10.2.tgz#f37cc4fd8982b31c7a3088f4360cc25f4120e2f3"
+  integrity sha512-k84BMUxpeFTEIoUil4tnXF5viY4oUHXq4wz4JkO/LMEW6lAkO/PhJnJMMrcEJu0sox4aoNppcnS236RNXCiPpg==
 
-"@tiptap/extension-strike@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-strike/-/extension-strike-3.10.1.tgz#58c49b884deaf31b77cda64aa94786783751ffb3"
-  integrity sha512-NYnQOQM/HRvOcCRdetZthMMOZFpxpJ2PBuYg6u6ysotFJPWVVaegtNfZ4se0UdxDNPYInTW3gAgF05Tq/XszRQ==
+"@tiptap/extension-strike@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-strike/-/extension-strike-3.10.2.tgz#f638fcd08c0d07d8b4b7a1414f78effb8db5641b"
+  integrity sha512-e6+WaEhWlsbV3mw8kSMwgq7Tty8BWoRGFGQj5B6Tg7bZUg3qgdE0Kp2s6MGNNikpuDchOebbIZxOk/qfVqgUbw==
 
-"@tiptap/extension-table@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-table/-/extension-table-3.10.1.tgz#2fc125002432e0d07970b0742456288cb662804c"
-  integrity sha512-i18t1wfVHQjJIMlqIB0SCpP78bsoZDTFhhZBOLYDM0Q4KHY+zVkiZADkiY5zA8UFZiBuWC4eviqajCvq4XOvQw==
+"@tiptap/extension-table@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-table/-/extension-table-3.10.2.tgz#b294a7f0e1703af302a8b4d4a264c438ebf148f1"
+  integrity sha512-6aIJcrIhc/1ukdGMr/ZuGLnkXt3xTob3KHDsnEWFMVtRfcdologE6zEeP/xObF2GJ0bNeeU1BLj/k6Vf/3o8IQ==
 
-"@tiptap/extension-text-align@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-text-align/-/extension-text-align-3.10.1.tgz#45f62f20e1b3e135900e9cfd70ec25bb8e3a3c60"
-  integrity sha512-6Pxgf5TuQr44lXbPi5REZxHQYCRTUm6VXiuC3oisvoJxe4rls0+2OFI8iaSRRQalceXsCPkUGUH+Pf5xljC61g==
+"@tiptap/extension-text-align@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-text-align/-/extension-text-align-3.10.2.tgz#ac82fd1b3a20c8ab25501cebe82411af9e55c525"
+  integrity sha512-PD7ZNuC1qr/dHcvYT8QwBDeCxXH6LzIbYIZ69/Aph0llXPCUf9N0UWKjy2gYHHXG1AfTr0iQ9vhPWF+YF3TWtg==
 
-"@tiptap/extension-text-style@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-text-style/-/extension-text-style-3.10.1.tgz#f6f9a3d1611de014d6cbd24119f49d26e3d596fe"
-  integrity sha512-WPpHNtcet6P23w7kQHvut3y3+ATd1/8Wwyk/nIhdEc6RuOerisRm2EPW+kvGHsQ5NdlaQOwY555zKjJkyv1igA==
+"@tiptap/extension-text-style@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-text-style/-/extension-text-style-3.10.2.tgz#d9dd818e947f741d40aa3d10b8d411094f155bf2"
+  integrity sha512-gcxr+T6AKjeNVr9SifO8lNFjfoeWRauQEGvD1P4FYRyDoWKRc5z3+uRYQyeMv/hEciVL+eBierGDpWZvh441Yg==
 
-"@tiptap/extension-text@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-text/-/extension-text-3.10.1.tgz#9d3c74b64b750a7efc37bb4d3966dd00f80594fd"
-  integrity sha512-Af0WBQJvjiTnEArutOZENCVNGuK7Ln3BwUH3jXsk4OUHxOyt5JK9qsDePsO46Dj9OlXHbnBi5hAnhJGI8zGLzw==
+"@tiptap/extension-text@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-text/-/extension-text-3.10.2.tgz#5f6d409c891b30360a46ca389c7a9da683000ad8"
+  integrity sha512-5gHtEh7eIjFYtwIYvjJp1Sg7qlS1ObOLIkYGOm763t0JJbePXnkA5EnyfxAq3g+wfPajK7qgs3uqArCjlHA33w==
 
-"@tiptap/extension-typography@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-typography/-/extension-typography-3.10.1.tgz#87a31fa403a4360c8afb04a7a005e9e4c2e9a1f7"
-  integrity sha512-1fpkR1Z7hWMYjGFKb6SS9FrWma/lF8E0wqIALL9QtKLJskd3NcBosQ5MS5DHEeUi8Yd/5pprkVtBNRfqsfnv9Q==
+"@tiptap/extension-typography@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-typography/-/extension-typography-3.10.2.tgz#ca7a59c99de58b67b5e329e893d1282a10ad447e"
+  integrity sha512-UnBp8c2l4ZTMkIvYyybsDNcmn457W4mt58C97F5d8XoSc/qmX3k+Ih5tEuiat0FOrsQZ9DpeJZlPSKeZLJP5HA==
 
-"@tiptap/extension-underline@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extension-underline/-/extension-underline-3.10.1.tgz#a575d3f789a0a49e5521a46c26eb71d262ab874d"
-  integrity sha512-U56hHqCSjwP8wAq28n6A+l+aNW/DxJXiaNwXs7YlC4IjRDkbsl5q53UcOlRCoVnYVY2mxj1L6Zmu2u6dhjeuSQ==
+"@tiptap/extension-underline@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extension-underline/-/extension-underline-3.10.2.tgz#a84dfaf57c8f2dc06078d3611b481b78e92dd1d3"
+  integrity sha512-/n/+YXYYGmOOQl8zPZiyZFRtOmsnTe1TfEjNcsJcIUGW4X5teddp4lVTcvGO3aaufH48FcYnSVJya7A9dw3ABg==
 
-"@tiptap/extensions@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/extensions/-/extensions-3.10.1.tgz#7faab67917a779a77ec89f588ad5fb7670b4dbff"
-  integrity sha512-tZZ1IGIcch4ezuoid3iPSirh0s2GQuSKY6ceWRJCVeZ2gT2LsN3i10tqfidcYrsmyQRMuM7QUfRmH5HOKJZ73Q==
+"@tiptap/extensions@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/extensions/-/extensions-3.10.2.tgz#5f5ba24a109894f19acc443c57963c32f60e16f1"
+  integrity sha512-XyvMn6B6PCPsgV6VMLiS1QXI1OKarBAYwXmqsE+gCzzYyXxYX4sLUlQ8JKysREyIGMHxSg5vgOajsgXgFMrvyA==
 
-"@tiptap/pm@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/pm/-/pm-3.10.1.tgz#61c0a7fff66847ce059d0f4394cc1562fc0677cb"
-  integrity sha512-LhTRI+bECLFqitWN821A7faVFVw5OitFGWn45LIIRc/1Jg3lkqsaqx3LcLN1sjXd+f/vfoeXLKSD6VJvv/B/nQ==
+"@tiptap/pm@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/pm/-/pm-3.10.2.tgz#f156f358821517990f01359e0c0a0782b6bc0b66"
+  integrity sha512-qXsp7guPLoir49Fh6IOzg6IAJA3tYYy/1316vv7DhJwmdF9GebkwgFcei2XGk6vKlwv18jWV+BlqDv9iwQ5Alg==
   dependencies:
     prosemirror-changeset "^2.3.0"
     prosemirror-collab "^1.3.1"
@@ -785,43 +805,43 @@
     prosemirror-transform "^1.10.2"
     prosemirror-view "^1.38.1"
 
-"@tiptap/starter-kit@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/starter-kit/-/starter-kit-3.10.1.tgz#f63c022f8997834f67ad2955670b995618d08dc1"
-  integrity sha512-7IRZqLbvb6VWTS1nIRClQiE54I37aXFejdViTBRvxWb2TiWW8wpsfSdNAMklfwmFbg7RmOO9vaOHlilVu+donw==
+"@tiptap/starter-kit@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/starter-kit/-/starter-kit-3.10.2.tgz#bbcdf73c8f980e9f24f00fc1654aa9f8c782b7c7"
+  integrity sha512-8eCl+kBkOiXH+k3AVU1F1l3GK7+/Y3hdu/FSfpgTm+jJ14e5VNUQaDPvqKDmCo1dlTzF1OCJPi91hhUeqcJLvw==
   dependencies:
-    "@tiptap/core" "^3.10.1"
-    "@tiptap/extension-blockquote" "^3.10.1"
-    "@tiptap/extension-bold" "^3.10.1"
-    "@tiptap/extension-bullet-list" "^3.10.1"
-    "@tiptap/extension-code" "^3.10.1"
-    "@tiptap/extension-code-block" "^3.10.1"
-    "@tiptap/extension-document" "^3.10.1"
-    "@tiptap/extension-dropcursor" "^3.10.1"
-    "@tiptap/extension-gapcursor" "^3.10.1"
-    "@tiptap/extension-hard-break" "^3.10.1"
-    "@tiptap/extension-heading" "^3.10.1"
-    "@tiptap/extension-horizontal-rule" "^3.10.1"
-    "@tiptap/extension-italic" "^3.10.1"
-    "@tiptap/extension-link" "^3.10.1"
-    "@tiptap/extension-list" "^3.10.1"
-    "@tiptap/extension-list-item" "^3.10.1"
-    "@tiptap/extension-list-keymap" "^3.10.1"
-    "@tiptap/extension-ordered-list" "^3.10.1"
-    "@tiptap/extension-paragraph" "^3.10.1"
-    "@tiptap/extension-strike" "^3.10.1"
-    "@tiptap/extension-text" "^3.10.1"
-    "@tiptap/extension-underline" "^3.10.1"
-    "@tiptap/extensions" "^3.10.1"
-    "@tiptap/pm" "^3.10.1"
+    "@tiptap/core" "^3.10.2"
+    "@tiptap/extension-blockquote" "^3.10.2"
+    "@tiptap/extension-bold" "^3.10.2"
+    "@tiptap/extension-bullet-list" "^3.10.2"
+    "@tiptap/extension-code" "^3.10.2"
+    "@tiptap/extension-code-block" "^3.10.2"
+    "@tiptap/extension-document" "^3.10.2"
+    "@tiptap/extension-dropcursor" "^3.10.2"
+    "@tiptap/extension-gapcursor" "^3.10.2"
+    "@tiptap/extension-hard-break" "^3.10.2"
+    "@tiptap/extension-heading" "^3.10.2"
+    "@tiptap/extension-horizontal-rule" "^3.10.2"
+    "@tiptap/extension-italic" "^3.10.2"
+    "@tiptap/extension-link" "^3.10.2"
+    "@tiptap/extension-list" "^3.10.2"
+    "@tiptap/extension-list-item" "^3.10.2"
+    "@tiptap/extension-list-keymap" "^3.10.2"
+    "@tiptap/extension-ordered-list" "^3.10.2"
+    "@tiptap/extension-paragraph" "^3.10.2"
+    "@tiptap/extension-strike" "^3.10.2"
+    "@tiptap/extension-text" "^3.10.2"
+    "@tiptap/extension-underline" "^3.10.2"
+    "@tiptap/extensions" "^3.10.2"
+    "@tiptap/pm" "^3.10.2"
 
-"@tiptap/vue-3@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.npmmirror.com/@tiptap/vue-3/-/vue-3-3.10.1.tgz#e71a2a4a6c92dbeaba593b37f37717ad6303bd84"
-  integrity sha512-FbJL8JsqR4V9/LnXL1PHmhmzb5476C3Hn3nFYjX+ozPNvurPz/X4qj4YM56V3p7DcOLdEyfh7usg6FwYKyuAAA==
+"@tiptap/vue-3@^3.10.2":
+  version "3.10.2"
+  resolved "https://registry.npmmirror.com/@tiptap/vue-3/-/vue-3-3.10.2.tgz#18a910ea1f79119743e044af3f79a8369c186d15"
+  integrity sha512-eFBGF9NbC65qcudkYKm+A7x2RZFGAqaLk/xXeDMV3IZTstgBqywUPxCvNV+H7D+gdYf37HX2gNmByYojZ1PfdA==
   optionalDependencies:
-    "@tiptap/extension-bubble-menu" "^3.10.1"
-    "@tiptap/extension-floating-menu" "^3.10.1"
+    "@tiptap/extension-bubble-menu" "^3.10.2"
+    "@tiptap/extension-floating-menu" "^3.10.2"
 
 "@tybys/wasm-util@^0.10.1":
   version "0.10.1"
@@ -914,7 +934,26 @@
     estree-walker "^2.0.2"
     source-map-js "^1.2.1"
 
-"@vue/compiler-dom@3.5.22", "@vue/compiler-dom@^3.5.0":
+"@vue/compiler-core@3.5.23":
+  version "3.5.23"
+  resolved "https://registry.npmmirror.com/@vue/compiler-core/-/compiler-core-3.5.23.tgz#5c468952070c63eebf044244821e5f6f089b9569"
+  integrity sha512-nW7THWj5HOp085ROk65LwaoxuzDsjIxr485F4iu63BoxsXoSqKqmsUUoP4A7Gl67DgIgi0zJ8JFgHfvny/74MA==
+  dependencies:
+    "@babel/parser" "^7.28.5"
+    "@vue/shared" "3.5.23"
+    entities "^4.5.0"
+    estree-walker "^2.0.2"
+    source-map-js "^1.2.1"
+
+"@vue/compiler-dom@3.5.23":
+  version "3.5.23"
+  resolved "https://registry.npmmirror.com/@vue/compiler-dom/-/compiler-dom-3.5.23.tgz#a67862d731a875509e219715700f3a5b56c28ad6"
+  integrity sha512-AT8RMw0vEzzzO0JU5gY0F6iCzaWUIh/aaRVordzMBKXRpoTllTT4kocHDssByPsvodNCfump/Lkdow2mT/O5KQ==
+  dependencies:
+    "@vue/compiler-core" "3.5.23"
+    "@vue/shared" "3.5.23"
+
+"@vue/compiler-dom@^3.5.0":
   version "3.5.22"
   resolved "https://registry.npmmirror.com/@vue/compiler-dom/-/compiler-dom-3.5.22.tgz#6c9c2c9843520f6d3dbc685e5d0e1e12a2c04c56"
   integrity sha512-W8RknzUM1BLkypvdz10OVsGxnMAuSIZs9Wdx1vzA3mL5fNMN15rhrSCLiTm6blWeACwUwizzPVqGJgOGBEN/hA==
@@ -922,28 +961,28 @@
     "@vue/compiler-core" "3.5.22"
     "@vue/shared" "3.5.22"
 
-"@vue/compiler-sfc@3.5.22":
-  version "3.5.22"
-  resolved "https://registry.npmmirror.com/@vue/compiler-sfc/-/compiler-sfc-3.5.22.tgz#663a8483b1dda8de83b6fa1aab38a52bf73dd965"
-  integrity sha512-tbTR1zKGce4Lj+JLzFXDq36K4vcSZbJ1RBu8FxcDv1IGRz//Dh2EBqksyGVypz3kXpshIfWKGOCcqpSbyGWRJQ==
+"@vue/compiler-sfc@3.5.23":
+  version "3.5.23"
+  resolved "https://registry.npmmirror.com/@vue/compiler-sfc/-/compiler-sfc-3.5.23.tgz#7252082823f681d1a54c58c0f8c59ae57af071c4"
+  integrity sha512-3QTEUo4qg7FtQwaDJa8ou1CUikx5WTtZlY61rRRDu3lK2ZKrGoAGG8mvDgOpDsQ4A1bez9s+WtBB6DS2KuFCPw==
   dependencies:
-    "@babel/parser" "^7.28.4"
-    "@vue/compiler-core" "3.5.22"
-    "@vue/compiler-dom" "3.5.22"
-    "@vue/compiler-ssr" "3.5.22"
-    "@vue/shared" "3.5.22"
+    "@babel/parser" "^7.28.5"
+    "@vue/compiler-core" "3.5.23"
+    "@vue/compiler-dom" "3.5.23"
+    "@vue/compiler-ssr" "3.5.23"
+    "@vue/shared" "3.5.23"
     estree-walker "^2.0.2"
-    magic-string "^0.30.19"
+    magic-string "^0.30.21"
     postcss "^8.5.6"
     source-map-js "^1.2.1"
 
-"@vue/compiler-ssr@3.5.22":
-  version "3.5.22"
-  resolved "https://registry.npmmirror.com/@vue/compiler-ssr/-/compiler-ssr-3.5.22.tgz#a0ef16e364731b25e79a13470569066af101320f"
-  integrity sha512-GdgyLvg4R+7T8Nk2Mlighx7XGxq/fJf9jaVofc3IL0EPesTE86cP/8DD1lT3h1JeZr2ySBvyqKQJgbS54IX1Ww==
+"@vue/compiler-ssr@3.5.23":
+  version "3.5.23"
+  resolved "https://registry.npmmirror.com/@vue/compiler-ssr/-/compiler-ssr-3.5.23.tgz#0968b61898fb57a5b26ce84b8ab4757569e100b4"
+  integrity sha512-Hld2xphbMjXs9Q9WKxPf2EqmE+Rq/FEDnK/wUBtmYq74HCV4XDdSCheAaB823OQXIIFGq9ig/RbAZkF9s4U0Ow==
   dependencies:
-    "@vue/compiler-dom" "3.5.22"
-    "@vue/shared" "3.5.22"
+    "@vue/compiler-dom" "3.5.23"
+    "@vue/shared" "3.5.23"
 
 "@vue/language-core@3.1.3":
   version "3.1.3"
@@ -958,43 +997,48 @@
     path-browserify "^1.0.1"
     picomatch "^4.0.2"
 
-"@vue/reactivity@3.5.22":
-  version "3.5.22"
-  resolved "https://registry.npmmirror.com/@vue/reactivity/-/reactivity-3.5.22.tgz#9b26f8557c96df46c9a859914a2229f3ca5b8f4f"
-  integrity sha512-f2Wux4v/Z2pqc9+4SmgZC1p73Z53fyD90NFWXiX9AKVnVBEvLFOWCEgJD3GdGnlxPZt01PSlfmLqbLYzY/Fw4A==
+"@vue/reactivity@3.5.23":
+  version "3.5.23"
+  resolved "https://registry.npmmirror.com/@vue/reactivity/-/reactivity-3.5.23.tgz#d2a7b7cae73168ec3bf513e7395d790046213ef8"
+  integrity sha512-ji5w0qvrPyBmBx5Ldv4QGNsw0phgRreEvjt0iUf1lei2Sm8//9ZAi78uM2ZjsT5gk0YZilLuoRCIMvtuZlHMJw==
   dependencies:
-    "@vue/shared" "3.5.22"
+    "@vue/shared" "3.5.23"
 
-"@vue/runtime-core@3.5.22":
-  version "3.5.22"
-  resolved "https://registry.npmmirror.com/@vue/runtime-core/-/runtime-core-3.5.22.tgz#e004c1e35f423555a0e4c10646ef3e9d380643d1"
-  integrity sha512-EHo4W/eiYeAzRTN5PCextDUZ0dMs9I8mQ2Fy+OkzvRPUYQEyK9yAjbasrMCXbLNhF7P0OUyivLjIy0yc6VrLJQ==
+"@vue/runtime-core@3.5.23":
+  version "3.5.23"
+  resolved "https://registry.npmmirror.com/@vue/runtime-core/-/runtime-core-3.5.23.tgz#f8c3e39398bec1662586c927de23cdaa47d7c4f8"
+  integrity sha512-LMB0S6/G7mFJcpQeQaZrbsthFbWrIX8FVTzu5x9U3Ec8YW5MY1CGAnBBHNj+TPOBu3pIbtPpjrXtcaN04X+aBw==
   dependencies:
-    "@vue/reactivity" "3.5.22"
-    "@vue/shared" "3.5.22"
+    "@vue/reactivity" "3.5.23"
+    "@vue/shared" "3.5.23"
 
-"@vue/runtime-dom@3.5.22":
-  version "3.5.22"
-  resolved "https://registry.npmmirror.com/@vue/runtime-dom/-/runtime-dom-3.5.22.tgz#01276cea7cb9ac2b9aba046adfb5903b494e2e7e"
-  integrity sha512-Av60jsryAkI023PlN7LsqrfPvwfxOd2yAwtReCjeuugTJTkgrksYJJstg1e12qle0NarkfhfFu1ox2D+cQotww==
+"@vue/runtime-dom@3.5.23":
+  version "3.5.23"
+  resolved "https://registry.npmmirror.com/@vue/runtime-dom/-/runtime-dom-3.5.23.tgz#65e6e545a2280de672939fc2dedf49df402c0cd5"
+  integrity sha512-r/PYc8W9THzEL0UExpTkV+d31zO+Jid/RMZIDG6aS/NekOEUHuCJkJgftySWZw7JTJO/+q9Kxkg8p+i7Q7Q+ew==
   dependencies:
-    "@vue/reactivity" "3.5.22"
-    "@vue/runtime-core" "3.5.22"
-    "@vue/shared" "3.5.22"
+    "@vue/reactivity" "3.5.23"
+    "@vue/runtime-core" "3.5.23"
+    "@vue/shared" "3.5.23"
     csstype "^3.1.3"
 
-"@vue/server-renderer@3.5.22":
-  version "3.5.22"
-  resolved "https://registry.npmmirror.com/@vue/server-renderer/-/server-renderer-3.5.22.tgz#d134e3409094044bd066d9803714677457756157"
-  integrity sha512-gXjo+ao0oHYTSswF+a3KRHZ1WszxIqO7u6XwNHqcqb9JfyIL/pbWrrh/xLv7jeDqla9u+LK7yfZKHih1e1RKAQ==
+"@vue/server-renderer@3.5.23":
+  version "3.5.23"
+  resolved "https://registry.npmmirror.com/@vue/server-renderer/-/server-renderer-3.5.23.tgz#85fdc651f603dd5971eb0a0fe54bb7f0096fc33c"
+  integrity sha512-NiWZsNCsXA20/VufcrW5u+Trt/PyFlpMmxaB2KERYM8eZgUoKUjXxJQb9ypq+LZ0Sp3XHJGNBR8DkhRnkKAMUw==
   dependencies:
-    "@vue/compiler-ssr" "3.5.22"
-    "@vue/shared" "3.5.22"
+    "@vue/compiler-ssr" "3.5.23"
+    "@vue/shared" "3.5.23"
 
 "@vue/shared@3.5.22", "@vue/shared@^3.5.0":
   version "3.5.22"
   resolved "https://registry.npmmirror.com/@vue/shared/-/shared-3.5.22.tgz#9d56a1644a3becb8af1e34655928b0e288d827f8"
   integrity sha512-F4yc6palwq3TT0u+FYf0Ns4Tfl9GRFURDN2gWG7L1ecIaS/4fCIuFOjMTnCyjsu/OK6vaDKLCrGAa+KvvH+h4w==
+
+"@vue/shared@3.5.23":
+  version "3.5.23"
+  resolved "https://registry.npmmirror.com/@vue/shared/-/shared-3.5.23.tgz#7678dd36f3d26c541801a73088ab0841889ffae0"
+  integrity sha512-0YZ1DYuC5o/YJPf6pFdt2KYxVGDxkDbH/1NYJnVJWUkzr8ituBEmFVQRNX2gCaAsFEjEDnLkWpgqlZA7htgS/g==
 
 "@vueuse/core@^14.0.0":
   version "14.0.0"
@@ -1272,6 +1316,13 @@ magic-string@^0.30.19:
   version "0.30.19"
   resolved "https://registry.npmmirror.com/magic-string/-/magic-string-0.30.19.tgz#cebe9f104e565602e5d2098c5f2e79a77cc86da9"
   integrity sha512-2N21sPY9Ws53PZvsEpVtNuSW+ScYbQdp4b9qUaL+9QkHUrGFKo56Lg9Emg5s9V/qrtNBmiR01sYhUOwu3H+VOw==
+  dependencies:
+    "@jridgewell/sourcemap-codec" "^1.5.5"
+
+magic-string@^0.30.21:
+  version "0.30.21"
+  resolved "https://registry.npmmirror.com/magic-string/-/magic-string-0.30.21.tgz#56763ec09a0fa8091df27879fd94d19078c00d91"
+  integrity sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==
   dependencies:
     "@jridgewell/sourcemap-codec" "^1.5.5"
 
@@ -1579,10 +1630,10 @@ uc.micro@^2.0.0, uc.micro@^2.1.0:
   resolved "https://registry.npmmirror.com/uc.micro/-/uc.micro-2.1.0.tgz#f8d3f7d0ec4c3dea35a7e3c8efa4cb8b45c9e7ee"
   integrity sha512-ARDJmphmdvUk6Glw7y9DQ2bFkKBHwQHLi2lsaH6PPmz/Ka9sFOBsBluozhDltWmnv9u/cF6Rt87znRTPV+yp/A==
 
-vite@^7.1.12:
-  version "7.1.12"
-  resolved "https://registry.npmmirror.com/vite/-/vite-7.1.12.tgz#8b29a3f61eba23bcb93fc9ec9af4a3a1e83eecdb"
-  integrity sha512-ZWyE8YXEXqJrrSLvYgrRP7p62OziLW7xI5HYGWFzOvupfAlrLvURSzv/FyGyy0eidogEM3ujU+kUG1zuHgb6Ug==
+vite@^7.2.0:
+  version "7.2.0"
+  resolved "https://registry.npmmirror.com/vite/-/vite-7.2.0.tgz#a362bc909af8b01736e56d287ce5a5d88598ad1a"
+  integrity sha512-C/Naxf8H0pBx1PA4BdpT+c/5wdqI9ILMdwjSMILw7tVIh3JsxzZqdeTLmmdaoh5MYUEOyBnM9K3o0DzoZ/fe+w==
   dependencies:
     esbuild "^0.25.0"
     fdir "^6.5.0"
@@ -1611,16 +1662,16 @@ vue-tsc@^3.1.3:
     "@volar/typescript" "2.4.23"
     "@vue/language-core" "3.1.3"
 
-vue@^3.5.22:
-  version "3.5.22"
-  resolved "https://registry.npmmirror.com/vue/-/vue-3.5.22.tgz#2b8ddb94ee4b640ef12fe7f6efe1cf16f3b582e7"
-  integrity sha512-toaZjQ3a/G/mYaLSbV+QsQhIdMo9x5rrqIpYRObsJ6T/J+RyCSFwN2LHNVH9v8uIcljDNa3QzPVdv3Y6b9hAJQ==
+vue@^3.5.23:
+  version "3.5.23"
+  resolved "https://registry.npmmirror.com/vue/-/vue-3.5.23.tgz#0e0e8bc436b175cf24056a1ba4ab961bdbec5947"
+  integrity sha512-CfvZv/vI52xUhumUvHtD6iFIS78nGWfX4IJnHfBGhpqMI0CwDq2YEngXOeaBFMRmiArcqczuVrLxurvesTYT9w==
   dependencies:
-    "@vue/compiler-dom" "3.5.22"
-    "@vue/compiler-sfc" "3.5.22"
-    "@vue/runtime-dom" "3.5.22"
-    "@vue/server-renderer" "3.5.22"
-    "@vue/shared" "3.5.22"
+    "@vue/compiler-dom" "3.5.23"
+    "@vue/compiler-sfc" "3.5.23"
+    "@vue/runtime-dom" "3.5.23"
+    "@vue/server-renderer" "3.5.23"
+    "@vue/shared" "3.5.23"
 
 w3c-keyname@^2.2.0:
   version "2.2.8"
