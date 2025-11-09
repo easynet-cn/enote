@@ -125,6 +125,37 @@ export function useNotes() {
     });
 
     // 方法
+    const saveNotebook = async (showNotebook: ShowNotebook) => {
+        const notification = ElNotification({
+            title: '',
+            message: '正在保存笔记',
+            type: 'success',
+            duration: 0,
+        })
+        try {
+            await noteApi.createNotebook({
+                id: 0,
+                parentId: showNotebook.parentId,
+                name: showNotebook.name ?? '',
+                description: showNotebook.description,
+                icon: showNotebook.icon,
+                cls: showNotebook.cls,
+            })
+
+            getNotebookResult();
+        } catch (error) {
+            ElNotification({
+                title: '',
+                message: String(error),
+                type: 'error',
+                duration: 0,
+            })
+        } finally {
+            notification.close();
+        }
+
+    }
+
     const setActiveNotebook = async (notebookId: string) => {
         state.activeNotebook = notebookId;
         state.activeNote = null;
@@ -326,6 +357,7 @@ export function useNotes() {
         query,
         state,
         activeNoteData,
+        saveNotebook,
         setActiveNotebook,
         setActiveNote,
         createNewNote,

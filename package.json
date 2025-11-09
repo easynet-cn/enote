@@ -1,7 +1,7 @@
 {
   "name": "enote",
   "private": true,
-  "version": "0.1.6",
+  "version": "0.1.7",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -51,7 +51,7 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.17",
-    "@tauri-apps/cli": "^2.9.3",
+    "@tauri-apps/cli": "^2.9.4",
     "@vitejs/plugin-vue": "^6.0.1",
     "tailwindcss": "^4.1.17",
     "typescript": "~5.9.3",

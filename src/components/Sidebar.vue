@@ -181,7 +181,7 @@ const submitNotebookForm = async (form: FormInstance | undefined) => {
         return
     }
 
-    await form.validate((valid, fields) => {
+    await form.validate((valid) => {
         if (valid) {
             emit('saveNotebook', {
                 id: '',
@@ -202,7 +202,7 @@ const submitTagForm = async (form: FormInstance | undefined) => {
         return
     }
 
-    await form.validate((valid, fields) => {
+    await form.validate((valid) => {
         if (valid) {
             emit('saveTag', {
                 id: '',

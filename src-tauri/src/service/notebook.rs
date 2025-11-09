@@ -1,5 +1,9 @@
 use chrono::Local;
-use sea_orm::{ActiveModelTrait, ActiveValue::Set, DatabaseConnection, EntityTrait, QueryOrder};
+use sea_orm::{
+    ActiveModelTrait,
+    ActiveValue::{NotSet, Set},
+    DatabaseConnection, EntityTrait, QueryOrder,
+};
 
 use crate::{entity, model::Notebook};
 
@@ -22,7 +26,7 @@ pub async fn create(
     let now = Local::now().naive_local();
 
     let active_model = entity::notebook::ActiveModel {
-        id: Set(0),
+        id: NotSet,
         parent_id: Set(notebook.parent_id),
         name: Set(notebook.name.clone()),
         description: Set(notebook.description.clone()),

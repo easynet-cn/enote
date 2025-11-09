@@ -72,7 +72,7 @@ pub async fn create(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
 
     let mut active_model: entity::note::ActiveModel = note.into();
 
-    active_model.id = Set(0);
+    active_model.id = NotSet;
     active_model.create_time = Set(now);
     active_model.update_time = Set(now);
 
@@ -83,7 +83,7 @@ pub async fn create(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
             .tags
             .iter()
             .map(|e| entity::note_tags::ActiveModel {
-                id: Set(0),
+                id: NotSet,
                 note_id: Set(entity.id),
                 tag_id: Set(e.id),
                 sort_order: Set(e.sort_order),

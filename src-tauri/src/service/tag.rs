@@ -1,5 +1,9 @@
 use chrono::Local;
-use sea_orm::{ActiveModelTrait, ActiveValue::Set, DatabaseConnection};
+use sea_orm::{
+    ActiveModelTrait,
+    ActiveValue::{NotSet, Set},
+    DatabaseConnection,
+};
 
 use crate::{entity, model::Tag};
 
@@ -7,7 +11,7 @@ pub async fn create(db: &DatabaseConnection, tag: &Tag) -> anyhow::Result<Option
     let now = Local::now().naive_local();
 
     let active_model = entity::tag::ActiveModel {
-        id: Set(0),
+        id: NotSet,
         name: Set(tag.name.clone()),
         icon: Set(tag.icon.clone()),
         cls: Set(tag.cls.clone()),
