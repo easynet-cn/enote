@@ -133,6 +133,22 @@ impl From<&entity::notebook::Model> for Notebook {
     }
 }
 
+impl From<entity::notebook::Model> for Notebook {
+    fn from(value: entity::notebook::Model) -> Self {
+        Self {
+            id: value.id,
+            parent_id: value.parent_id,
+            name: value.name,
+            description: value.description,
+            icon: value.icon,
+            cls: value.cls,
+            sort_order: value.sort_order,
+            create_time: Some(value.create_time),
+            update_time: Some(value.update_time),
+        }
+    }
+}
+
 #[serde_as]
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::{
     config::AppState,
-    model::{Note, NotePageResult, NoteSearchPageParam, Notebook},
+    model::{Note, NotePageResult, NoteSearchPageParam, Notebook, Tag},
     service,
 };
 
@@ -17,6 +17,30 @@ pub async fn find_all_notebooks(
         .map_err(|e| e.to_string())?;
 
     Ok(notebooks)
+}
+
+#[tauri::command]
+pub async fn create_notebook(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    notebook: Notebook,
+) -> Result<Option<Notebook>, String> {
+    let db = &app_state.database_connection;
+
+    service::notebook::create(db, &notebook)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn create_tag(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    tag: Tag,
+) -> Result<Option<Tag>, String> {
+    let db = &app_state.database_connection;
+
+    service::tag::create(db, &tag)
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
