@@ -31,6 +31,9 @@ export const noteApi = {
         return await invoke('search_page_notes', { searchParam })
     },
 
+    async geTags(): Promise<Tag[]> {
+        return await invoke('find_all_tags')
+    },
 
     async createTag(tag: Tag): Promise<Tag> {
         return await invoke('create_tag', { tag })

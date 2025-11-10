@@ -35,7 +35,7 @@
                 <h2 class="text-sm font-semibold text-gray-500 mb-3">标签</h2>
             </el-col>
             <el-col :span="2">
-                <el-button type="success" :icon="Plus" size="small" @click="tagDialog = true">
+                <el-button type="success" :icon="Plus" size="small" text @click="tagDialog = true">
 
                 </el-button>
             </el-col>
@@ -212,7 +212,7 @@ const submitTagForm = async (form: FormInstance | undefined) => {
                 sortOrder: tagForm.sortOrder
             })
 
-            notebookDialog.value = false
+            tagDialog.value = false
         }
     })
 }

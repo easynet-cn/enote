@@ -2,11 +2,22 @@ use chrono::Local;
 use sea_orm::{
     ActiveModelTrait,
     ActiveValue::{NotSet, Set},
-    DatabaseConnection,
+    DatabaseConnection, EntityTrait, QueryOrder,
 };
 
 use crate::{entity, model::Tag};
 
+pub async fn find_all(db: &DatabaseConnection) -> anyhow::Result<Vec<Tag>> {
+    let tags = entity::tag::Entity::find()
+        .order_by_desc(entity::tag::Column::SortOrder)
+        .all(db)
+        .await?
+        .iter()
+        .map(Tag::from)
+        .collect::<Vec<Tag>>();
+
+    Ok(tags)
+}
 pub async fn create(db: &DatabaseConnection, tag: &Tag) -> anyhow::Result<Option<Tag>> {
     let now = Local::now().naive_local();
 

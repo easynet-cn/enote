@@ -1,4 +1,4 @@
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onBeforeMount } from 'vue';
 import { useDateFormat, useNow } from '@vueuse/core'
 import type { AppState, ShowNotebook, ShowTag, ShowNote, NotePageResult } from '../types';
 import { ElNotification } from 'element-plus';
@@ -9,10 +9,6 @@ const notebooks = ref<ShowNotebook[]>([
 ]);
 
 const tags = ref<ShowTag[]>([
-    { id: '1', name: '重要', cls: 'text-red-500' },
-    { id: '2', name: '待办', cls: 'text-yellow-500' },
-    { id: '3', name: '已完成', cls: 'text-green-500' },
-    { id: '4', name: '灵感', cls: 'text-blue-500' }
 ]);
 
 const notes = ref<ShowNote[]>([]);
@@ -30,7 +26,7 @@ const state = reactive<AppState>({
 
 export function useNotes() {
     // 获取笔记本
-    const getNotebookResult = async () => {
+    const getNotebooks = async () => {
         const notification = ElNotification({
             title: '',
             message: '正在加载笔记本',
@@ -61,9 +57,9 @@ export function useNotes() {
                 type: 'error',
                 duration: 0,
             })
+        } finally {
+            notification.close();
         }
-
-        notification.close();
     }
 
     // 获取笔记
@@ -120,6 +116,40 @@ export function useNotes() {
         return new Array();
     }
 
+    // 获取标签
+    const getTags = async () => {
+        const notification = ElNotification({
+            title: '',
+            message: '正在加载标签',
+            type: 'success',
+            duration: 0,
+        })
+
+        try {
+            const data = (await noteApi.geTags()).map((tag): ShowTag => (
+                {
+                    id: String(tag.id),
+                    name: tag.name,
+                    icon: tag.icon,
+                    cls: tag.cls,
+                    createTime: tag.createTime ?? '',
+                    updateTime: tag.updateTime ?? '',
+                }
+            ));
+
+            tags.value = data;
+        } catch (error) {
+            ElNotification({
+                title: '',
+                message: String(error),
+                type: 'error',
+                duration: 0,
+            })
+        } finally {
+            notification.close();
+        }
+    }
+
     const activeNoteData = computed(() => {
         return notes.value.find(note => note.id === state.activeNote) || null;
     });
@@ -142,7 +172,36 @@ export function useNotes() {
                 cls: showNotebook.cls,
             })
 
-            getNotebookResult();
+            getNotebooks();
+        } catch (error) {
+            ElNotification({
+                title: '',
+                message: String(error),
+                type: 'error',
+                duration: 0,
+            })
+        } finally {
+            notification.close();
+        }
+
+    }
+
+    const saveTag = async (showTag: ShowTag) => {
+        const notification = ElNotification({
+            title: '',
+            message: '正在保存标签',
+            type: 'success',
+            duration: 0,
+        })
+        try {
+            await noteApi.createTag({
+                id: 0,
+                name: showTag.name ?? '',
+                icon: showTag.icon,
+                cls: showTag.cls,
+            })
+
+            getTags();
         } catch (error) {
             ElNotification({
                 title: '',
@@ -323,12 +382,13 @@ export function useNotes() {
 
 
         try {
-            await getNotebookResult();
+            await getNotebooks();
 
             if (notebooks.value.length > 0) {
                 await setActiveNotebook(notebooks.value[0].id)
             }
 
+            await getTags();
 
             notes.value = await searchNotes();
 
@@ -345,10 +405,9 @@ export function useNotes() {
         }
     }
 
-    // 初始化
-    onMounted(() => {
+    onBeforeMount(() => {
         initialize();
-    });
+    })
 
     return {
         notebooks,
@@ -358,6 +417,7 @@ export function useNotes() {
         state,
         activeNoteData,
         saveNotebook,
+        saveTag,
         setActiveNotebook,
         setActiveNote,
         createNewNote,

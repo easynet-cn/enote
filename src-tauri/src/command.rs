@@ -32,6 +32,17 @@ pub async fn create_notebook(
 }
 
 #[tauri::command]
+pub async fn find_all_tags(app_state: tauri::State<'_, Arc<AppState>>) -> Result<Vec<Tag>, String> {
+    let db = &app_state.database_connection;
+
+    let tags = service::tag::find_all(db)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(tags)
+}
+
+#[tauri::command]
 pub async fn create_tag(
     app_state: tauri::State<'_, Arc<AppState>>,
     tag: Tag,

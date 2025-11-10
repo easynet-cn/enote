@@ -2,7 +2,8 @@
   <el-container class="flex h-screen bg-white">
     <!-- 侧边栏组件 -->
     <Sidebar :notebooks="notebooks" :tags="tags" :active-notebook="state.activeNotebook"
-      @set-active-notebook="setActiveNotebook" @create-new-note="createNewNote" @save-notebook="saveNotebook" />
+      @set-active-notebook="setActiveNotebook" @create-new-note="createNewNote" @save-notebook="saveNotebook"
+      @save-tag="saveTag" />
 
     <!-- 笔记列表组件 -->
     <NotesList :notebooks="notebooks" :notes="notes" :active-notebook="state.activeNotebook"
@@ -30,6 +31,7 @@ const {
   state,
   activeNoteData,
   saveNotebook,
+  saveTag,
   setActiveNotebook,
   setActiveNote,
   createNewNote,
