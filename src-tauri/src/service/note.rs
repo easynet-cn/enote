@@ -231,7 +231,7 @@ pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
         let tags_changed: bool = old_tag_ids == tag_ids;
 
         if tags_changed {
-            if !old_tag_ids.is_empty() || note.tags.is_empty() {
+            if !old_tag_ids.is_empty() && note.tags.is_empty() {
                 entity::note_tags::Entity::delete_many()
                     .filter(entity::note_tags::Column::Id.is_in(old_tag_ids))
                     .exec(&txn)
@@ -267,7 +267,7 @@ pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
             let extra = serde_json::to_string(&note_history_extra).unwrap_or_default();
 
             entity::note_history::ActiveModel {
-                id: Set(0),
+                id: NotSet,
                 note_id: Set(note.id),
                 old_content: Set(old_content),
                 new_content: Set(note.content.clone()),
