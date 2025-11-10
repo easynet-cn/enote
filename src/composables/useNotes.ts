@@ -295,8 +295,21 @@ export function useNotes() {
         }
     };
 
-    const cancelEdit = () => {
+    const cancelEdit = async () => {
         state.editMode = false;
+
+        if (!state.activeNote) return;
+
+        const noteId = state.activeNote;
+
+        if (noteId.indexOf('-') > -1) {
+            const noteIndex = notes.value.findIndex(note => note.id === state.activeNote);
+
+            if (noteIndex !== -1) {
+                notes.value.splice(noteIndex, 1);
+                state.activeNote = null;
+            }
+        }
     };
 
     const deleteNote = async () => {
