@@ -2,7 +2,10 @@ use std::sync::Arc;
 
 use crate::{
     config::AppState,
-    model::{Note, NotePageResult, NoteSearchPageParam, Notebook, Tag},
+    model::{
+        Note, NoteHistory, NoteHistorySearchPageParam, NotePageResult, NoteSearchPageParam,
+        Notebook, PageResult, Tag,
+    },
     service,
 };
 
@@ -98,6 +101,18 @@ pub async fn search_page_notes(
     let db = &app_state.database_connection;
 
     service::note::search_page(db, &search_param)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn search_page_note_histories(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    search_param: NoteHistorySearchPageParam,
+) -> Result<PageResult<NoteHistory>, String> {
+    let db = &app_state.database_connection;
+
+    service::note_history::search_page(db, &search_param)
         .await
         .map_err(|e| e.to_string())
 }

@@ -327,6 +327,68 @@ pub struct NoteHistoryExtra {
     pub tags: Vec<Tag>,
 }
 
+#[serde_as]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct NoteHistory {
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub id: i64,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub note_id: i64,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub old_content: String,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub new_content: String,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub extra: NoteHistoryExtra,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub operate_type: i32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub operate_time: NaiveDateTime,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub create_time: NaiveDateTime,
+}
+
+impl From<entity::note_history::Model> for NoteHistory {
+    fn from(value: entity::note_history::Model) -> Self {
+        Self {
+            id: value.id,
+            note_id: value.note_id,
+            old_content: value.old_content,
+            new_content: value.new_content,
+            extra: serde_json::from_str(&value.extra).unwrap_or_default(),
+            operate_type: value.operate_type,
+            operate_time: value.operate_time,
+            create_time: value.create_time,
+        }
+    }
+}
+
+impl From<&entity::note_history::Model> for NoteHistory {
+    fn from(value: &entity::note_history::Model) -> Self {
+        Self {
+            id: value.id,
+            note_id: value.note_id,
+            old_content: value.old_content.clone(),
+            new_content: value.new_content.clone(),
+            extra: serde_json::from_str(&value.extra).unwrap_or_default(),
+            operate_type: value.operate_type,
+            operate_time: value.operate_time,
+            create_time: value.create_time,
+        }
+    }
+}
+
+#[serde_as]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct NoteHistorySearchPageParam {
+    #[serde(flatten)]
+    pub page_param: PageParam,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub note_id: i64,
+}
+
 pub fn serialize_dt<S>(dt: &NaiveDateTime, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,

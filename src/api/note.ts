@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
 
-import { Note, Notebook, NotePageResult, NoteSearchPageParam, Tag } from '../types'
+import { Note, Notebook, NoteHistory, NoteHistorySearchPageParam, NotePageResult, NoteSearchPageParam, PageResult, Tag } from '../types'
 
 export const noteApi = {
     async getNotebooks(): Promise<Notebook[]> {
@@ -37,5 +37,10 @@ export const noteApi = {
 
     async createTag(tag: Tag): Promise<Tag> {
         return await invoke('create_tag', { tag })
+    },
+
+
+    async searchPageNoteHistories(searchParam: NoteHistorySearchPageParam): Promise<PageResult<NoteHistory>> {
+        return await invoke('search_page_note_histories', { searchParam })
     },
 }

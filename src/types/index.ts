@@ -73,11 +73,17 @@ export interface NotePageResult extends PageResult<Note> {
     notebookCounts: Map<number, number>
 }
 
+export interface NoteHistoryExtra {
+    title: String;
+    tags: Tag[];
+}
+
 export interface NoteHistory {
     id: string;
     noteId: number;
     oldContent: string;
     newConmtent: string;
+    extra: NoteHistoryExtra;
     operateType: number;
     operateTime: string;
     createTime: string;
@@ -89,6 +95,12 @@ export interface NoteSearchPageParam {
     notebookId: number;
     tagId: number;
     keyword: string;
+}
+
+export interface NoteHistorySearchPageParam {
+    pageIndex: number;
+    pageSize: number;
+    noteId: number;
 }
 
 export interface AppState {
