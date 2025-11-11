@@ -2,24 +2,51 @@
     <el-container>
         <el-main>
             <el-row v-if="activeNote">
-                <el-col :sm="14" :lg="12" :xl="17">
+                <el-col :span="23">
                     <el-input :model-value="activeNote.title" @update:model-value="$emit('updateNoteTitle', $event)"
                         placeholder="笔记标题" :readonly="!editMode" size="large" class="editor-title-input" />
                 </el-col>
-                <el-col :sm="10" :lg="12" :xl="7">
-                    <div class="button-row float-right">
-                        <el-button v-if="!editMode" type="primary" @click="$emit('toggleEditMode')" :icon="Edit">
-                            编辑
-                        </el-button>
-                        <el-button v-if="editMode" type="success" @click="$emit('saveNote')" :icon="Check">
-                            保存
-                        </el-button>
-                        <el-button v-if="editMode" @click="$emit('cancelEdit')" :icon="Close">
-                            取消
-                        </el-button>
-                        <el-button type="danger" @click="$emit('deleteNote')" :icon="Delete">
-                            删除
-                        </el-button>
+                <el-col :span="1">
+                    <div class="toolbar">
+                        <el-dropdown @command="handleCommand">
+                            <el-icon style="margin-right: 8px; margin-top: 1px">
+                                <icon-menu />
+                            </el-icon>
+                            <template #dropdown>
+                                <el-dropdown-menu>
+                                    <el-dropdown-item v-if="!editMode" command="edit">
+                                        <el-icon>
+                                            <edit />
+                                        </el-icon>
+                                        <span> 编辑</span>
+                                    </el-dropdown-item>
+                                    <el-dropdown-item v-if="editMode" command="save">
+                                        <el-icon>
+                                            <check />
+                                        </el-icon>
+                                        <span> 保存</span>
+                                    </el-dropdown-item>
+                                    <el-dropdown-item v-if="editMode" command="cancel">
+                                        <el-icon>
+                                            <close />
+                                        </el-icon>
+                                        <span> 取消</span>
+                                    </el-dropdown-item>
+                                    <el-dropdown-item command="delete">
+                                        <el-icon>
+                                            <delete />
+                                        </el-icon>
+                                        <span> 删除</span>
+                                    </el-dropdown-item>
+                                    <el-dropdown-item command="history">
+                                        <el-icon>
+                                            <icon-view />
+                                        </el-icon>
+                                        <span> 历史记录</span>
+                                    </el-dropdown-item>
+                                </el-dropdown-menu>
+                            </template>
+                        </el-dropdown>
                     </div>
                 </el-col>
             </el-row>
@@ -49,7 +76,7 @@ import Color from '@tiptap/extension-color'
 import Highlight from '@tiptap/extension-highlight'
 import Underline from '@tiptap/extension-underline'
 import TiptapToolbar from './TiptapToolbar.vue'
-import { Edit, Check, Close, Delete } from '@element-plus/icons-vue'
+import { Edit, Check, Close, Delete, Menu as IconMenu, View as IconView } from '@element-plus/icons-vue'
 import type { ShowNote } from '../types'
 
 interface Props {
@@ -114,6 +141,19 @@ onBeforeUnmount(() => {
         editor.value.destroy()
     }
 })
+
+const handleCommand = (command: string | number | object) => {
+    if (command === 'edit') {
+        emit('toggleEditMode')
+    } else if (command === 'save') {
+        emit('saveNote')
+    } else if (command === 'cancel') {
+        emit('cancelEdit')
+    } else if (command === 'delete') {
+        emit('deleteNote')
+    }
+}
+
 </script>
 
 <style scoped>
