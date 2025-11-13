@@ -1,19 +1,16 @@
 import { ref, reactive, computed, onBeforeMount } from 'vue';
 import { useDateFormat, useNow } from '@vueuse/core'
-import type { AppState, ShowNotebook, ShowTag, ShowNote, NotePageResult } from '../types';
+import type { AppState, ShowNotebook, ShowTag, ShowNote, NotePageResult, NoteHistory } from '../types';
 import { ElNotification } from 'element-plus';
 import { noteApi } from '../api/note';
 
 const notebooks = ref<ShowNotebook[]>([
     { id: '0', name: '全部', count: 0, icon: '📒' },
 ]);
-
-const tags = ref<ShowTag[]>([
-]);
-
+const tags = ref<ShowTag[]>([]);
 const notes = ref<ShowNote[]>([]);
-
 const query = ref<string>('');
+const histories = ref<NoteHistory[]>([]);
 
 // 状态管理
 const state = reactive<AppState>({
@@ -22,6 +19,9 @@ const state = reactive<AppState>({
     noteSearchPageParam: { pageIndex: 1, pageSize: 50, notebookId: 0, tagId: 0, keyword: '' },
     editMode: false,
     loading: false,
+    historyPageIndex: 1,
+    historyPageSize: 50,
+    historyTotal: 0,
 });
 
 export function useNotes() {
@@ -382,6 +382,35 @@ export function useNotes() {
         notes.value = await searchNotes();
     }
 
+    const openHistoryDialog = async () => {
+        const notification = ElNotification({
+            title: '',
+            message: '正在加载历史记录',
+            type: 'success',
+            duration: 0,
+        })
+
+        try {
+            const pageResult = await noteApi.searchPageNoteHistories({
+                pageIndex: state.historyPageIndex,
+                pageSize: state.historyPageSize,
+                noteId: Number.parseInt(state.activeNote ?? '')
+            })
+
+            histories.value = pageResult.data;
+            state.historyTotal = pageResult.total;
+        } catch (error) {
+            ElNotification({
+                title: '',
+                message: String(error),
+                type: 'error',
+                duration: 0,
+            })
+        } finally {
+            notification.close();
+        }
+    }
+
     // 初始化
     const initialize = async () => {
         state.loading = true;
@@ -427,6 +456,7 @@ export function useNotes() {
         tags,
         notes,
         query,
+        histories,
         state,
         activeNoteData,
         saveNotebook,
@@ -440,6 +470,7 @@ export function useNotes() {
         updateNoteTitle,
         updateNoteContent,
         getTagById,
-        handleUpdateSearchQuery
+        handleUpdateSearchQuery,
+        openHistoryDialog,
     };
 }

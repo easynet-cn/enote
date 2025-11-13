@@ -109,4 +109,7 @@ export interface AppState {
     noteSearchPageParam: NoteSearchPageParam;
     editMode: boolean;
     loading: boolean;
+    historyPageIndex: number;
+    historyPageSize: number;
+    historyTotal: number;
 }

@@ -64,10 +64,13 @@
             </el-row>
         </el-main>
     </el-container>
+    <History v-model:visible="historyVisible" v-model:data="historyData" v-model:current-page="currentPage"
+        v-model:page-size="pageSize" v-model:total="total" @open="$emit('open')" @size-change="handleSizeChange"
+        @current-change="handleCurrentChange" />
 </template>
 
 <script setup lang="ts">
-import { watch, onBeforeUnmount } from 'vue'
+import { watch, onBeforeUnmount, ref } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import TextAlign from '@tiptap/extension-text-align'
@@ -77,7 +80,8 @@ import Highlight from '@tiptap/extension-highlight'
 import Underline from '@tiptap/extension-underline'
 import TiptapToolbar from './TiptapToolbar.vue'
 import { Edit, Check, Close, Delete, Menu as IconMenu, View as IconView } from '@element-plus/icons-vue'
-import type { ShowNote } from '../types'
+import type { NoteHistory, ShowNote } from '../types'
+import History from './History.vue'
 
 interface Props {
     activeNote: ShowNote | null
@@ -93,7 +97,17 @@ const emit = defineEmits<{
     toggleEditMode: []
     updateNoteTitle: [title: string]
     updateNoteContent: [content: string]
+    sizeChange: [pageSize: number]
+    currentChange: [currentPage: number],
+    open: []
 }>()
+
+const historyData = defineModel<NoteHistory[]>("historyData");
+const currentPage = defineModel<number>("currentPage");
+const pageSize = defineModel<number>("pageSize");
+const total = defineModel<number>("total");
+
+const historyVisible = ref<boolean>(false)
 
 // TipTap 编辑器实例
 const editor = useEditor({
@@ -151,7 +165,17 @@ const handleCommand = (command: string | number | object) => {
         emit('cancelEdit')
     } else if (command === 'delete') {
         emit('deleteNote')
+    } else if (command === 'history') {
+        historyVisible.value = true
     }
+}
+
+const handleSizeChange = (val: number) => {
+    emit("sizeChange", val);
+}
+
+const handleCurrentChange = (val: number) => {
+    emit("currentChange", val);
 }
 
 </script>

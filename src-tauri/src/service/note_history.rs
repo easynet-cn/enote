@@ -33,17 +33,17 @@ pub async fn search_page(
     if total > 0 {
         let start = search_param.page_param.start() as u64;
         let page_size = search_param.page_param.page_size as u64;
-        let notebooks: Vec<NoteHistory> = query_builder
+        let histories: Vec<NoteHistory> = query_builder
             .offset(start)
             .limit(page_size)
-            .order_by_desc(entity::note::Column::Id)
+            .order_by_desc(entity::note_history::Column::Id)
             .all(db)
             .await?
             .iter()
             .map(NoteHistory::from)
             .collect();
 
-        let mut page_result = PageResult::<NoteHistory>::with_data(total, notebooks);
+        let mut page_result = PageResult::<NoteHistory>::with_data(total, histories);
 
         page_result.total_pages(search_param.page_param.page_size);
 

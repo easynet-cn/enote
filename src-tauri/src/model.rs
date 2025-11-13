@@ -343,9 +343,9 @@ pub struct NoteHistory {
     pub extra: NoteHistoryExtra,
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub operate_type: i32,
-    #[serde_as(deserialize_as = "DefaultOnNull")]
+    #[serde(serialize_with = "serialize_dt", deserialize_with = "deserialize_dt")]
     pub operate_time: NaiveDateTime,
-    #[serde_as(deserialize_as = "DefaultOnNull")]
+    #[serde(serialize_with = "serialize_dt", deserialize_with = "deserialize_dt")]
     pub create_time: NaiveDateTime,
 }
 
