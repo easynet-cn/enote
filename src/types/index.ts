@@ -82,7 +82,7 @@ export interface NoteHistory {
     id: string;
     noteId: number;
     oldContent: string;
-    newConmtent: string;
+    newContent: string;
     extra: NoteHistoryExtra;
     operateType: number;
     operateTime: string;
