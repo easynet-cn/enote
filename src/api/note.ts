@@ -11,6 +11,14 @@ export const noteApi = {
         return await invoke('create_notebook', { notebook })
     },
 
+    async updateNotebook(notebook: Notebook): Promise<Notebook> {
+        return await invoke('update_notebook', { notebook })
+    },
+
+    async deleteNotebook(id: number): Promise<void> {
+        return await invoke('delete_notebook_by_id', { id })
+    },
+
     async createNote(notebookId: number, title: string, content: string, tags: Tag[]): Promise<Note> {
         const note: Note = { id: 0, notebookId: notebookId, title: title, content: content, tags: tags, createTime: null, updateTime: null }
 
@@ -23,7 +31,7 @@ export const noteApi = {
         return await invoke('update_note', { note })
     },
 
-    async deleteNote(id: number): Promise<Note> {
+    async deleteNote(id: number): Promise<void> {
         return await invoke('delete_note_by_id', { id })
     },
 
@@ -39,6 +47,13 @@ export const noteApi = {
         return await invoke('create_tag', { tag })
     },
 
+    async updateTag(tag: Tag): Promise<Tag> {
+        return await invoke('update_tag', { tag })
+    },
+
+    async deleteTag(id: number): Promise<void> {
+        return await invoke('delete_tag_by_id', { id })
+    },
 
     async searchPageNoteHistories(searchParam: NoteHistorySearchPageParam): Promise<PageResult<NoteHistory>> {
         return await invoke('search_page_note_histories', { searchParam })

@@ -35,8 +35,12 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             command::find_all_notebooks,
             command::create_notebook,
+            command::delete_notebook_by_id,
+            command::update_notebook,
             command::find_all_tags,
             command::create_tag,
+            command::delete_tag_by_id,
+            command::update_tag,
             command::create_note,
             command::update_note,
             command::delete_note_by_id,

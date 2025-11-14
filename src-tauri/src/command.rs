@@ -35,6 +35,30 @@ pub async fn create_notebook(
 }
 
 #[tauri::command]
+pub async fn delete_notebook_by_id(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    id: i64,
+) -> Result<(), String> {
+    let db = &app_state.database_connection;
+
+    service::notebook::delete_by_id(db, id)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn update_notebook(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    notebook: Notebook,
+) -> Result<Option<Notebook>, String> {
+    let db = &app_state.database_connection;
+
+    service::notebook::update(db, &notebook)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub async fn find_all_tags(app_state: tauri::State<'_, Arc<AppState>>) -> Result<Vec<Tag>, String> {
     let db = &app_state.database_connection;
 
@@ -53,6 +77,30 @@ pub async fn create_tag(
     let db = &app_state.database_connection;
 
     service::tag::create(db, &tag)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn delete_tag_by_id(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    id: i64,
+) -> Result<(), String> {
+    let db = &app_state.database_connection;
+
+    service::tag::delete_by_id(db, id)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn update_tag(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    tag: Tag,
+) -> Result<Option<Tag>, String> {
+    let db = &app_state.database_connection;
+
+    service::tag::update(db, &tag)
         .await
         .map_err(|e| e.to_string())
 }

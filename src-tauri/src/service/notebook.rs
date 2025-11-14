@@ -2,7 +2,7 @@ use chrono::Local;
 use sea_orm::{
     ActiveModelTrait,
     ActiveValue::{NotSet, Set},
-    DatabaseConnection, EntityTrait, QueryOrder,
+    DatabaseConnection, EntityTrait, IntoActiveModel, QueryOrder,
 };
 
 use crate::{entity, model::Notebook};
@@ -40,4 +40,43 @@ pub async fn create(
     let entity = active_model.insert(db).await?;
 
     Ok(Some(Notebook::from(entity)))
+}
+
+pub async fn delete_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<()> {
+    entity::notebook::Entity::delete_by_id(id).exec(db).await?;
+
+    Ok(())
+}
+
+pub async fn update(
+    db: &DatabaseConnection,
+    notebook: &Notebook,
+) -> anyhow::Result<Option<Notebook>> {
+    if let Some(entity) = entity::notebook::Entity::find_by_id(notebook.id)
+        .one(db)
+        .await?
+    {
+        let mut m = notebook.clone();
+        let mut active_model: entity::notebook::ActiveModel = entity.into_active_model();
+
+        active_model.name = Set(notebook.name.clone());
+        active_model.description = Set(notebook.description.clone());
+        active_model.icon = Set(notebook.icon.clone());
+        active_model.cls = Set(notebook.cls.clone());
+        active_model.sort_order = Set(notebook.sort_order);
+
+        if active_model.is_changed() {
+            let now = Local::now().naive_local();
+
+            active_model.update_time = Set(now);
+
+            active_model.update(db).await?;
+
+            m.update_time = Some(now);
+        }
+
+        Ok(Some(m))
+    } else {
+        Ok(None)
+    }
 }
