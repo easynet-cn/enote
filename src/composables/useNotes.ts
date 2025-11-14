@@ -15,6 +15,7 @@ const histories = ref<NoteHistory[]>([]);
 // 状态管理
 const state = reactive<AppState>({
     activeNotebook: '',
+    activeTag: '',
     activeNote: null,
     noteSearchPageParam: { pageIndex: 1, pageSize: 50, notebookId: 0, tagId: 0, keyword: '' },
     editMode: false,
@@ -221,6 +222,10 @@ export function useNotes() {
         state.noteSearchPageParam.notebookId = Number.parseInt(notebookId);
 
         notes.value = await searchNotes();
+    };
+
+    const setActiveTag = async (tagId: string) => {
+        state.activeTag = tagId;
     };
 
     const setActiveNote = (noteId: string) => {
@@ -462,6 +467,7 @@ export function useNotes() {
         saveNotebook,
         saveTag,
         setActiveNotebook,
+        setActiveTag,
         setActiveNote,
         createNewNote,
         saveNote,

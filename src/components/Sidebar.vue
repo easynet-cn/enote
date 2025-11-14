@@ -25,13 +25,13 @@
                                     </el-icon>
                                     <span>添加</span>
                                 </el-dropdown-item>
-                                <el-dropdown-item command="edit">
+                                <el-dropdown-item v-if="showNotebookEditAndDelete" command="edit">
                                     <el-icon>
                                         <edit />
                                     </el-icon>
                                     <span>编辑</span>
                                 </el-dropdown-item>
-                                <el-dropdown-item command="delete">
+                                <el-dropdown-item v-if="showNotebookEditAndDelete" command="delete">
                                     <el-icon>
                                         <delete />
                                     </el-icon>
@@ -74,13 +74,13 @@
                                     </el-icon>
                                     <span>添加</span>
                                 </el-dropdown-item>
-                                <el-dropdown-item command="edit">
+                                <el-dropdown-item v-if="showTagEditAndDelete" command="edit">
                                     <el-icon>
                                         <edit />
                                     </el-icon>
                                     <span>编辑</span>
                                 </el-dropdown-item>
-                                <el-dropdown-item command="delete">
+                                <el-dropdown-item v-if="showTagEditAndDelete" command="delete">
                                     <el-icon>
                                         <delete />
                                     </el-icon>
@@ -93,7 +93,8 @@
             </el-col>
             <el-col :span="24">
                 <ul class="space-y-1">
-                    <li v-for="tag in tags" :key="tag.id" class="sidebar-item">
+                    <li v-for="tag in tags" :key="tag.id" :class="['sidebar-item', { active: activeTag === tag.id }]"
+                        @click="$emit('setActiveTag', tag.id)">
                         <div class="flex items-center">
                             <span :class="['mr-3', tag.cls]">●</span>
                             <span>{{ tag.name }}</span>
@@ -160,7 +161,7 @@
 import { Plus, Edit, Delete, Menu as IconMenu } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import type { ShowNotebook, ShowTag } from '../types'
-import { reactive, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 
 interface NotebookForm {
     name: string
@@ -215,18 +216,27 @@ const tagRules = reactive<FormRules<TagForm>>({
 const notebookDialog = ref(false);
 const tagDialog = ref(false);
 
-defineProps<{
+const props = defineProps<{
     notebooks: ShowNotebook[]
     tags: ShowTag[]
-    activeNotebook: string
+    activeNotebook: string,
+    activeTag: string
 }>()
 
 const emit = defineEmits<{
     setActiveNotebook: [id: string]
     createNewNote: []
     saveNotebook: [notebook: ShowNotebook]
+    setActiveTag: [id: string]
     saveTag: [tag: ShowTag]
 }>()
+
+const showNotebookEditAndDelete = computed(() => {
+    return props.notebooks.length > 0 && props.activeNotebook !== '' && props.activeNotebook !== '0'
+})
+const showTagEditAndDelete = computed(() => {
+    return props.tags.length > 0 && props.activeTag !== ''
+})
 
 const submitNotebookForm = async (form: FormInstance | undefined) => {
     if (!form) {

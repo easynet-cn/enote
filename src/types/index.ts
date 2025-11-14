@@ -105,6 +105,7 @@ export interface NoteHistorySearchPageParam {
 
 export interface AppState {
     activeNotebook: string;
+    activeTag: string;
     activeNote: string | null;
     noteSearchPageParam: NoteSearchPageParam;
     editMode: boolean;
