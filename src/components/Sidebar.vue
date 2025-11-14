@@ -12,9 +12,35 @@
                 <h2 class="text-sm font-semibold text-gray-500 mb-3">笔记本</h2>
             </el-col>
             <el-col :span="2">
-                <el-button type="success" :icon="Plus" size="small" text @click="notebookDialog = true">
-
-                </el-button>
+                <div class="toolbar">
+                    <el-dropdown @command="handleNotebookCommand">
+                        <el-icon class="mt-1">
+                            <icon-menu />
+                        </el-icon>
+                        <template #dropdown>
+                            <el-dropdown-menu>
+                                <el-dropdown-item command="create">
+                                    <el-icon>
+                                        <plus />
+                                    </el-icon>
+                                    <span>添加</span>
+                                </el-dropdown-item>
+                                <el-dropdown-item command="edit">
+                                    <el-icon>
+                                        <edit />
+                                    </el-icon>
+                                    <span>编辑</span>
+                                </el-dropdown-item>
+                                <el-dropdown-item command="delete">
+                                    <el-icon>
+                                        <delete />
+                                    </el-icon>
+                                    <span>删除</span>
+                                </el-dropdown-item>
+                            </el-dropdown-menu>
+                        </template>
+                    </el-dropdown>
+                </div>
             </el-col>
             <el-col :span="24">
                 <ul>
@@ -35,9 +61,35 @@
                 <h2 class="text-sm font-semibold text-gray-500 mb-3">标签</h2>
             </el-col>
             <el-col :span="2">
-                <el-button type="success" :icon="Plus" size="small" text @click="tagDialog = true">
-
-                </el-button>
+                <div class="toolbar">
+                    <el-dropdown @command="handleTagCommand">
+                        <el-icon class="mt-1">
+                            <icon-menu />
+                        </el-icon>
+                        <template #dropdown>
+                            <el-dropdown-menu>
+                                <el-dropdown-item command="create">
+                                    <el-icon>
+                                        <plus />
+                                    </el-icon>
+                                    <span>添加</span>
+                                </el-dropdown-item>
+                                <el-dropdown-item command="edit">
+                                    <el-icon>
+                                        <edit />
+                                    </el-icon>
+                                    <span>编辑</span>
+                                </el-dropdown-item>
+                                <el-dropdown-item command="delete">
+                                    <el-icon>
+                                        <delete />
+                                    </el-icon>
+                                    <span>删除</span>
+                                </el-dropdown-item>
+                            </el-dropdown-menu>
+                        </template>
+                    </el-dropdown>
+                </div>
             </el-col>
             <el-col :span="24">
                 <ul class="space-y-1">
@@ -105,7 +157,7 @@
 </template>
 
 <script setup lang="ts">
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete, Menu as IconMenu } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import type { ShowNotebook, ShowTag } from '../types'
 import { reactive, ref } from 'vue';
@@ -227,4 +279,33 @@ const closeTagDialog = () => {
     tagDialog.value = false
 }
 
+const handleNotebookCommand = (command: string | number | object) => {
+    if (command === 'create') {
+        notebookDialog.value = true
+
+    } else if (command === 'edit') {
+
+    } else if (command === 'save') {
+
+    } else if (command === 'cancel') {
+
+    } else if (command === 'delete') {
+
+    }
+}
+
+const handleTagCommand = (command: string | number | object) => {
+    if (command === 'create') {
+        tagDialog.value = true
+
+    } else if (command === 'edit') {
+
+    } else if (command === 'save') {
+
+    } else if (command === 'cancel') {
+
+    } else if (command === 'delete') {
+
+    }
+}
 </script>

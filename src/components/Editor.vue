@@ -9,7 +9,7 @@
                 <el-col :span="1">
                     <div class="toolbar">
                         <el-dropdown @command="handleCommand">
-                            <el-icon style="margin-right: 8px; margin-top: 1px">
+                            <el-icon class="mr-2 mt-1">
                                 <icon-menu />
                             </el-icon>
                             <template #dropdown>
@@ -18,31 +18,31 @@
                                         <el-icon>
                                             <edit />
                                         </el-icon>
-                                        <span> 编辑</span>
+                                        <span>添加</span>
                                     </el-dropdown-item>
                                     <el-dropdown-item v-if="editMode" command="save">
                                         <el-icon>
                                             <check />
                                         </el-icon>
-                                        <span> 保存</span>
+                                        <span>保存</span>
                                     </el-dropdown-item>
                                     <el-dropdown-item v-if="editMode" command="cancel">
                                         <el-icon>
                                             <close />
                                         </el-icon>
-                                        <span> 取消</span>
+                                        <span>取消</span>
                                     </el-dropdown-item>
                                     <el-dropdown-item command="delete">
                                         <el-icon>
                                             <delete />
                                         </el-icon>
-                                        <span> 删除</span>
+                                        <span>删除</span>
                                     </el-dropdown-item>
                                     <el-dropdown-item command="history">
                                         <el-icon>
                                             <icon-view />
                                         </el-icon>
-                                        <span> 历史记录</span>
+                                        <span>历史记录</span>
                                     </el-dropdown-item>
                                 </el-dropdown-menu>
                             </template>
