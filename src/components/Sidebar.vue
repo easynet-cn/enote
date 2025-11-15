@@ -104,7 +104,7 @@
             </el-col>
         </el-row>
     </el-aside>
-    <el-dialog v-model="notebookDialog" title="添加笔记本" width="500" align-center>
+    <el-dialog v-model="notebookDialog" :title="notebookDialogTitle" width="500" align-center>
         <el-form ref="notebookFormRef" :model="notebookForm" :rules="notebookRules" label-width="auto">
             <el-form-item label="名称" prop="name">
                 <el-input v-model="notebookForm.name" />
@@ -119,7 +119,7 @@
                 <el-input v-model="notebookForm.cls" />
             </el-form-item>
             <el-form-item label="排序" prop="sortOrder">
-                <el-input v-model="notebookForm.sortOrder" />
+                <el-input-number v-model="notebookForm.sortOrder" :min="0" :precision="0" />
             </el-form-item>
         </el-form>
         <template #footer>
@@ -131,7 +131,7 @@
             </div>
         </template>
     </el-dialog>
-    <el-dialog v-model="tagDialog" title="添加标签" width="500" align-center>
+    <el-dialog v-model="tagDialog" :title="tagDialogTitle" width="500" align-center>
         <el-form ref="tagFormRef" :model="tagForm" :rules="tagRules" label-width="auto">
             <el-form-item label="名称" prop="name">
                 <el-input v-model="tagForm.name" />
@@ -143,7 +143,7 @@
                 <el-input v-model="tagForm.cls" />
             </el-form-item>
             <el-form-item label="排序" prop="sortOrder">
-                <el-input v-model="tagForm.sortOrder" />
+                <el-input-number v-model="tagForm.sortOrder" :min="0" :precision="0" />
             </el-form-item>
         </el-form>
         <template #footer>
@@ -214,7 +214,9 @@ const tagRules = reactive<FormRules<TagForm>>({
 })
 
 const notebookDialog = ref(false);
+const notebookDialogTitle = ref('添加笔记本')
 const tagDialog = ref(false);
+const tagDialogTitle = ref('添加标签')
 
 const props = defineProps<{
     notebooks: ShowNotebook[]
@@ -289,30 +291,66 @@ const closeTagDialog = () => {
     tagDialog.value = false
 }
 
+const resetNotebookForm = () => {
+    notebookForm.name = ''
+    notebookForm.description = ''
+    notebookForm.icon = ''
+    notebookForm.cls = ''
+    notebookForm.sortOrder = 0
+}
+
 const handleNotebookCommand = (command: string | number | object) => {
     if (command === 'create') {
+        resetNotebookForm()
+
+        notebookDialogTitle.value = '添加笔记本'
         notebookDialog.value = true
 
     } else if (command === 'edit') {
+        let notebook = props.notebooks.find(n => n.id === props.activeNotebook)
 
-    } else if (command === 'save') {
+        if (notebook) {
+            notebookForm.name = notebook.name ?? ''
+            notebookForm.description = notebook.description ?? ''
+            notebookForm.icon = notebook.icon ?? ''
+            notebookForm.cls = notebook.cls ?? ''
+            notebookForm.sortOrder = notebook.sortOrder ?? 0
+        }
 
-    } else if (command === 'cancel') {
+        notebookDialogTitle.value = '编辑笔记本'
+        notebookDialog.value = true
 
     } else if (command === 'delete') {
 
     }
 }
 
+const resetTagForm = () => {
+    tagForm.name = ''
+    tagForm.icon = ''
+    tagForm.cls = ''
+    tagForm.sortOrder = 0
+}
+
 const handleTagCommand = (command: string | number | object) => {
     if (command === 'create') {
+        resetTagForm()
+
+        tagDialogTitle.value = '添加标签'
         tagDialog.value = true
 
     } else if (command === 'edit') {
+        let tag = props.tags.find(t => t.id === props.activeTag)
 
-    } else if (command === 'save') {
+        if (tag) {
+            tagForm.name = tag.name ?? ''
+            tagForm.icon = tag.icon ?? ''
+            tagForm.cls = tag.cls ?? ''
+            tagForm.sortOrder = tag.sortOrder ?? 0
+        }
 
-    } else if (command === 'cancel') {
+        tagDialogTitle.value = '编辑标签'
+        tagDialog.value = true
 
     } else if (command === 'delete') {
 
