@@ -11,7 +11,7 @@ use sea_orm::{
 };
 
 use crate::{
-    entity::{self},
+    entity::{self, notebook},
     model::{Note, NoteHistoryExtra, NotePageResult, NoteSearchPageParam, PageResult, Tag},
 };
 
@@ -97,7 +97,22 @@ pub async fn create(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
             .await?;
     }
 
+    let mut notebook_id = 0_i64;
+    let mut notebook_name = String::default();
+
+    if note.notebook_id > 0 {
+        if let Some(notebook) = entity::notebook::Entity::find_by_id(note.notebook_id)
+            .one(db)
+            .await?
+        {
+            notebook_id = notebook.id;
+            notebook_name = notebook.name.clone();
+        }
+    }
+
     let note_history_extra = NoteHistoryExtra {
+        notebook_id: notebook_id,
+        notebook_name: notebook_name.clone(),
         title: note.title.clone(),
         tags: note.tags.clone(),
     };
@@ -145,11 +160,26 @@ pub async fn delete_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<()
                 .collect::<Vec<Tag>>();
         }
 
+        let mut notebook_id = 0_i64;
+        let mut notebook_name = String::default();
+
+        if entity.notebook_id > 0 {
+            if let Some(notebook) = entity::notebook::Entity::find_by_id(entity.notebook_id)
+                .one(db)
+                .await?
+            {
+                notebook_id = notebook.id;
+                notebook_name = notebook.name.clone();
+            }
+        }
+
         let txn = db.begin().await?;
 
         let now = Local::now().naive_local();
 
         let note_history_extra = NoteHistoryExtra {
+            notebook_id: notebook_id,
+            notebook_name: notebook_name.clone(),
             title: entity.title.clone(),
             tags: tags,
         };
@@ -259,7 +289,22 @@ pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
         }
 
         if note_changed && tags_changed {
+            let mut notebook_id = 0_i64;
+            let mut notebook_name = String::default();
+
+            if note.notebook_id > 0 {
+                if let Some(notebook) = entity::notebook::Entity::find_by_id(note.notebook_id)
+                    .one(db)
+                    .await?
+                {
+                    notebook_id = notebook.id;
+                    notebook_name = notebook.name.clone();
+                }
+            }
+
             let note_history_extra = NoteHistoryExtra {
+                notebook_id: notebook_id,
+                notebook_name: notebook_name.clone(),
                 title: old_title,
                 tags: old_tags,
             };

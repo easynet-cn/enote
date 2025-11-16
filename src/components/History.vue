@@ -1,19 +1,11 @@
 <template>
     <el-dialog v-model="visible" title="历史记录" fullscreen @open="$emit('open')">
         <div class="h-[88vh] overflow-hidden flex flex-col">
-            <el-table :data="data" empty-text="没有数据">
+            <el-table :data="showData" empty-text="没有数据">
                 <el-table-column prop="id" label="ID" width="60" />
-                <el-table-column prop="oldContent" label="旧内容" min-width="200">
-                    <template #default="scope">
-                        <div class="text-sm text-gray-500 mb-2 line-clamp-2" v-html="scope.row.oldContent"></div>
-                    </template>
-                </el-table-column>
-                <el-table-column prop="newContent" label="新内容" min-width="200">
-                    <template #default="scope">
-                        <div class="text-sm text-gray-500 mb-2 line-clamp-2" v-html="scope.row.newContent"></div>
-                    </template>
-                </el-table-column>
-                <el-table-column prop="extra" label="其他信息" width="120" />
+                <el-table-column prop="notebookName" label="笔记本名称" width="500" />
+                <el-table-column prop="title" label="标题" width="500" />
+                <el-table-column prop="tags" label="标签" with="500" />
                 <el-table-column prop="operateType" label="操作类型" width="80" />
                 <el-table-column prop="operateTime" label="操作时间" width="170" />
                 <el-table-column label="操作" width="80" fixed="right">
@@ -58,9 +50,11 @@
     </el-dialog>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { NoteHistory } from '../types';
 import TipTapEditor from './TipTapEditor.vue';
+
+
 
 const visible = defineModel<boolean>("visible");
 const data = defineModel<NoteHistory[]>("data");
@@ -72,6 +66,22 @@ const total = defineModel<number>("total");
 const viewVisible = ref(false);
 const viewOldContent = ref('');
 const viewNewContent = ref('');
+
+const showData = computed(() => {
+    return data.value?.map((item) => {
+        return {
+            id: item.id,
+            notebookId: item.extra.notebookId,
+            notebookName: item.extra.notebookName,
+            title: item.extra.title,
+            tags: item.extra.tags.join(' '),
+            oldContent: item.oldContent,
+            newContent: item.newContent,
+            operateType: item.operateType === 1 ? '添加' : item.operateType === 2 ? '修改' : item.operateType === 3 ? '删除' : '',
+            operateTime: item.operateTime,
+        }
+    })
+})
 
 const emit = defineEmits<{
     sizeChange: [pageSize: number]

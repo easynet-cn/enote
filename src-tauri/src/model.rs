@@ -322,6 +322,10 @@ pub struct NoteSearchPageParam {
 #[serde(rename_all = "camelCase", default)]
 pub struct NoteHistoryExtra {
     #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub notebook_id: i64,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub notebook_name: String,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
     pub title: String,
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub tags: Vec<Tag>,

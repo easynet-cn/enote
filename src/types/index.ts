@@ -74,6 +74,9 @@ export interface NotePageResult extends PageResult<Note> {
 }
 
 export interface NoteHistoryExtra {
+    notebookId: number;
+    notebookName: string;
+    noteId: number;
     title: String;
     tags: Tag[];
 }
