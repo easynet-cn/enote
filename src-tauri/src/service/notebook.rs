@@ -10,6 +10,7 @@ use crate::{entity, model::Notebook};
 pub async fn find_all(db: &DatabaseConnection) -> anyhow::Result<Vec<Notebook>> {
     let notebooks = entity::notebook::Entity::find()
         .order_by_desc(entity::notebook::Column::SortOrder)
+        .order_by_desc(entity::notebook::Column::UpdateTime)
         .all(db)
         .await?
         .iter()

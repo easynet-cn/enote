@@ -3,7 +3,7 @@
     <!-- 侧边栏组件 -->
     <Sidebar :notebooks="notebooks" :tags="tags" :active-notebook="state.activeNotebook" :active-tag="state.activeTag"
       @set-active-notebook="setActiveNotebook" @set-active-tag="setActiveTag" @create-new-note="createNewNote"
-      @save-notebook="saveNotebook" @save-tag="saveTag" />
+      @save-notebook="saveNotebook" @delete-notebook="deleteNotebook" @save-tag="saveTag" @delete-tag="deleteTag" />
 
     <!-- 笔记列表组件 -->
     <NotesList :notebooks="notebooks" :notes="notes" :active-notebook="state.activeNotebook"
@@ -34,7 +34,9 @@ const {
   state,
   activeNoteData,
   saveNotebook,
+  deleteNotebook,
   saveTag,
+  deleteTag,
   setActiveNotebook,
   setActiveTag,
   setActiveNote,

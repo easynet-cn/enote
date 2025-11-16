@@ -10,6 +10,7 @@ use crate::{entity, model::Tag};
 pub async fn find_all(db: &DatabaseConnection) -> anyhow::Result<Vec<Tag>> {
     let tags = entity::tag::Entity::find()
         .order_by_desc(entity::tag::Column::SortOrder)
+        .order_by_desc(entity::tag::Column::UpdateTime)
         .all(db)
         .await?
         .iter()

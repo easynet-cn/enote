@@ -164,6 +164,7 @@ import type { ShowNotebook, ShowTag } from '../types'
 import { computed, reactive, ref } from 'vue';
 
 interface NotebookForm {
+    id: string
     name: string
     description: string
     icon: string
@@ -172,6 +173,7 @@ interface NotebookForm {
 }
 
 interface TagForm {
+    id: string
     name: string
     icon: string
     cls: string
@@ -180,6 +182,7 @@ interface TagForm {
 
 const notebookFormRef = ref<FormInstance>()
 const notebookForm = reactive<NotebookForm>({
+    id: '',
     name: '',
     description: '',
     icon: '',
@@ -198,6 +201,7 @@ const notebookRules = reactive<FormRules<NotebookForm>>({
 
 const tagFormRef = ref<FormInstance>()
 const tagForm = reactive<TagForm>({
+    id: '',
     name: '',
     icon: '',
     cls: '',
@@ -229,8 +233,10 @@ const emit = defineEmits<{
     setActiveNotebook: [id: string]
     createNewNote: []
     saveNotebook: [notebook: ShowNotebook]
+    deleteNotebook: [id: string]
     setActiveTag: [id: string]
     saveTag: [tag: ShowTag]
+    deleteTag: [id: string]
 }>()
 
 const showNotebookEditAndDelete = computed(() => {
@@ -248,7 +254,7 @@ const submitNotebookForm = async (form: FormInstance | undefined) => {
     await form.validate((valid) => {
         if (valid) {
             emit('saveNotebook', {
-                id: '',
+                id: notebookForm.id,
                 name: notebookForm.name,
                 description: notebookForm.description,
                 icon: notebookForm.icon,
@@ -269,7 +275,7 @@ const submitTagForm = async (form: FormInstance | undefined) => {
     await form.validate((valid) => {
         if (valid) {
             emit('saveTag', {
-                id: '',
+                id: tagForm.id,
                 name: tagForm.name,
                 icon: tagForm.icon,
                 cls: tagForm.cls,
@@ -292,6 +298,7 @@ const closeTagDialog = () => {
 }
 
 const resetNotebookForm = () => {
+    notebookForm.id = ''
     notebookForm.name = ''
     notebookForm.description = ''
     notebookForm.icon = ''
@@ -310,6 +317,7 @@ const handleNotebookCommand = (command: string | number | object) => {
         let notebook = props.notebooks.find(n => n.id === props.activeNotebook)
 
         if (notebook) {
+            notebookForm.id = notebook.id ?? ''
             notebookForm.name = notebook.name ?? ''
             notebookForm.description = notebook.description ?? ''
             notebookForm.icon = notebook.icon ?? ''
@@ -321,11 +329,12 @@ const handleNotebookCommand = (command: string | number | object) => {
         notebookDialog.value = true
 
     } else if (command === 'delete') {
-
+        emit('deleteNotebook', props.activeNotebook)
     }
 }
 
 const resetTagForm = () => {
+    tagForm.id = ''
     tagForm.name = ''
     tagForm.icon = ''
     tagForm.cls = ''
@@ -343,6 +352,7 @@ const handleTagCommand = (command: string | number | object) => {
         let tag = props.tags.find(t => t.id === props.activeTag)
 
         if (tag) {
+            tagForm.id = tag.id ?? ''
             tagForm.name = tag.name ?? ''
             tagForm.icon = tag.icon ?? ''
             tagForm.cls = tag.cls ?? ''
@@ -353,7 +363,7 @@ const handleTagCommand = (command: string | number | object) => {
         tagDialog.value = true
 
     } else if (command === 'delete') {
-
+        emit('deleteTag', props.activeTag)
     }
 }
 </script>

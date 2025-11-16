@@ -159,21 +159,37 @@ export function useNotes() {
     const saveNotebook = async (showNotebook: ShowNotebook) => {
         const notification = ElNotification({
             title: '',
-            message: '正在保存笔记',
+            message: '正在保存笔记本',
             type: 'success',
             duration: 0,
         })
-        try {
-            await noteApi.createNotebook({
-                id: 0,
-                parentId: showNotebook.parentId,
-                name: showNotebook.name ?? '',
-                description: showNotebook.description,
-                icon: showNotebook.icon,
-                cls: showNotebook.cls,
-            })
 
-            getNotebooks();
+        try {
+            const id = !showNotebook.id || showNotebook.id.trim() === '' || showNotebook.id === '0' ? 0 : Number.parseInt(showNotebook.id) ?? 0;
+
+            if (id == 0) {
+                await noteApi.createNotebook({
+                    id: 0,
+                    parentId: showNotebook.parentId,
+                    name: showNotebook.name ?? '',
+                    description: showNotebook.description,
+                    icon: showNotebook.icon,
+                    cls: showNotebook.cls,
+                })
+            } else {
+                await noteApi.updateNotebook({
+                    id: id,
+                    parentId: showNotebook.parentId,
+                    name: showNotebook.name ?? '',
+                    description: showNotebook.description,
+                    icon: showNotebook.icon,
+                    cls: showNotebook.cls,
+                })
+            }
+
+
+            await getNotebooks();
+            await searchNotes();
         } catch (error) {
             ElNotification({
                 title: '',
@@ -187,6 +203,35 @@ export function useNotes() {
 
     }
 
+    const deleteNotebook = async (id: string) => {
+        const notification = ElNotification({
+            title: '',
+            message: '正在删除笔记本',
+            type: 'success',
+            duration: 0,
+        })
+
+        try {
+            const notebookId = Number.parseInt(id) ?? 0;
+
+            if (notebookId > 0) {
+                await noteApi.deleteNotebook(notebookId);
+
+                await getNotebooks();
+                await searchNotes();
+            }
+        } catch (error) {
+            ElNotification({
+                title: '',
+                message: String(error),
+                type: 'error',
+                duration: 0,
+            })
+        } finally {
+            notification.close();
+        }
+    }
+
     const saveTag = async (showTag: ShowTag) => {
         const notification = ElNotification({
             title: '',
@@ -195,14 +240,27 @@ export function useNotes() {
             duration: 0,
         })
         try {
-            await noteApi.createTag({
-                id: 0,
-                name: showTag.name ?? '',
-                icon: showTag.icon,
-                cls: showTag.cls,
-            })
+            const id = !showTag.id || showTag.id.trim().length == 0 || showTag.id === '0' ? 0 : Number.parseInt(showTag.id) ?? 0;
 
-            getTags();
+            if (id == 0) {
+                await noteApi.createTag({
+                    id: 0,
+                    name: showTag.name ?? '',
+                    icon: showTag.icon,
+                    cls: showTag.cls,
+                })
+            } else {
+                await noteApi.updateTag({
+                    id: id,
+                    name: showTag.name ?? '',
+                    icon: showTag.icon,
+                    cls: showTag.cls,
+                })
+            }
+
+            await getNotebooks();
+            await getTags();
+            await searchNotes();
         } catch (error) {
             ElNotification({
                 title: '',
@@ -214,6 +272,35 @@ export function useNotes() {
             notification.close();
         }
 
+    }
+
+    const deleteTag = async (id: string) => {
+        const notification = ElNotification({
+            title: '',
+            message: '正在删除标签',
+            type: 'success',
+            duration: 0,
+        })
+
+        try {
+            const tagId = Number.parseInt(id) ?? 0;
+
+            if (tagId > 0) {
+                await noteApi.deleteTag(tagId);
+
+                await getNotebooks();
+                await searchNotes();
+            }
+        } catch (error) {
+            ElNotification({
+                title: '',
+                message: String(error),
+                type: 'error',
+                duration: 0,
+            })
+        } finally {
+            notification.close();
+        }
     }
 
     const setActiveNotebook = async (notebookId: string) => {
@@ -465,7 +552,9 @@ export function useNotes() {
         state,
         activeNoteData,
         saveNotebook,
+        deleteNotebook,
         saveTag,
+        deleteTag,
         setActiveNotebook,
         setActiveTag,
         setActiveNote,
