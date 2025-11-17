@@ -14,7 +14,7 @@ export interface Notebook {
     sortOrder?: number;
     count?: number;
     createTime?: string | null;
-    updateTime?: String | null;
+    updateTime?: string | null;
 }
 
 export interface ShowNotebook {
@@ -27,7 +27,7 @@ export interface ShowNotebook {
     sortOrder?: number;
     count?: number;
     createTime?: string | null;
-    updateTime?: String | null;
+    updateTime?: string | null;
 }
 
 export interface Tag {
@@ -62,7 +62,7 @@ export interface Note {
 
 export interface ShowNote {
     id: string;
-    notebookId?: String;
+    notebookId?: string;
     title: string;
     content: string;
     tags?: ShowTag[];
@@ -77,7 +77,7 @@ export interface NoteHistoryExtra {
     notebookId: number;
     notebookName: string;
     noteId: number;
-    title: String;
+    title: string;
     tags: Tag[];
 }
 

@@ -356,7 +356,7 @@ export function useNotes() {
             if (noteId.indexOf('-') < 0) {
                 await noteApi.updateNote(
                     Number.parseInt(noteId),
-                    Number.parseInt(state.activeNotebook),
+                    Number.parseInt(activeNoteData.value.notebookId || '') ?? 0,
                     activeNoteData.value.title,
                     activeNoteData.value.content,
                     []

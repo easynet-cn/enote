@@ -18,7 +18,7 @@
                                         <el-icon>
                                             <edit />
                                         </el-icon>
-                                        <span>添加</span>
+                                        <span>编辑</span>
                                     </el-dropdown-item>
                                     <el-dropdown-item v-if="editMode" command="save">
                                         <el-icon>
