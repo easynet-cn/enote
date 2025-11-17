@@ -99,6 +99,13 @@ export function useNotes() {
                     notebookId: String(note.notebookId),
                     title: note.title,
                     content: note.content,
+                    tags: note.tags.map(e => ({
+                        id: String(e.id),
+                        name: e.name,
+                        icon: e.icon,
+                        cls: e.cls,
+                        sortOrder: e.sortOrder,
+                    })),
                     createTime: note.createTime,
                     updateTime: note.updateTime,
                 }
@@ -352,6 +359,13 @@ export function useNotes() {
         try {
             const noteId = state.activeNote;
             let newNoteId = noteId;
+            let tags = activeNoteData.value.tags?.map(e => ({
+                id: Number.parseInt(e.id),
+                name: e.name,
+                icon: e.icon,
+                cls: e.cls,
+                sortOrder: e.sortOrder
+            })) ?? [];
 
             if (noteId.indexOf('-') < 0) {
                 await noteApi.updateNote(
@@ -359,14 +373,14 @@ export function useNotes() {
                     Number.parseInt(activeNoteData.value.notebookId || '') ?? 0,
                     activeNoteData.value.title,
                     activeNoteData.value.content,
-                    []
+                    tags,
                 )
             } else {
                 let newNote = await noteApi.createNote(
-                    Number.parseInt(state.activeNotebook),
+                    Number.parseInt(activeNoteData.value.notebookId || '') ?? 0,
                     activeNoteData.value.title,
                     activeNoteData.value.content,
-                    []
+                    tags,
                 )
 
                 newNoteId = String(newNote.id);

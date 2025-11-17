@@ -18,11 +18,6 @@
                 <div class="text-sm text-gray-500 mb-2 line-clamp-2" v-html="note.content"></div>
                 <div class="flex justify-between items-center text-xs text-gray-400">
                     <span>{{ note.updateTime }}</span>
-                    <div class="flex space-x-1">
-                        <span v-for="tag in note.tags" :key="tag.id" :class="tag.cls">
-                            ●
-                        </span>
-                    </div>
                 </div>
             </div>
         </el-scrollbar>

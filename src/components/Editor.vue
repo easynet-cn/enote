@@ -38,6 +38,12 @@
                                         </el-icon>
                                         <span>删除</span>
                                     </el-dropdown-item>
+                                    <el-dropdown-item v-if="editMode" command="setting">
+                                        <el-icon>
+                                            <setting />
+                                        </el-icon>
+                                        <span>设置</span>
+                                    </el-dropdown-item>
                                     <el-dropdown-item command="history">
                                         <el-icon>
                                             <icon-view />
@@ -64,13 +70,36 @@
             </el-row>
         </el-main>
     </el-container>
+    <el-dialog v-model="settingDialog" title="设置" width="500" align-center>
+        <el-form :model="settingForm" label-width="auto">
+            <el-form-item label="笔记本">
+                <el-select v-model="settingForm.notebookId" placeholder="请选择笔记本" clearable>
+                    <el-option v-for="notebook in notebooks" :key="notebook.id" :label="notebook.name"
+                        :value="notebook.id" />
+                </el-select>
+            </el-form-item>
+            <el-form-item label="标签">
+                <el-select v-model="settingForm.tagIds" placeholder="请选择标签" multiple clearable>
+                    <el-option v-for="tag in tags" :key="tag.id" :label="tag.name" :value="tag.id" />
+                </el-select>
+            </el-form-item>
+        </el-form>
+        <template #footer>
+            <div class="dialog-footer">
+                <el-button @click="settingDialog = false">取消</el-button>
+                <el-button type="primary" @click="handleSettingFormSubmit">
+                    保存
+                </el-button>
+            </div>
+        </template>
+    </el-dialog>
     <History v-model:visible="historyVisible" v-model:data="historyData" v-model:current-page="currentPage"
         v-model:page-size="pageSize" v-model:total="total" @open="$emit('open')" @size-change="handleSizeChange"
         @current-change="handleCurrentChange" />
 </template>
 
 <script setup lang="ts">
-import { watch, onBeforeUnmount, ref } from 'vue'
+import { watch, onBeforeUnmount, ref, reactive } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import TextAlign from '@tiptap/extension-text-align'
@@ -79,11 +108,13 @@ import Color from '@tiptap/extension-color'
 import Highlight from '@tiptap/extension-highlight'
 import Underline from '@tiptap/extension-underline'
 import TiptapToolbar from './TiptapToolbar.vue'
-import { Edit, Check, Close, Delete, Menu as IconMenu, View as IconView } from '@element-plus/icons-vue'
-import type { NoteHistory, ShowNote } from '../types'
+import { Edit, Check, Close, Delete, Menu as IconMenu, View as IconView, Setting } from '@element-plus/icons-vue'
+import type { NoteHistory, ShowNote, ShowNotebook, ShowTag } from '../types'
 import History from './History.vue'
 
 interface Props {
+    notebooks: ShowNotebook[]
+    tags: ShowTag[]
     activeNote: ShowNote | null
     editMode: boolean
 }
@@ -102,6 +133,17 @@ const emit = defineEmits<{
     open: []
 }>()
 
+interface Setting {
+    notebookId: string
+    tagIds: string[]
+}
+
+const settingForm = reactive<Setting>({
+    notebookId: '',
+    tagIds: [],
+})
+
+const settingDialog = ref(false)
 const historyData = defineModel<NoteHistory[]>("historyData");
 const currentPage = defineModel<number>("currentPage");
 const pageSize = defineModel<number>("pageSize");
@@ -129,10 +171,15 @@ const editor = useEditor({
     },
 })
 
+
+
 // 监听活动笔记变化
 watch(() => props.activeNote, (newNote) => {
     if (editor.value && newNote) {
         editor.value.commands.setContent(newNote.content)
+
+        settingForm.notebookId = props.activeNote?.notebookId ?? '';
+        settingForm.tagIds = props.activeNote?.tags?.map(t => t.id) ?? [];
     }
 })
 
@@ -165,6 +212,8 @@ const handleCommand = (command: string | number | object) => {
         emit('cancelEdit')
     } else if (command === 'delete') {
         emit('deleteNote')
+    } else if (command === 'setting') {
+        settingDialog.value = true
     } else if (command === 'history') {
         historyVisible.value = true
     }
@@ -176,6 +225,15 @@ const handleSizeChange = (val: number) => {
 
 const handleCurrentChange = (val: number) => {
     emit("currentChange", val);
+}
+
+const handleSettingFormSubmit = () => {
+    if (props.activeNote) {
+        props.activeNote.notebookId = settingForm.notebookId
+        props.activeNote.tags = props.tags.filter(t => settingForm.tagIds.includes(t.id))
+    }
+
+    settingDialog.value = false
 }
 
 </script>

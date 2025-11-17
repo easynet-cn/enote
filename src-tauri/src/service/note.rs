@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use chrono::Local;
 use sea_orm::{
@@ -11,7 +11,7 @@ use sea_orm::{
 };
 
 use crate::{
-    entity::{self, notebook},
+    entity::{self},
     model::{Note, NoteHistoryExtra, NotePageResult, NoteSearchPageParam, PageResult, Tag},
 };
 
@@ -258,7 +258,7 @@ pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
 
         let tag_ids = note.tags.iter().map(|e| e.id).collect::<Vec<i64>>();
 
-        let tags_changed: bool = old_tag_ids == tag_ids;
+        let tags_changed: bool = old_tag_ids != tag_ids;
 
         if tags_changed {
             if !old_tag_ids.is_empty() && note.tags.is_empty() {
@@ -273,7 +273,7 @@ pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
                     .tags
                     .iter()
                     .map(|e| entity::note_tags::ActiveModel {
-                        id: Set(0),
+                        id: NotSet,
                         note_id: Set(note.id),
                         tag_id: Set(e.id),
                         sort_order: Set(e.sort_order),
@@ -395,7 +395,7 @@ pub async fn search_page(
 
         let start = search_param.page_param.start() as u64;
         let page_size = search_param.page_param.page_size as u64;
-        let notebooks: Vec<Note> = query_builder
+        let mut notes: Vec<Note> = query_builder
             .offset(start)
             .limit(page_size)
             .order_by_desc(entity::note::Column::UpdateTime)
@@ -406,7 +406,52 @@ pub async fn search_page(
             .map(Note::from)
             .collect();
 
-        let mut page_result = PageResult::<Note>::with_data(total, notebooks);
+        let note_ids = notes.iter().map(|e| e.id).collect::<Vec<i64>>();
+
+        if !note_ids.is_empty() {
+            let note_tags = entity::note_tags::Entity::find()
+                .filter(entity::note_tags::Column::NoteId.is_in(note_ids))
+                .order_by_asc(entity::note_tags::Column::SortOrder)
+                .order_by_asc(entity::note_tags::Column::Id)
+                .all(db)
+                .await?;
+
+            if !note_tags.is_empty() {
+                let mut note_tags_map = HashMap::<i64, Vec<i64>>::new();
+
+                for note_tag in note_tags.iter() {
+                    note_tags_map
+                        .entry(note_tag.note_id)
+                        .or_default()
+                        .push(note_tag.tag_id);
+                }
+
+                let tag_ids = note_tags.iter().map(|e| e.tag_id).collect::<HashSet<i64>>();
+                let tag_map = entity::tag::Entity::find()
+                    .filter(entity::tag::Column::Id.is_in(tag_ids))
+                    .all(db)
+                    .await?
+                    .iter()
+                    .map(|e| (e.id, Tag::from(e)))
+                    .collect::<HashMap<i64, Tag>>();
+
+                for note in notes.iter_mut() {
+                    if let Some(tag_ids) = note_tags_map.get(&note.id) {
+                        let mut tags = Vec::<Tag>::new();
+
+                        for tag_id in tag_ids.iter() {
+                            if let Some(tag) = tag_map.get(tag_id) {
+                                tags.push(tag.clone());
+                            }
+                        }
+
+                        note.tags = tags;
+                    }
+                }
+            }
+        }
+
+        let mut page_result = PageResult::<Note>::with_data(total, notes);
 
         page_result.total_pages(search_param.page_param.page_size);
 

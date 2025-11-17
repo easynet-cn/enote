@@ -12,10 +12,10 @@
 
     <!-- 编辑器组件 -->
     <Editor v-model:history-data="histories" v-model:current-page="state.historyPageIndex"
-      v-model:page-size="state.historyPageSize" v-model:total="state.historyTotal" :active-note="activeNoteData"
-      :edit-mode="state.editMode" @save-note="saveNote" @cancel-edit="cancelEdit" @delete-note="deleteNote"
-      @toggle-edit-mode="state.editMode = !state.editMode" @update-note-title="updateNoteTitle"
-      @update-note-content="updateNoteContent" @open="openHistoryDialog" />
+      v-model:page-size="state.historyPageSize" v-model:total="state.historyTotal" :notebooks="notebooks" :tags="tags"
+      :active-note="activeNoteData" :edit-mode="state.editMode" @save-note="saveNote" @cancel-edit="cancelEdit"
+      @delete-note="deleteNote" @toggle-edit-mode="state.editMode = !state.editMode"
+      @update-note-title="updateNoteTitle" @update-note-content="updateNoteContent" @open="openHistoryDialog" />
   </el-container>
 </template>
 
