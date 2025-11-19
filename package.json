@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
+    "format": "prettier --write src/",
     "tauri": "tauri"
   },
   "dependencies": {
@@ -53,6 +54,13 @@
     "@tailwindcss/vite": "^4.1.17",
     "@tauri-apps/cli": "^2.9.4",
     "@vitejs/plugin-vue": "^6.0.2",
+    "@vue/eslint-config-prettier": "^10.2.0",
+    "@vue/eslint-config-typescript": "^14.6.0",
+    "@vue/test-utils": "^2.4.6",
+    "@vue/tsconfig": "^0.8.1",
+    "eslint": "^9.39.1",
+    "eslint-plugin-vue": "^10.5.1",
+    "prettier": "^3.6.2",
     "tailwindcss": "^4.1.17",
     "typescript": "~5.9.3",
     "vite": "^7.2.2",
