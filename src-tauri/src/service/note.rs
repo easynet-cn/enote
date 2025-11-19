@@ -243,8 +243,9 @@ pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
 
         let mut active_model: entity::note::ActiveModel = entity.into_active_model();
 
-        active_model.title = Set(note.title.clone());
-        active_model.content = Set(note.content.clone());
+        active_model.notebook_id.set_if_not_equals(note.notebook_id);
+        active_model.title.set_if_not_equals(note.title.clone());
+        active_model.content.set_if_not_equals(note.content.clone());
 
         let now = Local::now().naive_local();
 
@@ -288,7 +289,7 @@ pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
             }
         }
 
-        if note_changed && tags_changed {
+        if note_changed || tags_changed {
             let mut notebook_id = 0_i64;
             let mut notebook_name = String::default();
 

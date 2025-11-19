@@ -60,11 +60,15 @@ pub async fn update(
         let mut m = notebook.clone();
         let mut active_model: entity::notebook::ActiveModel = entity.into_active_model();
 
-        active_model.name = Set(notebook.name.clone());
-        active_model.description = Set(notebook.description.clone());
-        active_model.icon = Set(notebook.icon.clone());
-        active_model.cls = Set(notebook.cls.clone());
-        active_model.sort_order = Set(notebook.sort_order);
+        active_model.name.set_if_not_equals(notebook.name.clone());
+        active_model
+            .description
+            .set_if_not_equals(notebook.description.clone());
+        active_model.icon.set_if_not_equals(notebook.icon.clone());
+        active_model.cls.set_if_not_equals(notebook.cls.clone());
+        active_model
+            .sort_order
+            .set_if_not_equals(notebook.sort_order);
 
         if active_model.is_changed() {
             let now = Local::now().naive_local();

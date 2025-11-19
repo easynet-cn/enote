@@ -74,7 +74,7 @@ const showData = computed(() => {
             notebookId: item.extra.notebookId,
             notebookName: item.extra.notebookName,
             title: item.extra.title,
-            tags: item.extra.tags.join(' '),
+            tags: item.extra.tags.map(t => t.name).join(' '),
             oldContent: item.oldContent,
             newContent: item.newContent,
             operateType: item.operateType === 1 ? '添加' : item.operateType === 2 ? '修改' : item.operateType === 3 ? '删除' : '',

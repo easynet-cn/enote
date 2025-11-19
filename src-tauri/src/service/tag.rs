@@ -48,10 +48,10 @@ pub async fn update(db: &DatabaseConnection, tag: &Tag) -> anyhow::Result<Option
         let mut m = tag.clone();
         let mut active_model: entity::tag::ActiveModel = entity.into_active_model();
 
-        active_model.name = Set(tag.name.clone());
-        active_model.icon = Set(tag.icon.clone());
-        active_model.cls = Set(tag.cls.clone());
-        active_model.sort_order = Set(tag.sort_order);
+        active_model.name.set_if_not_equals(tag.name.clone());
+        active_model.icon.set_if_not_equals(tag.icon.clone());
+        active_model.cls.set_if_not_equals(tag.cls.clone());
+        active_model.sort_order.set_if_not_equals(tag.sort_order);
 
         if active_model.is_changed() {
             let now = Local::now().naive_local();
