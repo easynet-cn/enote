@@ -7,7 +7,7 @@ import { noteApi } from '../api/note';
 const notebooks = ref<ShowNotebook[]>([
     { id: '0', name: '全部', count: 0, icon: '📒' },
 ]);
-const tags = ref<ShowTag[]>([]);
+const tags = ref<ShowTag[]>([{ id: '0', name: '全部', cls: 'text-gray-500' },]);
 const notes = ref<ShowNote[]>([]);
 const query = ref<string>('');
 const histories = ref<NoteHistory[]>([]);
@@ -153,7 +153,7 @@ export function useNotes() {
                 }
             ));
 
-            tags.value = data;
+            tags.value = [...[tags.value[0]], ...data];
         } catch (error) {
             ElNotification({
                 title: '',
@@ -321,13 +321,17 @@ export function useNotes() {
     const setActiveNotebook = async (notebookId: string) => {
         state.activeNotebook = notebookId;
         state.activeNote = null;
-        state.noteSearchPageParam.notebookId = Number.parseInt(notebookId);
+        state.noteSearchPageParam.notebookId = Number.parseInt(notebookId) ?? 0;
 
         notes.value = await searchNotes();
     };
 
     const setActiveTag = async (tagId: string) => {
         state.activeTag = tagId;
+        state.activeNote = null;
+        state.noteSearchPageParam.tagId = Number.parseInt(tagId) ?? 0;
+
+        notes.value = await searchNotes();
     };
 
     const setActiveNote = (noteId: string) => {
@@ -567,11 +571,11 @@ export function useNotes() {
         try {
             await getNotebooks();
 
-            if (notebooks.value.length > 0) {
-                await setActiveNotebook(notebooks.value[0].id)
-            }
+            await setActiveNotebook(notebooks.value[0].id)
 
             await getTags();
+
+            await setActiveTag(tags.value[0].id)
 
             notes.value = await searchNotes();
 

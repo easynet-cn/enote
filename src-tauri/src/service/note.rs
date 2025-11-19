@@ -7,7 +7,7 @@ use sea_orm::{
     ColumnTrait, Condition, DatabaseConnection, EntityTrait, IntoActiveModel, QueryFilter,
     QueryOrder, QuerySelect, TransactionTrait,
     prelude::Expr,
-    sea_query::Asterisk,
+    sea_query::{Asterisk, Query},
 };
 
 use crate::{
@@ -350,6 +350,21 @@ pub async fn search_page(
             query_builder.filter(entity::note::Column::NotebookId.eq(search_param.notebook_id));
         count_map_builder =
             count_map_builder.filter(entity::note::Column::NotebookId.eq(search_param.notebook_id));
+    }
+    if search_param.tag_id > 0 {
+        let sub_query = Query::select()
+            .column(entity::note_tags::Column::NoteId)
+            .distinct()
+            .and_where(Expr::col(entity::note_tags::Column::TagId).eq(search_param.tag_id))
+            .from(entity::note_tags::Entity)
+            .to_owned();
+
+        count_builder = count_builder
+            .filter(Condition::any().add(entity::note::Column::Id.in_subquery(sub_query.clone())));
+        query_builder = query_builder
+            .filter(Condition::any().add(entity::note::Column::Id.in_subquery(sub_query.clone())));
+        count_map_builder = count_map_builder
+            .filter(Condition::any().add(entity::note::Column::Id.in_subquery(sub_query.clone())));
     }
     if !search_param.keyword.is_empty() {
         let keyword = search_param.keyword.as_str();
