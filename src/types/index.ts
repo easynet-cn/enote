@@ -107,6 +107,9 @@ export interface NoteHistorySearchPageParam {
 }
 
 export interface AppState {
+    notePageIndex: number;
+    notePageSize: number;
+    noteTotal: number;
     activeNotebook: string;
     activeTag: string;
     activeNote: string | null;

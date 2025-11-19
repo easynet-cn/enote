@@ -14,6 +14,9 @@ const histories = ref<NoteHistory[]>([]);
 
 // 状态管理
 const state = reactive<AppState>({
+    notePageIndex: 1,
+    notePageSize: 10,
+    noteTotal: 0,
     activeNotebook: '',
     activeTag: '',
     activeNote: null,
@@ -73,7 +76,12 @@ export function useNotes() {
         })
 
         try {
+            state.noteSearchPageParam.pageIndex = state.notePageIndex;
+            state.noteSearchPageParam.pageSize = state.notePageSize;
+
             const pageResult: NotePageResult = await noteApi.searchPageNotes(state.noteSearchPageParam);
+
+            state.noteTotal = pageResult.total;
 
             let countMap = new Map<number, number>();
             let totalCount = 0;
@@ -488,7 +496,19 @@ export function useNotes() {
         notes.value = await searchNotes();
     }
 
-    const openHistoryDialog = async () => {
+    const handleNoteSizeChange = async (pageSize: number) => {
+        state.notePageSize = pageSize;
+
+        notes.value = await searchNotes();
+    }
+
+    const handleNoteCurrentChange = async (pageIndex: number) => {
+        state.notePageIndex = pageIndex;
+
+        notes.value = await searchNotes();
+    }
+
+    const searchNoteHistories = async () => {
         const notification = ElNotification({
             title: '',
             message: '正在加载历史记录',
@@ -517,6 +537,21 @@ export function useNotes() {
         }
     }
 
+    const openHistoryDialog = async () => {
+        await searchNoteHistories();
+    }
+
+    const handleNoteHistorySizeChange = async (pageSize: number) => {
+        state.historyPageSize = pageSize;
+
+        await searchNoteHistories();
+    }
+
+    const handleNoteHistoryCurrentChange = async (pageIndex: number) => {
+        state.historyPageIndex = pageIndex;
+
+        await searchNoteHistories();
+    }
     // 初始化
     const initialize = async () => {
         state.loading = true;
@@ -580,6 +615,10 @@ export function useNotes() {
         updateNoteContent,
         getTagById,
         handleUpdateSearchQuery,
+        handleNoteSizeChange,
+        handleNoteCurrentChange,
         openHistoryDialog,
+        handleNoteHistorySizeChange,
+        handleNoteHistoryCurrentChange,
     };
 }

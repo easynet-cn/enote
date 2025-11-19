@@ -10,7 +10,6 @@
             <el-input v-model="query" placeholder="搜索笔记..." :prefix-icon="Search" clearable
                 @keyup.enter="$emit('updateSearchQuery')" />
         </div>
-
         <el-scrollbar>
             <div v-for="note in notes" :key="note.id" class="note-item" :class="{ active: activeNote === note.id }"
                 @click="$emit('setActiveNote', note.id)">
@@ -21,6 +20,11 @@
                 </div>
             </div>
         </el-scrollbar>
+        <el-affix position="bottom" :offset="40">
+            <el-pagination class="flex justify-center items-center" layout="prev, pager, next"
+                v-model:current-page="currentPage" v-model:page-size="pageSize" :total="total"
+                @size-change="handleSizeChange" @current-change="handleCurrentChange" />
+        </el-affix>
     </el-aside>
 </template>
 
@@ -40,8 +44,13 @@ interface Props {
 const props = defineProps<Props>()
 
 const query = defineModel<string>("query");
+const currentPage = defineModel<number>("currentPage");
+const pageSize = defineModel<number>("pageSize");
+const total = defineModel<number>("total");
 
-defineEmits<{
+const emit = defineEmits<{
+    sizeChange: [pageSize: number]
+    currentChange: [currentPage: number]
     setActiveNote: [id: string]
     updateSearchQuery: []
 }>()
@@ -51,5 +60,13 @@ const activeNotebookName = computed(() => {
 
     return notebook ? notebook.name : ''
 })
+
+const handleSizeChange = (val: number) => {
+    emit("sizeChange", val);
+}
+
+const handleCurrentChange = (val: number) => {
+    emit("currentChange", val);
+}
 
 </script>
