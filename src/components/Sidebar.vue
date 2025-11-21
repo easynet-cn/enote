@@ -291,7 +291,9 @@ const showNotebookEditAndDelete = computed(() => {
   );
 });
 const showTagEditAndDelete = computed(() => {
-  return props.tags.length > 0 && props.activeTag !== "";
+  return (
+    props.tags.length > 0 && props.activeTag !== "" && props.activeTag !== "0"
+  );
 });
 
 const submitNotebookForm = async (form: FormInstance | undefined) => {
