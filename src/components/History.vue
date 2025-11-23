@@ -1,10 +1,5 @@
 <template>
-  <el-dialog
-    v-model="visible"
-    title="历史记录"
-    fullscreen
-    @open="$emit('open')"
-  >
+  <el-dialog v-model="visible" title="历史记录" fullscreen @open="$emit('open')">
     <div class="h-[88vh] overflow-hidden flex flex-col">
       <el-table :data="showData" empty-text="没有数据">
         <el-table-column prop="id" label="ID" width="60" />
@@ -15,13 +10,7 @@
         <el-table-column prop="operateTime" label="操作时间" width="170" />
         <el-table-column label="操作" width="80" fixed="right">
           <template #default="scope">
-            <el-button
-              type="primary"
-              size="small"
-              @click="handleView(scope.row)"
-            >
-              查看
-            </el-button>
+            <el-button type="primary" size="small" @click="handleView(scope.row)"> 查看 </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -43,12 +32,7 @@
   </el-dialog>
 
   <!-- 内容查看对话框 -->
-  <el-dialog
-    v-model="viewVisible"
-    title="内容查看"
-    width="90%"
-    :fullscreen="false"
-  >
+  <el-dialog v-model="viewVisible" title="内容查看" width="90%" :fullscreen="false">
     <div class="h-[70vh] overflow-hidden flex">
       <!-- 旧内容区域 -->
       <div class="flex-1 border-r border-gray-200 pr-4">
@@ -79,20 +63,20 @@
   </el-dialog>
 </template>
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { NoteHistory } from "../types";
-import TipTapEditor from "./TipTapEditor.vue";
+import { computed, ref } from 'vue'
+import { NoteHistory } from '../types'
+import TipTapEditor from './TipTapEditor.vue'
 
-const visible = defineModel<boolean>("visible");
-const data = defineModel<NoteHistory[]>("data");
-const currentPage = defineModel<number>("currentPage");
-const pageSize = defineModel<number>("pageSize");
-const total = defineModel<number>("total");
+const visible = defineModel<boolean>('visible')
+const data = defineModel<NoteHistory[]>('data')
+const currentPage = defineModel<number>('currentPage')
+const pageSize = defineModel<number>('pageSize')
+const total = defineModel<number>('total')
 
 // 查看对话框相关状态
-const viewVisible = ref(false);
-const viewOldContent = ref("");
-const viewNewContent = ref("");
+const viewVisible = ref(false)
+const viewOldContent = ref('')
+const viewNewContent = ref('')
 
 const showData = computed(() => {
   return data.value?.map((item) => {
@@ -101,43 +85,43 @@ const showData = computed(() => {
       notebookId: item.extra.notebookId,
       notebookName: item.extra.notebookName,
       title: item.extra.title,
-      tags: item.extra.tags.map((t) => t.name).join(" "),
+      tags: item.extra.tags.map((t) => t.name).join(' '),
       oldContent: item.oldContent,
       newContent: item.newContent,
       operateType:
         item.operateType === 1
-          ? "添加"
+          ? '添加'
           : item.operateType === 2
-            ? "修改"
+            ? '修改'
             : item.operateType === 3
-              ? "删除"
-              : "",
+              ? '删除'
+              : '',
       operateTime: item.operateTime,
-    };
-  });
-});
+    }
+  })
+})
 
 const emit = defineEmits<{
-  sizeChange: [pageSize: number];
-  currentChange: [currentPage: number];
-  open: [];
-}>();
+  sizeChange: [pageSize: number]
+  currentChange: [currentPage: number]
+  open: []
+}>()
 
 const handleSizeChange = (val: number) => {
-  emit("sizeChange", val);
-};
+  emit('sizeChange', val)
+}
 
 const handleCurrentChange = (val: number) => {
-  emit("currentChange", val);
-};
+  emit('currentChange', val)
+}
 
 const handleView = (row: NoteHistory) => {
-  const oldContent = row.oldContent || "";
-  const newContent = row.newContent || "";
+  const oldContent = row.oldContent || ''
+  const newContent = row.newContent || ''
 
   // 直接使用原始HTML内容，TipTap编辑器会处理显示
-  viewOldContent.value = oldContent;
-  viewNewContent.value = newContent;
-  viewVisible.value = true;
-};
+  viewOldContent.value = oldContent
+  viewNewContent.value = newContent
+  viewVisible.value = true
+}
 </script>

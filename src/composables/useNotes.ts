@@ -1,5 +1,5 @@
-import { ref, reactive, computed, onBeforeMount } from "vue";
-import { useDateFormat, useNow } from "@vueuse/core";
+import { ref, reactive, computed, onBeforeMount } from 'vue'
+import { useDateFormat, useNow } from '@vueuse/core'
 import type {
   AppState,
   ShowNotebook,
@@ -7,49 +7,47 @@ import type {
   ShowNote,
   NotePageResult,
   NoteHistory,
-} from "../types";
-import { ElNotification } from "element-plus";
-import { noteApi } from "../api/note";
+} from '../types'
+import { ElNotification } from 'element-plus'
+import { noteApi } from '../api/note'
 
-const notebooks = ref<ShowNotebook[]>([
-  { id: "0", name: "全部", count: 0, icon: "📒" },
-]);
-const tags = ref<ShowTag[]>([{ id: "0", name: "全部", cls: "text-gray-500" }]);
-const notes = ref<ShowNote[]>([]);
-const query = ref<string>("");
-const histories = ref<NoteHistory[]>([]);
+const notebooks = ref<ShowNotebook[]>([{ id: '0', name: '全部', count: 0, icon: '📒' }])
+const tags = ref<ShowTag[]>([{ id: '0', name: '全部', cls: 'text-gray-500' }])
+const notes = ref<ShowNote[]>([])
+const query = ref<string>('')
+const histories = ref<NoteHistory[]>([])
 
 // 状态管理
 const state = reactive<AppState>({
   notePageIndex: 1,
   notePageSize: 10,
   noteTotal: 0,
-  activeNotebook: "",
-  activeTag: "",
+  activeNotebook: '',
+  activeTag: '',
   activeNote: null,
   noteSearchPageParam: {
     pageIndex: 1,
     pageSize: 50,
     notebookId: 0,
     tagId: 0,
-    keyword: "",
+    keyword: '',
   },
   editMode: false,
   loading: false,
   historyPageIndex: 1,
   historyPageSize: 50,
   historyTotal: 0,
-});
+})
 
 export function useNotes() {
   // 获取笔记本
   const getNotebooks = async () => {
     const notification = ElNotification({
-      title: "",
-      message: "正在加载笔记本",
-      type: "success",
+      title: '',
+      message: '正在加载笔记本',
+      type: 'success',
       duration: 0,
-    });
+    })
 
     try {
       const data = (await noteApi.getNotebooks()).map(
@@ -64,57 +62,55 @@ export function useNotes() {
           createTime: notebook.createTime,
           updateTime: notebook.updateTime,
         }),
-      );
+      )
 
-      notebooks.value = [...[notebooks.value[0]], ...data];
+      notebooks.value = [...[notebooks.value[0]], ...data]
     } catch (error) {
       ElNotification({
-        title: "",
+        title: '',
         message: String(error),
-        type: "error",
+        type: 'error',
         duration: 0,
-      });
+      })
     } finally {
-      notification.close();
+      notification.close()
     }
-  };
+  }
 
   // 获取笔记
   const searchNotes = async () => {
     const notification = ElNotification({
-      title: "",
-      message: "正在加载笔记",
-      type: "success",
+      title: '',
+      message: '正在加载笔记',
+      type: 'success',
       duration: 0,
-    });
+    })
 
     try {
-      state.noteSearchPageParam.pageIndex = state.notePageIndex;
-      state.noteSearchPageParam.pageSize = state.notePageSize;
+      state.noteSearchPageParam.pageIndex = state.notePageIndex
+      state.noteSearchPageParam.pageSize = state.notePageSize
 
-      const pageResult: NotePageResult = await noteApi.searchPageNotes(
-        state.noteSearchPageParam,
-      );
+      const pageResult: NotePageResult = await noteApi.searchPageNotes(state.noteSearchPageParam)
 
-      state.noteTotal = pageResult.total;
+      state.noteTotal = pageResult.total
 
-      let countMap = new Map<number, number>();
-      let totalCount = 0;
+      let countMap = new Map<number, number>()
+      let totalCount = 0
 
       Object.entries(pageResult.notebookCounts).forEach(([k, v]) => {
-        countMap.set(Number.parseInt(k) ?? 0, v);
-        totalCount += v;
-      });
+        countMap.set(Number.parseInt(k) ?? 0, v)
+        totalCount += v
+      })
 
       notebooks.value.forEach((e) => {
-        if (e.id == "0") {
-          e.count = totalCount;
+        if (e.id == '0') {
+          e.count = totalCount
         } else {
-          const id = Number.parseInt(e.id) ?? 0;
+          const id = Number.parseInt(e.id) ?? 0
 
-          e.count = countMap.get(id) || 0;
+          e.count = countMap.get(id) || 0
         }
-      });
+      })
 
       return pageResult.data.map(
         (note): ShowNote => ({
@@ -132,29 +128,29 @@ export function useNotes() {
           createTime: note.createTime,
           updateTime: note.updateTime,
         }),
-      );
+      )
     } catch (error) {
       ElNotification({
-        title: "",
+        title: '',
         message: String(error),
-        type: "error",
+        type: 'error',
         duration: 0,
-      });
+      })
     } finally {
-      notification.close();
+      notification.close()
     }
 
-    return new Array();
-  };
+    return new Array()
+  }
 
   // 获取标签
   const getTags = async () => {
     const notification = ElNotification({
-      title: "",
-      message: "正在加载标签",
-      type: "success",
+      title: '',
+      message: '正在加载标签',
+      type: 'success',
       duration: 0,
-    });
+    })
 
     try {
       const data = (await noteApi.geTags()).map(
@@ -163,234 +159,232 @@ export function useNotes() {
           name: tag.name,
           icon: tag.icon,
           cls: tag.cls,
-          createTime: tag.createTime ?? "",
-          updateTime: tag.updateTime ?? "",
+          createTime: tag.createTime ?? '',
+          updateTime: tag.updateTime ?? '',
         }),
-      );
+      )
 
-      tags.value = [...[tags.value[0]], ...data];
+      tags.value = [...[tags.value[0]], ...data]
     } catch (error) {
       ElNotification({
-        title: "",
+        title: '',
         message: String(error),
-        type: "error",
+        type: 'error',
         duration: 0,
-      });
+      })
     } finally {
-      notification.close();
+      notification.close()
     }
-  };
+  }
 
   const activeNoteData = computed(() => {
-    return notes.value.find((note) => note.id === state.activeNote) || null;
-  });
+    return notes.value.find((note) => note.id === state.activeNote) || null
+  })
 
   // 方法
   const saveNotebook = async (showNotebook: ShowNotebook) => {
     const notification = ElNotification({
-      title: "",
-      message: "正在保存笔记本",
-      type: "success",
+      title: '',
+      message: '正在保存笔记本',
+      type: 'success',
       duration: 0,
-    });
+    })
 
     try {
       const id =
-        !showNotebook.id ||
-        showNotebook.id.trim() === "" ||
-        showNotebook.id === "0"
+        !showNotebook.id || showNotebook.id.trim() === '' || showNotebook.id === '0'
           ? 0
-          : (Number.parseInt(showNotebook.id) ?? 0);
+          : (Number.parseInt(showNotebook.id) ?? 0)
 
       if (id == 0) {
         await noteApi.createNotebook({
           id: 0,
           parentId: showNotebook.parentId,
-          name: showNotebook.name ?? "",
+          name: showNotebook.name ?? '',
           description: showNotebook.description,
           icon: showNotebook.icon,
           cls: showNotebook.cls,
-        });
+        })
       } else {
         await noteApi.updateNotebook({
           id: id,
           parentId: showNotebook.parentId,
-          name: showNotebook.name ?? "",
+          name: showNotebook.name ?? '',
           description: showNotebook.description,
           icon: showNotebook.icon,
           cls: showNotebook.cls,
-        });
+        })
       }
 
-      await getNotebooks();
-      await searchNotes();
+      await getNotebooks()
+      await searchNotes()
     } catch (error) {
       ElNotification({
-        title: "",
+        title: '',
         message: String(error),
-        type: "error",
+        type: 'error',
         duration: 0,
-      });
+      })
     } finally {
-      notification.close();
+      notification.close()
     }
-  };
+  }
 
   const deleteNotebook = async (id: string) => {
     const notification = ElNotification({
-      title: "",
-      message: "正在删除笔记本",
-      type: "success",
+      title: '',
+      message: '正在删除笔记本',
+      type: 'success',
       duration: 0,
-    });
+    })
 
     try {
-      const notebookId = Number.parseInt(id) ?? 0;
+      const notebookId = Number.parseInt(id) ?? 0
 
       if (notebookId > 0) {
-        await noteApi.deleteNotebook(notebookId);
+        await noteApi.deleteNotebook(notebookId)
 
-        await getNotebooks();
-        await searchNotes();
+        await getNotebooks()
+        await searchNotes()
       }
     } catch (error) {
       ElNotification({
-        title: "",
+        title: '',
         message: String(error),
-        type: "error",
+        type: 'error',
         duration: 0,
-      });
+      })
     } finally {
-      notification.close();
+      notification.close()
     }
-  };
+  }
 
   const saveTag = async (showTag: ShowTag) => {
     const notification = ElNotification({
-      title: "",
-      message: "正在保存标签",
-      type: "success",
+      title: '',
+      message: '正在保存标签',
+      type: 'success',
       duration: 0,
-    });
+    })
     try {
       const id =
-        !showTag.id || showTag.id.trim().length == 0 || showTag.id === "0"
+        !showTag.id || showTag.id.trim().length == 0 || showTag.id === '0'
           ? 0
-          : (Number.parseInt(showTag.id) ?? 0);
+          : (Number.parseInt(showTag.id) ?? 0)
 
       if (id == 0) {
         await noteApi.createTag({
           id: 0,
-          name: showTag.name ?? "",
+          name: showTag.name ?? '',
           icon: showTag.icon,
           cls: showTag.cls,
-        });
+        })
       } else {
         await noteApi.updateTag({
           id: id,
-          name: showTag.name ?? "",
+          name: showTag.name ?? '',
           icon: showTag.icon,
           cls: showTag.cls,
-        });
+        })
       }
 
-      await getNotebooks();
-      await getTags();
-      await searchNotes();
+      await getNotebooks()
+      await getTags()
+      await searchNotes()
     } catch (error) {
       ElNotification({
-        title: "",
+        title: '',
         message: String(error),
-        type: "error",
+        type: 'error',
         duration: 0,
-      });
+      })
     } finally {
-      notification.close();
+      notification.close()
     }
-  };
+  }
 
   const deleteTag = async (id: string) => {
     const notification = ElNotification({
-      title: "",
-      message: "正在删除标签",
-      type: "success",
+      title: '',
+      message: '正在删除标签',
+      type: 'success',
       duration: 0,
-    });
+    })
 
     try {
-      const tagId = Number.parseInt(id) ?? 0;
+      const tagId = Number.parseInt(id) ?? 0
 
       if (tagId > 0) {
-        await noteApi.deleteTag(tagId);
+        await noteApi.deleteTag(tagId)
 
-        await getNotebooks();
-        await searchNotes();
+        await getNotebooks()
+        await searchNotes()
       }
     } catch (error) {
       ElNotification({
-        title: "",
+        title: '',
         message: String(error),
-        type: "error",
+        type: 'error',
         duration: 0,
-      });
+      })
     } finally {
-      notification.close();
+      notification.close()
     }
-  };
+  }
 
   const setActiveNotebook = async (notebookId: string) => {
-    state.activeNotebook = notebookId;
-    state.activeNote = null;
-    state.noteSearchPageParam.notebookId = Number.parseInt(notebookId) ?? 0;
+    state.activeNotebook = notebookId
+    state.activeNote = null
+    state.noteSearchPageParam.notebookId = Number.parseInt(notebookId) ?? 0
 
-    notes.value = await searchNotes();
-  };
+    notes.value = await searchNotes()
+  }
 
   const setActiveTag = async (tagId: string) => {
-    state.activeTag = tagId;
-    state.activeNote = null;
-    state.noteSearchPageParam.tagId = Number.parseInt(tagId) ?? 0;
+    state.activeTag = tagId
+    state.activeNote = null
+    state.noteSearchPageParam.tagId = Number.parseInt(tagId) ?? 0
 
-    notes.value = await searchNotes();
-  };
+    notes.value = await searchNotes()
+  }
 
   const setActiveNote = (noteId: string) => {
-    state.activeNote = noteId;
-    state.editMode = false;
-  };
+    state.activeNote = noteId
+    state.editMode = false
+  }
 
   const createNewNote = () => {
-    const now = useNow();
-    const nowStr = useDateFormat(now, "YYYY-MM-DD HH:mm:ss").value;
+    const now = useNow()
+    const nowStr = useDateFormat(now, 'YYYY-MM-DD HH:mm:ss').value
 
     const newNote: ShowNote = {
-      id: 0 + "-" + now.value.getTime(),
+      id: 0 + '-' + now.value.getTime(),
       notebookId: state.activeNotebook,
-      title: "",
-      content: "",
+      title: '',
+      content: '',
       tags: [],
       createTime: nowStr,
       updateTime: nowStr,
-    };
+    }
 
-    notes.value.unshift(newNote);
-    state.activeNote = newNote.id;
-    state.editMode = true;
-  };
+    notes.value.unshift(newNote)
+    state.activeNote = newNote.id
+    state.editMode = true
+  }
 
   const saveNote = async () => {
-    if (!state.activeNote || !activeNoteData.value) return;
+    if (!state.activeNote || !activeNoteData.value) return
 
     const notification = ElNotification({
-      title: "",
-      message: "正在保存笔记",
-      type: "success",
+      title: '',
+      message: '正在保存笔记',
+      type: 'success',
       duration: 0,
-    });
+    })
 
     try {
-      const noteId = state.activeNote;
-      let newNoteId = noteId;
+      const noteId = state.activeNote
+      let newNoteId = noteId
       let tags =
         activeNoteData.value.tags?.map((e) => ({
           id: Number.parseInt(e.id),
@@ -398,229 +392,221 @@ export function useNotes() {
           icon: e.icon,
           cls: e.cls,
           sortOrder: e.sortOrder,
-        })) ?? [];
+        })) ?? []
 
-      if (noteId.indexOf("-") < 0) {
+      if (noteId.indexOf('-') < 0) {
         await noteApi.updateNote(
           Number.parseInt(noteId),
-          Number.parseInt(activeNoteData.value.notebookId || "") ?? 0,
+          Number.parseInt(activeNoteData.value.notebookId || '') ?? 0,
           activeNoteData.value.title,
           activeNoteData.value.content,
           tags,
-        );
+        )
       } else {
         let newNote = await noteApi.createNote(
-          Number.parseInt(activeNoteData.value.notebookId || "") ?? 0,
+          Number.parseInt(activeNoteData.value.notebookId || '') ?? 0,
           activeNoteData.value.title,
           activeNoteData.value.content,
           tags,
-        );
+        )
 
-        newNoteId = String(newNote.id);
+        newNoteId = String(newNote.id)
       }
 
-      notes.value = await searchNotes();
+      notes.value = await searchNotes()
 
-      setActiveNote(newNoteId);
+      setActiveNote(newNoteId)
     } catch (error) {
       ElNotification({
-        title: "",
+        title: '',
         message: String(error),
-        type: "error",
+        type: 'error',
         duration: 0,
-      });
+      })
     } finally {
-      notification.close();
+      notification.close()
     }
-  };
+  }
 
   const cancelEdit = async () => {
-    state.editMode = false;
+    state.editMode = false
 
-    if (!state.activeNote) return;
+    if (!state.activeNote) return
 
-    const noteId = state.activeNote;
+    const noteId = state.activeNote
 
-    if (noteId.indexOf("-") > -1) {
-      const noteIndex = notes.value.findIndex(
-        (note) => note.id === state.activeNote,
-      );
+    if (noteId.indexOf('-') > -1) {
+      const noteIndex = notes.value.findIndex((note) => note.id === state.activeNote)
 
       if (noteIndex !== -1) {
-        notes.value.splice(noteIndex, 1);
-        state.activeNote = null;
+        notes.value.splice(noteIndex, 1)
+        state.activeNote = null
       }
     }
-  };
+  }
 
   const deleteNote = async () => {
-    if (!state.activeNote) return;
+    if (!state.activeNote) return
 
-    const noteId = state.activeNote;
+    const noteId = state.activeNote
 
-    if (noteId.indexOf("-") > -1) {
-      const noteIndex = notes.value.findIndex(
-        (note) => note.id === state.activeNote,
-      );
+    if (noteId.indexOf('-') > -1) {
+      const noteIndex = notes.value.findIndex((note) => note.id === state.activeNote)
 
       if (noteIndex !== -1) {
-        notes.value.splice(noteIndex, 1);
-        state.activeNote = null;
+        notes.value.splice(noteIndex, 1)
+        state.activeNote = null
       }
     } else {
       const notification = ElNotification({
-        title: "",
-        message: "正在删除笔记",
-        type: "success",
+        title: '',
+        message: '正在删除笔记',
+        type: 'success',
         duration: 0,
-      });
+      })
 
       try {
-        await noteApi.deleteNote(Number.parseInt(noteId));
+        await noteApi.deleteNote(Number.parseInt(noteId))
 
-        state.noteSearchPageParam.pageIndex = 1;
+        state.noteSearchPageParam.pageIndex = 1
       } catch (error) {
         ElNotification({
-          title: "",
+          title: '',
           message: String(error),
-          type: "error",
+          type: 'error',
           duration: 0,
-        });
+        })
       } finally {
-        notification.close();
+        notification.close()
       }
 
-      notes.value = await searchNotes();
+      notes.value = await searchNotes()
     }
-  };
+  }
 
   const updateNoteTitle = (title: string) => {
-    if (!state.activeNote) return;
+    if (!state.activeNote) return
 
-    const noteIndex = notes.value.findIndex(
-      (note) => note.id === state.activeNote,
-    );
+    const noteIndex = notes.value.findIndex((note) => note.id === state.activeNote)
 
     if (noteIndex !== -1) {
-      notes.value[noteIndex].title = title;
+      notes.value[noteIndex].title = title
     }
-  };
+  }
 
   const updateNoteContent = (content: string) => {
-    if (!state.activeNote) return;
+    if (!state.activeNote) return
 
-    const noteIndex = notes.value.findIndex(
-      (note) => note.id === state.activeNote,
-    );
+    const noteIndex = notes.value.findIndex((note) => note.id === state.activeNote)
 
     if (noteIndex !== -1) {
-      notes.value[noteIndex].content = content;
+      notes.value[noteIndex].content = content
     }
-  };
+  }
 
   const getTagById = (tagId: string) => {
-    return tags.value.find((tag) => tag.id === tagId);
-  };
+    return tags.value.find((tag) => tag.id === tagId)
+  }
 
   const handleUpdateSearchQuery = async () => {
-    state.noteSearchPageParam.keyword = query.value;
+    state.noteSearchPageParam.keyword = query.value
 
-    notes.value = await searchNotes();
-  };
+    notes.value = await searchNotes()
+  }
 
   const handleNoteSizeChange = async (pageSize: number) => {
-    state.notePageSize = pageSize;
+    state.notePageSize = pageSize
 
-    notes.value = await searchNotes();
-  };
+    notes.value = await searchNotes()
+  }
 
   const handleNoteCurrentChange = async (pageIndex: number) => {
-    state.notePageIndex = pageIndex;
+    state.notePageIndex = pageIndex
 
-    notes.value = await searchNotes();
-  };
+    notes.value = await searchNotes()
+  }
 
   const searchNoteHistories = async () => {
     const notification = ElNotification({
-      title: "",
-      message: "正在加载历史记录",
-      type: "success",
+      title: '',
+      message: '正在加载历史记录',
+      type: 'success',
       duration: 0,
-    });
+    })
 
     try {
       const pageResult = await noteApi.searchPageNoteHistories({
         pageIndex: state.historyPageIndex,
         pageSize: state.historyPageSize,
-        noteId: Number.parseInt(state.activeNote ?? ""),
-      });
+        noteId: Number.parseInt(state.activeNote ?? ''),
+      })
 
-      histories.value = pageResult.data;
-      state.historyTotal = pageResult.total;
+      histories.value = pageResult.data
+      state.historyTotal = pageResult.total
     } catch (error) {
       ElNotification({
-        title: "",
+        title: '',
         message: String(error),
-        type: "error",
+        type: 'error',
         duration: 0,
-      });
+      })
     } finally {
-      notification.close();
+      notification.close()
     }
-  };
+  }
 
   const openHistoryDialog = async () => {
-    await searchNoteHistories();
-  };
+    await searchNoteHistories()
+  }
 
   const handleNoteHistorySizeChange = async (pageSize: number) => {
-    state.historyPageSize = pageSize;
+    state.historyPageSize = pageSize
 
-    await searchNoteHistories();
-  };
+    await searchNoteHistories()
+  }
 
   const handleNoteHistoryCurrentChange = async (pageIndex: number) => {
-    state.historyPageIndex = pageIndex;
+    state.historyPageIndex = pageIndex
 
-    await searchNoteHistories();
-  };
+    await searchNoteHistories()
+  }
   // 初始化
   const initialize = async () => {
-    state.loading = true;
+    state.loading = true
 
     const notification = ElNotification({
-      title: "",
-      message: "正在加载",
-      type: "success",
+      title: '',
+      message: '正在加载',
+      type: 'success',
       duration: 0,
-    });
+    })
 
     try {
-      await getNotebooks();
+      await getNotebooks()
 
-      await setActiveNotebook(notebooks.value[0].id);
+      await setActiveNotebook(notebooks.value[0].id)
 
-      await getTags();
+      await getTags()
 
-      await setActiveTag(tags.value[0].id);
+      await setActiveTag(tags.value[0].id)
 
-      notes.value = await searchNotes();
+      notes.value = await searchNotes()
     } catch (error) {
       ElNotification({
-        title: "错误信息",
-        type: "error",
+        title: '错误信息',
+        type: 'error',
         message: String(error),
         duration: 0,
-      });
+      })
     } finally {
-      state.loading = false;
-      notification.close();
+      state.loading = false
+      notification.close()
     }
-  };
+  }
 
   onBeforeMount(() => {
-    initialize();
-  });
+    initialize()
+  })
 
   return {
     notebooks,
@@ -650,5 +636,5 @@ export function useNotes() {
     openHistoryDialog,
     handleNoteHistorySizeChange,
     handleNoteHistoryCurrentChange,
-  };
+  }
 }

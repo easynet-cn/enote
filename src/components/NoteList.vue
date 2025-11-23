@@ -26,10 +26,7 @@
         <div class="font-semibold text-gray-800 mb-1 truncate">
           {{ note.title }}
         </div>
-        <div
-          class="text-sm text-gray-500 mb-2 line-clamp-2"
-          v-html="note.content"
-        ></div>
+        <div class="text-sm text-gray-500 mb-2 line-clamp-2" v-html="note.content"></div>
         <div class="flex justify-between items-center text-xs text-gray-400">
           <span>{{ note.updateTime }}</span>
         </div>
@@ -50,42 +47,42 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import { Search } from "@element-plus/icons-vue";
-import type { ShowNotebook, ShowNote } from "../types";
+import { computed } from 'vue'
+import { Search } from '@element-plus/icons-vue'
+import type { ShowNotebook, ShowNote } from '../types'
 
 interface Props {
-  notebooks: ShowNotebook[];
-  notes: ShowNote[];
-  activeNotebook: string;
-  activeNote: string | null;
+  notebooks: ShowNotebook[]
+  notes: ShowNote[]
+  activeNotebook: string
+  activeNote: string | null
 }
 
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 
-const query = defineModel<string>("query");
-const currentPage = defineModel<number>("currentPage");
-const pageSize = defineModel<number>("pageSize");
-const total = defineModel<number>("total");
+const query = defineModel<string>('query')
+const currentPage = defineModel<number>('currentPage')
+const pageSize = defineModel<number>('pageSize')
+const total = defineModel<number>('total')
 
 const emit = defineEmits<{
-  sizeChange: [pageSize: number];
-  currentChange: [currentPage: number];
-  setActiveNote: [id: string];
-  updateSearchQuery: [];
-}>();
+  sizeChange: [pageSize: number]
+  currentChange: [currentPage: number]
+  setActiveNote: [id: string]
+  updateSearchQuery: []
+}>()
 
 const activeNotebookName = computed(() => {
-  const notebook = props.notebooks.find((n) => n.id === props.activeNotebook);
+  const notebook = props.notebooks.find((n) => n.id === props.activeNotebook)
 
-  return notebook ? notebook.name : "";
-});
+  return notebook ? notebook.name : ''
+})
 
 const handleSizeChange = (val: number) => {
-  emit("sizeChange", val);
-};
+  emit('sizeChange', val)
+}
 
 const handleCurrentChange = (val: number) => {
-  emit("currentChange", val);
-};
+  emit('currentChange', val)
+}
 </script>

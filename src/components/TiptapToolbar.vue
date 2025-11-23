@@ -70,9 +70,7 @@
         <el-tooltip content="左对齐" placement="bottom">
           <el-button
             size="small"
-            :type="
-              editor.isActive({ textAlign: 'left' }) ? 'primary' : 'default'
-            "
+            :type="editor.isActive({ textAlign: 'left' }) ? 'primary' : 'default'"
             @click="editor.chain().focus().setTextAlign('left').run()"
           >
             <i class="ri-align-left"></i>
@@ -82,9 +80,7 @@
         <el-tooltip content="居中" placement="bottom">
           <el-button
             size="small"
-            :type="
-              editor.isActive({ textAlign: 'center' }) ? 'primary' : 'default'
-            "
+            :type="editor.isActive({ textAlign: 'center' }) ? 'primary' : 'default'"
             @click="editor.chain().focus().setTextAlign('center').run()"
           >
             <i class="ri-align-center"></i>
@@ -94,9 +90,7 @@
         <el-tooltip content="右对齐" placement="bottom">
           <el-button
             size="small"
-            :type="
-              editor.isActive({ textAlign: 'right' }) ? 'primary' : 'default'
-            "
+            :type="editor.isActive({ textAlign: 'right' }) ? 'primary' : 'default'"
             @click="editor.chain().focus().setTextAlign('right').run()"
           >
             <i class="ri-align-right"></i>
@@ -106,9 +100,7 @@
         <el-tooltip content="两端对齐" placement="bottom">
           <el-button
             size="small"
-            :type="
-              editor.isActive({ textAlign: 'justify' }) ? 'primary' : 'default'
-            "
+            :type="editor.isActive({ textAlign: 'justify' }) ? 'primary' : 'default'"
             @click="editor.chain().focus().setTextAlign('justify').run()"
           >
             <i class="ri-align-justify"></i>
@@ -201,10 +193,7 @@
         </el-tooltip>
 
         <el-tooltip content="分隔线" placement="bottom">
-          <el-button
-            size="small"
-            @click="editor.chain().focus().setHorizontalRule().run()"
-          >
+          <el-button size="small" @click="editor.chain().focus().setHorizontalRule().run()">
             <i class="ri-separator"></i>
           </el-button>
         </el-tooltip>
@@ -270,91 +259,91 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
-import type { Editor } from "@tiptap/vue-3";
+import { ref, watch } from 'vue'
+import type { Editor } from '@tiptap/vue-3'
 
 interface Props {
-  editor: Editor;
+  editor: Editor
 }
 
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 
-const headingLevel = ref("0");
-const textColor = ref("#000000");
-const highlightColor = ref("#FFFF00");
+const headingLevel = ref('0')
+const textColor = ref('#000000')
+const highlightColor = ref('#FFFF00')
 
 // 预定义颜色
 const predefineColors = ref([
-  "#000000",
-  "#ffffff",
-  "#ff4500",
-  "#ff8c00",
-  "#ffd700",
-  "#90ee90",
-  "#00ced1",
-  "#1e90ff",
-  "#c71585",
-  "rgba(255, 69, 0, 0.68)",
-  "rgb(255, 120, 0)",
-  "hsv(51, 100, 98)",
-  "hsva(120, 40, 94, 0.5)",
-  "hsl(181, 100%, 37%)",
-  "hsla(209, 100%, 56%, 0.73)",
-]);
+  '#000000',
+  '#ffffff',
+  '#ff4500',
+  '#ff8c00',
+  '#ffd700',
+  '#90ee90',
+  '#00ced1',
+  '#1e90ff',
+  '#c71585',
+  'rgba(255, 69, 0, 0.68)',
+  'rgb(255, 120, 0)',
+  'hsv(51, 100, 98)',
+  'hsva(120, 40, 94, 0.5)',
+  'hsl(181, 100%, 37%)',
+  'hsla(209, 100%, 56%, 0.73)',
+])
 
 // 设置标题
 const setHeading = () => {
-  const level = parseInt(headingLevel.value);
+  const level = parseInt(headingLevel.value)
   if (level === 0) {
-    props.editor.chain().focus().setParagraph().run();
+    props.editor.chain().focus().setParagraph().run()
   } else {
     props.editor
       .chain()
       .focus()
       .toggleHeading({ level: level as any })
-      .run();
+      .run()
   }
-};
+}
 
 // 设置文本颜色
 const setTextColor = (color: string) => {
-  props.editor.chain().focus().setColor(color).run();
-};
+  props.editor.chain().focus().setColor(color).run()
+}
 
 // 设置背景颜色
 const setHighlightColor = (color: string) => {
-  props.editor.chain().focus().toggleHighlight({ color }).run();
-};
+  props.editor.chain().focus().toggleHighlight({ color }).run()
+}
 
 // 监听编辑器活动状态更新选择框
 watch(
-  () => props.editor?.isActive("heading"),
+  () => props.editor?.isActive('heading'),
   (isActive) => {
     if (!isActive) {
-      headingLevel.value = "0";
+      headingLevel.value = '0'
     }
   },
-);
+)
 
 // 监听文本颜色变化
 watch(
-  () => props.editor?.getAttributes("textStyle")?.color,
+  () => props.editor?.getAttributes('textStyle')?.color,
   (color) => {
     if (color) {
-      textColor.value = color;
+      textColor.value = color
     }
   },
-);
+)
 
 // 监听高亮颜色变化
 watch(
-  () => props.editor?.getAttributes("highlight")?.color,
+  () => props.editor?.getAttributes('highlight')?.color,
   (color) => {
     if (color) {
-      highlightColor.value = color;
+      highlightColor.value = color
     }
   },
-);
+)
 </script>
 
 <style scoped>

@@ -5,73 +5,73 @@
 </template>
 
 <script setup lang="ts">
-import { watch, onBeforeUnmount } from "vue";
-import { useEditor, EditorContent } from "@tiptap/vue-3";
-import StarterKit from "@tiptap/starter-kit";
-import TextAlign from "@tiptap/extension-text-align";
-import { TextStyle } from "@tiptap/extension-text-style";
-import Color from "@tiptap/extension-color";
-import Highlight from "@tiptap/extension-highlight";
-import Underline from "@tiptap/extension-underline";
+import { watch, onBeforeUnmount } from 'vue'
+import { useEditor, EditorContent } from '@tiptap/vue-3'
+import StarterKit from '@tiptap/starter-kit'
+import TextAlign from '@tiptap/extension-text-align'
+import { TextStyle } from '@tiptap/extension-text-style'
+import Color from '@tiptap/extension-color'
+import Highlight from '@tiptap/extension-highlight'
+import Underline from '@tiptap/extension-underline'
 
 interface Props {
-  modelValue: string;
-  editable?: boolean;
-  showToolbar?: boolean;
+  modelValue: string
+  editable?: boolean
+  showToolbar?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   editable: false,
   showToolbar: false,
-});
+})
 
 // TipTap 编辑器实例 - 只读模式
 const editor = useEditor({
   extensions: [
     StarterKit,
     TextAlign.configure({
-      types: ["heading", "paragraph"],
+      types: ['heading', 'paragraph'],
     }),
     TextStyle,
     Color,
     Highlight.configure({ multicolor: true }),
     Underline,
   ],
-  content: props.modelValue || "",
+  content: props.modelValue || '',
   editable: props.editable,
   editorProps: {
     attributes: {
-      class: "prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none",
+      class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none',
     },
   },
-});
+})
 
 // 监听内容变化
 watch(
   () => props.modelValue,
   (newValue) => {
     if (editor.value && newValue !== editor.value.getHTML()) {
-      editor.value.commands.setContent(newValue);
+      editor.value.commands.setContent(newValue)
     }
   },
-);
+)
 
 // 监听编辑模式变化
 watch(
   () => props.editable,
   (newEditable) => {
     if (editor.value) {
-      editor.value.setEditable(newEditable);
+      editor.value.setEditable(newEditable)
     }
   },
-);
+)
 
 // 组件卸载时销毁编辑器
 onBeforeUnmount(() => {
   if (editor.value) {
-    editor.value.destroy();
+    editor.value.destroy()
   }
-});
+})
 </script>
 
 <style scoped>
@@ -143,7 +143,7 @@ onBeforeUnmount(() => {
   background-color: #f3f4f6;
   padding: 0.125rem 0.25rem;
   border-radius: 0.25rem;
-  font-family: "Courier New", Courier, monospace;
+  font-family: 'Courier New', Courier, monospace;
   color: #dc2626;
 }
 
@@ -191,12 +191,12 @@ onBeforeUnmount(() => {
 }
 
 /* 只读模式下的样式 */
-:deep(.ProseMirror[contenteditable="false"]) {
+:deep(.ProseMirror[contenteditable='false']) {
   cursor: default;
   user-select: text;
 }
 
-:deep(.ProseMirror[contenteditable="false"]:focus) {
+:deep(.ProseMirror[contenteditable='false']:focus) {
   outline: none;
 }
 </style>

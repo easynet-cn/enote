@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from '@tauri-apps/api/core'
 
 import {
   Note,
@@ -9,31 +9,26 @@ import {
   NoteSearchPageParam,
   PageResult,
   Tag,
-} from "../types";
+} from '../types'
 
 export const noteApi = {
   async getNotebooks(): Promise<Notebook[]> {
-    return await invoke("find_all_notebooks");
+    return await invoke('find_all_notebooks')
   },
 
   async createNotebook(notebook: Notebook): Promise<Notebook> {
-    return await invoke("create_notebook", { notebook });
+    return await invoke('create_notebook', { notebook })
   },
 
   async updateNotebook(notebook: Notebook): Promise<Notebook> {
-    return await invoke("update_notebook", { notebook });
+    return await invoke('update_notebook', { notebook })
   },
 
   async deleteNotebook(id: number): Promise<void> {
-    return await invoke("delete_notebook_by_id", { id });
+    return await invoke('delete_notebook_by_id', { id })
   },
 
-  async createNote(
-    notebookId: number,
-    title: string,
-    content: string,
-    tags: Tag[],
-  ): Promise<Note> {
+  async createNote(notebookId: number, title: string, content: string, tags: Tag[]): Promise<Note> {
     const note: Note = {
       id: 0,
       notebookId: notebookId,
@@ -42,9 +37,9 @@ export const noteApi = {
       tags: tags,
       createTime: null,
       updateTime: null,
-    };
+    }
 
-    return await invoke("create_note", { note });
+    return await invoke('create_note', { note })
   },
 
   async updateNote(
@@ -62,40 +57,38 @@ export const noteApi = {
       tags: tags,
       createTime: null,
       updateTime: null,
-    };
+    }
 
-    return await invoke("update_note", { note });
+    return await invoke('update_note', { note })
   },
 
   async deleteNote(id: number): Promise<void> {
-    return await invoke("delete_note_by_id", { id });
+    return await invoke('delete_note_by_id', { id })
   },
 
-  async searchPageNotes(
-    searchParam: NoteSearchPageParam,
-  ): Promise<NotePageResult> {
-    return await invoke("search_page_notes", { searchParam });
+  async searchPageNotes(searchParam: NoteSearchPageParam): Promise<NotePageResult> {
+    return await invoke('search_page_notes', { searchParam })
   },
 
   async geTags(): Promise<Tag[]> {
-    return await invoke("find_all_tags");
+    return await invoke('find_all_tags')
   },
 
   async createTag(tag: Tag): Promise<Tag> {
-    return await invoke("create_tag", { tag });
+    return await invoke('create_tag', { tag })
   },
 
   async updateTag(tag: Tag): Promise<Tag> {
-    return await invoke("update_tag", { tag });
+    return await invoke('update_tag', { tag })
   },
 
   async deleteTag(id: number): Promise<void> {
-    return await invoke("delete_tag_by_id", { id });
+    return await invoke('delete_tag_by_id', { id })
   },
 
   async searchPageNoteHistories(
     searchParam: NoteHistorySearchPageParam,
   ): Promise<PageResult<NoteHistory>> {
-    return await invoke("search_page_note_histories", { searchParam });
+    return await invoke('search_page_note_histories', { searchParam })
   },
-};
+}

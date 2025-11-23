@@ -55,10 +55,10 @@
 </template>
 
 <script setup lang="ts">
-import { useNotes } from "./composables/useNotes";
-import Sidebar from "./components/Sidebar.vue";
-import NoteList from "./components/NoteList.vue";
-import Editor from "./components/Editor.vue";
+import { useNotes } from './composables/useNotes'
+import Sidebar from './components/Sidebar.vue'
+import NoteList from './components/NoteList.vue'
+import Editor from './components/Editor.vue'
 
 const {
   notebooks,
@@ -87,5 +87,5 @@ const {
   openHistoryDialog,
   handleNoteHistorySizeChange,
   handleNoteHistoryCurrentChange,
-} = useNotes();
+} = useNotes()
 </script>
