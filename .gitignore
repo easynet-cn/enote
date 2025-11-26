@@ -14,3 +14,10 @@ Cargo.lock
 node_modules/
 .DS_Store
 dist/
+
+# pnpm
+pnpm-debug.log*
+node_modules/.pnpm-debug.log*
+
+# 如果使用 pnpm 的虚拟存储目录
+**/.pnpm-store/**
