@@ -71,7 +71,7 @@
       <el-row>
         <!-- TipTap 编辑器 -->
         <el-col :span="24" v-if="activeNote" class="flex-1 overflow-hidden">
-          <editor-content :editor="editor" class="tiptap-editor" />
+          <editor-content :editor="editor" :class="editorCls" />
         </el-col>
       </el-row>
     </el-main>
@@ -114,7 +114,7 @@
 </template>
 
 <script setup lang="ts">
-import { watch, onBeforeUnmount, ref, reactive } from 'vue'
+import { watch, onBeforeUnmount, ref, reactive, computed } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import TextAlign from '@tiptap/extension-text-align'
@@ -223,6 +223,10 @@ watch(
   },
 )
 
+const editorCls = computed(() => {
+  return props.editMode ? 'tiptap-editor-edit' : 'tiptap-editor'
+})
+
 // 组件卸载时销毁编辑器
 onBeforeUnmount(() => {
   if (editor.value) {
@@ -283,7 +287,14 @@ const handleSettingFormSubmit = () => {
 .tiptap-editor {
   padding: 1.5rem;
   min-height: 500px;
-  max-height: calc(100vh - 200px);
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
+.tiptap-editor-edit {
+  padding: 1.5rem;
+  min-height: 500px;
+  max-height: 88vh;
   overflow-y: auto;
 }
 
