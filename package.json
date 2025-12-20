@@ -1,14 +1,15 @@
 {
   "name": "enote",
   "private": true,
-  "version": "0.2.1",
+  "version": "0.2.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
     "format": "prettier --write src/",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "tauri:icon": "tauri icon doc/enote-icon.svg"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
