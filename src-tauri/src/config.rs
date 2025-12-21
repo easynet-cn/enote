@@ -2,9 +2,12 @@
 //!
 //! 本模块负责：
 //! - 加载和解析 YAML 配置文件
+//! - 自动创建默认配置文件（如不存在）
 //! - 管理数据库连接池配置
 //! - 提供应用全局状态
 
+use std::fs;
+use std::path::PathBuf;
 use std::time::Duration;
 
 use anyhow::{Context, Result};
@@ -24,6 +27,8 @@ pub struct Configuration {
 impl Configuration {
     /// 创建新的配置实例
     ///
+    /// 如果配置文件不存在，会自动创建默认配置文件。
+    ///
     /// # 参数
     /// - `app_handle`: Tauri 应用句柄，用于获取应用数据目录
     ///
@@ -33,15 +38,30 @@ impl Configuration {
     ///
     /// # 配置文件位置
     /// 配置文件位于应用数据目录下的 `application.yml`
+    ///
+    /// # 自动创建
+    /// 如果配置文件不存在，会自动创建包含 SQLite 数据库配置的默认文件
     pub fn new(app_handle: &AppHandle) -> Result<Self> {
-        // 获取配置文件路径：{app_data_dir}/application.yml
-        let config_dir = app_handle
+        // 获取应用数据目录
+        let app_data_dir = app_handle
             .path()
             .app_data_dir()
-            .context("无法获取应用数据目录")?
-            .join("application.yml");
+            .context("无法获取应用数据目录")?;
 
-        let config_path = config_dir
+        // 确保目录存在
+        if !app_data_dir.exists() {
+            fs::create_dir_all(&app_data_dir).context("无法创建应用数据目录")?;
+        }
+
+        // 配置文件路径
+        let config_file_path = app_data_dir.join("application.yml");
+
+        // 如果配置文件不存在，创建默认配置
+        if !config_file_path.exists() {
+            Self::create_default_config(&app_data_dir, &config_file_path)?;
+        }
+
+        let config_path = config_file_path
             .to_str()
             .context("配置文件路径包含无效字符")?;
 
@@ -52,6 +72,57 @@ impl Configuration {
             .context("无法加载配置文件，请确保 application.yml 存在且格式正确")?;
 
         Ok(Self { config })
+    }
+
+    /// 创建默认配置文件
+    ///
+    /// # 参数
+    /// - `app_data_dir`: 应用数据目录
+    /// - `config_file_path`: 配置文件完整路径
+    ///
+    /// # 返回
+    /// - `Ok(())`: 创建成功
+    /// - `Err`: 创建失败
+    ///
+    /// # 默认配置
+    /// - 使用 SQLite 数据库
+    /// - 数据库文件位于应用数据目录下的 `enote.db`
+    fn create_default_config(app_data_dir: &PathBuf, config_file_path: &PathBuf) -> Result<()> {
+        // SQLite 数据库文件路径
+        let db_path = app_data_dir.join("enote.db");
+        let db_url = format!(
+            "sqlite:{}?mode=rwc",
+            db_path.to_str().context("数据库路径包含无效字符")?
+        );
+
+        // 默认配置内容
+        let default_config = format!(
+            r#"# ENote 应用配置文件
+# 此文件由应用自动生成
+
+datasource:
+  # SQLite 数据库连接 URL
+  # mode=rwc 表示读写模式，如果文件不存在则创建
+  url: "{}"
+
+  # 连接池配置
+  max-connections: 5
+  min-connections: 1
+  connect_timeout: 30
+  acquire-timeout: 8
+  idle-time: 10
+  max-lifetime: 30
+"#,
+            db_url
+        );
+
+        // 写入配置文件
+        fs::write(config_file_path, default_config).context("无法写入配置文件")?;
+
+        println!("已创建默认配置文件: {:?}", config_file_path);
+        println!("数据库文件: {:?}", db_path);
+
+        Ok(())
     }
 
     /// 创建数据库连接

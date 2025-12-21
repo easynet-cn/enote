@@ -1,11 +1,36 @@
 <template>
   <aside
-    class="w-60 border-r border-gray-200 flex flex-col bg-gray-50"
+    :class="[
+      'border-r border-gray-200 flex flex-col bg-gray-50 transition-all duration-300 relative',
+      collapsed ? 'w-12' : 'w-60',
+    ]"
     role="navigation"
     aria-label="侧边栏导航"
   >
+    <!-- 折叠/展开按钮（右侧边界中间） -->
+    <button
+      @click="$emit('toggle-collapse')"
+      class="absolute -right-3 top-1/2 -translate-y-1/2 z-10 w-6 h-6 bg-white border border-gray-300 rounded-full shadow-sm flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors"
+      :aria-label="collapsed ? '展开侧边栏' : '收起侧边栏'"
+      :title="collapsed ? '展开侧边栏' : '收起侧边栏'"
+    >
+      <ChevronRight v-if="collapsed" class="w-4 h-4" aria-hidden="true" />
+      <ChevronLeft v-else class="w-4 h-4" aria-hidden="true" />
+    </button>
+
+    <!-- 新建笔记按钮 -->
     <div class="p-2 border-b border-gray-200 flex justify-center">
       <button
+        v-if="collapsed"
+        @click="$emit('createNewNote')"
+        class="p-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
+        aria-label="创建新笔记"
+        title="创建新笔记"
+      >
+        <Plus class="w-5 h-5" aria-hidden="true" />
+      </button>
+      <button
+        v-else
         @click="$emit('createNewNote')"
         class="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-full hover:bg-green-600 transition-colors"
         aria-label="创建新笔记"
@@ -15,111 +40,114 @@
       </button>
     </div>
 
-    <div class="p-4 border-b border-gray-200">
-      <div class="flex justify-between items-center mb-3">
-        <h2 class="text-sm font-semibold text-gray-500">笔记本</h2>
-        <Dropdown ref="notebookDropdownRef" @command="handleNotebookCommand">
-          <template #trigger>
-            <Menu class="w-4 h-4 text-gray-500 hover:text-gray-700 cursor-pointer" />
-          </template>
-          <DropdownItem command="create" @command="handleNotebookCommand">
-            <Plus class="w-4 h-4" />
-            <span>添加</span>
-          </DropdownItem>
-          <DropdownItem
-            v-if="showNotebookEditAndDelete"
-            command="edit"
-            @command="handleNotebookCommand"
-          >
-            <Pencil class="w-4 h-4" />
-            <span>编辑</span>
-          </DropdownItem>
-          <DropdownItem
-            v-if="showNotebookEditAndDelete"
-            command="delete"
-            @command="handleNotebookCommand"
-          >
-            <Trash2 class="w-4 h-4" />
-            <span>删除</span>
-          </DropdownItem>
-        </Dropdown>
-      </div>
-
-      <ul role="listbox" aria-label="笔记本列表">
-        <li
-          v-for="notebook in notebooks"
-          :key="notebook.id"
-          role="option"
-          :aria-selected="activeNotebook === notebook.id"
-          class="sidebar-item"
-          :class="{ active: activeNotebook === notebook.id }"
-          @click="$emit('setActiveNotebook', notebook.id)"
-          @keydown.enter="$emit('setActiveNotebook', notebook.id)"
-          tabindex="0"
-        >
-          <div class="flex items-center">
-            <component
-              v-if="notebook.icon && iconComponents[notebook.icon]"
-              :is="iconComponents[notebook.icon]"
-              class="w-4 h-4 mr-3 text-gray-500"
-              aria-hidden="true"
-            />
-            <span v-else-if="notebook.cls" :class="['mr-3', notebook.cls]" aria-hidden="true"
-              >●</span
+    <template v-if="!collapsed">
+      <div class="p-4 border-b border-gray-200">
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="text-sm font-semibold text-gray-500">笔记本</h2>
+          <Dropdown ref="notebookDropdownRef" @command="handleNotebookCommand">
+            <template #trigger>
+              <Menu class="w-4 h-4 text-gray-500 hover:text-gray-700 cursor-pointer" />
+            </template>
+            <DropdownItem command="create" @command="handleNotebookCommand">
+              <Plus class="w-4 h-4" />
+              <span>添加</span>
+            </DropdownItem>
+            <DropdownItem
+              v-if="showNotebookEditAndDelete"
+              command="edit"
+              @command="handleNotebookCommand"
             >
-            <span class="flex-1">{{ notebook.name }}</span>
-            <span class="text-xs text-gray-400" aria-label="笔记数量">{{ notebook.count }}</span>
-          </div>
-        </li>
-      </ul>
-    </div>
+              <Pencil class="w-4 h-4" />
+              <span>编辑</span>
+            </DropdownItem>
+            <DropdownItem
+              v-if="showNotebookEditAndDelete"
+              command="delete"
+              @command="handleNotebookCommand"
+            >
+              <Trash2 class="w-4 h-4" />
+              <span>删除</span>
+            </DropdownItem>
+          </Dropdown>
+        </div>
 
-    <div class="p-4 flex-1 overflow-y-auto">
-      <div class="flex justify-between items-center mb-3">
-        <h2 class="text-sm font-semibold text-gray-500">标签</h2>
-        <Dropdown ref="tagDropdownRef" @command="handleTagCommand">
-          <template #trigger>
-            <Menu class="w-4 h-4 text-gray-500 hover:text-gray-700 cursor-pointer" />
-          </template>
-          <DropdownItem command="create" @command="handleTagCommand">
-            <Plus class="w-4 h-4" />
-            <span>添加</span>
-          </DropdownItem>
-          <DropdownItem v-if="showTagEditAndDelete" command="edit" @command="handleTagCommand">
-            <Pencil class="w-4 h-4" />
-            <span>编辑</span>
-          </DropdownItem>
-          <DropdownItem v-if="showTagEditAndDelete" command="delete" @command="handleTagCommand">
-            <Trash2 class="w-4 h-4" />
-            <span>删除</span>
-          </DropdownItem>
-        </Dropdown>
+        <ul role="listbox" aria-label="笔记本列表">
+          <li
+            v-for="notebook in notebooks"
+            :key="notebook.id"
+            role="option"
+            :aria-selected="activeNotebook === notebook.id"
+            class="sidebar-item"
+            :class="{ active: activeNotebook === notebook.id }"
+            @click="$emit('setActiveNotebook', notebook.id)"
+            @keydown.enter="$emit('setActiveNotebook', notebook.id)"
+            tabindex="0"
+          >
+            <div class="flex items-center">
+              <component
+                v-if="notebook.icon && iconComponents[notebook.icon]"
+                :is="iconComponents[notebook.icon]"
+                class="w-4 h-4 mr-3 text-gray-500"
+                aria-hidden="true"
+              />
+              <span v-else-if="notebook.cls" :class="['mr-3', notebook.cls]" aria-hidden="true"
+                >●</span
+              >
+              <span class="flex-1">{{ notebook.name }}</span>
+              <span class="text-xs text-gray-400" aria-label="笔记数量">{{ notebook.count }}</span>
+            </div>
+          </li>
+        </ul>
       </div>
 
-      <ul class="space-y-1" role="listbox" aria-label="标签列表">
-        <li
-          v-for="tag in tags"
-          :key="tag.id"
-          role="option"
-          :aria-selected="activeTag === tag.id"
-          :class="['sidebar-item', { active: activeTag === tag.id }]"
-          @click="$emit('setActiveTag', tag.id)"
-          @keydown.enter="$emit('setActiveTag', tag.id)"
-          tabindex="0"
-        >
-          <div class="flex items-center">
-            <component
-              v-if="tag.icon && iconComponents[tag.icon]"
-              :is="iconComponents[tag.icon]"
-              class="w-4 h-4 mr-3 text-gray-500"
-              aria-hidden="true"
-            />
-            <span v-else-if="tag.cls" :class="['mr-3', tag.cls]" aria-hidden="true">●</span>
-            <span>{{ tag.name }}</span>
-          </div>
-        </li>
-      </ul>
-    </div>
+      <div class="p-4 flex-1 overflow-y-auto">
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="text-sm font-semibold text-gray-500">标签</h2>
+          <Dropdown ref="tagDropdownRef" @command="handleTagCommand">
+            <template #trigger>
+              <Menu class="w-4 h-4 text-gray-500 hover:text-gray-700 cursor-pointer" />
+            </template>
+            <DropdownItem command="create" @command="handleTagCommand">
+              <Plus class="w-4 h-4" />
+              <span>添加</span>
+            </DropdownItem>
+            <DropdownItem v-if="showTagEditAndDelete" command="edit" @command="handleTagCommand">
+              <Pencil class="w-4 h-4" />
+              <span>编辑</span>
+            </DropdownItem>
+            <DropdownItem v-if="showTagEditAndDelete" command="delete" @command="handleTagCommand">
+              <Trash2 class="w-4 h-4" />
+              <span>删除</span>
+            </DropdownItem>
+          </Dropdown>
+        </div>
+
+        <ul class="space-y-1" role="listbox" aria-label="标签列表">
+          <li
+            v-for="tag in tags"
+            :key="tag.id"
+            role="option"
+            :aria-selected="activeTag === tag.id"
+            :class="['sidebar-item', { active: activeTag === tag.id }]"
+            @click="$emit('setActiveTag', tag.id)"
+            @keydown.enter="$emit('setActiveTag', tag.id)"
+            tabindex="0"
+          >
+            <div class="flex items-center">
+              <component
+                v-if="tag.icon && iconComponents[tag.icon]"
+                :is="iconComponents[tag.icon]"
+                class="w-4 h-4 mr-3 text-gray-500"
+                aria-hidden="true"
+              />
+              <span v-else-if="tag.cls" :class="['mr-3', tag.cls]" aria-hidden="true">●</span>
+              <span>{{ tag.name }}</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+    </template>
   </aside>
 
   <!-- 笔记本编辑弹窗 -->
@@ -302,6 +330,8 @@ import {
   Tag,
   Folder,
   FileText,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-vue-next'
 import type { Component } from 'vue'
 
@@ -369,6 +399,7 @@ const props = defineProps<{
   tags: ShowTag[]
   activeNotebook: string
   activeTag: string
+  collapsed: boolean
 }>()
 
 const emit = defineEmits<{
@@ -379,6 +410,7 @@ const emit = defineEmits<{
   setActiveTag: [id: string]
   saveTag: [tag: ShowTag]
   deleteTag: [id: string]
+  'toggle-collapse': []
 }>()
 
 const showNotebookEditAndDelete = computed(() => {

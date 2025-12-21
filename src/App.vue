@@ -6,6 +6,7 @@
       :tags="tags"
       :active-notebook="state.activeNotebook"
       :active-tag="state.activeTag"
+      :collapsed="sidebarCollapsed"
       @set-active-notebook="setActiveNotebook"
       @set-active-tag="setActiveTag"
       @create-new-note="createNewNote"
@@ -13,6 +14,7 @@
       @delete-notebook="deleteNotebook"
       @save-tag="saveTag"
       @delete-tag="deleteTag"
+      @toggle-collapse="sidebarCollapsed = !sidebarCollapsed"
     />
 
     <!-- 笔记列表组件 -->
@@ -21,6 +23,7 @@
       :notes="notes"
       :active-notebook="state.activeNotebook"
       :active-note="state.activeNote"
+      :collapsed="noteListCollapsed"
       v-model:current-page="state.notePageIndex"
       v-model:page-size="state.notePageSize"
       v-model:total="state.noteTotal"
@@ -29,6 +32,7 @@
       @update-search-query="handleUpdateSearchQuery"
       @size-change="handleNoteSizeChange"
       @current-change="handleNoteCurrentChange"
+      @toggle-collapse="noteListCollapsed = !noteListCollapsed"
     />
 
     <!-- 编辑器组件 -->
@@ -55,10 +59,15 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useNotes } from './composables/useNotes'
 import Sidebar from './components/Sidebar.vue'
 import NoteList from './components/NoteList.vue'
 import Editor from './components/Editor.vue'
+
+// 折叠状态
+const sidebarCollapsed = ref(false)
+const noteListCollapsed = ref(false)
 
 const {
   notebooks,

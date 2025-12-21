@@ -1,13 +1,15 @@
 //! ENote 应用程序入口模块
 //!
 //! 本模块负责初始化 Tauri 应用程序，包括：
-//! - 加载配置文件
+//! - 加载配置文件（自动创建默认配置）
 //! - 建立数据库连接
+//! - 运行数据库迁移（自动创建表）
 //! - 注册命令处理器
 //! - 启动应用程序
 
 use std::sync::Arc;
 
+use sea_orm_migration::MigratorTrait;
 use tauri::Manager;
 
 use crate::config::AppState;
@@ -16,6 +18,7 @@ use crate::config::AppState;
 mod command; // Tauri 命令处理器
 mod config; // 配置管理
 mod entity; // SeaORM 数据库实体
+mod migration; // 数据库迁移
 mod model; // 数据传输对象（DTO）
 mod service; // 业务逻辑服务层
 
@@ -23,10 +26,12 @@ mod service; // 业务逻辑服务层
 ///
 /// 该函数执行以下操作：
 /// 1. 初始化 Tauri 插件（文件系统、打开器、Shell）
-/// 2. 加载应用配置并建立数据库连接
-/// 3. 将应用状态注入到 Tauri 管理器
-/// 4. 注册所有前端可调用的命令
-/// 5. 启动应用程序主循环
+/// 2. 加载应用配置（自动创建默认配置文件）
+/// 3. 建立数据库连接
+/// 4. 运行数据库迁移（自动创建表结构）
+/// 5. 将应用状态注入到 Tauri 管理器
+/// 6. 注册所有前端可调用的命令
+/// 7. 启动应用程序主循环
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -56,6 +61,13 @@ pub fn run() {
                         return Err(e.to_string().into());
                     }
                 };
+
+                // 运行数据库迁移，自动创建表结构
+                if let Err(e) = migration::Migrator::up(&database_connection, None).await {
+                    eprintln!("数据库迁移失败: {:#}", e);
+                    return Err(e.to_string().into());
+                }
+                println!("数据库迁移完成");
 
                 // 创建应用状态并注入到 Tauri 管理器
                 let app_state = Arc::new(AppState {
