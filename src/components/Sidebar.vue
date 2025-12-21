@@ -19,25 +19,32 @@
     </button>
 
     <!-- 新建笔记按钮 -->
-    <div class="p-2 border-b border-gray-200 flex justify-center">
-      <button
+    <div class="p-3 border-b border-gray-200 flex justify-center">
+      <Button
         v-if="collapsed"
+        type="primary"
+        circle
         @click="$emit('createNewNote')"
-        class="p-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
         aria-label="创建新笔记"
         title="创建新笔记"
       >
-        <Plus class="w-5 h-5" aria-hidden="true" />
-      </button>
-      <button
+        <template #icon>
+          <Plus class="w-5 h-5" aria-hidden="true" />
+        </template>
+      </Button>
+      <Button
         v-else
+        type="primary"
+        round
+        block
         @click="$emit('createNewNote')"
-        class="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-full hover:bg-green-600 transition-colors"
         aria-label="创建新笔记"
       >
-        <Plus class="w-4 h-4" aria-hidden="true" />
+        <template #icon>
+          <Plus class="w-4 h-4" aria-hidden="true" />
+        </template>
         创建新笔记
-      </button>
+      </Button>
     </div>
 
     <template v-if="!collapsed">
@@ -146,7 +153,6 @@
           </li>
         </ul>
       </div>
-
     </template>
   </aside>
 
@@ -179,26 +185,8 @@
           />
         </div>
         <div>
-          <label for="notebook-icon" class="block text-sm font-medium text-gray-700 mb-1"
-            >图标</label
-          >
-          <input
-            id="notebook-icon"
-            v-model="notebookForm.icon"
-            type="text"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-          />
-        </div>
-        <div>
-          <label for="notebook-cls" class="block text-sm font-medium text-gray-700 mb-1"
-            >样式</label
-          >
-          <input
-            id="notebook-cls"
-            v-model="notebookForm.cls"
-            type="text"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-          />
+          <label class="block text-sm font-medium text-gray-700 mb-2">图标</label>
+          <IconPicker v-model="notebookForm.icon" placeholder="选择图标" clearable />
         </div>
         <div>
           <label for="notebook-sort" class="block text-sm font-medium text-gray-700 mb-1"
@@ -215,19 +203,9 @@
       </div>
     </form>
     <template #footer>
-      <div class="flex justify-end gap-2">
-        <button
-          @click="closeNotebookDialog"
-          class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-        >
-          取消
-        </button>
-        <button
-          @click="submitNotebookForm"
-          class="px-4 py-2 text-white bg-green-500 rounded-md hover:bg-green-600 transition-colors"
-        >
-          保存
-        </button>
+      <div class="flex justify-end gap-3">
+        <Button type="secondary" @click="closeNotebookDialog">取消</Button>
+        <Button type="primary" @click="submitNotebookForm">保存</Button>
       </div>
     </template>
   </Dialog>
@@ -250,22 +228,12 @@
           />
         </div>
         <div>
-          <label for="tag-icon" class="block text-sm font-medium text-gray-700 mb-1">图标</label>
-          <input
-            id="tag-icon"
-            v-model="tagForm.icon"
-            type="text"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-          />
+          <label class="block text-sm font-medium text-gray-700 mb-2">图标</label>
+          <IconPicker v-model="tagForm.icon" placeholder="选择图标" clearable />
         </div>
         <div>
-          <label for="tag-cls" class="block text-sm font-medium text-gray-700 mb-1">样式</label>
-          <input
-            id="tag-cls"
-            v-model="tagForm.cls"
-            type="text"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-          />
+          <label class="block text-sm font-medium text-gray-700 mb-2">样式颜色</label>
+          <StylePicker v-model="tagForm.cls" placeholder="选择颜色样式" clearable />
         </div>
         <div>
           <label for="tag-sort" class="block text-sm font-medium text-gray-700 mb-1">排序</label>
@@ -280,19 +248,9 @@
       </div>
     </form>
     <template #footer>
-      <div class="flex justify-end gap-2">
-        <button
-          @click="closeTagDialog"
-          class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-        >
-          取消
-        </button>
-        <button
-          @click="submitTagForm"
-          class="px-4 py-2 text-white bg-green-500 rounded-md hover:bg-green-600 transition-colors"
-        >
-          保存
-        </button>
+      <div class="flex justify-end gap-3">
+        <Button type="secondary" @click="closeTagDialog">取消</Button>
+        <Button type="primary" @click="submitTagForm">保存</Button>
       </div>
     </template>
   </Dialog>
@@ -319,32 +277,17 @@
 </template>
 
 <script setup lang="ts">
+import { Plus, Pencil, Trash2, Menu, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import {
-  Plus,
-  Pencil,
-  Trash2,
-  Menu,
-  BookOpen,
-  Book,
-  Tags,
-  Tag,
-  Folder,
-  FileText,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-vue-next'
-import type { Component } from 'vue'
-
-// Lucide 图标映射
-const iconComponents: Record<string, Component> = {
-  BookOpen,
-  Book,
-  Tags,
-  Tag,
-  Folder,
-  FileText,
-}
-import { Dialog, Dropdown, DropdownItem, ConfirmDialog } from './ui'
+  Button,
+  IconPicker,
+  StylePicker,
+  Dialog,
+  Dropdown,
+  DropdownItem,
+  ConfirmDialog,
+} from './ui'
+import { iconComponents } from './ui/icons'
 import type { ShowNotebook, ShowTag } from '../types'
 import { computed, reactive, ref } from 'vue'
 

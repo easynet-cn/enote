@@ -1,10 +1,5 @@
 <template>
-  <div
-    ref="triggerRef"
-    class="inline-block"
-    @mouseenter="show"
-    @mouseleave="hide"
-  >
+  <div ref="triggerRef" class="inline-block" @mouseenter="show" @mouseleave="hide">
     <slot></slot>
     <Teleport to="body">
       <Transition name="tooltip">
@@ -15,10 +10,7 @@
           :style="tooltipStyle"
         >
           {{ content }}
-          <div
-            class="absolute w-2 h-2 bg-gray-800 rotate-45"
-            :style="arrowStyle"
-          ></div>
+          <div class="absolute w-2 h-2 bg-gray-800 rotate-45" :style="arrowStyle"></div>
         </div>
       </Transition>
     </Teleport>

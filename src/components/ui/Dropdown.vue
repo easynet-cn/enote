@@ -1,14 +1,11 @@
 <template>
-  <div class="relative inline-block" ref="dropdownRef">
-    <div @click="toggle" class="cursor-pointer">
+  <div class="dropdown-wrapper" ref="dropdownRef">
+    <div @click="toggle" class="dropdown-trigger">
       <slot name="trigger"></slot>
     </div>
 
     <Transition name="dropdown">
-      <div
-        v-if="visible"
-        class="absolute right-0 mt-1 min-w-[160px] bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
-      >
+      <div v-if="visible" class="dropdown-menu">
         <slot></slot>
       </div>
     </Transition>
@@ -47,14 +44,39 @@ defineExpose({ close })
 </script>
 
 <style scoped>
+.dropdown-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-trigger {
+  cursor: pointer;
+}
+
+.dropdown-menu {
+  position: absolute;
+  right: 0;
+  margin-top: 8px;
+  min-width: 180px;
+  background: white;
+  border-radius: 10px;
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+  padding: 6px;
+  z-index: 50;
+  overflow: hidden;
+}
+
+/* 入场/离场动画 */
 .dropdown-enter-active,
 .dropdown-leave-active {
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dropdown-enter-from,
 .dropdown-leave-to {
   opacity: 0;
-  transform: translateY(-4px);
+  transform: translateY(-8px) scale(0.95);
 }
 </style>

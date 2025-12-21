@@ -2,7 +2,9 @@
   <div class="relative inline-block" ref="pickerRef">
     <button
       @click="toggle"
-      class="w-7 h-7 rounded border border-gray-300 cursor-pointer hover:border-gray-400 transition-colors"
+      :disabled="disabled"
+      class="w-7 h-7 rounded border border-gray-300 transition-colors"
+      :class="disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-gray-400'"
       :style="{ backgroundColor: modelValue || '#ffffff' }"
     ></button>
 
@@ -47,9 +49,11 @@ import { ref, onMounted, onUnmounted } from 'vue'
 interface Props {
   modelValue: string
   predefine?: string[]
+  disabled?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  disabled: false,
   predefine: () => [
     '#000000',
     '#ffffff',
@@ -75,6 +79,7 @@ const pickerRef = ref<HTMLElement>()
 const predefineColors = props.predefine
 
 const toggle = () => {
+  if (props.disabled) return
   visible.value = !visible.value
 }
 

@@ -1,7 +1,27 @@
 <template>
   <div class="flex-1 flex flex-col overflow-hidden">
     <main class="flex-1 flex flex-col overflow-hidden p-4" role="main" aria-label="笔记编辑区">
-      <div v-if="activeNote" class="flex items-center mb-4">
+      <!-- TipTap 编辑器工具栏（始终显示） -->
+      <div v-if="activeNote">
+        <TiptapToolbar
+          :editor="editor ?? null"
+          :source-mode="sourceMode"
+          :content-type="activeNote?.contentType ?? ContentType.Html"
+          :is-new-note="isNewNote"
+          :edit-mode="editMode"
+          @toggle-source-mode="toggleSourceMode"
+          @update:content-type="handleContentTypeChange"
+          @edit="handleEdit"
+          @save="handleSave"
+          @cancel="handleCancel"
+          @delete="handleDelete"
+          @settings="handleSettings"
+          @history="handleHistory"
+        />
+      </div>
+
+      <!-- 标题输入区域 -->
+      <div v-if="activeNote" class="flex items-center my-4">
         <div class="flex-1">
           <input
             :value="activeNote.title"
@@ -13,46 +33,6 @@
             :class="{ 'cursor-default': !editMode }"
           />
         </div>
-        <div class="flex-shrink-0">
-          <Dropdown ref="menuDropdownRef" @command="handleCommand">
-            <template #trigger>
-              <Menu class="w-5 h-5 text-gray-500 hover:text-gray-700 cursor-pointer" />
-            </template>
-            <DropdownItem v-if="!editMode" command="edit" @command="handleCommand">
-              <Pencil class="w-4 h-4" />
-              <span>编辑</span>
-            </DropdownItem>
-            <DropdownItem v-if="editMode" command="save" @command="handleCommand">
-              <Check class="w-4 h-4" />
-              <span>保存</span>
-            </DropdownItem>
-            <DropdownItem v-if="editMode" command="cancel" @command="handleCommand">
-              <X class="w-4 h-4" />
-              <span>取消</span>
-            </DropdownItem>
-            <DropdownItem command="delete" @command="handleCommand">
-              <Trash2 class="w-4 h-4" />
-              <span>删除</span>
-            </DropdownItem>
-            <DropdownItem v-if="editMode" command="setting" @command="handleCommand">
-              <Settings class="w-4 h-4" />
-              <span>设置</span>
-            </DropdownItem>
-            <DropdownItem command="history" @command="handleCommand">
-              <Eye class="w-4 h-4" />
-              <span>历史记录</span>
-            </DropdownItem>
-          </Dropdown>
-        </div>
-      </div>
-
-      <!-- TipTap 编辑器工具栏 -->
-      <div v-if="editMode && editor">
-        <TiptapToolbar
-          :editor="editor"
-          :source-mode="sourceMode"
-          @toggle-source-mode="toggleSourceMode"
-        />
       </div>
 
       <!-- TipTap 编辑器 / Markdown 源码编辑器 -->
@@ -75,28 +55,23 @@
   <Dialog v-model="settingDialog" title="设置" :width="500">
     <div class="space-y-4" role="form" aria-label="笔记设置">
       <div>
-        <label for="note-notebook" class="block text-sm font-medium text-gray-700 mb-1"
-          >笔记本</label
-        >
-        <select
-          id="note-notebook"
+        <label class="block text-sm font-medium text-gray-700 mb-2">笔记本</label>
+        <Select
           v-model="settingForm.notebookId"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-        >
-          <option value="">请选择笔记本</option>
-          <option v-for="notebook in notebooks" :key="notebook.id" :value="notebook.id">
-            {{ notebook.name }}
-          </option>
-        </select>
+          :options="notebookOptions"
+          placeholder="请选择笔记本"
+          clearable
+          filterable
+        />
       </div>
       <div>
-        <span class="block text-sm font-medium text-gray-700 mb-1" id="tags-label">标签</span>
+        <span class="block text-sm font-medium text-gray-700 mb-2" id="tags-label">标签</span>
         <div class="flex flex-wrap gap-2" role="group" aria-labelledby="tags-label">
           <label
-            v-for="tag in tags"
+            v-for="tag in tags.filter((t) => t.id !== '0')"
             :key="tag.id"
-            class="flex items-center gap-1 px-2 py-1 border rounded cursor-pointer hover:bg-gray-50"
-            :class="{ 'bg-green-50 border-green-500': settingForm.tagIds.includes(tag.id) }"
+            class="tag-select-item"
+            :class="{ 'tag-select-item-active': settingForm.tagIds.includes(tag.id) }"
           >
             <input
               type="checkbox"
@@ -105,42 +80,19 @@
               class="sr-only"
               :aria-label="tag.name"
             />
+            <span class="tag-select-check">
+              <Check class="w-3 h-3" />
+            </span>
             <span :class="tag.cls" aria-hidden="true">●</span>
             <span class="text-sm">{{ tag.name }}</span>
           </label>
         </div>
       </div>
-      <div>
-        <label for="note-content-type" class="block text-sm font-medium text-gray-700 mb-1"
-          >内容格式</label
-        >
-        <select
-          id="note-content-type"
-          v-model.number="settingForm.contentType"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-        >
-          <option :value="ContentType.Html">HTML（富文本）</option>
-          <option :value="ContentType.Markdown">Markdown</option>
-        </select>
-        <p class="mt-1 text-xs text-gray-500">
-          切换格式后，内容将按新格式保存。建议在空白笔记时切换。
-        </p>
-      </div>
     </div>
     <template #footer>
-      <div class="flex justify-end gap-2">
-        <button
-          @click="settingDialog = false"
-          class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-        >
-          取消
-        </button>
-        <button
-          @click="handleSettingFormSubmit"
-          class="px-4 py-2 text-white bg-green-500 rounded-md hover:bg-green-600 transition-colors"
-        >
-          保存
-        </button>
+      <div class="flex justify-end gap-3">
+        <Button type="secondary" @click="settingDialog = false">取消</Button>
+        <Button type="primary" @click="handleSettingFormSubmit">保存</Button>
       </div>
     </template>
   </Dialog>
@@ -187,10 +139,12 @@ import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import { Markdown } from 'tiptap-markdown'
 import TiptapToolbar from './TiptapToolbar.vue'
-import { Pencil, Check, X, Trash2, Menu, Eye, Settings } from 'lucide-vue-next'
-import { Dialog, Dropdown, DropdownItem, ConfirmDialog } from './ui'
+import { Check } from 'lucide-vue-next'
+import { Button, Select, Dialog, ConfirmDialog } from './ui'
+import type { SelectOption } from './ui'
 import { ContentType } from '../types'
 import type { NoteHistory, ShowNote, ShowNotebook, ShowTag } from '../types'
+import { isTemporaryId } from '../utils/validation'
 import History from './History.vue'
 
 interface Props {
@@ -218,13 +172,24 @@ const emit = defineEmits<{
 interface Setting {
   notebookId: string
   tagIds: string[]
-  contentType: ContentType
 }
 
 const settingForm = reactive<Setting>({
   notebookId: '',
   tagIds: [],
-  contentType: ContentType.Html,
+})
+
+// 判断是否为新建笔记
+const isNewNote = computed(() => isTemporaryId(props.activeNote?.id))
+
+// 笔记本选项（过滤掉"全部"）
+const notebookOptions = computed<SelectOption[]>(() => {
+  return props.notebooks
+    .filter((n) => n.id !== '0')
+    .map((n) => ({
+      label: n.name || '',
+      value: n.id,
+    }))
 })
 
 const settingDialog = ref(false)
@@ -235,7 +200,6 @@ const pageSize = defineModel<number>('pageSize')
 const total = defineModel<number>('total')
 
 const historyVisible = ref<boolean>(false)
-const menuDropdownRef = ref()
 
 // Markdown 源码模式
 const sourceMode = ref(false)
@@ -308,7 +272,6 @@ watch(
 
       settingForm.notebookId = props.activeNote?.notebookId ?? ''
       settingForm.tagIds = props.activeNote?.tags?.map((t) => t.id) ?? []
-      settingForm.contentType = props.activeNote?.contentType ?? ContentType.Html
 
       // 重置源码模式
       sourceMode.value = false
@@ -343,22 +306,29 @@ onBeforeUnmount(() => {
   }
 })
 
-const handleCommand = (command: string) => {
-  menuDropdownRef.value?.close()
+// 工具栏事件处理
+const handleEdit = () => {
+  emit('toggleEditMode')
+}
 
-  if (command === 'edit') {
-    emit('toggleEditMode')
-  } else if (command === 'save') {
-    emit('saveNote')
-  } else if (command === 'cancel') {
-    emit('cancelEdit')
-  } else if (command === 'delete') {
-    deleteNoteConfirm.value = true
-  } else if (command === 'setting') {
-    settingDialog.value = true
-  } else if (command === 'history') {
-    historyVisible.value = true
-  }
+const handleSave = () => {
+  emit('saveNote')
+}
+
+const handleCancel = () => {
+  emit('cancelEdit')
+}
+
+const handleDelete = () => {
+  deleteNoteConfirm.value = true
+}
+
+const handleSettings = () => {
+  settingDialog.value = true
+}
+
+const handleHistory = () => {
+  historyVisible.value = true
 }
 
 const handleSizeChange = (val: number) => {
@@ -373,8 +343,6 @@ const handleSettingFormSubmit = () => {
   if (props.activeNote) {
     props.activeNote.notebookId = settingForm.notebookId
     props.activeNote.tags = props.tags.filter((t) => settingForm.tagIds.includes(t.id))
-    props.activeNote.contentType = settingForm.contentType
-    emit('updateNoteContentType', settingForm.contentType)
   }
 
   settingDialog.value = false
@@ -382,6 +350,14 @@ const handleSettingFormSubmit = () => {
 
 const confirmDeleteNote = () => {
   emit('deleteNote')
+}
+
+// 处理内容类型变化（仅新建笔记时可用）
+const handleContentTypeChange = (contentType: ContentType) => {
+  if (props.activeNote && isNewNote.value) {
+    props.activeNote.contentType = contentType
+    emit('updateNoteContentType', contentType)
+  }
 }
 
 // 切换源码模式
@@ -638,5 +614,55 @@ const handleSourceChange = () => {
 
 .markdown-source:focus {
   outline: none;
+}
+
+/* 标签选择样式 */
+.tag-select-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: white;
+  user-select: none;
+}
+
+.tag-select-item:hover {
+  border-color: #d1d5db;
+  background: #f9fafb;
+}
+
+.tag-select-item-active {
+  border-color: #22c55e;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.25);
+}
+
+.tag-select-item-active:hover {
+  border-color: #16a34a;
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+}
+
+.tag-select-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #d1d5db;
+  background: white;
+  color: transparent;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.tag-select-item-active .tag-select-check {
+  border-color: #22c55e;
+  background: #22c55e;
+  color: white;
 }
 </style>

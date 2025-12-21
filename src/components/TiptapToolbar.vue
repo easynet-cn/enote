@@ -1,5 +1,39 @@
 <template>
   <div class="tiptap-toolbar-wrapper">
+    <!-- 左侧固定区域：Content Type -->
+    <div class="toolbar-fixed toolbar-fixed-left">
+      <!-- 新建笔记时的模式选择 -->
+      <div v-if="isNewNote" class="toolbar-section">
+        <Tooltip content="内容格式（保存后不可更改）" placement="bottom">
+          <select
+            :value="contentType"
+            @change="
+              emit('update:content-type', Number(($event.target as HTMLSelectElement).value))
+            "
+            class="h-8 px-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent font-medium"
+            :class="
+              isMarkdownMode
+                ? 'bg-gray-800 text-white border-gray-700'
+                : 'bg-green-50 text-green-700 border-green-300'
+            "
+          >
+            <option :value="ContentType.Html">富文本</option>
+            <option :value="ContentType.Markdown">Markdown</option>
+          </select>
+        </Tooltip>
+      </div>
+
+      <!-- 模式标识（已保存的笔记） -->
+      <div v-else class="toolbar-section">
+        <span
+          class="h-8 px-3 text-sm rounded-md flex items-center font-medium"
+          :class="isMarkdownMode ? 'bg-gray-800 text-white' : 'bg-green-50 text-green-700'"
+        >
+          {{ isMarkdownMode ? 'Markdown' : '富文本' }}
+        </span>
+      </div>
+    </div>
+
     <!-- 左箭头 -->
     <button
       class="scroll-btn scroll-btn-left"
@@ -10,360 +44,390 @@
       <ChevronLeft class="w-5 h-5" />
     </button>
 
-    <!-- 工具栏内容 -->
+    <!-- 中间可滚动区域：编辑工具 -->
     <div class="tiptap-toolbar" ref="toolbarRef" @scroll="updateScrollState">
-      <!-- 标题和字体 -->
-      <div class="toolbar-section">
-        <Tooltip content="标题级别" placement="bottom">
-          <select
-            v-model="headingLevel"
-            @change="setHeading"
-            class="h-8 px-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-          >
-            <option value="0">正文</option>
-            <option value="1">标题 1</option>
-            <option value="2">标题 2</option>
-            <option value="3">标题 3</option>
-            <option value="4">标题 4</option>
-            <option value="5">标题 5</option>
-            <option value="6">标题 6</option>
-          </select>
-        </Tooltip>
-
-        <Tooltip content="字体" placement="bottom">
-          <select
-            v-model="fontFamily"
-            @change="setFontFamily"
-            class="h-8 px-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ml-1"
-          >
-          <option value="">默认字体</option>
-          <optgroup label="无衬线字体">
-            <option value="Arial, sans-serif">Arial</option>
-            <option value="Helvetica, sans-serif">Helvetica</option>
-            <option value="Verdana, sans-serif">Verdana</option>
-            <option value="Tahoma, sans-serif">Tahoma</option>
-            <option value="Trebuchet MS, sans-serif">Trebuchet MS</option>
-            <option value="Microsoft YaHei, sans-serif">微软雅黑</option>
-            <option value="PingFang SC, sans-serif">苹方</option>
-          </optgroup>
-          <optgroup label="衬线字体">
-            <option value="Times New Roman, serif">Times New Roman</option>
-            <option value="Georgia, serif">Georgia</option>
-            <option value="Palatino, serif">Palatino</option>
-            <option value="SimSun, serif">宋体</option>
-            <option value="KaiTi, serif">楷体</option>
-            <option value="FangSong, serif">仿宋</option>
-          </optgroup>
-          <optgroup label="等宽字体">
-            <option value="Courier New, monospace">Courier New</option>
-            <option value="Consolas, monospace">Consolas</option>
-            <option value="Monaco, monospace">Monaco</option>
-            <option value="Source Code Pro, monospace">Source Code Pro</option>
-          </optgroup>
-          <optgroup label="艺术字体">
-            <option value="Comic Sans MS, cursive">Comic Sans MS</option>
-            <option value="Impact, fantasy">Impact</option>
-            <option value="Brush Script MT, cursive">Brush Script</option>
-          </optgroup>
-        </select>
-        </Tooltip>
-      </div>
-
-      <!-- 字体样式 -->
-      <div class="toolbar-section">
-        <div class="btn-group">
-          <Tooltip content="粗体" placement="bottom">
-            <button
-              :class="['toolbar-btn', { active: editor.isActive('bold') }]"
-              @click="editor.chain().focus().toggleBold().run()"
-              :disabled="!editor.can().chain().focus().toggleBold().run()"
+      <!-- 富文本模式工具栏（始终显示，非编辑模式禁用） -->
+      <template v-if="!isMarkdownMode && editor">
+        <!-- 标题和字体 -->
+        <div class="toolbar-section">
+          <Tooltip content="标题级别" placement="bottom">
+            <select
+              v-model="headingLevel"
+              @change="setHeading"
+              :disabled="!editMode"
+              class="h-8 px-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Bold class="w-4 h-4" />
-            </button>
+              <option value="0">正文</option>
+              <option value="1">标题 1</option>
+              <option value="2">标题 2</option>
+              <option value="3">标题 3</option>
+              <option value="4">标题 4</option>
+              <option value="5">标题 5</option>
+              <option value="6">标题 6</option>
+            </select>
           </Tooltip>
 
-          <Tooltip content="斜体" placement="bottom">
-            <button
-              :class="['toolbar-btn', { active: editor.isActive('italic') }]"
-              @click="editor.chain().focus().toggleItalic().run()"
-              :disabled="!editor.can().chain().focus().toggleItalic().run()"
+          <Tooltip content="字体" placement="bottom">
+            <select
+              v-model="fontFamily"
+              @change="setFontFamily"
+              :disabled="!editMode"
+              class="h-8 px-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ml-1 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Italic class="w-4 h-4" />
-            </button>
-          </Tooltip>
-
-          <Tooltip content="下划线" placement="bottom">
-            <button
-              :class="['toolbar-btn', { active: editor.isActive('underline') }]"
-              @click="editor.chain().focus().toggleUnderline().run()"
-            >
-              <UnderlineIcon class="w-4 h-4" />
-            </button>
-          </Tooltip>
-
-          <Tooltip content="删除线" placement="bottom">
-            <button
-              :class="['toolbar-btn', { active: editor.isActive('strike') }]"
-              @click="editor.chain().focus().toggleStrike().run()"
-              :disabled="!editor.can().chain().focus().toggleStrike().run()"
-            >
-              <Strikethrough class="w-4 h-4" />
-            </button>
+              <option value="">默认字体</option>
+              <optgroup label="无衬线字体">
+                <option value="Arial, sans-serif">Arial</option>
+                <option value="Helvetica, sans-serif">Helvetica</option>
+                <option value="Verdana, sans-serif">Verdana</option>
+                <option value="Tahoma, sans-serif">Tahoma</option>
+                <option value="Trebuchet MS, sans-serif">Trebuchet MS</option>
+                <option value="Microsoft YaHei, sans-serif">微软雅黑</option>
+                <option value="PingFang SC, sans-serif">苹方</option>
+              </optgroup>
+              <optgroup label="衬线字体">
+                <option value="Times New Roman, serif">Times New Roman</option>
+                <option value="Georgia, serif">Georgia</option>
+                <option value="Palatino, serif">Palatino</option>
+                <option value="SimSun, serif">宋体</option>
+                <option value="KaiTi, serif">楷体</option>
+                <option value="FangSong, serif">仿宋</option>
+              </optgroup>
+              <optgroup label="等宽字体">
+                <option value="Courier New, monospace">Courier New</option>
+                <option value="Consolas, monospace">Consolas</option>
+                <option value="Monaco, monospace">Monaco</option>
+                <option value="Source Code Pro, monospace">Source Code Pro</option>
+              </optgroup>
+              <optgroup label="艺术字体">
+                <option value="Comic Sans MS, cursive">Comic Sans MS</option>
+                <option value="Impact, fantasy">Impact</option>
+                <option value="Brush Script MT, cursive">Brush Script</option>
+              </optgroup>
+            </select>
           </Tooltip>
         </div>
-      </div>
 
-      <!-- 文本对齐 -->
-      <div class="toolbar-section">
-        <div class="btn-group">
-          <Tooltip content="左对齐" placement="bottom">
-            <button
-              :class="['toolbar-btn', { active: editor.isActive({ textAlign: 'left' }) }]"
-              @click="editor.chain().focus().setTextAlign('left').run()"
-            >
-              <AlignLeft class="w-4 h-4" />
-            </button>
+        <!-- 字体样式 -->
+        <div class="toolbar-section">
+          <div class="btn-group">
+            <Tooltip content="粗体" placement="bottom">
+              <button
+                :class="['toolbar-btn', { active: editor.isActive('bold') }]"
+                @click="editor.chain().focus().toggleBold().run()"
+                :disabled="!editMode || !editor.can().chain().focus().toggleBold().run()"
+              >
+                <Bold class="w-4 h-4" />
+              </button>
+            </Tooltip>
+
+            <Tooltip content="斜体" placement="bottom">
+              <button
+                :class="['toolbar-btn', { active: editor.isActive('italic') }]"
+                @click="editor.chain().focus().toggleItalic().run()"
+                :disabled="!editMode || !editor.can().chain().focus().toggleItalic().run()"
+              >
+                <Italic class="w-4 h-4" />
+              </button>
+            </Tooltip>
+
+            <Tooltip content="下划线" placement="bottom">
+              <button
+                :class="['toolbar-btn', { active: editor.isActive('underline') }]"
+                @click="editor.chain().focus().toggleUnderline().run()"
+                :disabled="!editMode"
+              >
+                <UnderlineIcon class="w-4 h-4" />
+              </button>
+            </Tooltip>
+
+            <Tooltip content="删除线" placement="bottom">
+              <button
+                :class="['toolbar-btn', { active: editor.isActive('strike') }]"
+                @click="editor.chain().focus().toggleStrike().run()"
+                :disabled="!editMode || !editor.can().chain().focus().toggleStrike().run()"
+              >
+                <Strikethrough class="w-4 h-4" />
+              </button>
+            </Tooltip>
+          </div>
+        </div>
+
+        <!-- 文本对齐 -->
+        <div class="toolbar-section">
+          <div class="btn-group">
+            <Tooltip content="左对齐" placement="bottom">
+              <button
+                :class="['toolbar-btn', { active: editor.isActive({ textAlign: 'left' }) }]"
+                @click="editor.chain().focus().setTextAlign('left').run()"
+                :disabled="!editMode"
+              >
+                <AlignLeft class="w-4 h-4" />
+              </button>
+            </Tooltip>
+
+            <Tooltip content="居中" placement="bottom">
+              <button
+                :class="['toolbar-btn', { active: editor.isActive({ textAlign: 'center' }) }]"
+                @click="editor.chain().focus().setTextAlign('center').run()"
+                :disabled="!editMode"
+              >
+                <AlignCenter class="w-4 h-4" />
+              </button>
+            </Tooltip>
+
+            <Tooltip content="右对齐" placement="bottom">
+              <button
+                :class="['toolbar-btn', { active: editor.isActive({ textAlign: 'right' }) }]"
+                @click="editor.chain().focus().setTextAlign('right').run()"
+                :disabled="!editMode"
+              >
+                <AlignRight class="w-4 h-4" />
+              </button>
+            </Tooltip>
+
+            <Tooltip content="两端对齐" placement="bottom">
+              <button
+                :class="['toolbar-btn', { active: editor.isActive({ textAlign: 'justify' }) }]"
+                @click="editor.chain().focus().setTextAlign('justify').run()"
+                :disabled="!editMode"
+              >
+                <AlignJustify class="w-4 h-4" />
+              </button>
+            </Tooltip>
+          </div>
+        </div>
+
+        <!-- 列表 -->
+        <div class="toolbar-section">
+          <div class="btn-group">
+            <Tooltip content="无序列表" placement="bottom">
+              <button
+                :class="['toolbar-btn', { active: editor.isActive('bulletList') }]"
+                @click="editor.chain().focus().toggleBulletList().run()"
+                :disabled="!editMode"
+              >
+                <List class="w-4 h-4" />
+              </button>
+            </Tooltip>
+
+            <Tooltip content="有序列表" placement="bottom">
+              <button
+                :class="['toolbar-btn', { active: editor.isActive('orderedList') }]"
+                @click="editor.chain().focus().toggleOrderedList().run()"
+                :disabled="!editMode"
+              >
+                <ListOrdered class="w-4 h-4" />
+              </button>
+            </Tooltip>
+
+            <Tooltip content="任务列表" placement="bottom">
+              <button
+                :class="['toolbar-btn', { active: editor.isActive('taskList') }]"
+                @click="editor.chain().focus().toggleTaskList().run()"
+                :disabled="!editMode"
+              >
+                <ListChecks class="w-4 h-4" />
+              </button>
+            </Tooltip>
+          </div>
+        </div>
+
+        <!-- 引用和代码 -->
+        <div class="toolbar-section">
+          <div class="btn-group">
+            <Tooltip content="引用" placement="bottom">
+              <button
+                :class="['toolbar-btn', { active: editor.isActive('blockquote') }]"
+                @click="editor.chain().focus().toggleBlockquote().run()"
+                :disabled="!editMode"
+              >
+                <Quote class="w-4 h-4" />
+              </button>
+            </Tooltip>
+
+            <Tooltip content="代码块" placement="bottom">
+              <button
+                :class="['toolbar-btn', { active: editor.isActive('codeBlock') }]"
+                @click="editor.chain().focus().toggleCodeBlock().run()"
+                :disabled="!editMode"
+              >
+                <Code2 class="w-4 h-4" />
+              </button>
+            </Tooltip>
+
+            <Tooltip content="行内代码" placement="bottom">
+              <button
+                :class="['toolbar-btn', { active: editor.isActive('code') }]"
+                @click="editor.chain().focus().toggleCode().run()"
+                :disabled="!editMode"
+              >
+                <Code class="w-4 h-4" />
+              </button>
+            </Tooltip>
+          </div>
+        </div>
+
+        <!-- 链接和图片 -->
+        <div class="toolbar-section">
+          <div class="btn-group">
+            <Tooltip content="链接" placement="bottom">
+              <button
+                :class="['toolbar-btn', { active: editor.isActive('link') }]"
+                @click="openLinkDialog"
+                :disabled="!editMode"
+              >
+                <LinkIcon class="w-4 h-4" />
+              </button>
+            </Tooltip>
+
+            <Tooltip content="取消链接" placement="bottom">
+              <button
+                class="toolbar-btn"
+                @click="editor.chain().focus().unsetLink().run()"
+                :disabled="!editMode || !editor.isActive('link')"
+              >
+                <Unlink class="w-4 h-4" />
+              </button>
+            </Tooltip>
+
+            <Tooltip content="图片" placement="bottom">
+              <button class="toolbar-btn" @click="openImageDialog" :disabled="!editMode">
+                <ImageIcon class="w-4 h-4" />
+              </button>
+            </Tooltip>
+          </div>
+        </div>
+
+        <!-- 表格 -->
+        <div class="toolbar-section">
+          <div class="btn-group">
+            <Tooltip content="插入表格" placement="bottom">
+              <button class="toolbar-btn" @click="insertTable" :disabled="!editMode">
+                <TableIcon class="w-4 h-4" />
+              </button>
+            </Tooltip>
+
+            <Tooltip content="添加列" placement="bottom">
+              <button
+                class="toolbar-btn"
+                @click="editor.chain().focus().addColumnAfter().run()"
+                :disabled="!editMode || !editor.can().addColumnAfter()"
+              >
+                <Columns3 class="w-4 h-4" />
+              </button>
+            </Tooltip>
+
+            <Tooltip content="添加行" placement="bottom">
+              <button
+                class="toolbar-btn"
+                @click="editor.chain().focus().addRowAfter().run()"
+                :disabled="!editMode || !editor.can().addRowAfter()"
+              >
+                <Rows3 class="w-4 h-4" />
+              </button>
+            </Tooltip>
+
+            <Tooltip content="删除表格" placement="bottom">
+              <button
+                class="toolbar-btn"
+                @click="editor.chain().focus().deleteTable().run()"
+                :disabled="!editMode || !editor.can().deleteTable()"
+              >
+                <TableOff class="w-4 h-4" />
+              </button>
+            </Tooltip>
+          </div>
+        </div>
+
+        <!-- 其他功能 -->
+        <div class="toolbar-section">
+          <div class="btn-group">
+            <Tooltip content="高亮" placement="bottom">
+              <button
+                :class="['toolbar-btn', { active: editor.isActive('highlight') }]"
+                @click="editor.chain().focus().toggleHighlight().run()"
+                :disabled="!editMode"
+              >
+                <Highlighter class="w-4 h-4" />
+              </button>
+            </Tooltip>
+
+            <Tooltip content="分隔线" placement="bottom">
+              <button
+                class="toolbar-btn"
+                @click="editor.chain().focus().setHorizontalRule().run()"
+                :disabled="!editMode"
+              >
+                <Minus class="w-4 h-4" />
+              </button>
+            </Tooltip>
+
+            <Tooltip content="清除格式" placement="bottom">
+              <button
+                class="toolbar-btn"
+                @click="editor.chain().focus().clearNodes().unsetAllMarks().run()"
+                :disabled="!editMode"
+              >
+                <RemoveFormatting class="w-4 h-4" />
+              </button>
+            </Tooltip>
+          </div>
+        </div>
+
+        <!-- 撤销和重做 -->
+        <div class="toolbar-section">
+          <div class="btn-group">
+            <Tooltip content="撤销" placement="bottom">
+              <button
+                class="toolbar-btn"
+                @click="editor.chain().focus().undo().run()"
+                :disabled="!editMode || !editor.can().chain().focus().undo().run()"
+              >
+                <Undo2 class="w-4 h-4" />
+              </button>
+            </Tooltip>
+
+            <Tooltip content="重做" placement="bottom">
+              <button
+                class="toolbar-btn"
+                @click="editor.chain().focus().redo().run()"
+                :disabled="!editMode || !editor.can().chain().focus().redo().run()"
+              >
+                <Redo2 class="w-4 h-4" />
+              </button>
+            </Tooltip>
+          </div>
+        </div>
+
+        <!-- 颜色选择器 -->
+        <div class="toolbar-section">
+          <Tooltip content="文本颜色" placement="bottom">
+            <ColorPicker
+              v-model="textColor"
+              @change="setTextColor"
+              :predefine="predefineColors"
+              :disabled="!editMode"
+            />
           </Tooltip>
 
-          <Tooltip content="居中" placement="bottom">
-            <button
-              :class="['toolbar-btn', { active: editor.isActive({ textAlign: 'center' }) }]"
-              @click="editor.chain().focus().setTextAlign('center').run()"
-            >
-              <AlignCenter class="w-4 h-4" />
-            </button>
-          </Tooltip>
-
-          <Tooltip content="右对齐" placement="bottom">
-            <button
-              :class="['toolbar-btn', { active: editor.isActive({ textAlign: 'right' }) }]"
-              @click="editor.chain().focus().setTextAlign('right').run()"
-            >
-              <AlignRight class="w-4 h-4" />
-            </button>
-          </Tooltip>
-
-          <Tooltip content="两端对齐" placement="bottom">
-            <button
-              :class="['toolbar-btn', { active: editor.isActive({ textAlign: 'justify' }) }]"
-              @click="editor.chain().focus().setTextAlign('justify').run()"
-            >
-              <AlignJustify class="w-4 h-4" />
-            </button>
+          <Tooltip content="背景颜色" placement="bottom">
+            <ColorPicker
+              v-model="highlightColor"
+              @change="setHighlightColor"
+              :predefine="predefineColors"
+              :disabled="!editMode"
+            />
           </Tooltip>
         </div>
-      </div>
+      </template>
 
-      <!-- 列表 -->
-      <div class="toolbar-section">
-        <div class="btn-group">
-          <Tooltip content="无序列表" placement="bottom">
-            <button
-              :class="['toolbar-btn', { active: editor.isActive('bulletList') }]"
-              @click="editor.chain().focus().toggleBulletList().run()"
-            >
-              <List class="w-4 h-4" />
-            </button>
-          </Tooltip>
-
-          <Tooltip content="有序列表" placement="bottom">
-            <button
-              :class="['toolbar-btn', { active: editor.isActive('orderedList') }]"
-              @click="editor.chain().focus().toggleOrderedList().run()"
-            >
-              <ListOrdered class="w-4 h-4" />
-            </button>
-          </Tooltip>
-
-          <Tooltip content="任务列表" placement="bottom">
-            <button
-              :class="['toolbar-btn', { active: editor.isActive('taskList') }]"
-              @click="editor.chain().focus().toggleTaskList().run()"
-            >
-              <ListChecks class="w-4 h-4" />
-            </button>
-          </Tooltip>
-        </div>
-      </div>
-
-      <!-- 引用和代码 -->
-      <div class="toolbar-section">
-        <div class="btn-group">
-          <Tooltip content="引用" placement="bottom">
-            <button
-              :class="['toolbar-btn', { active: editor.isActive('blockquote') }]"
-              @click="editor.chain().focus().toggleBlockquote().run()"
-            >
-              <Quote class="w-4 h-4" />
-            </button>
-          </Tooltip>
-
-          <Tooltip content="代码块" placement="bottom">
-            <button
-              :class="['toolbar-btn', { active: editor.isActive('codeBlock') }]"
-              @click="editor.chain().focus().toggleCodeBlock().run()"
-            >
-              <Code2 class="w-4 h-4" />
-            </button>
-          </Tooltip>
-
-          <Tooltip content="行内代码" placement="bottom">
-            <button
-              :class="['toolbar-btn', { active: editor.isActive('code') }]"
-              @click="editor.chain().focus().toggleCode().run()"
-            >
-              <Code class="w-4 h-4" />
-            </button>
-          </Tooltip>
-        </div>
-      </div>
-
-      <!-- 链接和图片 -->
-      <div class="toolbar-section">
-        <div class="btn-group">
-          <Tooltip content="链接" placement="bottom">
-            <button
-              :class="['toolbar-btn', { active: editor.isActive('link') }]"
-              @click="openLinkDialog"
-            >
-              <LinkIcon class="w-4 h-4" />
-            </button>
-          </Tooltip>
-
-          <Tooltip content="取消链接" placement="bottom">
-            <button
-              class="toolbar-btn"
-              @click="editor.chain().focus().unsetLink().run()"
-              :disabled="!editor.isActive('link')"
-            >
-              <Unlink class="w-4 h-4" />
-            </button>
-          </Tooltip>
-
-          <Tooltip content="图片" placement="bottom">
-            <button class="toolbar-btn" @click="openImageDialog">
-              <ImageIcon class="w-4 h-4" />
-            </button>
-          </Tooltip>
-        </div>
-      </div>
-
-      <!-- 表格 -->
-      <div class="toolbar-section">
-        <div class="btn-group">
-          <Tooltip content="插入表格" placement="bottom">
-            <button class="toolbar-btn" @click="insertTable">
-              <TableIcon class="w-4 h-4" />
-            </button>
-          </Tooltip>
-
-          <Tooltip content="添加列" placement="bottom">
-            <button
-              class="toolbar-btn"
-              @click="editor.chain().focus().addColumnAfter().run()"
-              :disabled="!editor.can().addColumnAfter()"
-            >
-              <Columns3 class="w-4 h-4" />
-            </button>
-          </Tooltip>
-
-          <Tooltip content="添加行" placement="bottom">
-            <button
-              class="toolbar-btn"
-              @click="editor.chain().focus().addRowAfter().run()"
-              :disabled="!editor.can().addRowAfter()"
-            >
-              <Rows3 class="w-4 h-4" />
-            </button>
-          </Tooltip>
-
-          <Tooltip content="删除表格" placement="bottom">
-            <button
-              class="toolbar-btn"
-              @click="editor.chain().focus().deleteTable().run()"
-              :disabled="!editor.can().deleteTable()"
-            >
-              <TableOff class="w-4 h-4" />
-            </button>
-          </Tooltip>
-        </div>
-      </div>
-
-      <!-- 其他功能 -->
-      <div class="toolbar-section">
-        <div class="btn-group">
-          <Tooltip content="高亮" placement="bottom">
-            <button
-              :class="['toolbar-btn', { active: editor.isActive('highlight') }]"
-              @click="editor.chain().focus().toggleHighlight().run()"
-            >
-              <Highlighter class="w-4 h-4" />
-            </button>
-          </Tooltip>
-
-          <Tooltip content="分隔线" placement="bottom">
-            <button class="toolbar-btn" @click="editor.chain().focus().setHorizontalRule().run()">
-              <Minus class="w-4 h-4" />
-            </button>
-          </Tooltip>
-
-          <Tooltip content="清除格式" placement="bottom">
-            <button
-              class="toolbar-btn"
-              @click="editor.chain().focus().clearNodes().unsetAllMarks().run()"
-            >
-              <RemoveFormatting class="w-4 h-4" />
-            </button>
-          </Tooltip>
-        </div>
-      </div>
-
-      <!-- 撤销和重做 -->
-      <div class="toolbar-section">
-        <div class="btn-group">
-          <Tooltip content="撤销" placement="bottom">
-            <button
-              class="toolbar-btn"
-              @click="editor.chain().focus().undo().run()"
-              :disabled="!editor.can().chain().focus().undo().run()"
-            >
-              <Undo2 class="w-4 h-4" />
-            </button>
-          </Tooltip>
-
-          <Tooltip content="重做" placement="bottom">
-            <button
-              class="toolbar-btn"
-              @click="editor.chain().focus().redo().run()"
-              :disabled="!editor.can().chain().focus().redo().run()"
-            >
-              <Redo2 class="w-4 h-4" />
-            </button>
-          </Tooltip>
-        </div>
-      </div>
-
-      <!-- 颜色选择器 -->
-      <div class="toolbar-section">
-        <Tooltip content="文本颜色" placement="bottom">
-          <ColorPicker v-model="textColor" @change="setTextColor" :predefine="predefineColors" />
-        </Tooltip>
-
-        <Tooltip content="背景颜色" placement="bottom">
-          <ColorPicker
-            v-model="highlightColor"
-            @change="setHighlightColor"
-            :predefine="predefineColors"
-          />
-        </Tooltip>
-      </div>
-
-      <!-- Markdown 源码/预览切换 -->
-      <div class="toolbar-section">
+      <!-- Markdown 源码/预览切换（Markdown 模式显示） -->
+      <div v-if="isMarkdownMode" class="toolbar-section">
         <Tooltip :content="sourceMode ? '预览模式' : 'Markdown 源码'" placement="bottom">
           <button
             :class="['toolbar-btn', { active: sourceMode }]"
             @click="emit('toggle-source-mode')"
+            :disabled="!editMode"
           >
             <FileCode v-if="!sourceMode" class="w-4 h-4" />
             <Eye v-else class="w-4 h-4" />
@@ -381,6 +445,56 @@
     >
       <ChevronRight class="w-5 h-5" />
     </button>
+
+    <!-- 右侧固定区域：操作按钮 -->
+    <div class="toolbar-fixed toolbar-fixed-right">
+      <div class="toolbar-actions">
+        <!-- 编辑按钮（非编辑模式显示） -->
+        <Tooltip v-if="!editMode" content="编辑" placement="bottom">
+          <button class="action-btn action-btn-primary" @click="emit('edit')">
+            <Pencil class="w-4 h-4" />
+          </button>
+        </Tooltip>
+
+        <!-- 保存按钮（编辑模式显示） -->
+        <Tooltip v-if="editMode" content="保存" placement="bottom">
+          <button class="action-btn action-btn-success" @click="emit('save')">
+            <Check class="w-4 h-4" />
+          </button>
+        </Tooltip>
+
+        <!-- 取消按钮（编辑模式显示） -->
+        <Tooltip v-if="editMode" content="取消" placement="bottom">
+          <button class="action-btn action-btn-secondary" @click="emit('cancel')">
+            <X class="w-4 h-4" />
+          </button>
+        </Tooltip>
+
+        <!-- 分隔线 -->
+        <div class="action-divider"></div>
+
+        <!-- 设置按钮（编辑模式显示） -->
+        <Tooltip v-if="editMode" content="设置" placement="bottom">
+          <button class="action-btn action-btn-ghost" @click="emit('settings')">
+            <Settings class="w-4 h-4" />
+          </button>
+        </Tooltip>
+
+        <!-- 历史记录按钮 -->
+        <Tooltip content="历史记录" placement="bottom">
+          <button class="action-btn action-btn-ghost" @click="emit('history')">
+            <History class="w-4 h-4" />
+          </button>
+        </Tooltip>
+
+        <!-- 删除按钮 -->
+        <Tooltip content="删除" placement="bottom">
+          <button class="action-btn action-btn-danger" @click="emit('delete')">
+            <Trash2 class="w-4 h-4" />
+          </button>
+        </Tooltip>
+      </div>
+    </div>
   </div>
 
   <!-- 链接弹窗 -->
@@ -457,8 +571,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import type { Editor } from '@tiptap/vue-3'
+import { ContentType } from '../types'
 import { Tooltip, ColorPicker, Dialog } from './ui'
 import {
   Bold,
@@ -491,20 +606,42 @@ import {
   ChevronRight,
   FileCode,
   Eye,
+  Pencil,
+  Check,
+  X,
+  Trash2,
+  Settings,
+  History,
 } from 'lucide-vue-next'
 
 interface Props {
-  editor: Editor
+  editor: Editor | null
   sourceMode?: boolean
+  contentType?: ContentType
+  isNewNote?: boolean
+  editMode?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   sourceMode: false,
+  contentType: ContentType.Html,
+  isNewNote: false,
+  editMode: false,
 })
 
 const emit = defineEmits<{
   'toggle-source-mode': []
+  'update:content-type': [contentType: ContentType]
+  edit: []
+  save: []
+  cancel: []
+  delete: []
+  settings: []
+  history: []
 }>()
+
+// 是否为 Markdown 模式
+const isMarkdownMode = computed(() => props.contentType === ContentType.Markdown)
 
 const headingLevel = ref('0')
 const fontFamily = ref('')
@@ -571,6 +708,7 @@ const predefineColors = [
 
 // 设置标题
 const setHeading = () => {
+  if (!props.editor) return
   const level = parseInt(headingLevel.value)
   if (level === 0) {
     props.editor.chain().focus().setParagraph().run()
@@ -585,6 +723,7 @@ const setHeading = () => {
 
 // 设置字体
 const setFontFamily = () => {
+  if (!props.editor) return
   if (fontFamily.value) {
     props.editor.chain().focus().setFontFamily(fontFamily.value).run()
   } else {
@@ -594,16 +733,19 @@ const setFontFamily = () => {
 
 // 设置文本颜色
 const setTextColor = (color: string) => {
+  if (!props.editor) return
   props.editor.chain().focus().setColor(color).run()
 }
 
 // 设置背景颜色
 const setHighlightColor = (color: string) => {
+  if (!props.editor) return
   props.editor.chain().focus().toggleHighlight({ color }).run()
 }
 
 // 打开链接弹窗
 const openLinkDialog = () => {
+  if (!props.editor) return
   const previousUrl = props.editor.getAttributes('link').href
   linkUrl.value = previousUrl || ''
   linkDialogVisible.value = true
@@ -611,6 +753,7 @@ const openLinkDialog = () => {
 
 // 设置链接
 const setLink = () => {
+  if (!props.editor) return
   if (linkUrl.value) {
     props.editor.chain().focus().extendMarkRange('link').setLink({ href: linkUrl.value }).run()
   }
@@ -639,6 +782,7 @@ const handleImageUpload = (event: Event) => {
 
 // 插入图片
 const insertImage = () => {
+  if (!props.editor) return
   if (imageUrl.value) {
     props.editor.chain().focus().setImage({ src: imageUrl.value }).run()
   }
@@ -648,6 +792,7 @@ const insertImage = () => {
 
 // 插入表格
 const insertTable = () => {
+  if (!props.editor) return
   props.editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
 }
 
@@ -655,6 +800,7 @@ const insertTable = () => {
 watch(
   () => props.editor?.isActive('heading'),
   (isActive) => {
+    if (!props.editor) return
     if (!isActive) {
       headingLevel.value = '0'
     } else {
@@ -706,6 +852,123 @@ watch(
   border-bottom: 1px solid #e5e7eb;
   background-color: #f9fafb;
   position: relative;
+}
+
+/* 固定区域 */
+.toolbar-fixed {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+  background-color: #f9fafb;
+  flex-shrink: 0;
+  z-index: 5;
+}
+
+.toolbar-fixed-left {
+  border-right: 1px solid #e5e7eb;
+  background: linear-gradient(to left, #f3f4f6, #f9fafb);
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.toolbar-fixed-right {
+  border-left: 1px solid #e5e7eb;
+  background: linear-gradient(to right, #f3f4f6, #f9fafb);
+}
+
+/* 操作按钮区域 */
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 操作按钮基础样式 */
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  outline: none;
+}
+
+/* 主要按钮 - 编辑 */
+.action-btn-primary {
+  background: #3b82f6;
+  color: white;
+  padding: 0 10px;
+  box-shadow: 0 1px 2px rgba(59, 130, 246, 0.3);
+}
+
+.action-btn-primary:hover {
+  background: #2563eb;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.4);
+  transform: translateY(-1px);
+}
+
+/* 成功按钮 - 保存 */
+.action-btn-success {
+  background: #22c55e;
+  color: white;
+  padding: 0 10px;
+  box-shadow: 0 1px 2px rgba(34, 197, 94, 0.3);
+}
+
+.action-btn-success:hover {
+  background: #16a34a;
+  box-shadow: 0 2px 4px rgba(34, 197, 94, 0.4);
+  transform: translateY(-1px);
+}
+
+/* 次要按钮 - 取消 */
+.action-btn-secondary {
+  background: #e5e7eb;
+  color: #374151;
+  padding: 0 8px;
+}
+
+.action-btn-secondary:hover {
+  background: #d1d5db;
+}
+
+/* 幽灵按钮 - 设置/历史 */
+.action-btn-ghost {
+  background: transparent;
+  color: #6b7280;
+  padding: 0 8px;
+}
+
+.action-btn-ghost:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+/* 危险按钮 - 删除 */
+.action-btn-danger {
+  background: transparent;
+  color: #9ca3af;
+  padding: 0 8px;
+}
+
+.action-btn-danger:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* 操作分隔线 */
+.action-divider {
+  width: 1px;
+  height: 20px;
+  background: #d1d5db;
+  margin: 0 4px;
 }
 
 /* 滚动按钮 */
