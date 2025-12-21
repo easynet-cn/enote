@@ -8,11 +8,19 @@ import type {
   NotePageResult,
   NoteHistory,
 } from '../types'
-import { ElNotification } from 'element-plus'
+import { showNotification } from '../components/ui/notification'
 import { noteApi } from '../api/note'
+import {
+  parseId,
+  isTemporaryId,
+  validateNotebookName,
+  validateTagName,
+  validateNoteTitle,
+} from '../utils/validation'
+import { showError, withNotification } from '../utils/errorHandler'
 
-const notebooks = ref<ShowNotebook[]>([{ id: '0', name: '全部', count: 0, icon: '📒' }])
-const tags = ref<ShowTag[]>([{ id: '0', name: '全部', cls: 'text-gray-500' }])
+const notebooks = ref<ShowNotebook[]>([{ id: '0', name: '全部', count: 0, icon: 'BookOpen' }])
+const tags = ref<ShowTag[]>([{ id: '0', name: '全部', icon: 'Tags' }])
 const notes = ref<ShowNote[]>([])
 const query = ref<string>('')
 const histories = ref<NoteHistory[]>([])
@@ -42,138 +50,105 @@ const state = reactive<AppState>({
 export function useNotes() {
   // 获取笔记本
   const getNotebooks = async () => {
-    const notification = ElNotification({
-      title: '',
-      message: '正在加载笔记本',
-      type: 'success',
-      duration: 0,
-    })
+    const result = await withNotification(
+      async () => {
+        const data = (await noteApi.getNotebooks()).map(
+          (notebook): ShowNotebook => ({
+            id: String(notebook.id),
+            parentId: notebook.parentId,
+            name: notebook.name,
+            description: notebook.description,
+            icon: notebook.icon,
+            cls: notebook.cls,
+            count: notebook.count,
+            createTime: notebook.createTime,
+            updateTime: notebook.updateTime,
+          }),
+        )
+        return data
+      },
+      { loading: '正在加载笔记本', error: '加载笔记本失败' },
+    )
 
-    try {
-      const data = (await noteApi.getNotebooks()).map(
-        (notebook): ShowNotebook => ({
-          id: String(notebook.id),
-          parentId: notebook.parentId,
-          name: notebook.name,
-          description: notebook.description,
-          icon: notebook.icon,
-          cls: notebook.cls,
-          count: notebook.count,
-          createTime: notebook.createTime,
-          updateTime: notebook.updateTime,
-        }),
-      )
-
-      notebooks.value = [...[notebooks.value[0]], ...data]
-    } catch (error) {
-      ElNotification({
-        title: '',
-        message: String(error),
-        type: 'error',
-        duration: 0,
-      })
-    } finally {
-      notification.close()
+    if (result) {
+      notebooks.value = [notebooks.value[0], ...result]
     }
   }
 
   // 获取笔记
-  const searchNotes = async () => {
-    const notification = ElNotification({
-      title: '',
-      message: '正在加载笔记',
-      type: 'success',
-      duration: 0,
-    })
+  const searchNotes = async (): Promise<ShowNote[]> => {
+    const result = await withNotification(
+      async () => {
+        state.noteSearchPageParam.pageIndex = state.notePageIndex
+        state.noteSearchPageParam.pageSize = state.notePageSize
 
-    try {
-      state.noteSearchPageParam.pageIndex = state.notePageIndex
-      state.noteSearchPageParam.pageSize = state.notePageSize
+        const pageResult: NotePageResult = await noteApi.searchPageNotes(state.noteSearchPageParam)
 
-      const pageResult: NotePageResult = await noteApi.searchPageNotes(state.noteSearchPageParam)
+        state.noteTotal = pageResult.total
 
-      state.noteTotal = pageResult.total
+        const countMap = new Map<number, number>()
+        let totalCount = 0
 
-      let countMap = new Map<number, number>()
-      let totalCount = 0
+        Object.entries(pageResult.notebookCounts).forEach(([k, v]) => {
+          const id = parseId(k)
+          countMap.set(id, v)
+          totalCount += v
+        })
 
-      Object.entries(pageResult.notebookCounts).forEach(([k, v]) => {
-        countMap.set(Number.parseInt(k) ?? 0, v)
-        totalCount += v
-      })
+        notebooks.value.forEach((e) => {
+          if (e.id === '0') {
+            e.count = totalCount
+          } else {
+            const id = parseId(e.id)
+            e.count = countMap.get(id) || 0
+          }
+        })
 
-      notebooks.value.forEach((e) => {
-        if (e.id == '0') {
-          e.count = totalCount
-        } else {
-          const id = Number.parseInt(e.id) ?? 0
+        return pageResult.data.map(
+          (note): ShowNote => ({
+            id: String(note.id),
+            notebookId: String(note.notebookId),
+            title: note.title,
+            content: note.content,
+            tags: note.tags.map((e) => ({
+              id: String(e.id),
+              name: e.name,
+              icon: e.icon,
+              cls: e.cls,
+              sortOrder: e.sortOrder,
+            })),
+            createTime: note.createTime,
+            updateTime: note.updateTime,
+          }),
+        )
+      },
+      { loading: '正在加载笔记', error: '加载笔记失败' },
+    )
 
-          e.count = countMap.get(id) || 0
-        }
-      })
-
-      return pageResult.data.map(
-        (note): ShowNote => ({
-          id: String(note.id),
-          notebookId: String(note.notebookId),
-          title: note.title,
-          content: note.content,
-          tags: note.tags.map((e) => ({
-            id: String(e.id),
-            name: e.name,
-            icon: e.icon,
-            cls: e.cls,
-            sortOrder: e.sortOrder,
-          })),
-          createTime: note.createTime,
-          updateTime: note.updateTime,
-        }),
-      )
-    } catch (error) {
-      ElNotification({
-        title: '',
-        message: String(error),
-        type: 'error',
-        duration: 0,
-      })
-    } finally {
-      notification.close()
-    }
-
-    return new Array()
+    return result || []
   }
 
   // 获取标签
   const getTags = async () => {
-    const notification = ElNotification({
-      title: '',
-      message: '正在加载标签',
-      type: 'success',
-      duration: 0,
-    })
+    const result = await withNotification(
+      async () => {
+        const data = (await noteApi.geTags()).map(
+          (tag): ShowTag => ({
+            id: String(tag.id),
+            name: tag.name,
+            icon: tag.icon,
+            cls: tag.cls,
+            createTime: tag.createTime ?? '',
+            updateTime: tag.updateTime ?? '',
+          }),
+        )
+        return data
+      },
+      { loading: '正在加载标签', error: '加载标签失败' },
+    )
 
-    try {
-      const data = (await noteApi.geTags()).map(
-        (tag): ShowTag => ({
-          id: String(tag.id),
-          name: tag.name,
-          icon: tag.icon,
-          cls: tag.cls,
-          createTime: tag.createTime ?? '',
-          updateTime: tag.updateTime ?? '',
-        }),
-      )
-
-      tags.value = [...[tags.value[0]], ...data]
-    } catch (error) {
-      ElNotification({
-        title: '',
-        message: String(error),
-        type: 'error',
-        duration: 0,
-      })
-    } finally {
-      notification.close()
+    if (result) {
+      tags.value = [tags.value[0], ...result]
     }
   }
 
@@ -181,161 +156,126 @@ export function useNotes() {
     return notes.value.find((note) => note.id === state.activeNote) || null
   })
 
-  // 方法
+  // 保存笔记本
   const saveNotebook = async (showNotebook: ShowNotebook) => {
-    const notification = ElNotification({
-      title: '',
-      message: '正在保存笔记本',
-      type: 'success',
-      duration: 0,
-    })
-
-    try {
-      const id =
-        !showNotebook.id || showNotebook.id.trim() === '' || showNotebook.id === '0'
-          ? 0
-          : (Number.parseInt(showNotebook.id) ?? 0)
-
-      if (id == 0) {
-        await noteApi.createNotebook({
-          id: 0,
-          parentId: showNotebook.parentId,
-          name: showNotebook.name ?? '',
-          description: showNotebook.description,
-          icon: showNotebook.icon,
-          cls: showNotebook.cls,
-        })
-      } else {
-        await noteApi.updateNotebook({
-          id: id,
-          parentId: showNotebook.parentId,
-          name: showNotebook.name ?? '',
-          description: showNotebook.description,
-          icon: showNotebook.icon,
-          cls: showNotebook.cls,
-        })
-      }
-
-      await getNotebooks()
-      await searchNotes()
-    } catch (error) {
-      ElNotification({
-        title: '',
-        message: String(error),
-        type: 'error',
-        duration: 0,
-      })
-    } finally {
-      notification.close()
+    // 验证
+    const validation = validateNotebookName(showNotebook.name)
+    if (!validation.valid) {
+      showError(null, validation.error)
+      return
     }
+
+    const id = parseId(showNotebook.id)
+
+    await withNotification(
+      async () => {
+        const notebookData = {
+          id,
+          parentId: showNotebook.parentId,
+          name: showNotebook.name ?? '',
+          description: showNotebook.description,
+          icon: showNotebook.icon,
+          cls: showNotebook.cls,
+        }
+
+        if (id === 0) {
+          await noteApi.createNotebook(notebookData)
+        } else {
+          await noteApi.updateNotebook(notebookData)
+        }
+
+        // 并行刷新数据
+        await Promise.all([getNotebooks(), searchNotes().then((data) => (notes.value = data))])
+      },
+      {
+        loading: '正在保存笔记本',
+        success: '笔记本保存成功',
+        error: '保存笔记本失败',
+      },
+    )
   }
 
+  // 删除笔记本
   const deleteNotebook = async (id: string) => {
-    const notification = ElNotification({
-      title: '',
-      message: '正在删除笔记本',
-      type: 'success',
-      duration: 0,
-    })
+    const notebookId = parseId(id)
+    if (notebookId === 0) return
 
-    try {
-      const notebookId = Number.parseInt(id) ?? 0
-
-      if (notebookId > 0) {
+    await withNotification(
+      async () => {
         await noteApi.deleteNotebook(notebookId)
-
-        await getNotebooks()
-        await searchNotes()
-      }
-    } catch (error) {
-      ElNotification({
-        title: '',
-        message: String(error),
-        type: 'error',
-        duration: 0,
-      })
-    } finally {
-      notification.close()
-    }
+        await Promise.all([getNotebooks(), searchNotes().then((data) => (notes.value = data))])
+      },
+      {
+        loading: '正在删除笔记本',
+        success: '笔记本已删除',
+        error: '删除笔记本失败',
+      },
+    )
   }
 
+  // 保存标签
   const saveTag = async (showTag: ShowTag) => {
-    const notification = ElNotification({
-      title: '',
-      message: '正在保存标签',
-      type: 'success',
-      duration: 0,
-    })
-    try {
-      const id =
-        !showTag.id || showTag.id.trim().length == 0 || showTag.id === '0'
-          ? 0
-          : (Number.parseInt(showTag.id) ?? 0)
-
-      if (id == 0) {
-        await noteApi.createTag({
-          id: 0,
-          name: showTag.name ?? '',
-          icon: showTag.icon,
-          cls: showTag.cls,
-        })
-      } else {
-        await noteApi.updateTag({
-          id: id,
-          name: showTag.name ?? '',
-          icon: showTag.icon,
-          cls: showTag.cls,
-        })
-      }
-
-      await getNotebooks()
-      await getTags()
-      await searchNotes()
-    } catch (error) {
-      ElNotification({
-        title: '',
-        message: String(error),
-        type: 'error',
-        duration: 0,
-      })
-    } finally {
-      notification.close()
+    // 验证
+    const validation = validateTagName(showTag.name)
+    if (!validation.valid) {
+      showError(null, validation.error)
+      return
     }
+
+    const id = parseId(showTag.id)
+
+    await withNotification(
+      async () => {
+        const tagData = {
+          id,
+          name: showTag.name ?? '',
+          icon: showTag.icon,
+          cls: showTag.cls,
+        }
+
+        if (id === 0) {
+          await noteApi.createTag(tagData)
+        } else {
+          await noteApi.updateTag(tagData)
+        }
+
+        // 并行刷新数据
+        await Promise.all([
+          getNotebooks(),
+          getTags(),
+          searchNotes().then((data) => (notes.value = data)),
+        ])
+      },
+      {
+        loading: '正在保存标签',
+        success: '标签保存成功',
+        error: '保存标签失败',
+      },
+    )
   }
 
+  // 删除标签
   const deleteTag = async (id: string) => {
-    const notification = ElNotification({
-      title: '',
-      message: '正在删除标签',
-      type: 'success',
-      duration: 0,
-    })
+    const tagId = parseId(id)
+    if (tagId === 0) return
 
-    try {
-      const tagId = Number.parseInt(id) ?? 0
-
-      if (tagId > 0) {
+    await withNotification(
+      async () => {
         await noteApi.deleteTag(tagId)
-
-        await getNotebooks()
-        await searchNotes()
-      }
-    } catch (error) {
-      ElNotification({
-        title: '',
-        message: String(error),
-        type: 'error',
-        duration: 0,
-      })
-    } finally {
-      notification.close()
-    }
+        await Promise.all([getNotebooks(), searchNotes().then((data) => (notes.value = data))])
+      },
+      {
+        loading: '正在删除标签',
+        success: '标签已删除',
+        error: '删除标签失败',
+      },
+    )
   }
 
   const setActiveNotebook = async (notebookId: string) => {
     state.activeNotebook = notebookId
     state.activeNote = null
-    state.noteSearchPageParam.notebookId = Number.parseInt(notebookId) ?? 0
+    state.noteSearchPageParam.notebookId = parseId(notebookId)
 
     notes.value = await searchNotes()
   }
@@ -343,7 +283,7 @@ export function useNotes() {
   const setActiveTag = async (tagId: string) => {
     state.activeTag = tagId
     state.activeNote = null
-    state.noteSearchPageParam.tagId = Number.parseInt(tagId) ?? 0
+    state.noteSearchPageParam.tagId = parseId(tagId)
 
     notes.value = await searchNotes()
   }
@@ -358,7 +298,7 @@ export function useNotes() {
     const nowStr = useDateFormat(now, 'YYYY-MM-DD HH:mm:ss').value
 
     const newNote: ShowNote = {
-      id: 0 + '-' + now.value.getTime(),
+      id: '0-' + now.value.getTime(),
       notebookId: state.activeNotebook,
       title: '',
       content: '',
@@ -372,60 +312,58 @@ export function useNotes() {
     state.editMode = true
   }
 
+  // 保存笔记
   const saveNote = async () => {
     if (!state.activeNote || !activeNoteData.value) return
 
-    const notification = ElNotification({
-      title: '',
-      message: '正在保存笔记',
-      type: 'success',
-      duration: 0,
-    })
-
-    try {
-      const noteId = state.activeNote
-      let newNoteId = noteId
-      let tags =
-        activeNoteData.value.tags?.map((e) => ({
-          id: Number.parseInt(e.id),
-          name: e.name,
-          icon: e.icon,
-          cls: e.cls,
-          sortOrder: e.sortOrder,
-        })) ?? []
-
-      if (noteId.indexOf('-') < 0) {
-        await noteApi.updateNote(
-          Number.parseInt(noteId),
-          Number.parseInt(activeNoteData.value.notebookId || '') ?? 0,
-          activeNoteData.value.title,
-          activeNoteData.value.content,
-          tags,
-        )
-      } else {
-        let newNote = await noteApi.createNote(
-          Number.parseInt(activeNoteData.value.notebookId || '') ?? 0,
-          activeNoteData.value.title,
-          activeNoteData.value.content,
-          tags,
-        )
-
-        newNoteId = String(newNote.id)
-      }
-
-      notes.value = await searchNotes()
-
-      setActiveNote(newNoteId)
-    } catch (error) {
-      ElNotification({
-        title: '',
-        message: String(error),
-        type: 'error',
-        duration: 0,
-      })
-    } finally {
-      notification.close()
+    // 验证标题
+    const validation = validateNoteTitle(activeNoteData.value.title)
+    if (!validation.valid) {
+      showError(null, validation.error)
+      return
     }
+
+    const noteId = state.activeNote
+    let newNoteId = noteId
+
+    await withNotification(
+      async () => {
+        const tags =
+          activeNoteData.value?.tags?.map((e) => ({
+            id: parseId(e.id),
+            name: e.name,
+            icon: e.icon,
+            cls: e.cls,
+            sortOrder: e.sortOrder,
+          })) ?? []
+
+        if (!isTemporaryId(noteId)) {
+          await noteApi.updateNote(
+            parseId(noteId),
+            parseId(activeNoteData.value?.notebookId),
+            activeNoteData.value?.title ?? '',
+            activeNoteData.value?.content ?? '',
+            tags,
+          )
+        } else {
+          const newNote = await noteApi.createNote(
+            parseId(activeNoteData.value?.notebookId),
+            activeNoteData.value?.title ?? '',
+            activeNoteData.value?.content ?? '',
+            tags,
+          )
+          newNoteId = String(newNote.id)
+        }
+
+        notes.value = await searchNotes()
+        setActiveNote(newNoteId)
+      },
+      {
+        loading: '正在保存笔记',
+        success: '笔记保存成功',
+        error: '保存笔记失败',
+      },
+    )
   }
 
   const cancelEdit = async () => {
@@ -433,11 +371,8 @@ export function useNotes() {
 
     if (!state.activeNote) return
 
-    const noteId = state.activeNote
-
-    if (noteId.indexOf('-') > -1) {
+    if (isTemporaryId(state.activeNote)) {
       const noteIndex = notes.value.findIndex((note) => note.id === state.activeNote)
-
       if (noteIndex !== -1) {
         notes.value.splice(noteIndex, 1)
         state.activeNote = null
@@ -445,42 +380,33 @@ export function useNotes() {
     }
   }
 
+  // 删除笔记
   const deleteNote = async () => {
     if (!state.activeNote) return
 
     const noteId = state.activeNote
 
-    if (noteId.indexOf('-') > -1) {
+    if (isTemporaryId(noteId)) {
+      // 临时笔记直接从列表移除
       const noteIndex = notes.value.findIndex((note) => note.id === state.activeNote)
-
       if (noteIndex !== -1) {
         notes.value.splice(noteIndex, 1)
         state.activeNote = null
       }
     } else {
-      const notification = ElNotification({
-        title: '',
-        message: '正在删除笔记',
-        type: 'success',
-        duration: 0,
-      })
-
-      try {
-        await noteApi.deleteNote(Number.parseInt(noteId))
-
-        state.noteSearchPageParam.pageIndex = 1
-      } catch (error) {
-        ElNotification({
-          title: '',
-          message: String(error),
-          type: 'error',
-          duration: 0,
-        })
-      } finally {
-        notification.close()
-      }
-
-      notes.value = await searchNotes()
+      await withNotification(
+        async () => {
+          await noteApi.deleteNote(parseId(noteId))
+          state.noteSearchPageParam.pageIndex = 1
+          notes.value = await searchNotes()
+          state.activeNote = null
+        },
+        {
+          loading: '正在删除笔记',
+          success: '笔记已删除',
+          error: '删除笔记失败',
+        },
+      )
     }
   }
 
@@ -488,7 +414,6 @@ export function useNotes() {
     if (!state.activeNote) return
 
     const noteIndex = notes.value.findIndex((note) => note.id === state.activeNote)
-
     if (noteIndex !== -1) {
       notes.value[noteIndex].title = title
     }
@@ -498,7 +423,6 @@ export function useNotes() {
     if (!state.activeNote) return
 
     const noteIndex = notes.value.findIndex((note) => note.id === state.activeNote)
-
     if (noteIndex !== -1) {
       notes.value[noteIndex].content = content
     }
@@ -510,49 +434,34 @@ export function useNotes() {
 
   const handleUpdateSearchQuery = async () => {
     state.noteSearchPageParam.keyword = query.value
-
     notes.value = await searchNotes()
   }
 
   const handleNoteSizeChange = async (pageSize: number) => {
     state.notePageSize = pageSize
-
     notes.value = await searchNotes()
   }
 
   const handleNoteCurrentChange = async (pageIndex: number) => {
     state.notePageIndex = pageIndex
-
     notes.value = await searchNotes()
   }
 
+  // 搜索历史记录
   const searchNoteHistories = async () => {
-    const notification = ElNotification({
-      title: '',
-      message: '正在加载历史记录',
-      type: 'success',
-      duration: 0,
-    })
+    await withNotification(
+      async () => {
+        const pageResult = await noteApi.searchPageNoteHistories({
+          pageIndex: state.historyPageIndex,
+          pageSize: state.historyPageSize,
+          noteId: parseId(state.activeNote ?? ''),
+        })
 
-    try {
-      const pageResult = await noteApi.searchPageNoteHistories({
-        pageIndex: state.historyPageIndex,
-        pageSize: state.historyPageSize,
-        noteId: Number.parseInt(state.activeNote ?? ''),
-      })
-
-      histories.value = pageResult.data
-      state.historyTotal = pageResult.total
-    } catch (error) {
-      ElNotification({
-        title: '',
-        message: String(error),
-        type: 'error',
-        duration: 0,
-      })
-    } finally {
-      notification.close()
-    }
+        histories.value = pageResult.data
+        state.historyTotal = pageResult.total
+      },
+      { loading: '正在加载历史记录', error: '加载历史记录失败' },
+    )
   }
 
   const openHistoryDialog = async () => {
@@ -561,21 +470,19 @@ export function useNotes() {
 
   const handleNoteHistorySizeChange = async (pageSize: number) => {
     state.historyPageSize = pageSize
-
     await searchNoteHistories()
   }
 
   const handleNoteHistoryCurrentChange = async (pageIndex: number) => {
     state.historyPageIndex = pageIndex
-
     await searchNoteHistories()
   }
+
   // 初始化
   const initialize = async () => {
     state.loading = true
 
-    const notification = ElNotification({
-      title: '',
+    const notification = showNotification({
       message: '正在加载',
       type: 'success',
       duration: 0,
@@ -583,21 +490,12 @@ export function useNotes() {
 
     try {
       await getNotebooks()
-
       await setActiveNotebook(notebooks.value[0].id)
-
       await getTags()
-
       await setActiveTag(tags.value[0].id)
-
       notes.value = await searchNotes()
     } catch (error) {
-      ElNotification({
-        title: '错误信息',
-        type: 'error',
-        message: String(error),
-        duration: 0,
-      })
+      showError(error, '初始化失败，请刷新页面重试')
     } finally {
       state.loading = false
       notification.close()

@@ -13,6 +13,15 @@ import { TextStyle } from '@tiptap/extension-text-style'
 import Color from '@tiptap/extension-color'
 import Highlight from '@tiptap/extension-highlight'
 import Underline from '@tiptap/extension-underline'
+import Link from '@tiptap/extension-link'
+import Image from '@tiptap/extension-image'
+import { Table } from '@tiptap/extension-table'
+import { TableRow } from '@tiptap/extension-table-row'
+import { TableCell } from '@tiptap/extension-table-cell'
+import { TableHeader } from '@tiptap/extension-table-header'
+import FontFamily from '@tiptap/extension-font-family'
+import TaskList from '@tiptap/extension-task-list'
+import TaskItem from '@tiptap/extension-task-item'
 
 interface Props {
   modelValue: string
@@ -36,6 +45,27 @@ const editor = useEditor({
     Color,
     Highlight.configure({ multicolor: true }),
     Underline,
+    Link.configure({
+      openOnClick: true,
+      HTMLAttributes: {
+        class: 'text-blue-500 underline cursor-pointer',
+      },
+    }),
+    Image.configure({
+      inline: true,
+      allowBase64: true,
+    }),
+    Table.configure({
+      resizable: false,
+    }),
+    TableRow,
+    TableCell,
+    TableHeader,
+    FontFamily,
+    TaskList,
+    TaskItem.configure({
+      nested: true,
+    }),
   ],
   content: props.modelValue || '',
   editable: props.editable,
@@ -115,6 +145,27 @@ onBeforeUnmount(() => {
   color: #4b5563;
 }
 
+:deep(.ProseMirror h4) {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0.625rem 0;
+  color: #4b5563;
+}
+
+:deep(.ProseMirror h5) {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0.5rem 0;
+  color: #6b7280;
+}
+
+:deep(.ProseMirror h6) {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0.5rem 0;
+  color: #6b7280;
+}
+
 :deep(.ProseMirror p) {
   margin-bottom: 0.75rem;
 }
@@ -188,6 +239,45 @@ onBeforeUnmount(() => {
   max-width: 100%;
   height: auto;
   border-radius: 0.375rem;
+}
+
+/* 任务列表样式 */
+:deep(.ProseMirror ul[data-type='taskList']) {
+  list-style: none;
+  padding-left: 0;
+}
+
+:deep(.ProseMirror ul[data-type='taskList'] li) {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+:deep(.ProseMirror ul[data-type='taskList'] li > label) {
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+
+:deep(.ProseMirror ul[data-type='taskList'] li > label input[type='checkbox']) {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+  accent-color: #10b981;
+}
+
+:deep(.ProseMirror ul[data-type='taskList'] li > div) {
+  flex: 1;
+}
+
+:deep(.ProseMirror ul[data-type='taskList'] li[data-checked='true'] > div) {
+  text-decoration: line-through;
+  color: #9ca3af;
+}
+
+/* 链接悬停样式 */
+:deep(.ProseMirror a:hover) {
+  color: #2563eb;
 }
 
 /* 只读模式下的样式 */

@@ -1,5 +1,5 @@
 <template>
-  <el-container class="flex h-screen bg-white">
+  <div class="flex h-screen bg-white">
     <!-- 侧边栏组件 -->
     <Sidebar
       :notebooks="notebooks"
@@ -51,7 +51,7 @@
       @size-change="handleNoteHistorySizeChange"
       @current-change="handleNoteHistoryCurrentChange"
     />
-  </el-container>
+  </div>
 </template>
 
 <script setup lang="ts">

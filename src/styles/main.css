@@ -110,11 +110,6 @@
   align-items: center;
 }
 
-/* 确保工具栏按钮组正确显示 */
-.el-button-group {
-  display: flex !important;
-}
-
 /* 编辑器内容区域优化 */
 .tiptap-editor {
   padding: 1.5rem;

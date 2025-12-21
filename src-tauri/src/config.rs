@@ -1,44 +1,83 @@
+//! 配置管理模块
+//!
+//! 本模块负责：
+//! - 加载和解析 YAML 配置文件
+//! - 管理数据库连接池配置
+//! - 提供应用全局状态
+
 use std::time::Duration;
 
-use clap::Parser;
+use anyhow::{Context, Result};
 use config::Config;
 use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 use tauri::{AppHandle, Manager};
 
-#[derive(Debug, Parser)]
-#[command()]
-struct Cli {
-    #[arg(long = "config.path", env = "ENOTE_CONFIG_LOCATION")]
-    config_path: Option<String>,
-}
-
+/// 应用配置结构体
+///
+/// 封装了从 YAML 配置文件加载的所有配置项
 #[derive(Clone, Debug, Default)]
 pub struct Configuration {
+    /// 底层配置对象，用于读取具体配置值
     pub config: Config,
 }
 
 impl Configuration {
-    pub fn new(app_handle: &AppHandle) -> Result<Self, Box<dyn std::error::Error>> {
+    /// 创建新的配置实例
+    ///
+    /// # 参数
+    /// - `app_handle`: Tauri 应用句柄，用于获取应用数据目录
+    ///
+    /// # 返回
+    /// - `Ok(Configuration)`: 配置加载成功
+    /// - `Err`: 配置加载失败（目录不存在、文件格式错误等）
+    ///
+    /// # 配置文件位置
+    /// 配置文件位于应用数据目录下的 `application.yml`
+    pub fn new(app_handle: &AppHandle) -> Result<Self> {
+        // 获取配置文件路径：{app_data_dir}/application.yml
         let config_dir = app_handle
             .path()
             .app_data_dir()
-            .expect("无法获取数据目录")
+            .context("无法获取应用数据目录")?
             .join("application.yml");
 
+        let config_path = config_dir
+            .to_str()
+            .context("配置文件路径包含无效字符")?;
+
+        // 加载并解析配置文件
         let config = Config::builder()
-            .add_source(config::File::with_name(
-                config_dir.to_str().unwrap_or_default(),
-            ))
+            .add_source(config::File::with_name(config_path))
             .build()
-            .unwrap();
+            .context("无法加载配置文件，请确保 application.yml 存在且格式正确")?;
 
         Ok(Self { config })
     }
 
-    pub async fn database_connection(
-        &self,
-    ) -> Result<DatabaseConnection, Box<dyn std::error::Error>> {
-        let url = self.config.get_string("datasource.url")?;
+    /// 创建数据库连接
+    ///
+    /// 根据配置文件中的数据库设置创建连接池
+    ///
+    /// # 配置项
+    /// - `datasource.url`: 数据库连接 URL（必需）
+    /// - `datasource.max-connections`: 最大连接数（默认: 100）
+    /// - `datasource.min-connections`: 最小连接数（默认: 1）
+    /// - `datasource.connect_timeout`: 连接超时时间，秒（默认: 30）
+    /// - `datasource.acquire-timeout`: 获取连接超时时间，秒（默认: 8）
+    /// - `datasource.idle-time`: 空闲连接超时时间，秒（默认: 10）
+    /// - `datasource.max-lifetime`: 连接最大生命周期，秒（默认: 30）
+    ///
+    /// # 返回
+    /// - `Ok(DatabaseConnection)`: 数据库连接创建成功
+    /// - `Err`: 连接失败（配置错误、网络问题等）
+    pub async fn database_connection(&self) -> Result<DatabaseConnection> {
+        // 获取数据库连接 URL（必需配置项）
+        let url = self
+            .config
+            .get_string("datasource.url")
+            .context("配置文件中缺少 datasource.url")?;
+
+        // 读取连接池配置，使用默认值作为回退
         let max_connections = self
             .config
             .get_int("datasource.max-connections")
@@ -55,9 +94,16 @@ impl Configuration {
             .config
             .get_int("datasource.acquire-timeout")
             .unwrap_or(8) as u64;
-        let idle_timeout = self.config.get_int("datasource.idle-time").unwrap_or(10) as u64;
-        let max_lifetime = self.config.get_int("datasource.max-lifetime").unwrap_or(30) as u64;
+        let idle_timeout = self
+            .config
+            .get_int("datasource.idle-time")
+            .unwrap_or(10) as u64;
+        let max_lifetime = self
+            .config
+            .get_int("datasource.max-lifetime")
+            .unwrap_or(30) as u64;
 
+        // 配置数据库连接选项
         let mut opt = ConnectOptions::new(url);
 
         opt.max_connections(max_connections)
@@ -67,11 +113,19 @@ impl Configuration {
             .idle_timeout(Duration::from_secs(idle_timeout))
             .max_lifetime(Duration::from_secs(max_lifetime));
 
-        Ok(Database::connect(opt).await?)
+        // 建立数据库连接
+        Database::connect(opt)
+            .await
+            .context("无法连接数据库，请检查数据库配置和网络连接")
     }
 }
 
+/// 应用全局状态
+///
+/// 存储应用运行时需要的共享状态，通过 Tauri 状态管理器在各命令间共享
 pub struct AppState {
+    /// 应用配置
     pub configuration: Configuration,
+    /// 数据库连接（连接池）
     pub database_connection: DatabaseConnection,
 }

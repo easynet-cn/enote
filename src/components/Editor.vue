@@ -1,106 +1,121 @@
 <template>
-  <el-container>
-    <el-main>
-      <el-row v-if="activeNote">
-        <el-col :span="23">
-          <el-input
-            :model-value="activeNote.title"
-            @update:model-value="$emit('updateNoteTitle', $event)"
+  <div class="flex-1 flex flex-col overflow-hidden">
+    <main class="flex-1 flex flex-col overflow-hidden p-4" role="main" aria-label="笔记编辑区">
+      <div v-if="activeNote" class="flex items-center mb-4">
+        <div class="flex-1">
+          <input
+            :value="activeNote.title"
+            @input="$emit('updateNoteTitle', ($event.target as HTMLInputElement).value)"
             placeholder="笔记标题"
             :readonly="!editMode"
-            size="large"
-            class="editor-title-input"
+            aria-label="笔记标题"
+            class="w-full text-xl font-bold border-0 outline-none bg-transparent focus:ring-0"
+            :class="{ 'cursor-default': !editMode }"
           />
-        </el-col>
-        <el-col :span="1">
-          <div class="toolbar">
-            <el-dropdown @command="handleCommand">
-              <el-icon class="mr-2 mt-1">
-                <icon-menu />
-              </el-icon>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item v-if="!editMode" command="edit">
-                    <el-icon>
-                      <edit />
-                    </el-icon>
-                    <span>编辑</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item v-if="editMode" command="save">
-                    <el-icon>
-                      <check />
-                    </el-icon>
-                    <span>保存</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item v-if="editMode" command="cancel">
-                    <el-icon>
-                      <close />
-                    </el-icon>
-                    <span>取消</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item command="delete">
-                    <el-icon>
-                      <delete />
-                    </el-icon>
-                    <span>删除</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item v-if="editMode" command="setting">
-                    <el-icon>
-                      <setting />
-                    </el-icon>
-                    <span>设置</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item command="history">
-                    <el-icon>
-                      <icon-view />
-                    </el-icon>
-                    <span>历史记录</span>
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </div>
-        </el-col>
-      </el-row>
-      <el-row>
-        <el-col :span="24">
-          <!-- TipTap 编辑器工具栏 -->
-          <TiptapToolbar v-if="editMode && editor" :editor="editor" />
-        </el-col>
-      </el-row>
-      <el-row>
-        <!-- TipTap 编辑器 -->
-        <el-col :span="24" v-if="activeNote" class="flex-1 overflow-hidden">
-          <editor-content :editor="editor" :class="editorCls" />
-        </el-col>
-      </el-row>
-    </el-main>
-  </el-container>
-  <el-dialog v-model="settingDialog" title="设置" width="500" align-center>
-    <el-form :model="settingForm" label-width="auto">
-      <el-form-item label="笔记本">
-        <el-select v-model="settingForm.notebookId" placeholder="请选择笔记本" clearable>
-          <el-option
-            v-for="notebook in notebooks"
-            :key="notebook.id"
-            :label="notebook.name"
-            :value="notebook.id"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="标签">
-        <el-select v-model="settingForm.tagIds" placeholder="请选择标签" multiple clearable>
-          <el-option v-for="tag in tags" :key="tag.id" :label="tag.name" :value="tag.id" />
-        </el-select>
-      </el-form-item>
-    </el-form>
+        </div>
+        <div class="flex-shrink-0">
+          <Dropdown ref="menuDropdownRef" @command="handleCommand">
+            <template #trigger>
+              <Menu class="w-5 h-5 text-gray-500 hover:text-gray-700 cursor-pointer" />
+            </template>
+            <DropdownItem v-if="!editMode" command="edit" @command="handleCommand">
+              <Pencil class="w-4 h-4" />
+              <span>编辑</span>
+            </DropdownItem>
+            <DropdownItem v-if="editMode" command="save" @command="handleCommand">
+              <Check class="w-4 h-4" />
+              <span>保存</span>
+            </DropdownItem>
+            <DropdownItem v-if="editMode" command="cancel" @command="handleCommand">
+              <X class="w-4 h-4" />
+              <span>取消</span>
+            </DropdownItem>
+            <DropdownItem command="delete" @command="handleCommand">
+              <Trash2 class="w-4 h-4" />
+              <span>删除</span>
+            </DropdownItem>
+            <DropdownItem v-if="editMode" command="setting" @command="handleCommand">
+              <Settings class="w-4 h-4" />
+              <span>设置</span>
+            </DropdownItem>
+            <DropdownItem command="history" @command="handleCommand">
+              <Eye class="w-4 h-4" />
+              <span>历史记录</span>
+            </DropdownItem>
+          </Dropdown>
+        </div>
+      </div>
+
+      <!-- TipTap 编辑器工具栏 -->
+      <div v-if="editMode && editor">
+        <TiptapToolbar :editor="editor" />
+      </div>
+
+      <!-- TipTap 编辑器 -->
+      <div v-if="activeNote" class="flex-1 overflow-hidden">
+        <editor-content :editor="editor" :class="editorCls" />
+      </div>
+    </main>
+  </div>
+
+  <!-- 设置弹窗 -->
+  <Dialog v-model="settingDialog" title="设置" :width="500">
+    <div class="space-y-4" role="form" aria-label="笔记设置">
+      <div>
+        <label for="note-notebook" class="block text-sm font-medium text-gray-700 mb-1"
+          >笔记本</label
+        >
+        <select
+          id="note-notebook"
+          v-model="settingForm.notebookId"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+        >
+          <option value="">请选择笔记本</option>
+          <option v-for="notebook in notebooks" :key="notebook.id" :value="notebook.id">
+            {{ notebook.name }}
+          </option>
+        </select>
+      </div>
+      <div>
+        <span class="block text-sm font-medium text-gray-700 mb-1" id="tags-label">标签</span>
+        <div class="flex flex-wrap gap-2" role="group" aria-labelledby="tags-label">
+          <label
+            v-for="tag in tags"
+            :key="tag.id"
+            class="flex items-center gap-1 px-2 py-1 border rounded cursor-pointer hover:bg-gray-50"
+            :class="{ 'bg-green-50 border-green-500': settingForm.tagIds.includes(tag.id) }"
+          >
+            <input
+              type="checkbox"
+              :value="tag.id"
+              v-model="settingForm.tagIds"
+              class="sr-only"
+              :aria-label="tag.name"
+            />
+            <span :class="tag.cls" aria-hidden="true">●</span>
+            <span class="text-sm">{{ tag.name }}</span>
+          </label>
+        </div>
+      </div>
+    </div>
     <template #footer>
-      <div class="dialog-footer">
-        <el-button @click="settingDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleSettingFormSubmit"> 保存 </el-button>
+      <div class="flex justify-end gap-2">
+        <button
+          @click="settingDialog = false"
+          class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+        >
+          取消
+        </button>
+        <button
+          @click="handleSettingFormSubmit"
+          class="px-4 py-2 text-white bg-green-500 rounded-md hover:bg-green-600 transition-colors"
+        >
+          保存
+        </button>
       </div>
     </template>
-  </el-dialog>
+  </Dialog>
+
   <History
     v-model:visible="historyVisible"
     v-model:data="historyData"
@@ -110,6 +125,16 @@
     @open="$emit('open')"
     @size-change="handleSizeChange"
     @current-change="handleCurrentChange"
+  />
+
+  <!-- 删除笔记确认弹窗 -->
+  <ConfirmDialog
+    v-model="deleteNoteConfirm"
+    title="删除笔记"
+    message="确定要删除这篇笔记吗？此操作不可恢复。"
+    type="danger"
+    confirm-text="删除"
+    @confirm="confirmDeleteNote"
   />
 </template>
 
@@ -122,16 +147,18 @@ import { TextStyle } from '@tiptap/extension-text-style'
 import Color from '@tiptap/extension-color'
 import Highlight from '@tiptap/extension-highlight'
 import Underline from '@tiptap/extension-underline'
+import Link from '@tiptap/extension-link'
+import Image from '@tiptap/extension-image'
+import { Table } from '@tiptap/extension-table'
+import { TableRow } from '@tiptap/extension-table-row'
+import { TableCell } from '@tiptap/extension-table-cell'
+import { TableHeader } from '@tiptap/extension-table-header'
+import FontFamily from '@tiptap/extension-font-family'
+import TaskList from '@tiptap/extension-task-list'
+import TaskItem from '@tiptap/extension-task-item'
 import TiptapToolbar from './TiptapToolbar.vue'
-import {
-  Edit,
-  Check,
-  Close,
-  Delete,
-  Menu as IconMenu,
-  View as IconView,
-  Setting,
-} from '@element-plus/icons-vue'
+import { Pencil, Check, X, Trash2, Menu, Eye, Settings } from 'lucide-vue-next'
+import { Dialog, Dropdown, DropdownItem, ConfirmDialog } from './ui'
 import type { NoteHistory, ShowNote, ShowNotebook, ShowTag } from '../types'
 import History from './History.vue'
 
@@ -167,12 +194,14 @@ const settingForm = reactive<Setting>({
 })
 
 const settingDialog = ref(false)
+const deleteNoteConfirm = ref(false)
 const historyData = defineModel<NoteHistory[]>('historyData')
 const currentPage = defineModel<number>('currentPage')
 const pageSize = defineModel<number>('pageSize')
 const total = defineModel<number>('total')
 
 const historyVisible = ref<boolean>(false)
+const menuDropdownRef = ref()
 
 // TipTap 编辑器实例
 const editor = useEditor({
@@ -185,6 +214,27 @@ const editor = useEditor({
     Color,
     Highlight.configure({ multicolor: true }),
     Underline,
+    Link.configure({
+      openOnClick: false,
+      HTMLAttributes: {
+        class: 'text-blue-500 underline cursor-pointer',
+      },
+    }),
+    Image.configure({
+      inline: true,
+      allowBase64: true,
+    }),
+    Table.configure({
+      resizable: true,
+    }),
+    TableRow,
+    TableCell,
+    TableHeader,
+    FontFamily,
+    TaskList,
+    TaskItem.configure({
+      nested: true,
+    }),
   ],
   content: props.activeNote?.content || '',
   editable: false,
@@ -234,7 +284,9 @@ onBeforeUnmount(() => {
   }
 })
 
-const handleCommand = (command: string | number | object) => {
+const handleCommand = (command: string) => {
+  menuDropdownRef.value?.close()
+
   if (command === 'edit') {
     emit('toggleEditMode')
   } else if (command === 'save') {
@@ -242,7 +294,7 @@ const handleCommand = (command: string | number | object) => {
   } else if (command === 'cancel') {
     emit('cancelEdit')
   } else if (command === 'delete') {
-    emit('deleteNote')
+    deleteNoteConfirm.value = true
   } else if (command === 'setting') {
     settingDialog.value = true
   } else if (command === 'history') {
@@ -266,24 +318,13 @@ const handleSettingFormSubmit = () => {
 
   settingDialog.value = false
 }
+
+const confirmDeleteNote = () => {
+  emit('deleteNote')
+}
 </script>
 
 <style scoped>
-.editor-title-input {
-  font-size: 1.25rem;
-  font-weight: bold;
-}
-
-:deep(.editor-title-input .el-input__wrapper) {
-  box-shadow: none;
-  padding: 0;
-}
-
-:deep(.editor-title-input .el-input__inner) {
-  font-size: 1.25rem;
-  font-weight: bold;
-}
-
 .tiptap-editor {
   padding: 1.5rem;
   min-height: 500px;
@@ -327,6 +368,27 @@ const handleSettingFormSubmit = () => {
   font-weight: bold;
   margin: 0.75rem 0;
   color: #4b5563;
+}
+
+:deep(.ProseMirror h4) {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0.625rem 0;
+  color: #4b5563;
+}
+
+:deep(.ProseMirror h5) {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0.5rem 0;
+  color: #6b7280;
+}
+
+:deep(.ProseMirror h6) {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0.5rem 0;
+  color: #6b7280;
 }
 
 :deep(.ProseMirror p) {
@@ -402,5 +464,60 @@ const handleSettingFormSubmit = () => {
   max-width: 100%;
   height: auto;
   border-radius: 0.375rem;
+}
+
+/* 任务列表样式 */
+:deep(.ProseMirror ul[data-type='taskList']) {
+  list-style: none;
+  padding-left: 0;
+}
+
+:deep(.ProseMirror ul[data-type='taskList'] li) {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+:deep(.ProseMirror ul[data-type='taskList'] li > label) {
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+
+:deep(.ProseMirror ul[data-type='taskList'] li > label input[type='checkbox']) {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+  accent-color: #10b981;
+}
+
+:deep(.ProseMirror ul[data-type='taskList'] li > div) {
+  flex: 1;
+}
+
+:deep(.ProseMirror ul[data-type='taskList'] li[data-checked='true'] > div) {
+  text-decoration: line-through;
+  color: #9ca3af;
+}
+
+/* 表格选中样式 */
+:deep(.ProseMirror .selectedCell) {
+  background-color: #dbeafe;
+}
+
+:deep(.ProseMirror .column-resize-handle) {
+  background-color: #3b82f6;
+  width: 4px;
+  cursor: col-resize;
+}
+
+:deep(.ProseMirror .tableWrapper) {
+  overflow-x: auto;
+  margin-bottom: 0.75rem;
+}
+
+/* 链接悬停样式 */
+:deep(.ProseMirror a:hover) {
+  color: #2563eb;
 }
 </style>

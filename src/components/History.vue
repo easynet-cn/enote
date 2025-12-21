@@ -1,38 +1,73 @@
 <template>
-  <el-dialog v-model="visible" title="历史记录" fullscreen @open="$emit('open')">
+  <Dialog
+    :model-value="visible ?? false"
+    @update:model-value="visible = $event"
+    title="历史记录"
+    :fullscreen="true"
+    @open="$emit('open')"
+  >
     <div class="h-[88vh] overflow-hidden flex flex-col">
-      <el-table :data="showData" empty-text="没有数据">
-        <el-table-column prop="id" label="ID" width="60" />
-        <el-table-column prop="notebookName" label="笔记本名称" width="500" />
-        <el-table-column prop="title" label="标题" width="500" />
-        <el-table-column prop="tags" label="标签" with="500" />
-        <el-table-column prop="operateType" label="操作类型" width="80" />
-        <el-table-column prop="operateTime" label="操作时间" width="170" />
-        <el-table-column label="操作" width="80" fixed="right">
-          <template #default="scope">
-            <el-button type="primary" size="small" @click="handleView(scope.row)"> 查看 </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <div class="flex-1 overflow-auto">
+        <table class="w-full border-collapse">
+          <thead class="bg-gray-50 sticky top-0">
+            <tr>
+              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">ID</th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">
+                笔记本名称
+              </th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">标题</th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">标签</th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">
+                操作类型
+              </th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">
+                操作时间
+              </th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="!showData?.length">
+              <td colspan="7" class="px-4 py-8 text-center text-gray-500">没有数据</td>
+            </tr>
+            <tr v-for="row in showData" :key="row.id" class="hover:bg-gray-50 transition-colors">
+              <td class="px-4 py-3 text-sm text-gray-900 border-b">{{ row.id }}</td>
+              <td class="px-4 py-3 text-sm text-gray-900 border-b">{{ row.notebookName }}</td>
+              <td class="px-4 py-3 text-sm text-gray-900 border-b">{{ row.title }}</td>
+              <td class="px-4 py-3 text-sm text-gray-900 border-b">{{ row.tags }}</td>
+              <td class="px-4 py-3 text-sm text-gray-900 border-b">{{ row.operateType }}</td>
+              <td class="px-4 py-3 text-sm text-gray-900 border-b">{{ row.operateTime }}</td>
+              <td class="px-4 py-3 text-sm border-b">
+                <button
+                  @click="handleView(row)"
+                  class="px-3 py-1 text-sm text-white bg-green-500 rounded hover:bg-green-600 transition-colors"
+                >
+                  查看
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
     <template #footer>
       <div class="flex justify-end">
-        <el-pagination
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
+        <Pagination
+          :current-page="currentPage!"
+          :page-size="pageSize!"
+          :total="total!"
           :page-sizes="[20, 50, 100, 200]"
-          :default-page-size="50"
-          layout="total, sizes, prev, pager, next"
-          :total="total"
+          :show-total="true"
+          :show-sizes="true"
           @size-change="handleSizeChange"
           @current-change="handleCurrentChange"
         />
       </div>
     </template>
-  </el-dialog>
+  </Dialog>
 
   <!-- 内容查看对话框 -->
-  <el-dialog v-model="viewVisible" title="内容查看" width="90%" :fullscreen="false">
+  <Dialog v-model="viewVisible" title="内容查看" :width="1200">
     <div class="h-[70vh] overflow-hidden flex">
       <!-- 旧内容区域 -->
       <div class="flex-1 border-r border-gray-200 pr-4">
@@ -60,12 +95,14 @@
         </div>
       </div>
     </div>
-  </el-dialog>
+  </Dialog>
 </template>
+
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { NoteHistory } from '../types'
 import TipTapEditor from './TipTapEditor.vue'
+import { Dialog, Pagination } from './ui'
 
 const visible = defineModel<boolean>('visible')
 const data = defineModel<NoteHistory[]>('data')
@@ -78,8 +115,20 @@ const viewVisible = ref(false)
 const viewOldContent = ref('')
 const viewNewContent = ref('')
 
+interface ShowRow {
+  id: string
+  notebookId: number
+  notebookName: string
+  title: string
+  tags: string
+  oldContent: string
+  newContent: string
+  operateType: string
+  operateTime: string
+}
+
 const showData = computed(() => {
-  return data.value?.map((item) => {
+  return data.value?.map((item): ShowRow => {
     return {
       id: item.id,
       notebookId: item.extra.notebookId,
@@ -115,7 +164,7 @@ const handleCurrentChange = (val: number) => {
   emit('currentChange', val)
 }
 
-const handleView = (row: NoteHistory) => {
+const handleView = (row: ShowRow) => {
   const oldContent = row.oldContent || ''
   const newContent = row.newContent || ''
 

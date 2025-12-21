@@ -1,3 +1,23 @@
+//! 笔记服务模块
+//!
+//! 本模块提供笔记相关的所有业务逻辑，是应用程序中最复杂的服务模块。
+//!
+//! # 功能概述
+//! - 笔记的 CRUD 操作
+//! - 笔记与标签的关联管理
+//! - 笔记历史记录的自动生成
+//! - 分页搜索功能（支持多条件过滤）
+//!
+//! # 事务处理
+//! 创建、更新、删除操作都在事务中执行，确保数据一致性：
+//! - 笔记数据与标签关联的原子操作
+//! - 历史记录的同步写入
+//!
+//! # 历史记录类型
+//! - 操作类型 1: 创建
+//! - 操作类型 2: 更新
+//! - 操作类型 3: 删除
+
 use std::collections::{HashMap, HashSet};
 
 use chrono::Local;
@@ -15,37 +35,33 @@ use crate::{
     model::{Note, NoteHistoryExtra, NotePageResult, NoteSearchPageParam, PageResult, Tag},
 };
 
+/// 根据 ID 查询笔记（优化版本：2 次查询代替 4 次）
 pub async fn find_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<Option<Note>> {
-    if let Some(entity) = entity::note::Entity::find_by_id(id).one(db).await? {
-        let mut note = Note::from(entity);
+    // 查询 1: 获取笔记和笔记本（使用 LEFT JOIN）
+    let result = entity::note::Entity::find_by_id(id)
+        .find_also_related(entity::notebook::Entity)
+        .one(db)
+        .await?;
 
-        if let Some(notebook) = entity::notebook::Entity::find_by_id(note.id)
-            .one(db)
-            .await?
-        {
+    if let Some((note_entity, notebook_opt)) = result {
+        let mut note = Note::from(note_entity);
+
+        if let Some(notebook) = notebook_opt {
             note.notebook_name = notebook.name;
         }
 
-        let tag_ids = entity::note_tags::Entity::find()
+        // 查询 2: 使用 JOIN 一次性获取所有标签（代替原来的 2 次查询）
+        let tags: Vec<Tag> = entity::note_tags::Entity::find()
             .filter(entity::note_tags::Column::NoteId.eq(id))
+            .find_also_related(entity::tag::Entity)
             .order_by_desc(entity::note_tags::Column::SortOrder)
             .all(db)
             .await?
-            .iter()
-            .map(|e| e.tag_id)
-            .collect::<Vec<i64>>();
+            .into_iter()
+            .filter_map(|(_, tag_opt)| tag_opt.map(|t| Tag::from(t)))
+            .collect();
 
-        if !tag_ids.is_empty() {
-            let tags = entity::tag::Entity::find()
-                .filter(entity::tag::Column::Id.is_in(tag_ids))
-                .all(db)
-                .await?
-                .iter()
-                .map(Tag::from)
-                .collect::<Vec<Tag>>();
-
-            note.tags = tags;
-        }
+        note.tags = tags;
 
         Ok(Some(note))
     } else {
@@ -53,6 +69,14 @@ pub async fn find_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<Opti
     }
 }
 
+/// 获取笔记总数
+///
+/// # 参数
+/// - `db`: 数据库连接
+///
+/// # 返回
+/// - `Ok(i64)`: 笔记总数
+/// - `Err`: 查询失败
 pub async fn total_count(db: &DatabaseConnection) -> anyhow::Result<i64> {
     let total_count = entity::note::Entity::find()
         .select_only()
@@ -65,6 +89,24 @@ pub async fn total_count(db: &DatabaseConnection) -> anyhow::Result<i64> {
     Ok(total_count)
 }
 
+/// 创建笔记
+///
+/// 在事务中执行以下操作：
+/// 1. 插入笔记记录
+/// 2. 创建笔记与标签的关联
+/// 3. 记录创建历史（操作类型 1）
+///
+/// # 参数
+/// - `db`: 数据库连接
+/// - `note`: 笔记数据（包含标签列表）
+///
+/// # 返回
+/// - `Ok(Some(Note))`: 创建成功，返回完整的笔记对象（含标签和笔记本信息）
+/// - `Ok(None)`: 创建后未找到（异常情况）
+/// - `Err`: 创建失败
+///
+/// # 事务安全
+/// 所有操作在同一事务中执行，失败时自动回滚
 pub async fn create(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Option<Note>> {
     let txn = db.begin().await?;
 
@@ -137,6 +179,25 @@ pub async fn create(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
     find_by_id(db, entity.id).await
 }
 
+/// 根据 ID 删除笔记
+///
+/// 在事务中执行以下操作：
+/// 1. 查询笔记及其关联的标签信息（用于历史记录）
+/// 2. 记录删除历史（操作类型 3）
+/// 3. 删除笔记记录
+/// 4. 删除笔记与标签的关联记录
+///
+/// # 参数
+/// - `db`: 数据库连接
+/// - `id`: 笔记 ID
+///
+/// # 返回
+/// - `Ok(())`: 删除成功
+/// - `Err`: 删除失败
+///
+/// # 说明
+/// - 如果笔记不存在，不会报错，直接返回成功
+/// - 删除前会保存完整的笔记信息到历史记录
 pub async fn delete_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<()> {
     if let Some(entity) = entity::note::Entity::find_by_id(id).one(db).await? {
         let tag_ids = entity::note_tags::Entity::find()
@@ -211,6 +272,27 @@ pub async fn delete_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<()
     Ok(())
 }
 
+/// 更新笔记
+///
+/// 在事务中执行以下操作：
+/// 1. 查询原笔记数据（用于历史记录和变更检测）
+/// 2. 检测字段变更，仅更新有变化的字段
+/// 3. 处理标签关联的变更（删除旧关联，创建新关联）
+/// 4. 如有变更，记录更新历史（操作类型 2）
+///
+/// # 参数
+/// - `db`: 数据库连接
+/// - `note`: 包含更新数据的笔记对象
+///
+/// # 返回
+/// - `Ok(Some(Note))`: 更新成功，返回更新后的完整笔记
+/// - `Ok(None)`: 笔记不存在
+/// - `Err`: 更新失败
+///
+/// # 智能更新
+/// - 使用 `set_if_not_equals` 仅更新有变化的字段
+/// - 标签变更时先清空再重建关联
+/// - 只有实际发生变更时才记录历史
 pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Option<Note>> {
     if let Some(entity) = entity::note::Entity::find_by_id(note.id).one(db).await? {
         let old_title = entity.title.clone();
@@ -332,10 +414,36 @@ pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
     find_by_id(db, note.id).await
 }
 
+/// 分页搜索笔记
+///
+/// 支持多条件组合搜索：
+/// - 按笔记本 ID 过滤
+/// - 按标签 ID 过滤（使用子查询）
+/// - 按关键词搜索（标题和内容模糊匹配）
+///
+/// # 参数
+/// - `db`: 数据库连接
+/// - `search_param`: 搜索参数，包含：
+///   - `page_param`: 分页参数（页码、每页数量）
+///   - `notebook_id`: 笔记本 ID（0 表示不过滤）
+///   - `tag_id`: 标签 ID（0 表示不过滤）
+///   - `keyword`: 搜索关键词（空字符串表示不过滤）
+///
+/// # 返回
+/// - `Ok(NotePageResult)`: 搜索结果，包含：
+///   - 笔记列表（含标签信息）
+///   - 各笔记本的笔记数量统计
+///   - 分页信息
+/// - `Err`: 搜索失败
+///
+/// # 查询优化
+/// - 使用批量查询获取标签信息，避免 N+1 问题
+/// - 返回各笔记本的统计数量，便于前端显示
 pub async fn search_page(
     db: &DatabaseConnection,
     search_param: &NoteSearchPageParam,
 ) -> anyhow::Result<NotePageResult> {
+    // 构建计数查询、数据查询、分组统计查询
     let mut count_builder = entity::note::Entity::find();
     let mut query_builder = entity::note::Entity::find();
     let mut count_map_builder = entity::note::Entity::find()
