@@ -218,9 +218,12 @@ pub struct Note {
     /// 笔记标题
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub title: String,
-    /// 笔记内容（HTML 格式）
+    /// 笔记内容（HTML 或 Markdown 格式）
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub content: String,
+    /// 内容类型：0 = HTML（默认），1 = Markdown
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub content_type: i32,
     /// 创建时间
     #[serde(
         serialize_with = "serialize_option_dt",
@@ -246,6 +249,7 @@ impl From<entity::note::Model> for Note {
             notebook_id: value.notebook_id,
             title: value.title,
             content: value.content,
+            content_type: value.content_type,
             create_time: Some(value.create_time),
             update_time: Some(value.update_time),
             ..Default::default()
@@ -261,6 +265,7 @@ impl From<&entity::note::Model> for Note {
             notebook_id: value.notebook_id,
             title: value.title.clone(),
             content: value.content.clone(),
+            content_type: value.content_type,
             create_time: Some(value.create_time),
             update_time: Some(value.update_time),
             ..Default::default()
@@ -276,6 +281,7 @@ impl From<Note> for entity::note::ActiveModel {
             notebook_id: Set(note.notebook_id),
             title: Set(note.title),
             content: Set(note.content),
+            content_type: Set(note.content_type),
             create_time: Set(note.create_time.unwrap_or_default()),
             update_time: Set(note.update_time.unwrap_or_default()),
         }
@@ -290,6 +296,7 @@ impl From<&Note> for entity::note::ActiveModel {
             notebook_id: Set(note.notebook_id),
             title: Set(note.title.clone()),
             content: Set(note.content.clone()),
+            content_type: Set(note.content_type),
             create_time: Set(note.create_time.unwrap_or_default()),
             update_time: Set(note.update_time.unwrap_or_default()),
         }

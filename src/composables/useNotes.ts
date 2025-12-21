@@ -1,5 +1,6 @@
 import { ref, reactive, computed, onBeforeMount } from 'vue'
 import { useDateFormat, useNow } from '@vueuse/core'
+import { ContentType } from '../types'
 import type {
   AppState,
   ShowNotebook,
@@ -343,6 +344,7 @@ export function useNotes() {
             parseId(activeNoteData.value?.notebookId),
             activeNoteData.value?.title ?? '',
             activeNoteData.value?.content ?? '',
+            activeNoteData.value?.contentType ?? ContentType.Html,
             tags,
           )
         } else {
@@ -350,6 +352,7 @@ export function useNotes() {
             parseId(activeNoteData.value?.notebookId),
             activeNoteData.value?.title ?? '',
             activeNoteData.value?.content ?? '',
+            activeNoteData.value?.contentType ?? ContentType.Html,
             tags,
           )
           newNoteId = String(newNote.id)

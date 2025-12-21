@@ -26,26 +26,32 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
-        // 创建索引加速查询
-        manager
-            .create_index(
-                Index::create()
-                    .name("idx_note_tags_note_id")
-                    .table(NoteTags::Table)
-                    .col(NoteTags::NoteId)
-                    .to_owned(),
-            )
-            .await?;
+        // 创建索引加速查询（如果不存在）
+        if !manager.has_index("note_tags", "idx_note_tags_note_id").await? {
+            manager
+                .create_index(
+                    Index::create()
+                        .name("idx_note_tags_note_id")
+                        .table(NoteTags::Table)
+                        .col(NoteTags::NoteId)
+                        .to_owned(),
+                )
+                .await?;
+        }
 
-        manager
-            .create_index(
-                Index::create()
-                    .name("idx_note_tags_tag_id")
-                    .table(NoteTags::Table)
-                    .col(NoteTags::TagId)
-                    .to_owned(),
-            )
-            .await
+        if !manager.has_index("note_tags", "idx_note_tags_tag_id").await? {
+            manager
+                .create_index(
+                    Index::create()
+                        .name("idx_note_tags_tag_id")
+                        .table(NoteTags::Table)
+                        .col(NoteTags::TagId)
+                        .to_owned(),
+                )
+                .await?;
+        }
+
+        Ok(())
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {

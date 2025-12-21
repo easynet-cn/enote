@@ -1,23 +1,32 @@
 <template>
-  <div class="relative inline-block" @mouseenter="show" @mouseleave="hide">
+  <div
+    ref="triggerRef"
+    class="inline-block"
+    @mouseenter="show"
+    @mouseleave="hide"
+  >
     <slot></slot>
-    <Transition name="tooltip">
-      <div
-        v-if="visible"
-        :class="[
-          'absolute z-50 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap',
-          placementClasses,
-        ]"
-      >
-        {{ content }}
-        <div :class="['absolute w-2 h-2 bg-gray-800 rotate-45', arrowClasses]"></div>
-      </div>
-    </Transition>
+    <Teleport to="body">
+      <Transition name="tooltip">
+        <div
+          v-if="visible"
+          ref="tooltipRef"
+          class="fixed z-[9999] px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap pointer-events-none"
+          :style="tooltipStyle"
+        >
+          {{ content }}
+          <div
+            class="absolute w-2 h-2 bg-gray-800 rotate-45"
+            :style="arrowStyle"
+          ></div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 
 interface Props {
   content: string
@@ -29,42 +38,69 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const visible = ref(false)
+const triggerRef = ref<HTMLElement | null>(null)
+const tooltipRef = ref<HTMLElement | null>(null)
+const position = ref({ top: 0, left: 0 })
 
-const show = () => {
+const show = async () => {
   visible.value = true
+  await nextTick()
+  updatePosition()
 }
 
 const hide = () => {
   visible.value = false
 }
 
-const placementClasses = computed(() => {
-  switch (props.placement) {
-    case 'top':
-      return 'bottom-full left-1/2 -translate-x-1/2 mb-2'
-    case 'bottom':
-      return 'top-full left-1/2 -translate-x-1/2 mt-2'
-    case 'left':
-      return 'right-full top-1/2 -translate-y-1/2 mr-2'
-    case 'right':
-      return 'left-full top-1/2 -translate-y-1/2 ml-2'
-    default:
-      return 'top-full left-1/2 -translate-x-1/2 mt-2'
-  }
-})
+const updatePosition = () => {
+  if (!triggerRef.value || !tooltipRef.value) return
 
-const arrowClasses = computed(() => {
+  const triggerRect = triggerRef.value.getBoundingClientRect()
+  const tooltipRect = tooltipRef.value.getBoundingClientRect()
+  const gap = 8
+
+  let top = 0
+  let left = 0
+
   switch (props.placement) {
     case 'top':
-      return 'top-full left-1/2 -translate-x-1/2 -mt-1'
+      top = triggerRect.top - tooltipRect.height - gap
+      left = triggerRect.left + (triggerRect.width - tooltipRect.width) / 2
+      break
     case 'bottom':
-      return 'bottom-full left-1/2 -translate-x-1/2 -mb-1'
+      top = triggerRect.bottom + gap
+      left = triggerRect.left + (triggerRect.width - tooltipRect.width) / 2
+      break
     case 'left':
-      return 'left-full top-1/2 -translate-y-1/2 -ml-1'
+      top = triggerRect.top + (triggerRect.height - tooltipRect.height) / 2
+      left = triggerRect.left - tooltipRect.width - gap
+      break
     case 'right':
-      return 'right-full top-1/2 -translate-y-1/2 -mr-1'
+      top = triggerRect.top + (triggerRect.height - tooltipRect.height) / 2
+      left = triggerRect.right + gap
+      break
+  }
+
+  position.value = { top, left }
+}
+
+const tooltipStyle = computed(() => ({
+  top: `${position.value.top}px`,
+  left: `${position.value.left}px`,
+}))
+
+const arrowStyle = computed(() => {
+  switch (props.placement) {
+    case 'top':
+      return { bottom: '-4px', left: '50%', transform: 'translateX(-50%)' }
+    case 'bottom':
+      return { top: '-4px', left: '50%', transform: 'translateX(-50%)' }
+    case 'left':
+      return { right: '-4px', top: '50%', transform: 'translateY(-50%)' }
+    case 'right':
+      return { left: '-4px', top: '50%', transform: 'translateY(-50%)' }
     default:
-      return 'bottom-full left-1/2 -translate-x-1/2 -mb-1'
+      return { top: '-4px', left: '50%', transform: 'translateX(-50%)' }
   }
 })
 </script>

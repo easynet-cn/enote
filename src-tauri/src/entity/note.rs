@@ -3,6 +3,32 @@
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
+/// 内容类型枚举
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum ContentType {
+    /// HTML 格式（默认）
+    #[default]
+    Html = 0,
+    /// Markdown 格式
+    Markdown = 1,
+}
+
+impl From<i32> for ContentType {
+    fn from(value: i32) -> Self {
+        match value {
+            1 => ContentType::Markdown,
+            _ => ContentType::Html,
+        }
+    }
+}
+
+impl From<ContentType> for i32 {
+    fn from(value: ContentType) -> Self {
+        value as i32
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "note")]
 pub struct Model {
@@ -12,6 +38,8 @@ pub struct Model {
     pub title: String,
     #[sea_orm(column_type = "custom(\"LONGTEXT\")")]
     pub content: String,
+    /// 内容类型：0 = HTML，1 = Markdown
+    pub content_type: i32,
     pub create_time: DateTime,
     pub update_time: DateTime,
 }

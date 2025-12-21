@@ -19,22 +19,28 @@ impl MigrationTrait for Migration {
                     .col(big_integer(Note::NotebookId).not_null().default(0))
                     .col(string(Note::Title).not_null())
                     .col(text(Note::Content).not_null())
+                    // 内容类型：0 = HTML（默认），1 = Markdown
+                    .col(integer(Note::ContentType).not_null().default(0))
                     .col(date_time(Note::CreateTime).not_null())
                     .col(date_time(Note::UpdateTime).not_null())
                     .to_owned(),
             )
             .await?;
 
-        // 创建索引加速按笔记本查询
-        manager
-            .create_index(
-                Index::create()
-                    .name("idx_note_notebook_id")
-                    .table(Note::Table)
-                    .col(Note::NotebookId)
-                    .to_owned(),
-            )
-            .await
+        // 创建索引加速按笔记本查询（如果不存在）
+        if !manager.has_index("note", "idx_note_notebook_id").await? {
+            manager
+                .create_index(
+                    Index::create()
+                        .name("idx_note_notebook_id")
+                        .table(Note::Table)
+                        .col(Note::NotebookId)
+                        .to_owned(),
+                )
+                .await?;
+        }
+
+        Ok(())
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
@@ -52,6 +58,8 @@ enum Note {
     NotebookId,
     Title,
     Content,
+    /// 内容类型：0 = HTML，1 = Markdown
+    ContentType,
     CreateTime,
     UpdateTime,
 }

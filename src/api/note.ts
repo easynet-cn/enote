@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core'
 
 import {
+  ContentType,
   Note,
   Notebook,
   NoteHistory,
@@ -28,12 +29,19 @@ export const noteApi = {
     return await invoke('delete_notebook_by_id', { id })
   },
 
-  async createNote(notebookId: number, title: string, content: string, tags: Tag[]): Promise<Note> {
+  async createNote(
+    notebookId: number,
+    title: string,
+    content: string,
+    contentType: ContentType,
+    tags: Tag[],
+  ): Promise<Note> {
     const note: Note = {
       id: 0,
       notebookId: notebookId,
       title: title,
       content: content,
+      contentType: contentType,
       tags: tags,
       createTime: null,
       updateTime: null,
@@ -47,6 +55,7 @@ export const noteApi = {
     notebookId: number,
     title: string,
     content: string,
+    contentType: ContentType,
     tags: Tag[],
   ): Promise<Note> {
     const note: Note = {
@@ -54,6 +63,7 @@ export const noteApi = {
       notebookId: notebookId,
       title: title,
       content: content,
+      contentType: contentType,
       tags: tags,
       createTime: null,
       updateTime: null,

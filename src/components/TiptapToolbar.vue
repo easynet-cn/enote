@@ -14,25 +14,28 @@
     <div class="tiptap-toolbar" ref="toolbarRef" @scroll="updateScrollState">
       <!-- 标题和字体 -->
       <div class="toolbar-section">
-        <select
-          v-model="headingLevel"
-          @change="setHeading"
-          class="h-8 px-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-        >
-          <option value="0">正文</option>
-          <option value="1">标题 1</option>
-          <option value="2">标题 2</option>
-          <option value="3">标题 3</option>
-          <option value="4">标题 4</option>
-          <option value="5">标题 5</option>
-          <option value="6">标题 6</option>
-        </select>
+        <Tooltip content="标题级别" placement="bottom">
+          <select
+            v-model="headingLevel"
+            @change="setHeading"
+            class="h-8 px-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          >
+            <option value="0">正文</option>
+            <option value="1">标题 1</option>
+            <option value="2">标题 2</option>
+            <option value="3">标题 3</option>
+            <option value="4">标题 4</option>
+            <option value="5">标题 5</option>
+            <option value="6">标题 6</option>
+          </select>
+        </Tooltip>
 
-        <select
-          v-model="fontFamily"
-          @change="setFontFamily"
-          class="h-8 px-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ml-1"
-        >
+        <Tooltip content="字体" placement="bottom">
+          <select
+            v-model="fontFamily"
+            @change="setFontFamily"
+            class="h-8 px-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ml-1"
+          >
           <option value="">默认字体</option>
           <optgroup label="无衬线字体">
             <option value="Arial, sans-serif">Arial</option>
@@ -63,6 +66,7 @@
             <option value="Brush Script MT, cursive">Brush Script</option>
           </optgroup>
         </select>
+        </Tooltip>
       </div>
 
       <!-- 字体样式 -->
@@ -353,6 +357,19 @@
           />
         </Tooltip>
       </div>
+
+      <!-- Markdown 源码/预览切换 -->
+      <div class="toolbar-section">
+        <Tooltip :content="sourceMode ? '预览模式' : 'Markdown 源码'" placement="bottom">
+          <button
+            :class="['toolbar-btn', { active: sourceMode }]"
+            @click="emit('toggle-source-mode')"
+          >
+            <FileCode v-if="!sourceMode" class="w-4 h-4" />
+            <Eye v-else class="w-4 h-4" />
+          </button>
+        </Tooltip>
+      </div>
     </div>
 
     <!-- 右箭头 -->
@@ -472,13 +489,22 @@ import {
   TableProperties as TableOff,
   ChevronLeft,
   ChevronRight,
+  FileCode,
+  Eye,
 } from 'lucide-vue-next'
 
 interface Props {
   editor: Editor
+  sourceMode?: boolean
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  sourceMode: false,
+})
+
+const emit = defineEmits<{
+  'toggle-source-mode': []
+}>()
 
 const headingLevel = ref('0')
 const fontFamily = ref('')
@@ -749,7 +775,6 @@ watch(
   display: flex;
   border: 1px solid #e5e7eb;
   border-radius: 0.375rem;
-  overflow: hidden;
 }
 
 .btn-group .toolbar-btn {

@@ -48,12 +48,25 @@
 
       <!-- TipTap 编辑器工具栏 -->
       <div v-if="editMode && editor">
-        <TiptapToolbar :editor="editor" />
+        <TiptapToolbar
+          :editor="editor"
+          :source-mode="sourceMode"
+          @toggle-source-mode="toggleSourceMode"
+        />
       </div>
 
-      <!-- TipTap 编辑器 -->
+      <!-- TipTap 编辑器 / Markdown 源码编辑器 -->
       <div v-if="activeNote" class="flex-1 overflow-hidden">
-        <editor-content :editor="editor" :class="editorCls" />
+        <!-- Markdown 源码模式 -->
+        <textarea
+          v-if="sourceMode && editMode"
+          v-model="markdownSource"
+          class="markdown-source"
+          placeholder="在此输入 Markdown 源码..."
+          @input="handleSourceChange"
+        />
+        <!-- 预览模式 / 富文本编辑模式 -->
+        <editor-content v-else :editor="editor" :class="editorCls" />
       </div>
     </main>
   </div>
@@ -96,6 +109,22 @@
             <span class="text-sm">{{ tag.name }}</span>
           </label>
         </div>
+      </div>
+      <div>
+        <label for="note-content-type" class="block text-sm font-medium text-gray-700 mb-1"
+          >内容格式</label
+        >
+        <select
+          id="note-content-type"
+          v-model.number="settingForm.contentType"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+        >
+          <option :value="ContentType.Html">HTML（富文本）</option>
+          <option :value="ContentType.Markdown">Markdown</option>
+        </select>
+        <p class="mt-1 text-xs text-gray-500">
+          切换格式后，内容将按新格式保存。建议在空白笔记时切换。
+        </p>
       </div>
     </div>
     <template #footer>
@@ -156,9 +185,11 @@ import { TableHeader } from '@tiptap/extension-table-header'
 import FontFamily from '@tiptap/extension-font-family'
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
+import { Markdown } from 'tiptap-markdown'
 import TiptapToolbar from './TiptapToolbar.vue'
 import { Pencil, Check, X, Trash2, Menu, Eye, Settings } from 'lucide-vue-next'
 import { Dialog, Dropdown, DropdownItem, ConfirmDialog } from './ui'
+import { ContentType } from '../types'
 import type { NoteHistory, ShowNote, ShowNotebook, ShowTag } from '../types'
 import History from './History.vue'
 
@@ -178,6 +209,7 @@ const emit = defineEmits<{
   toggleEditMode: []
   updateNoteTitle: [title: string]
   updateNoteContent: [content: string]
+  updateNoteContentType: [contentType: ContentType]
   sizeChange: [pageSize: number]
   currentChange: [currentPage: number]
   open: []
@@ -186,11 +218,13 @@ const emit = defineEmits<{
 interface Setting {
   notebookId: string
   tagIds: string[]
+  contentType: ContentType
 }
 
 const settingForm = reactive<Setting>({
   notebookId: '',
   tagIds: [],
+  contentType: ContentType.Html,
 })
 
 const settingDialog = ref(false)
@@ -202,6 +236,10 @@ const total = defineModel<number>('total')
 
 const historyVisible = ref<boolean>(false)
 const menuDropdownRef = ref()
+
+// Markdown 源码模式
+const sourceMode = ref(false)
+const markdownSource = ref('')
 
 // TipTap 编辑器实例
 const editor = useEditor({
@@ -235,12 +273,29 @@ const editor = useEditor({
     TaskItem.configure({
       nested: true,
     }),
+    Markdown.configure({
+      html: true, // 允许解析 HTML
+      tightLists: true, // 紧凑列表
+      tightListClass: 'tight', // 紧凑列表 CSS 类
+      bulletListMarker: '-', // 无序列表标记
+      linkify: true, // 自动转换链接
+      breaks: true, // 换行符转为 <br>
+      transformPastedText: true, // 粘贴时转换 Markdown
+      transformCopiedText: true, // 复制时转换为 Markdown
+    }),
   ],
   content: props.activeNote?.content || '',
   editable: false,
   onUpdate: ({ editor }) => {
-    const html = editor.getHTML()
-    emit('updateNoteContent', html)
+    // 根据内容类型决定保存格式
+    const contentType = props.activeNote?.contentType ?? ContentType.Html
+    if (contentType === ContentType.Markdown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const storage = editor.storage as any
+      emit('updateNoteContent', storage.markdown.getMarkdown())
+    } else {
+      emit('updateNoteContent', editor.getHTML())
+    }
   },
 })
 
@@ -253,6 +308,10 @@ watch(
 
       settingForm.notebookId = props.activeNote?.notebookId ?? ''
       settingForm.tagIds = props.activeNote?.tags?.map((t) => t.id) ?? []
+      settingForm.contentType = props.activeNote?.contentType ?? ContentType.Html
+
+      // 重置源码模式
+      sourceMode.value = false
     }
   },
 )
@@ -314,6 +373,8 @@ const handleSettingFormSubmit = () => {
   if (props.activeNote) {
     props.activeNote.notebookId = settingForm.notebookId
     props.activeNote.tags = props.tags.filter((t) => settingForm.tagIds.includes(t.id))
+    props.activeNote.contentType = settingForm.contentType
+    emit('updateNoteContentType', settingForm.contentType)
   }
 
   settingDialog.value = false
@@ -321,6 +382,38 @@ const handleSettingFormSubmit = () => {
 
 const confirmDeleteNote = () => {
   emit('deleteNote')
+}
+
+// 切换源码模式
+const toggleSourceMode = () => {
+  if (!editor.value) return
+
+  if (sourceMode.value) {
+    // 从源码模式切换到预览模式：将 Markdown 转换为 HTML
+    editor.value.commands.setContent(markdownSource.value)
+  } else {
+    // 从预览模式切换到源码模式：获取 Markdown
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const storage = editor.value.storage as any
+    markdownSource.value = storage.markdown.getMarkdown()
+  }
+  sourceMode.value = !sourceMode.value
+}
+
+// 处理源码内容变化
+const handleSourceChange = () => {
+  // 根据内容类型决定保存格式
+  const contentType = props.activeNote?.contentType ?? ContentType.Html
+  if (contentType === ContentType.Markdown) {
+    // Markdown 模式直接保存源码
+    emit('updateNoteContent', markdownSource.value)
+  } else {
+    // HTML 模式需要先同步到编辑器再获取 HTML
+    if (editor.value) {
+      editor.value.commands.setContent(markdownSource.value)
+      emit('updateNoteContent', editor.value.getHTML())
+    }
+  }
 }
 </script>
 
@@ -519,5 +612,31 @@ const confirmDeleteNote = () => {
 /* 链接悬停样式 */
 :deep(.ProseMirror a:hover) {
   color: #2563eb;
+}
+
+/* Markdown 源码编辑器样式 */
+.markdown-source {
+  width: 100%;
+  height: 100%;
+  min-height: 500px;
+  max-height: 88vh;
+  padding: 1.5rem;
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+  overflow-y: auto;
+}
+
+.markdown-source::placeholder {
+  color: #6b7280;
+}
+
+.markdown-source:focus {
+  outline: none;
 }
 </style>

@@ -50,11 +50,21 @@ export interface ShowTag {
   updateTime?: string
 }
 
+/** 内容类型枚举 */
+export enum ContentType {
+  /** HTML 格式 */
+  Html = 0,
+  /** Markdown 格式 */
+  Markdown = 1,
+}
+
 export interface Note {
   id: number
   notebookId: number
   title: string
   content: string
+  /** 内容类型：0 = HTML，1 = Markdown */
+  contentType: ContentType
   tags: Tag[]
   createTime: string | null
   updateTime: string | null
@@ -65,6 +75,8 @@ export interface ShowNote {
   notebookId?: string
   title: string
   content: string
+  /** 内容类型：0 = HTML，1 = Markdown */
+  contentType?: ContentType
   tags?: ShowTag[]
   createTime?: string | null
   updateTime?: string | null
