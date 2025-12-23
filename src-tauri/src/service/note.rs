@@ -248,7 +248,7 @@ pub async fn delete_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<()
         let extra = serde_json::to_string(&note_history_extra).unwrap_or_default();
 
         entity::note_history::ActiveModel {
-            id: Set(0),
+            id: NotSet,
             note_id: Set(id),
             old_content: Set(entity.content),
             new_content: Set(String::default()),
