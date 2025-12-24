@@ -4,17 +4,17 @@
     <button
       :disabled="currentPage <= 1"
       @click="handlePrev"
-      class="w-8 h-8 flex items-center justify-center rounded-md border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+      class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-300 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
     >
       <ChevronLeft class="w-4 h-4" />
     </button>
 
-    <span class="text-sm text-gray-600">{{ currentPage }} / {{ totalPages }}</span>
+    <span class="text-sm text-slate-600">{{ currentPage }} / {{ totalPages }}</span>
 
     <button
       :disabled="currentPage >= totalPages"
       @click="handleNext"
-      class="w-8 h-8 flex items-center justify-center rounded-md border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+      class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-300 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
     >
       <ChevronRight class="w-4 h-4" />
     </button>
@@ -23,14 +23,14 @@
   <!-- 完整模式 -->
   <div v-else class="flex items-center gap-2">
     <!-- Total -->
-    <span v-if="showTotal" class="text-sm text-gray-600">共 {{ total }} 条</span>
+    <span v-if="showTotal" class="text-sm text-slate-600">共 {{ total }} 条</span>
 
     <!-- Page size selector -->
     <select
       v-if="showSizes"
       :value="pageSize"
       @change="handleSizeChange"
-      class="h-8 px-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+      class="h-8 px-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
     >
       <option v-for="size in pageSizes" :key="size" :value="size">{{ size }} 条/页</option>
     </select>
@@ -39,7 +39,7 @@
     <button
       :disabled="currentPage <= 1"
       @click="handlePrev"
-      class="h-8 px-3 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      class="h-8 px-3 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
     >
       上一页
     </button>
@@ -51,12 +51,12 @@
         :key="page"
         @click="page !== '...' && handlePageClick(page as number)"
         :class="[
-          'h-8 min-w-[32px] px-2 text-sm rounded-md transition-colors',
+          'h-8 min-w-[32px] px-2 text-sm rounded-lg transition-colors',
           page === currentPage
-            ? 'bg-green-500 text-white border border-green-500'
+            ? 'bg-indigo-600 text-white border border-indigo-600'
             : page === '...'
               ? 'cursor-default'
-              : 'border border-gray-300 hover:bg-gray-50',
+              : 'border border-slate-300 hover:bg-slate-50',
         ]"
         :disabled="page === '...'"
       >
@@ -68,7 +68,7 @@
     <button
       :disabled="currentPage >= totalPages"
       @click="handleNext"
-      class="h-8 px-3 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      class="h-8 px-3 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
     >
       下一页
     </button>

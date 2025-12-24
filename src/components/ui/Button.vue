@@ -138,10 +138,10 @@ const createRipple = (event: MouseEvent) => {
 }
 
 .btn-medium {
-  height: 36px;
-  padding: 0 16px;
+  height: 40px;
+  padding: 0 20px;
   font-size: 14px;
-  border-radius: 6px;
+  border-radius: 12px;
 }
 
 .btn-large {
@@ -153,70 +153,69 @@ const createRipple = (event: MouseEvent) => {
 
 /* 类型样式 - Primary */
 .btn-primary {
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
   color: white;
-  box-shadow: 0 2px 4px rgba(34, 197, 94, 0.3);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
 }
 
 .btn-primary:hover:not(.btn-disabled) {
-  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
-  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
 }
 
 .btn-primary:active:not(.btn-disabled) {
-  transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(34, 197, 94, 0.3);
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
 }
 
 /* 类型样式 - Secondary */
 .btn-secondary {
   background: white;
-  color: #374151;
-  border: 1px solid #d1d5db;
+  color: #334155;
+  border: 1px solid #cbd5e1;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .btn-secondary:hover:not(.btn-disabled) {
-  background: #f9fafb;
-  border-color: #9ca3af;
+  background: #f8fafc;
+  border-color: #94a3b8;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .btn-secondary:active:not(.btn-disabled) {
-  background: #f3f4f6;
+  background: #f1f5f9;
 }
 
 /* 类型样式 - Tertiary */
 .btn-tertiary {
-  background: #f3f4f6;
-  color: #374151;
+  background: #f1f5f9;
+  color: #334155;
   border: none;
 }
 
 .btn-tertiary:hover:not(.btn-disabled) {
-  background: #e5e7eb;
+  background: #e2e8f0;
 }
 
 .btn-tertiary:active:not(.btn-disabled) {
-  background: #d1d5db;
+  background: #cbd5e1;
 }
 
 /* 类型样式 - Text */
 .btn-text {
   background: transparent;
-  color: #22c55e;
+  color: #4f46e5;
   border: none;
   padding-left: 8px;
   padding-right: 8px;
 }
 
 .btn-text:hover:not(.btn-disabled) {
-  background: rgba(34, 197, 94, 0.1);
+  background: rgba(79, 70, 229, 0.1);
 }
 
 .btn-text:active:not(.btn-disabled) {
-  background: rgba(34, 197, 94, 0.2);
+  background: rgba(79, 70, 229, 0.2);
 }
 
 /* 类型样式 - Danger */
@@ -279,8 +278,8 @@ const createRipple = (event: MouseEvent) => {
 }
 
 .btn-circle.btn-medium {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
 }
 
 .btn-circle.btn-large {
@@ -350,7 +349,7 @@ const createRipple = (event: MouseEvent) => {
 
 /* Focus 样式 */
 .btn:focus-visible {
-  outline: 2px solid #22c55e;
+  outline: 2px solid #4f46e5;
   outline-offset: 2px;
 }
 

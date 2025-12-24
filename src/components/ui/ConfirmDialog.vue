@@ -109,13 +109,13 @@ const handleCancel = () => {
 .confirm-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #1f2937;
+  color: #0f172a;
   margin: 0 0 0.5rem 0;
 }
 
 .confirm-message {
   font-size: 0.9375rem;
-  color: #6b7280;
+  color: #64748b;
   line-height: 1.5;
   margin: 0;
 }

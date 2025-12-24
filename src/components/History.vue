@@ -1,6 +1,11 @@
 <template>
-  <Dialog :model-value="visible ?? false" @update:model-value="visible = $event" title="历史记录" :fullscreen="true"
-    @open="$emit('open')">
+  <Dialog
+    :model-value="visible ?? false"
+    @update:model-value="visible = $event"
+    title="历史记录"
+    :fullscreen="true"
+    @open="$emit('open')"
+  >
     <div class="h-[88vh] overflow-hidden flex flex-col">
       <div class="flex-1 overflow-auto">
         <table class="w-full border-collapse">
@@ -11,7 +16,9 @@
                 笔记本名称
               </th>
               <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">标题</th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">内容类型</th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">
+                内容类型
+              </th>
               <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">标签</th>
               <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">
                 操作类型
@@ -35,8 +42,10 @@
               <td class="px-4 py-3 text-sm text-gray-900 border-b">{{ row.operateType }}</td>
               <td class="px-4 py-3 text-sm text-gray-900 border-b">{{ row.operateTime }}</td>
               <td class="px-4 py-3 text-sm border-b">
-                <button @click="handleView(row)"
-                  class="px-3 py-1 text-sm text-white bg-green-500 rounded hover:bg-green-600 transition-colors">
+                <button
+                  @click="handleView(row)"
+                  class="px-3 py-1 text-sm text-white bg-green-500 rounded hover:bg-green-600 transition-colors"
+                >
                   查看
                 </button>
               </td>
@@ -47,8 +56,16 @@
     </div>
     <template #footer>
       <div class="flex justify-end">
-        <Pagination :current-page="currentPage!" :page-size="pageSize!" :total="total!" :page-sizes="[20, 50, 100, 200]"
-          :show-total="true" :show-sizes="true" @size-change="handleSizeChange" @current-change="handleCurrentChange" />
+        <Pagination
+          :current-page="currentPage!"
+          :page-size="pageSize!"
+          :total="total!"
+          :page-sizes="[20, 50, 100, 200]"
+          :show-total="true"
+          :show-sizes="true"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
       </div>
     </template>
   </Dialog>
@@ -60,7 +77,12 @@
       <div class="flex-1 border-r border-gray-200 pr-4">
         <div class="text-lg font-semibold mb-4">旧内容</div>
         <div class="h-full overflow-auto bg-gray-50 p-4 rounded border">
-          <TipTapEditor :model-value="viewOldContent" :editable="false" :show-toolbar="false" class="h-full" />
+          <TipTapEditor
+            :model-value="viewOldContent"
+            :editable="false"
+            :show-toolbar="false"
+            class="h-full"
+          />
         </div>
       </div>
 
@@ -68,7 +90,12 @@
       <div class="flex-1 pl-4">
         <div class="text-lg font-semibold mb-4">新内容</div>
         <div class="h-full overflow-auto bg-green-50 p-4 rounded border">
-          <TipTapEditor :model-value="viewNewContent" :editable="false" :show-toolbar="false" class="h-full" />
+          <TipTapEditor
+            :model-value="viewNewContent"
+            :editable="false"
+            :show-toolbar="false"
+            class="h-full"
+          />
         </div>
       </div>
     </div>

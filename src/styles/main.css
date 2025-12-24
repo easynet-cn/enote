@@ -28,12 +28,12 @@
 
 /* CSS 变量定义 */
 :root {
-  /* 主题色 */
-  --color-primary: #22c55e;
-  --color-primary-hover: #16a34a;
-  --color-primary-active: #15803d;
-  --color-primary-light: #dcfce7;
-  --color-primary-lighter: #f0fdf4;
+  /* 主题色 - Indigo */
+  --color-primary: #4f46e5;
+  --color-primary-hover: #4338ca;
+  --color-primary-active: #3730a3;
+  --color-primary-light: #e0e7ff;
+  --color-primary-lighter: #eef2ff;
 
   /* 语义色 */
   --color-success: #10b981;
@@ -41,19 +41,19 @@
   --color-danger: #ef4444;
   --color-info: #3b82f6;
 
-  /* 中性色 */
-  --color-text-primary: #1f2937;
-  --color-text-secondary: #6b7280;
-  --color-text-tertiary: #9ca3af;
-  --color-text-disabled: #d1d5db;
+  /* 中性色 - Slate */
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #64748b;
+  --color-text-tertiary: #94a3b8;
+  --color-text-disabled: #cbd5e1;
 
   --color-bg-primary: #ffffff;
-  --color-bg-secondary: #f9fafb;
-  --color-bg-tertiary: #f3f4f6;
+  --color-bg-secondary: #f8fafc;
+  --color-bg-tertiary: #f1f5f9;
 
-  --color-border: #e5e7eb;
-  --color-border-light: #f3f4f6;
-  --color-border-dark: #d1d5db;
+  --color-border: #e2e8f0;
+  --color-border-light: #f1f5f9;
+  --color-border-dark: #cbd5e1;
 
   /* Material Design 阴影系统 (Elevation) */
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -64,7 +64,7 @@
   --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 
   /* 带颜色的阴影（用于按钮悬浮效果）*/
-  --shadow-primary: 0 4px 14px rgba(34, 197, 94, 0.4);
+  --shadow-primary: 0 4px 14px rgba(79, 70, 229, 0.4);
   --shadow-danger: 0 4px 14px rgba(239, 68, 68, 0.4);
 
   /* 过渡时间 */
@@ -105,6 +105,29 @@ html {
   scroll-behavior: smooth;
 }
 
+/* 默认字体设置 */
+body {
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 等宽字体类 */
+.mono,
+code,
+pre {
+  font-family: 'JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
 /* 自定义滚动条样式 */
 ::-webkit-scrollbar {
   width: 6px;
@@ -116,12 +139,12 @@ html {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 3px;
+  background: #e2e8f0;
+  border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+  background: #cbd5e1;
 }
 
 /* 选中文本样式 */
@@ -162,7 +185,7 @@ html {
   background: linear-gradient(
     135deg,
     var(--color-primary-lighter) 0%,
-    rgba(34, 197, 94, 0.08) 100%
+    rgba(79, 70, 229, 0.08) 100%
   );
   color: var(--color-primary-hover);
 }
@@ -172,35 +195,39 @@ html {
 }
 
 .note-item {
-  padding: 0.875rem 1rem;
-  border-bottom: 1px solid var(--color-border-light);
+  padding: 1rem;
+  margin: 0.25rem 0.5rem;
   cursor: pointer;
   transition: all var(--transition-normal) var(--ease-default);
   position: relative;
+  border-radius: 1rem;
 }
 
 .note-item::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 0;
-  bottom: 0;
+  top: 1rem;
+  bottom: 1rem;
   width: 3px;
   background: var(--color-primary);
-  transform: scaleY(0);
+  border-radius: 0 3px 3px 0;
+  transform: scaleX(0);
+  transform-origin: left;
   transition: transform var(--transition-normal) var(--ease-default);
 }
 
 .note-item:hover {
-  background-color: var(--color-bg-secondary);
+  background-color: #f8fafc;
 }
 
 .note-item.active {
-  background: linear-gradient(90deg, var(--color-primary-lighter) 0%, transparent 100%);
+  background-color: rgba(238, 242, 255, 0.5);
+  box-shadow: 0 0 0 1px rgba(79, 70, 229, 0.1);
 }
 
 .note-item.active::before {
-  transform: scaleY(1);
+  transform: scaleX(1);
 }
 
 .editor-toolbar-button {

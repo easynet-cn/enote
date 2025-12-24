@@ -1,5 +1,5 @@
 <template>
-  <div class="flex-1 flex flex-col overflow-hidden">
+  <div class="flex-1 flex flex-col overflow-hidden bg-white shadow-sm">
     <main class="flex-1 flex flex-col overflow-hidden p-4" role="main" aria-label="笔记编辑区">
       <!-- TipTap 编辑器工具栏（始终显示） -->
       <div v-if="activeNote">
@@ -55,7 +55,7 @@
   <Dialog v-model="settingDialog" title="设置" :width="500">
     <div class="space-y-4" role="form" aria-label="笔记设置">
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">笔记本</label>
+        <label class="block text-sm font-medium text-slate-700 mb-2">笔记本</label>
         <Select
           v-model="settingForm.notebookId"
           :options="notebookOptions"
@@ -65,7 +65,7 @@
         />
       </div>
       <div>
-        <span class="block text-sm font-medium text-gray-700 mb-2" id="tags-label">标签</span>
+        <span class="block text-sm font-medium text-slate-700 mb-2" id="tags-label">标签</span>
         <div class="flex flex-wrap gap-2" role="group" aria-labelledby="tags-label">
           <label
             v-for="tag in tags.filter((t) => t.id !== '0')"
@@ -416,6 +416,16 @@ const handleSourceChange = () => {
 :deep(.ProseMirror) {
   outline: none;
   line-height: 1.6;
+  min-height: 100%;
+}
+
+/* 占位符样式 */
+:deep(.ProseMirror p.is-editor-empty:first-child::before) {
+  content: attr(data-placeholder);
+  float: left;
+  color: #cbd5e1;
+  pointer-events: none;
+  height: 0;
 }
 
 :deep(.ProseMirror h1) {
@@ -475,30 +485,33 @@ const handleSourceChange = () => {
 }
 
 :deep(.ProseMirror blockquote) {
-  border-left: 4px solid #e5e7eb;
+  border-left: 4px solid #4f46e5;
   padding-left: 1rem;
   margin-left: 0;
   margin-right: 0;
   font-style: italic;
   margin-bottom: 0.75rem;
-  color: #6b7280;
+  color: #64748b;
 }
 
 :deep(.ProseMirror code) {
-  background-color: #f3f4f6;
-  padding: 0.125rem 0.25rem;
+  background: #f1f5f9;
+  padding: 0.2rem 0.4rem;
   border-radius: 0.25rem;
-  font-family: 'Courier New', Courier, monospace;
-  color: #dc2626;
+  font-family:
+    ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.9em;
 }
 
 :deep(.ProseMirror pre) {
-  background-color: #1f2937;
-  color: #f9fafb;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
+  background: #1e293b;
+  color: #f8fafc;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  font-family:
+    ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
   overflow-x: auto;
-  margin-bottom: 0.75rem;
+  margin: 1rem 0;
 }
 
 :deep(.ProseMirror a) {
@@ -513,26 +526,34 @@ const handleSourceChange = () => {
 
 :deep(.ProseMirror table) {
   border-collapse: collapse;
-  margin-bottom: 0.75rem;
+  table-layout: fixed;
   width: 100%;
+  margin: 1rem 0;
+  overflow: hidden;
 }
 
 :deep(.ProseMirror th),
 :deep(.ProseMirror td) {
-  border: 1px solid #d1d5db;
-  padding: 0.5rem;
-  text-align: left;
+  min-width: 1em;
+  border: 1px solid #e2e8f0;
+  padding: 6px 10px;
+  vertical-align: top;
+  box-sizing: border-box;
+  position: relative;
 }
 
 :deep(.ProseMirror th) {
-  background-color: #f9fafb;
-  font-weight: 600;
+  background-color: #f8fafc;
+  font-weight: bold;
+  text-align: left;
 }
 
 :deep(.ProseMirror img) {
   max-width: 100%;
   height: auto;
-  border-radius: 0.375rem;
+  border-radius: 0.75rem;
+  margin: 1rem 0;
+  display: block;
 }
 
 /* 任务列表样式 */
@@ -550,14 +571,16 @@ const handleSourceChange = () => {
 
 :deep(.ProseMirror ul[data-type='taskList'] li > label) {
   flex-shrink: 0;
+  user-select: none;
+  margin-right: 0.75rem;
   margin-top: 0.25rem;
 }
 
 :deep(.ProseMirror ul[data-type='taskList'] li > label input[type='checkbox']) {
-  width: 1rem;
-  height: 1rem;
+  width: 1.1rem;
+  height: 1.1rem;
   cursor: pointer;
-  accent-color: #10b981;
+  accent-color: #4f46e5;
 }
 
 :deep(.ProseMirror ul[data-type='taskList'] li > div) {
@@ -622,7 +645,7 @@ const handleSourceChange = () => {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  border: 2px solid #e5e7eb;
+  border: 2px solid #e2e8f0;
   border-radius: 20px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -631,19 +654,19 @@ const handleSourceChange = () => {
 }
 
 .tag-select-item:hover {
-  border-color: #d1d5db;
-  background: #f9fafb;
+  border-color: #cbd5e1;
+  background: #f8fafc;
 }
 
 .tag-select-item-active {
-  border-color: #22c55e;
-  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.25);
+  border-color: #4f46e5;
+  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
 }
 
 .tag-select-item-active:hover {
-  border-color: #16a34a;
-  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  border-color: #4338ca;
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
 }
 
 .tag-select-check {
@@ -653,7 +676,7 @@ const handleSourceChange = () => {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  border: 2px solid #d1d5db;
+  border: 2px solid #cbd5e1;
   background: white;
   color: transparent;
   transition: all 0.2s ease;
@@ -661,8 +684,8 @@ const handleSourceChange = () => {
 }
 
 .tag-select-item-active .tag-select-check {
-  border-color: #22c55e;
-  background: #22c55e;
+  border-color: #4f46e5;
+  background: #4f46e5;
   color: white;
 }
 </style>

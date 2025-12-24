@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-screen bg-white">
+  <div class="flex h-screen bg-slate-50">
     <!-- 侧边栏组件 -->
     <Sidebar
       :notebooks="notebooks"

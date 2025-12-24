@@ -180,8 +180,8 @@ defineExpose({
   align-items: center;
   width: 100%;
   background: white;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
 }
@@ -213,12 +213,12 @@ defineExpose({
   border: none;
   outline: none;
   background: transparent;
-  color: #1f2937;
+  color: #0f172a;
   font-size: inherit;
 }
 
 .input-inner::placeholder {
-  color: #9ca3af;
+  color: #94a3b8;
   transition: color 0.2s;
 }
 
@@ -227,7 +227,7 @@ defineExpose({
 .input-suffix {
   display: inline-flex;
   align-items: center;
-  color: #9ca3af;
+  color: #94a3b8;
   flex-shrink: 0;
 }
 
@@ -252,7 +252,7 @@ defineExpose({
   width: 16px;
   height: 16px;
   margin-left: 4px;
-  color: #9ca3af;
+  color: #94a3b8;
   cursor: pointer;
   opacity: 0;
   transition: all 0.2s;
@@ -269,7 +269,7 @@ defineExpose({
 }
 
 .input-clear:hover {
-  color: #6b7280;
+  color: #64748b;
 }
 
 /* 密码切换 */
@@ -280,7 +280,7 @@ defineExpose({
   width: 20px;
   height: 20px;
   margin-left: 4px;
-  color: #9ca3af;
+  color: #94a3b8;
   cursor: pointer;
   transition: color 0.2s;
 }
@@ -291,13 +291,13 @@ defineExpose({
 }
 
 .input-password-toggle:hover {
-  color: #6b7280;
+  color: #64748b;
 }
 
 /* 字数统计 */
 .input-count {
   margin-left: 8px;
-  color: #9ca3af;
+  color: #94a3b8;
   font-size: 12px;
   flex-shrink: 0;
 }
@@ -309,21 +309,21 @@ defineExpose({
   bottom: -1px;
   width: 0;
   height: 2px;
-  background: linear-gradient(90deg, #22c55e, #16a34a);
+  background: linear-gradient(90deg, #4f46e5, #4338ca);
   transform: translateX(-50%);
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: 0 0 6px 6px;
+  border-radius: 0 0 8px 8px;
 }
 
 /* Hover 状态 */
 .input-wrapper:hover:not(.input-disabled):not(.input-readonly) {
-  border-color: #9ca3af;
+  border-color: #94a3b8;
 }
 
 /* Focus 状态 */
 .input-focused:not(.input-disabled) {
-  border-color: #22c55e;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 
 .input-focused .input-focus-line {
@@ -331,12 +331,12 @@ defineExpose({
 }
 
 .input-focused .input-inner::placeholder {
-  color: #6b7280;
+  color: #64748b;
 }
 
 /* 禁用状态 */
 .input-disabled {
-  background: #f9fafb;
+  background: #f8fafc;
   cursor: not-allowed;
   opacity: 0.6;
 }
@@ -347,7 +347,7 @@ defineExpose({
 
 /* 只读状态 */
 .input-readonly {
-  background: #f9fafb;
+  background: #f8fafc;
 }
 
 /* 状态样式 - Error */

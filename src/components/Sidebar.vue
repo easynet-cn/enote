@@ -1,8 +1,8 @@
 <template>
   <aside
     :class="[
-      'border-r border-gray-200 flex flex-col bg-gray-50 transition-all duration-300 relative',
-      collapsed ? 'w-12' : 'w-60',
+      'flex flex-col bg-slate-50 transition-all duration-300 relative',
+      collapsed ? 'w-12' : 'w-64',
     ]"
     role="navigation"
     aria-label="侧边栏导航"
@@ -10,7 +10,7 @@
     <!-- 折叠/展开按钮（右侧边界中间） -->
     <button
       @click="$emit('toggle-collapse')"
-      class="absolute -right-3 top-1/2 -translate-y-1/2 z-10 w-6 h-6 bg-white border border-gray-300 rounded-full shadow-sm flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors"
+      class="absolute -right-3.5 top-1/2 -translate-y-1/2 z-10 w-7 h-7 bg-white border border-slate-200 rounded-full shadow-sm flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-all hover:scale-110 active:scale-95"
       :aria-label="collapsed ? '展开侧边栏' : '收起侧边栏'"
       :title="collapsed ? '展开侧边栏' : '收起侧边栏'"
     >
@@ -19,7 +19,7 @@
     </button>
 
     <!-- 新建笔记按钮 -->
-    <div class="p-3 border-b border-gray-200 flex justify-center">
+    <div class="p-4 flex justify-center">
       <Button
         v-if="collapsed"
         type="primary"
@@ -32,14 +32,7 @@
           <Plus class="w-5 h-5" aria-hidden="true" />
         </template>
       </Button>
-      <Button
-        v-else
-        type="primary"
-        round
-        block
-        @click="$emit('createNewNote')"
-        aria-label="创建新笔记"
-      >
+      <Button v-else type="primary" block @click="$emit('createNewNote')" aria-label="创建新笔记">
         <template #icon>
           <Plus class="w-4 h-4" aria-hidden="true" />
         </template>
@@ -48,12 +41,12 @@
     </div>
 
     <template v-if="!collapsed">
-      <div class="p-4 border-b border-gray-200">
+      <div class="p-4 border-b border-slate-200">
         <div class="flex justify-between items-center mb-3">
-          <h2 class="text-sm font-semibold text-gray-500">笔记本</h2>
+          <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider">笔记本</h2>
           <Dropdown ref="notebookDropdownRef" @command="handleNotebookCommand">
             <template #trigger>
-              <Menu class="w-4 h-4 text-gray-500 hover:text-gray-700 cursor-pointer" />
+              <Menu class="w-4 h-4 text-slate-500 hover:text-slate-700 cursor-pointer" />
             </template>
             <DropdownItem command="create" @command="handleNotebookCommand">
               <Plus class="w-4 h-4" />
@@ -94,14 +87,14 @@
               <component
                 v-if="notebook.icon && iconComponents[notebook.icon]"
                 :is="iconComponents[notebook.icon]"
-                class="w-4 h-4 mr-3 text-gray-500"
+                class="w-4 h-4 mr-3 text-slate-500"
                 aria-hidden="true"
               />
               <span v-else-if="notebook.cls" :class="['mr-3', notebook.cls]" aria-hidden="true"
                 >●</span
               >
               <span class="flex-1">{{ notebook.name }}</span>
-              <span class="text-xs text-gray-400" aria-label="笔记数量">{{ notebook.count }}</span>
+              <span class="text-xs text-slate-400" aria-label="笔记数量">{{ notebook.count }}</span>
             </div>
           </li>
         </ul>
@@ -109,10 +102,10 @@
 
       <div class="p-4 flex-1 overflow-y-auto">
         <div class="flex justify-between items-center mb-3">
-          <h2 class="text-sm font-semibold text-gray-500">标签</h2>
+          <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider">标签</h2>
           <Dropdown ref="tagDropdownRef" @command="handleTagCommand">
             <template #trigger>
-              <Menu class="w-4 h-4 text-gray-500 hover:text-gray-700 cursor-pointer" />
+              <Menu class="w-4 h-4 text-slate-500 hover:text-slate-700 cursor-pointer" />
             </template>
             <DropdownItem command="create" @command="handleTagCommand">
               <Plus class="w-4 h-4" />
@@ -144,7 +137,7 @@
               <component
                 v-if="tag.icon && iconComponents[tag.icon]"
                 :is="iconComponents[tag.icon]"
-                class="w-4 h-4 mr-3 text-gray-500"
+                class="w-4 h-4 mr-3 text-slate-500"
                 aria-hidden="true"
               />
               <span v-else-if="tag.cls" :class="['mr-3', tag.cls]" aria-hidden="true">●</span>
@@ -161,7 +154,7 @@
     <form @submit.prevent="submitNotebookForm" aria-label="笔记本表单">
       <div class="space-y-4">
         <div>
-          <label for="notebook-name" class="block text-sm font-medium text-gray-700 mb-1"
+          <label for="notebook-name" class="block text-sm font-medium text-slate-700 mb-1"
             >名称 <span class="text-red-500" aria-hidden="true">*</span></label
           >
           <input
@@ -170,26 +163,26 @@
             type="text"
             required
             aria-required="true"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
         <div>
-          <label for="notebook-desc" class="block text-sm font-medium text-gray-700 mb-1"
+          <label for="notebook-desc" class="block text-sm font-medium text-slate-700 mb-1"
             >描述</label
           >
           <input
             id="notebook-desc"
             v-model="notebookForm.description"
             type="text"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">图标</label>
+          <label class="block text-sm font-medium text-slate-700 mb-2">图标</label>
           <IconPicker v-model="notebookForm.icon" placeholder="选择图标" clearable />
         </div>
         <div>
-          <label for="notebook-sort" class="block text-sm font-medium text-gray-700 mb-1"
+          <label for="notebook-sort" class="block text-sm font-medium text-slate-700 mb-1"
             >排序</label
           >
           <input
@@ -197,7 +190,7 @@
             v-model.number="notebookForm.sortOrder"
             type="number"
             min="0"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
       </div>
@@ -215,7 +208,7 @@
     <form @submit.prevent="submitTagForm" aria-label="标签表单">
       <div class="space-y-4">
         <div>
-          <label for="tag-name" class="block text-sm font-medium text-gray-700 mb-1"
+          <label for="tag-name" class="block text-sm font-medium text-slate-700 mb-1"
             >名称 <span class="text-red-500" aria-hidden="true">*</span></label
           >
           <input
@@ -224,25 +217,25 @@
             type="text"
             required
             aria-required="true"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">图标</label>
+          <label class="block text-sm font-medium text-slate-700 mb-2">图标</label>
           <IconPicker v-model="tagForm.icon" placeholder="选择图标" clearable />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">样式颜色</label>
+          <label class="block text-sm font-medium text-slate-700 mb-2">样式颜色</label>
           <StylePicker v-model="tagForm.cls" placeholder="选择颜色样式" clearable />
         </div>
         <div>
-          <label for="tag-sort" class="block text-sm font-medium text-gray-700 mb-1">排序</label>
+          <label for="tag-sort" class="block text-sm font-medium text-slate-700 mb-1">排序</label>
           <input
             id="tag-sort"
             v-model.number="tagForm.sortOrder"
             type="number"
             min="0"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
       </div>

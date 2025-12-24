@@ -390,25 +390,25 @@ defineExpose({
   align-items: center;
   width: 100%;
   background: white;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   gap: 8px;
 }
 
 .select-trigger:hover:not(.select-disabled .select-trigger) {
-  border-color: #9ca3af;
+  border-color: #94a3b8;
 }
 
 .select-open .select-trigger {
-  border-color: #22c55e;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 
 /* 禁用状态 */
 .select-disabled .select-trigger {
-  background: #f9fafb;
+  background: #f8fafc;
   cursor: not-allowed;
   opacity: 0.6;
 }
@@ -417,7 +417,7 @@ defineExpose({
 .select-prefix {
   display: inline-flex;
   align-items: center;
-  color: #9ca3af;
+  color: #94a3b8;
   flex-shrink: 0;
 }
 
@@ -430,14 +430,14 @@ defineExpose({
 }
 
 .select-value {
-  color: #1f2937;
+  color: #0f172a;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .select-placeholder {
-  color: #9ca3af;
+  color: #94a3b8;
 }
 
 /* 搜索输入 */
@@ -447,11 +447,11 @@ defineExpose({
   outline: none;
   background: transparent;
   font-size: inherit;
-  color: #1f2937;
+  color: #0f172a;
 }
 
 .select-search::placeholder {
-  color: #9ca3af;
+  color: #94a3b8;
 }
 
 /* 清除按钮 */
@@ -461,7 +461,7 @@ defineExpose({
   justify-content: center;
   width: 16px;
   height: 16px;
-  color: #9ca3af;
+  color: #94a3b8;
   cursor: pointer;
   opacity: 0;
   transition: all 0.2s;
@@ -479,7 +479,7 @@ defineExpose({
 }
 
 .select-clear:hover {
-  color: #6b7280;
+  color: #64748b;
 }
 
 /* 箭头 */
@@ -487,7 +487,7 @@ defineExpose({
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #9ca3af;
+  color: #94a3b8;
   transition: transform 0.2s ease;
   flex-shrink: 0;
 }
@@ -504,7 +504,7 @@ defineExpose({
 /* 下拉面板 */
 .select-dropdown {
   background: white;
-  border-radius: 10px;
+  border-radius: 12px;
   box-shadow:
     0 10px 40px rgba(0, 0, 0, 0.12),
     0 0 0 1px rgba(0, 0, 0, 0.05);
@@ -527,7 +527,7 @@ defineExpose({
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.15s ease;
   gap: 8px;
@@ -535,21 +535,21 @@ defineExpose({
 
 .select-option:hover,
 .select-option-highlighted {
-  background: #f3f4f6;
+  background: #f1f5f9;
 }
 
 .select-option-selected {
-  color: #22c55e;
+  color: #4f46e5;
   font-weight: 500;
 }
 
 .select-option-selected:hover,
 .select-option-selected.select-option-highlighted {
-  background: #f0fdf4;
+  background: #eef2ff;
 }
 
 .select-option-disabled {
-  color: #d1d5db;
+  color: #cbd5e1;
   cursor: not-allowed;
 }
 
@@ -569,7 +569,7 @@ defineExpose({
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #22c55e;
+  color: #4f46e5;
   flex-shrink: 0;
 }
 
@@ -583,7 +583,7 @@ defineExpose({
   padding: 8px 12px 4px;
   font-size: 12px;
   font-weight: 600;
-  color: #9ca3af;
+  color: #94a3b8;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -592,7 +592,7 @@ defineExpose({
 .select-empty {
   padding: 24px 16px;
   text-align: center;
-  color: #9ca3af;
+  color: #94a3b8;
   font-size: 14px;
 }
 
@@ -646,11 +646,11 @@ defineExpose({
 }
 
 .select-options::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 3px;
+  background: #e2e8f0;
+  border-radius: 10px;
 }
 
 .select-options::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+  background: #cbd5e1;
 }
 </style>

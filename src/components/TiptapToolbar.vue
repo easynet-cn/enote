@@ -10,11 +10,11 @@
             @change="
               emit('update:content-type', Number(($event.target as HTMLSelectElement).value))
             "
-            class="h-8 px-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent font-medium"
+            class="h-8 px-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-medium"
             :class="
               isMarkdownMode
-                ? 'bg-gray-800 text-white border-gray-700'
-                : 'bg-green-50 text-green-700 border-green-300'
+                ? 'bg-slate-800 text-white border-slate-700'
+                : 'bg-indigo-50 text-indigo-700 border-indigo-300'
             "
           >
             <option :value="ContentType.Html">富文本</option>
@@ -26,8 +26,8 @@
       <!-- 模式标识（已保存的笔记） -->
       <div v-else class="toolbar-section">
         <span
-          class="h-8 px-3 text-sm rounded-md flex items-center font-medium"
-          :class="isMarkdownMode ? 'bg-gray-800 text-white' : 'bg-green-50 text-green-700'"
+          class="h-8 px-3 text-sm rounded-lg flex items-center font-medium"
+          :class="isMarkdownMode ? 'bg-slate-800 text-white' : 'bg-indigo-50 text-indigo-700'"
         >
           {{ isMarkdownMode ? 'Markdown' : '富文本' }}
         </span>
@@ -55,7 +55,7 @@
               v-model="headingLevel"
               @change="setHeading"
               :disabled="!editMode"
-              class="h-8 px-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+              class="h-8 px-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="0">正文</option>
               <option value="1">标题 1</option>
@@ -72,7 +72,7 @@
               v-model="fontFamily"
               @change="setFontFamily"
               :disabled="!editMode"
-              class="h-8 px-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ml-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="h-8 px-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ml-1 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="">默认字体</option>
               <optgroup label="无衬线字体">
@@ -501,12 +501,12 @@
   <Dialog v-model="linkDialogVisible" title="插入链接" :width="400">
     <div class="space-y-4">
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">链接地址</label>
+        <label class="block text-sm font-medium text-slate-700 mb-1">链接地址</label>
         <input
           v-model="linkUrl"
           type="text"
           placeholder="https://example.com"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
         />
       </div>
     </div>
@@ -514,13 +514,13 @@
       <div class="flex justify-end gap-2">
         <button
           @click="linkDialogVisible = false"
-          class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+          class="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
         >
           取消
         </button>
         <button
           @click="setLink"
-          class="px-4 py-2 text-white bg-green-500 rounded-md hover:bg-green-600 transition-colors"
+          class="px-4 py-2 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
         >
           确定
         </button>
@@ -532,22 +532,22 @@
   <Dialog v-model="imageDialogVisible" title="插入图片" :width="400">
     <div class="space-y-4">
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">图片地址</label>
+        <label class="block text-sm font-medium text-slate-700 mb-1">图片地址</label>
         <input
           v-model="imageUrl"
           type="text"
           placeholder="https://example.com/image.png"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
         />
       </div>
-      <div class="text-center text-gray-500 text-sm">- 或 -</div>
+      <div class="text-center text-slate-500 text-sm">- 或 -</div>
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">上传图片</label>
+        <label class="block text-sm font-medium text-slate-700 mb-1">上传图片</label>
         <input
           type="file"
           accept="image/*"
           @change="handleImageUpload"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
         />
       </div>
     </div>
@@ -555,13 +555,13 @@
       <div class="flex justify-end gap-2">
         <button
           @click="imageDialogVisible = false"
-          class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+          class="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
         >
           取消
         </button>
         <button
           @click="insertImage"
-          class="px-4 py-2 text-white bg-green-500 rounded-md hover:bg-green-600 transition-colors"
+          class="px-4 py-2 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
         >
           确定
         </button>
@@ -849,8 +849,8 @@ watch(
 .tiptap-toolbar-wrapper {
   display: flex;
   align-items: center;
-  border-bottom: 1px solid #e5e7eb;
-  background-color: #f9fafb;
+  border-bottom: 1px solid #e2e8f0;
+  background-color: #f8fafc;
   position: relative;
 }
 
@@ -859,21 +859,21 @@ watch(
   display: flex;
   align-items: center;
   padding: 0.5rem;
-  background-color: #f9fafb;
+  background-color: #f8fafc;
   flex-shrink: 0;
   z-index: 5;
 }
 
 .toolbar-fixed-left {
-  border-right: 1px solid #e5e7eb;
-  background: linear-gradient(to left, #f3f4f6, #f9fafb);
+  border-right: 1px solid #e2e8f0;
+  background: linear-gradient(to left, #f1f5f9, #f8fafc);
   padding-left: 0.75rem;
   padding-right: 0.75rem;
 }
 
 .toolbar-fixed-right {
-  border-left: 1px solid #e5e7eb;
-  background: linear-gradient(to right, #f3f4f6, #f9fafb);
+  border-left: 1px solid #e2e8f0;
+  background: linear-gradient(to right, #f1f5f9, #f8fafc);
 }
 
 /* 操作按钮区域 */
@@ -891,7 +891,7 @@ watch(
   gap: 6px;
   height: 32px;
   padding: 0 12px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -902,59 +902,59 @@ watch(
 
 /* 主要按钮 - 编辑 */
 .action-btn-primary {
-  background: #3b82f6;
+  background: #4f46e5;
   color: white;
   padding: 0 10px;
-  box-shadow: 0 1px 2px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 1px 2px rgba(79, 70, 229, 0.3);
 }
 
 .action-btn-primary:hover {
-  background: #2563eb;
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.4);
+  background: #4338ca;
+  box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4);
   transform: translateY(-1px);
 }
 
 /* 成功按钮 - 保存 */
 .action-btn-success {
-  background: #22c55e;
+  background: #4f46e5;
   color: white;
   padding: 0 10px;
-  box-shadow: 0 1px 2px rgba(34, 197, 94, 0.3);
+  box-shadow: 0 1px 2px rgba(79, 70, 229, 0.3);
 }
 
 .action-btn-success:hover {
-  background: #16a34a;
-  box-shadow: 0 2px 4px rgba(34, 197, 94, 0.4);
+  background: #4338ca;
+  box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4);
   transform: translateY(-1px);
 }
 
 /* 次要按钮 - 取消 */
 .action-btn-secondary {
-  background: #e5e7eb;
-  color: #374151;
+  background: #e2e8f0;
+  color: #334155;
   padding: 0 8px;
 }
 
 .action-btn-secondary:hover {
-  background: #d1d5db;
+  background: #cbd5e1;
 }
 
 /* 幽灵按钮 - 设置/历史 */
 .action-btn-ghost {
   background: transparent;
-  color: #6b7280;
+  color: #64748b;
   padding: 0 8px;
 }
 
 .action-btn-ghost:hover {
-  background: #e5e7eb;
-  color: #374151;
+  background: #e2e8f0;
+  color: #334155;
 }
 
 /* 危险按钮 - 删除 */
 .action-btn-danger {
   background: transparent;
-  color: #9ca3af;
+  color: #94a3b8;
   padding: 0 8px;
 }
 
@@ -967,7 +967,7 @@ watch(
 .action-divider {
   width: 1px;
   height: 20px;
-  background: #d1d5db;
+  background: #cbd5e1;
   margin: 0 4px;
 }
 
@@ -979,18 +979,18 @@ watch(
   width: 28px;
   height: 100%;
   min-height: 48px;
-  background-color: #f9fafb;
+  background-color: #f8fafc;
   border: none;
   cursor: pointer;
-  color: #6b7280;
+  color: #64748b;
   transition: all 0.15s ease;
   flex-shrink: 0;
   z-index: 10;
 }
 
 .scroll-btn:hover:not(:disabled) {
-  background-color: #e5e7eb;
-  color: #374151;
+  background-color: #e2e8f0;
+  color: #334155;
 }
 
 .scroll-btn:disabled {
@@ -1004,11 +1004,11 @@ watch(
 }
 
 .scroll-btn-left {
-  border-right: 1px solid #e5e7eb;
+  border-right: 1px solid #e2e8f0;
 }
 
 .scroll-btn-right {
-  border-left: 1px solid #e5e7eb;
+  border-left: 1px solid #e2e8f0;
 }
 
 /* 工具栏内容区域 */
@@ -1036,14 +1036,14 @@ watch(
 
 .btn-group {
   display: flex;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.375rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
 }
 
 .btn-group .toolbar-btn {
   border-radius: 0;
   border: none;
-  border-right: 1px solid #e5e7eb;
+  border-right: 1px solid #e2e8f0;
 }
 
 .btn-group .toolbar-btn:last-child {
@@ -1056,16 +1056,16 @@ watch(
   justify-content: center;
   width: 32px;
   height: 32px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #e2e8f0;
   background-color: white;
-  border-radius: 0.375rem;
+  border-radius: 0.5rem;
   cursor: pointer;
   transition: all 0.15s ease;
   flex-shrink: 0;
 }
 
 .toolbar-btn:hover:not(:disabled) {
-  background-color: #f3f4f6;
+  background-color: #f1f5f9;
 }
 
 .toolbar-btn:disabled {
@@ -1074,9 +1074,9 @@ watch(
 }
 
 .toolbar-btn.active {
-  background-color: #10b981;
+  background-color: #4f46e5;
   color: white;
-  border-color: #10b981;
+  border-color: #4f46e5;
 }
 
 /* 响应式设计 */
