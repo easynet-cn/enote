@@ -155,6 +155,7 @@ pub async fn create(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
     let note_history_extra = NoteHistoryExtra {
         notebook_id: notebook_id,
         notebook_name: notebook_name.clone(),
+        content_type: note.content_type,
         title: note.title.clone(),
         tags: note.tags.clone(),
     };
@@ -241,6 +242,7 @@ pub async fn delete_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<()
         let note_history_extra = NoteHistoryExtra {
             notebook_id: notebook_id,
             notebook_name: notebook_name.clone(),
+            content_type: entity.content_type,
             title: entity.title.clone(),
             tags: tags,
         };
@@ -321,6 +323,7 @@ pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
 
         let txn = db.begin().await?;
 
+        let old_content_type = entity.content_type;
         let old_content = entity.content.clone();
 
         let mut active_model: entity::note::ActiveModel = entity.into_active_model();
@@ -388,6 +391,7 @@ pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
             let note_history_extra = NoteHistoryExtra {
                 notebook_id: notebook_id,
                 notebook_name: notebook_name.clone(),
+                content_type: old_content_type,
                 title: old_title,
                 tags: old_tags,
             };

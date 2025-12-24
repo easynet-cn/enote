@@ -426,6 +426,9 @@ pub struct NoteHistoryExtra {
     /// 当时的笔记本名称
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub notebook_name: String,
+    /// 当时的笔记内容类型
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub content_type: i32,
     /// 当时的笔记标题
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub title: String,

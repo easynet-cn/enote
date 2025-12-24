@@ -111,6 +111,7 @@ export function useNotes() {
             notebookId: String(note.notebookId),
             title: note.title,
             content: note.content,
+            contentType: note.contentType,
             tags: note.tags.map((e) => ({
               id: String(e.id),
               name: e.name,
