@@ -90,6 +90,7 @@ export interface NoteHistoryExtra {
   notebookName: string
   noteId: number
   title: string
+  contentType: ContentType
   tags: Tag[]
 }
 
