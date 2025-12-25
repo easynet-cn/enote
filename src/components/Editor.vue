@@ -26,6 +26,7 @@
       <div v-if="activeNote" class="flex items-center my-4">
         <div class="flex-1">
           <input
+            ref="titleInput"
             :value="activeNote.title"
             @input="$emit('updateNoteTitle', ($event.target as HTMLInputElement).value)"
             placeholder="笔记标题"
@@ -51,10 +52,12 @@
           <div class="split-panel source-panel" :style="splitPanelStyle">
             <div class="panel-header">源码</div>
             <textarea
+              ref="sourcePanel"
               v-model="markdownSource"
               class="markdown-source-panel"
               placeholder="在此输入 Markdown 源码..."
               @input="handleSourceChange"
+              @scroll="handleSourceScroll"
             />
           </div>
 
@@ -70,7 +73,9 @@
           <!-- 预览面板 -->
           <div class="split-panel preview-panel">
             <div class="panel-header">预览</div>
-            <editor-content :editor="editor" class="markdown-preview-panel" />
+            <div ref="previewPanel" class="markdown-preview-panel" @scroll="handlePreviewScroll">
+              <editor-content :editor="editor" />
+            </div>
           </div>
         </div>
 
@@ -251,6 +256,14 @@ const markdownLayout = ref<MarkdownLayout>(MarkdownLayout.None)
 const splitRatio = ref(50) // 分割比例，默认 50%
 const isResizing = ref(false)
 
+// 滚动同步相关
+const sourcePanel = ref<HTMLTextAreaElement | null>(null)
+const previewPanel = ref<HTMLDivElement | null>(null)
+const isScrollSyncing = ref(false) // 标志位，避免滚动循环触发
+
+// 标题输入框引用
+const titleInput = ref<HTMLInputElement | null>(null)
+
 // 是否为 Markdown 模式
 const isMarkdownMode = computed(() => props.activeNote?.contentType === ContentType.Markdown)
 
@@ -344,10 +357,16 @@ watch(
   () => props.editMode,
   (newMode) => {
     if (editor.value && newMode) {
-      // 切换到编辑模式时，编辑器自动获得焦点
+      editor.value?.setEditable(true)
+      // 切换到编辑模式时，根据是否为新建笔记决定焦点位置
       setTimeout(() => {
-        editor.value?.commands.focus()
-        editor.value?.setEditable(true)
+        if (isNewNote.value) {
+          // 新建笔记：焦点在标题
+          titleInput.value?.focus()
+        } else {
+          // 编辑笔记：焦点在内容
+          editor.value?.commands.focus()
+        }
       }, 100)
     } else {
       editor.value?.setEditable(false)
@@ -496,6 +515,16 @@ const toggleSourceMode = () => {
   sourceMode.value = !sourceMode.value
 }
 
+// 预处理Markdown内容，保留多个连续空行
+const preprocessMarkdown = (content: string): string => {
+  // 将连续的空行（3个及以上换行）转换为带 <br> 的格式，保留空行效果
+  return content.replace(/\n{3,}/g, (match) => {
+    // 每个额外的换行转换为 <br>
+    const extraLines = match.length - 2
+    return '\n\n' + '<br>\n'.repeat(extraLines)
+  })
+}
+
 // 处理源码内容变化
 const handleSourceChange = () => {
   // 根据内容类型决定保存格式
@@ -506,7 +535,9 @@ const handleSourceChange = () => {
 
     // 如果在双面板布局下，同步更新预览
     if (markdownLayout.value !== MarkdownLayout.None && editor.value) {
-      editor.value.commands.setContent(markdownSource.value)
+      // 预处理内容以保留多个空行
+      const processedContent = preprocessMarkdown(markdownSource.value)
+      editor.value.commands.setContent(processedContent)
     }
   } else {
     // HTML 模式需要先同步到编辑器再获取 HTML
@@ -515,6 +546,48 @@ const handleSourceChange = () => {
       emit('updateNoteContent', editor.value.getHTML())
     }
   }
+}
+
+// 滚动同步：源码面板滚动时同步预览面板
+const handleSourceScroll = () => {
+  if (isScrollSyncing.value || !sourcePanel.value || !previewPanel.value) return
+
+  isScrollSyncing.value = true
+
+  const source = sourcePanel.value
+  const preview = previewPanel.value
+
+  // 计算滚动比例
+  const scrollRatio = source.scrollTop / (source.scrollHeight - source.clientHeight || 1)
+
+  // 应用到预览面板
+  preview.scrollTop = scrollRatio * (preview.scrollHeight - preview.clientHeight)
+
+  // 重置标志位
+  requestAnimationFrame(() => {
+    isScrollSyncing.value = false
+  })
+}
+
+// 滚动同步：预览面板滚动时同步源码面板
+const handlePreviewScroll = () => {
+  if (isScrollSyncing.value || !sourcePanel.value || !previewPanel.value) return
+
+  isScrollSyncing.value = true
+
+  const source = sourcePanel.value
+  const preview = previewPanel.value
+
+  // 计算滚动比例
+  const scrollRatio = preview.scrollTop / (preview.scrollHeight - preview.clientHeight || 1)
+
+  // 应用到源码面板
+  source.scrollTop = scrollRatio * (source.scrollHeight - source.clientHeight)
+
+  // 重置标志位
+  requestAnimationFrame(() => {
+    isScrollSyncing.value = false
+  })
 }
 </script>
 
@@ -597,6 +670,11 @@ const handleSourceChange = () => {
 
 :deep(.ProseMirror p) {
   margin-bottom: 0.75rem;
+  min-height: 1.6em; /* 确保空段落也有高度 */
+}
+
+:deep(.ProseMirror p:empty::before) {
+  content: '\00a0'; /* 空段落显示不可见空格，保持高度 */
 }
 
 :deep(.ProseMirror ul),
@@ -874,6 +952,8 @@ const handleSourceChange = () => {
   background-color: #1e1e1e;
   color: #d4d4d4;
   overflow-y: auto;
+  height: 0; /* 关键：让 flex 子元素可以缩小，使 overflow-y: auto 生效 */
+  min-height: 0;
 }
 
 .markdown-source-panel::placeholder {
@@ -885,6 +965,8 @@ const handleSourceChange = () => {
   padding: 1rem;
   overflow-y: auto;
   background-color: #fff;
+  height: 0; /* 关键：让 flex 子元素可以缩小，使 overflow-y: auto 生效 */
+  min-height: 0;
 }
 
 /* 分割条样式 */
