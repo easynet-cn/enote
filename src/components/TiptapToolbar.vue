@@ -502,6 +502,13 @@
           </button>
         </Tooltip>
 
+        <!-- 导出按钮 -->
+        <Tooltip content="导出" placement="bottom">
+          <button class="action-btn action-btn-ghost" @click="emit('export')">
+            <Download class="w-4 h-4" />
+          </button>
+        </Tooltip>
+
         <!-- 历史记录按钮 -->
         <Tooltip content="历史记录" placement="bottom">
           <button class="action-btn action-btn-ghost" @click="emit('history')">
@@ -634,6 +641,7 @@ import {
   Trash2,
   Settings,
   History,
+  Download,
   PanelTop,
   PanelLeft,
 } from 'lucide-vue-next'
@@ -665,6 +673,7 @@ const emit = defineEmits<{
   delete: []
   settings: []
   history: []
+  export: []
 }>()
 
 const toggleLayout = (layout: MarkdownLayout) => {

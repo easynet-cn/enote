@@ -40,6 +40,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init()) // 文件系统访问
         .plugin(tauri_plugin_opener::init()) // 打开外部链接/文件
         .plugin(tauri_plugin_shell::init()) // Shell 命令执行
+        .plugin(tauri_plugin_dialog::init()) // 文件对话框
         // 应用初始化设置
         .setup(|app| {
             tauri::async_runtime::block_on(async move {

@@ -18,6 +18,7 @@
           @cancel="handleCancel"
           @delete="handleDelete"
           @settings="handleSettings"
+          @export="handleExport"
           @history="handleHistory"
         />
       </div>
@@ -107,6 +108,9 @@
     @save="handleSettingFormSubmit"
   />
 
+  <!-- 导出对话框 -->
+  <ExportDialog v-model="exportDialog" :note="activeNote" />
+
   <History
     v-model:visible="historyVisible"
     v-model:data="historyData"
@@ -135,6 +139,7 @@ import { useEditor, EditorContent } from '@tiptap/vue-3'
 import { getMarkdownExtensions } from '../config/editorExtensions'
 import TiptapToolbar from './TiptapToolbar.vue'
 import EditorSettingsDialog from './EditorSettingsDialog.vue'
+import ExportDialog from './ExportDialog.vue'
 import { ConfirmDialog } from './ui'
 import { ContentType, MarkdownLayout } from '../types'
 import type { NoteHistory, ShowNote, ShowNotebook, ShowTag } from '../types'
@@ -169,6 +174,7 @@ const emit = defineEmits<{
 const isNewNote = computed(() => isTemporaryId(props.activeNote?.id))
 
 const settingDialog = ref(false)
+const exportDialog = ref(false)
 const deleteNoteConfirm = ref(false)
 const historyData = defineModel<NoteHistory[]>('historyData')
 const currentPage = defineModel<number>('currentPage')
@@ -289,6 +295,10 @@ const handleDelete = () => {
 
 const handleSettings = () => {
   settingDialog.value = true
+}
+
+const handleExport = () => {
+  exportDialog.value = true
 }
 
 const handleHistory = () => {
