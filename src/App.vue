@@ -28,11 +28,12 @@
       v-model:page-size="state.notePageSize"
       v-model:total="state.noteTotal"
       v-model:query="query"
+      v-model:width="noteListWidth"
       @set-active-note="setActiveNote"
       @update-search-query="handleUpdateSearchQuery"
       @size-change="handleNoteSizeChange"
       @current-change="handleNoteCurrentChange"
-      @toggle-collapse="noteListCollapsed = !noteListCollapsed"
+      @toggle-collapse="handleNoteListToggle"
     />
 
     <!-- 编辑器组件 -->
@@ -68,6 +69,14 @@ import Editor from './components/Editor.vue'
 // 折叠状态
 const sidebarCollapsed = ref(false)
 const noteListCollapsed = ref(false)
+// NoteList宽度
+const noteListWidth = ref(320)
+const DEFAULT_NOTE_LIST_WIDTH = 320
+
+const handleNoteListToggle = () => {
+  noteListCollapsed.value = !noteListCollapsed.value
+  noteListWidth.value = DEFAULT_NOTE_LIST_WIDTH
+}
 
 const {
   notebooks,

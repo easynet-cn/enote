@@ -31,7 +31,7 @@ use sea_orm::{
 };
 
 use crate::{
-    entity::{self},
+    entity::{self, notebook},
     model::{Note, NoteHistoryExtra, NotePageResult, NoteSearchPageParam, PageResult, Tag},
 };
 
@@ -523,6 +523,7 @@ pub async fn search_page(
 
         let start = search_param.page_param.start() as u64;
         let page_size = search_param.page_param.page_size as u64;
+
         let mut notes: Vec<Note> = query_builder
             .offset(start)
             .limit(page_size)
@@ -534,9 +535,36 @@ pub async fn search_page(
             .map(Note::from)
             .collect();
 
-        let note_ids = notes.iter().map(|e| e.id).collect::<Vec<i64>>();
+        let mut note_ids = Vec::<i64>::with_capacity(notes.len());
+        let mut notebook_ids = HashSet::<i64>::new();
+
+        for note in notes.iter() {
+            note_ids.push(note.id);
+
+            if note.notebook_id > 0 {
+                notebook_ids.insert(note.notebook_id);
+            }
+        }
 
         if !note_ids.is_empty() {
+            let mut notebook_map = HashMap::<i64, String>::with_capacity(notebook_ids.len());
+
+            if !notebook_ids.is_empty() {
+                notebook_map = notebook::Entity::find()
+                    .filter(notebook::Column::Id.is_in(notebook_ids))
+                    .all(db)
+                    .await?
+                    .iter()
+                    .map(|e| (e.id, e.name.clone()))
+                    .collect::<HashMap<i64, String>>();
+            }
+
+            for note in notes.iter_mut() {
+                if let Some(notebook_name) = notebook_map.get(&note.notebook_id) {
+                    note.notebook_name = notebook_name.clone();
+                }
+            }
+
             let note_tags = entity::note_tags::Entity::find()
                 .filter(entity::note_tags::Column::NoteId.is_in(note_ids))
                 .order_by_asc(entity::note_tags::Column::SortOrder)

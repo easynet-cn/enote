@@ -1,14 +1,24 @@
 <template>
   <aside
-    :class="[
-      'bg-white border-r border-slate-200 flex flex-col transition-all duration-300 relative shadow-sm',
-      collapsed ? 'w-12' : 'w-80',
-    ]"
+    class="bg-white border-r border-slate-200 flex flex-col relative shadow-sm"
+    :class="{ 'transition-all duration-300': !isResizing }"
+    :style="{ width: collapsed ? '48px' : `${width}px` }"
   >
+    <!-- 拖拽调整宽度的边界 -->
+    <div
+      v-if="!collapsed"
+      class="absolute right-0 top-0 h-full w-1 cursor-ew-resize hover:bg-indigo-400 z-20 group"
+      @mousedown="startResize"
+    >
+      <div
+        class="absolute right-0 top-0 h-full w-1 bg-transparent group-hover:bg-indigo-400 transition-colors"
+      ></div>
+    </div>
+
     <!-- 折叠/展开按钮（右侧边界中间） -->
     <button
       @click="$emit('toggle-collapse')"
-      class="absolute -right-3.5 top-1/2 -translate-y-1/2 z-10 w-7 h-7 bg-white border border-slate-200 rounded-full shadow-sm flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-all hover:scale-110 active:scale-95"
+      class="absolute -right-3.5 top-1/2 -translate-y-1/2 z-30 w-7 h-7 bg-white border border-slate-200 rounded-full shadow-sm flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-all hover:scale-110 active:scale-95"
       :aria-label="collapsed ? '展开列表' : '收起列表'"
       :title="collapsed ? '展开列表' : '收起列表'"
     >
@@ -71,7 +81,8 @@
             {{ getPreviewText(note.content) }}
           </div>
           <div class="flex justify-between items-center text-xs text-slate-400">
-            <span>{{ note.updateTime }}</span>
+            <span class="truncate mr-2">{{ note.notebookName }}</span>
+            <span class="shrink-0">{{ note.updateTime }}</span>
           </div>
         </div>
       </div>
@@ -93,7 +104,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onUnmounted } from 'vue'
 import { Search, X, FileText, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { Pagination } from './ui'
 import { stripHtml, truncateText } from '../utils'
@@ -106,11 +117,17 @@ interface Props {
   activeNote: string | null
   loading?: boolean
   collapsed?: boolean
+  width?: number
+  minWidth?: number
+  maxWidth?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
   collapsed: false,
+  width: 320,
+  minWidth: 200,
+  maxWidth: 600,
 })
 
 const query = defineModel<string>('query')
@@ -124,7 +141,44 @@ const emit = defineEmits<{
   setActiveNote: [id: string]
   updateSearchQuery: []
   'toggle-collapse': []
+  'update:width': [width: number]
 }>()
+
+// 拖拽状态
+const isResizing = ref(false)
+const startX = ref(0)
+const startWidth = ref(0)
+
+const startResize = (e: MouseEvent) => {
+  isResizing.value = true
+  startX.value = e.clientX
+  startWidth.value = props.width
+  document.addEventListener('mousemove', handleMouseMove)
+  document.addEventListener('mouseup', stopResize)
+  document.body.style.cursor = 'ew-resize'
+  document.body.style.userSelect = 'none'
+}
+
+const handleMouseMove = (e: MouseEvent) => {
+  if (!isResizing.value) return
+  const delta = e.clientX - startX.value
+  let newWidth = startWidth.value + delta
+  newWidth = Math.max(props.minWidth, Math.min(props.maxWidth, newWidth))
+  emit('update:width', newWidth)
+}
+
+const stopResize = () => {
+  isResizing.value = false
+  document.removeEventListener('mousemove', handleMouseMove)
+  document.removeEventListener('mouseup', stopResize)
+  document.body.style.cursor = ''
+  document.body.style.userSelect = ''
+}
+
+onUnmounted(() => {
+  document.removeEventListener('mousemove', handleMouseMove)
+  document.removeEventListener('mouseup', stopResize)
+})
 
 const activeNotebookName = computed(() => {
   const notebook = props.notebooks.find((n) => n.id === props.activeNotebook)

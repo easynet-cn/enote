@@ -109,6 +109,7 @@ export function useNotes() {
           (note): ShowNote => ({
             id: String(note.id),
             notebookId: String(note.notebookId),
+            notebookName: note.notebookName,
             title: note.title,
             content: note.content,
             contentType: note.contentType,

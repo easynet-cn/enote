@@ -61,6 +61,7 @@ export enum ContentType {
 export interface Note {
   id: number
   notebookId: number
+  notebookName?: string
   title: string
   content: string
   /** 内容类型：0 = HTML，1 = Markdown */
@@ -73,6 +74,7 @@ export interface Note {
 export interface ShowNote {
   id: string
   notebookId?: string
+  notebookName?: string
   title: string
   content: string
   /** 内容类型：0 = HTML，1 = Markdown */
