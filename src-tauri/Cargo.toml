@@ -1,6 +1,6 @@
 [package]
 name = "enote"
-version = "0.3.0"
+version = "0.3.1"
 description = "个人笔记"
 authors = ["124244236@qq.com"]
 edition = "2024"

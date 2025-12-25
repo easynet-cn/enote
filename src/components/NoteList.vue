@@ -78,7 +78,7 @@
             {{ note.title || '无标题' }}
           </div>
           <div class="text-sm text-slate-500 mb-2 line-clamp-2">
-            {{ getPreviewText(note.content) }}
+            {{ getPreviewText(note) }}
           </div>
           <div class="flex justify-between items-center text-xs text-slate-400">
             <span class="truncate mr-2">{{ note.notebookName }}</span>
@@ -107,8 +107,8 @@
 import { computed, ref, onUnmounted } from 'vue'
 import { Search, X, FileText, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { Pagination } from './ui'
-import { stripHtml, truncateText } from '../utils'
-import type { ShowNotebook, ShowNote } from '../types'
+import { stripHtml, truncateText, markdownToHtml } from '../utils'
+import { ContentType, type ShowNotebook, type ShowNote } from '../types'
 
 interface Props {
   notebooks: ShowNotebook[]
@@ -194,8 +194,13 @@ const emptyMessage = computed(() => {
 
 /**
  * 获取预览文本（纯文本，无 HTML）
+ * 如果是 Markdown 类型，先转换为 HTML 再提取纯文本
  */
-const getPreviewText = (html: string): string => {
+const getPreviewText = (note: ShowNote): string => {
+  let html = note.content
+  if (note.contentType === ContentType.Markdown) {
+    html = markdownToHtml(note.content)
+  }
   const text = stripHtml(html)
   return truncateText(text, 80) || '无内容'
 }

@@ -190,6 +190,7 @@ import { Button, Select, Dialog, ConfirmDialog } from './ui'
 import type { SelectOption } from './ui'
 import { ContentType, MarkdownLayout } from '../types'
 import type { NoteHistory, ShowNote, ShowNotebook, ShowTag } from '../types'
+import { getMarkdownFromEditor } from '../types/tiptap-markdown'
 import { isTemporaryId } from '../utils/validation'
 import History from './History.vue'
 
@@ -325,9 +326,7 @@ const editor = useEditor({
     // 根据内容类型决定保存格式
     const contentType = props.activeNote?.contentType ?? ContentType.Html
     if (contentType === ContentType.Markdown) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const storage = editor.storage as any
-      emit('updateNoteContent', storage.markdown.getMarkdown())
+      emit('updateNoteContent', getMarkdownFromEditor(editor))
     } else {
       emit('updateNoteContent', editor.getHTML())
     }
@@ -450,9 +449,7 @@ const handleMarkdownLayoutChange = (layout: MarkdownLayout) => {
 
   // 切换到双面板布局时，同步源码
   if (layout !== MarkdownLayout.None && editor.value) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const storage = editor.value.storage as any
-    markdownSource.value = storage.markdown.getMarkdown()
+    markdownSource.value = getMarkdownFromEditor(editor.value)
   }
 }
 
@@ -508,9 +505,7 @@ const toggleSourceMode = () => {
     editor.value.commands.setContent(markdownSource.value)
   } else {
     // 从预览模式切换到源码模式：获取 Markdown
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const storage = editor.value.storage as any
-    markdownSource.value = storage.markdown.getMarkdown()
+    markdownSource.value = getMarkdownFromEditor(editor.value)
   }
   sourceMode.value = !sourceMode.value
 }

@@ -18,6 +18,7 @@ use crate::config::AppState;
 mod command; // Tauri 命令处理器
 mod config; // 配置管理
 mod entity; // SeaORM 数据库实体
+mod error; // 错误处理
 mod migration; // 数据库迁移
 mod model; // 数据传输对象（DTO）
 mod service; // 业务逻辑服务层
