@@ -303,29 +303,16 @@ impl From<&Note> for entity::note::ActiveModel {
     }
 }
 
-/// 笔记分页搜索结果
+/// 笔记统计结果
 ///
-/// 除了标准分页结果外，还包含各笔记本的笔记数量统计
+/// 笔记本的笔记数量统计
 #[serde_as]
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct NotePageResult {
-    /// 分页结果（展开到同一层级）
-    #[serde(flatten)]
-    page_result: PageResult<Note>,
-    /// 各笔记本的笔记数量映射 (notebook_id -> count)
+pub struct NoteStatsResult {
+    pub total: i64,
     #[serde_as(deserialize_as = "DefaultOnNull")]
-    notebook_counts: HashMap<i64, i64>,
-}
-
-impl NotePageResult {
-    /// 创建笔记分页结果
-    pub fn new(page_result: PageResult<Note>, notebook_counts: HashMap<i64, i64>) -> Self {
-        Self {
-            page_result,
-            notebook_counts,
-        }
-    }
+    pub notebook_counts: HashMap<i64, i64>,
 }
 
 /// 标签数据传输对象

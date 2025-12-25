@@ -32,7 +32,7 @@ use sea_orm::{
 
 use crate::{
     entity::{self, notebook},
-    model::{Note, NoteHistoryExtra, NotePageResult, NoteSearchPageParam, PageResult, Tag},
+    model::{Note, NoteHistoryExtra, NoteSearchPageParam, NoteStatsResult, PageResult, Tag},
 };
 
 /// 根据 ID 查询笔记（优化版本：2 次查询代替 4 次）
@@ -434,34 +434,26 @@ pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
 ///   - `keyword`: 搜索关键词（空字符串表示不过滤）
 ///
 /// # 返回
-/// - `Ok(NotePageResult)`: 搜索结果，包含：
+/// - `Ok(PageResult)`: 搜索结果，包含：
 ///   - 笔记列表（含标签信息）
-///   - 各笔记本的笔记数量统计
 ///   - 分页信息
 /// - `Err`: 搜索失败
 ///
 /// # 查询优化
 /// - 使用批量查询获取标签信息，避免 N+1 问题
-/// - 返回各笔记本的统计数量，便于前端显示
 pub async fn search_page(
     db: &DatabaseConnection,
     search_param: &NoteSearchPageParam,
-) -> anyhow::Result<NotePageResult> {
+) -> anyhow::Result<PageResult<Note>> {
     // 构建计数查询、数据查询、分组统计查询
     let mut count_builder = entity::note::Entity::find();
     let mut query_builder = entity::note::Entity::find();
-    let mut count_map_builder = entity::note::Entity::find()
-        .select_only()
-        .column(entity::note::Column::NotebookId)
-        .column_as(entity::note::Column::Id.count(), "n");
 
     if search_param.notebook_id > 0 {
         count_builder =
             count_builder.filter(entity::note::Column::NotebookId.eq(search_param.notebook_id));
         query_builder =
             query_builder.filter(entity::note::Column::NotebookId.eq(search_param.notebook_id));
-        count_map_builder =
-            count_map_builder.filter(entity::note::Column::NotebookId.eq(search_param.notebook_id));
     }
     if search_param.tag_id > 0 {
         let sub_query = Query::select()
@@ -474,8 +466,6 @@ pub async fn search_page(
         count_builder = count_builder
             .filter(Condition::any().add(entity::note::Column::Id.in_subquery(sub_query.clone())));
         query_builder = query_builder
-            .filter(Condition::any().add(entity::note::Column::Id.in_subquery(sub_query.clone())));
-        count_map_builder = count_map_builder
             .filter(Condition::any().add(entity::note::Column::Id.in_subquery(sub_query.clone())));
     }
     if !search_param.keyword.is_empty() {
@@ -495,13 +485,6 @@ pub async fn search_page(
                     .add(entity::note::Column::Content.contains(keyword)),
             ),
         );
-        count_map_builder = count_map_builder.filter(
-            Condition::all().add(
-                Condition::any()
-                    .add(entity::note::Column::Title.contains(keyword))
-                    .add(entity::note::Column::Content.contains(keyword)),
-            ),
-        );
     }
 
     let total = count_builder
@@ -513,14 +496,6 @@ pub async fn search_page(
         .unwrap_or_default();
 
     if total > 0 {
-        let notbook_counts = count_map_builder
-            .group_by(entity::note::Column::NotebookId)
-            .into_tuple::<(i64, i64)>()
-            .all(db)
-            .await?
-            .into_iter()
-            .collect::<HashMap<i64, i64>>();
-
         let start = search_param.page_param.start() as u64;
         let page_size = search_param.page_param.page_size as u64;
 
@@ -611,8 +586,83 @@ pub async fn search_page(
 
         page_result.total_pages(search_param.page_param.page_size);
 
-        return Ok(NotePageResult::new(page_result, notbook_counts));
+        return Ok(page_result);
     }
 
-    Ok(NotePageResult::default())
+    Ok(PageResult::default())
+}
+
+pub async fn stats(
+    db: &DatabaseConnection,
+    search_param: &NoteSearchPageParam,
+) -> anyhow::Result<NoteStatsResult> {
+    // 构建计数查询、数据查询、分组统计查询
+    let mut count_builder = entity::note::Entity::find();
+    let mut count_map_builder = entity::note::Entity::find()
+        .select_only()
+        .column(entity::note::Column::NotebookId)
+        .column_as(entity::note::Column::Id.count(), "n");
+
+    if search_param.notebook_id > 0 {
+        count_builder =
+            count_builder.filter(entity::note::Column::NotebookId.eq(search_param.notebook_id));
+        count_map_builder =
+            count_map_builder.filter(entity::note::Column::NotebookId.eq(search_param.notebook_id));
+    }
+    if search_param.tag_id > 0 {
+        let sub_query = Query::select()
+            .column(entity::note_tags::Column::NoteId)
+            .distinct()
+            .and_where(Expr::col(entity::note_tags::Column::TagId).eq(search_param.tag_id))
+            .from(entity::note_tags::Entity)
+            .to_owned();
+
+        count_builder = count_builder
+            .filter(Condition::any().add(entity::note::Column::Id.in_subquery(sub_query.clone())));
+        count_map_builder = count_map_builder
+            .filter(Condition::any().add(entity::note::Column::Id.in_subquery(sub_query.clone())));
+    }
+    if !search_param.keyword.is_empty() {
+        let keyword = search_param.keyword.as_str();
+
+        count_builder = count_builder.filter(
+            Condition::all().add(
+                Condition::any()
+                    .add(entity::note::Column::Title.contains(keyword))
+                    .add(entity::note::Column::Content.contains(keyword)),
+            ),
+        );
+        count_map_builder = count_map_builder.filter(
+            Condition::all().add(
+                Condition::any()
+                    .add(entity::note::Column::Title.contains(keyword))
+                    .add(entity::note::Column::Content.contains(keyword)),
+            ),
+        );
+    }
+
+    let total = count_builder
+        .select_only()
+        .column_as(Expr::col(Asterisk).count(), "count")
+        .into_tuple::<i64>()
+        .one(db)
+        .await?
+        .unwrap_or_default();
+
+    if total > 0 {
+        let notbook_counts = count_map_builder
+            .group_by(entity::note::Column::NotebookId)
+            .into_tuple::<(i64, i64)>()
+            .all(db)
+            .await?
+            .into_iter()
+            .collect::<HashMap<i64, i64>>();
+
+        return Ok(NoteStatsResult {
+            total,
+            notebook_counts: notbook_counts,
+        });
+    }
+
+    Ok(NoteStatsResult::default())
 }

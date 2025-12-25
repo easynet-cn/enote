@@ -15,7 +15,7 @@ use std::sync::Arc;
 use crate::{
     config::AppState,
     model::{
-        Note, NoteHistory, NoteHistorySearchPageParam, NotePageResult, NoteSearchPageParam,
+        Note, NoteHistory, NoteHistorySearchPageParam, NoteSearchPageParam, NoteStatsResult,
         Notebook, PageResult, Tag,
     },
     service,
@@ -270,16 +270,28 @@ pub async fn delete_note_by_id(
 ///   - `keyword`: 搜索关键词（搜索标题和内容）
 ///
 /// # 返回
-/// - `Ok(NotePageResult)`: 搜索结果，包含笔记列表和各笔记本的统计数量
+/// - `Ok(NotePageResult)`: 搜索结果
 /// - `Err(String)`: 搜索失败
 #[tauri::command]
 pub async fn search_page_notes(
     app_state: tauri::State<'_, Arc<AppState>>,
     search_param: NoteSearchPageParam,
-) -> Result<NotePageResult, String> {
+) -> Result<PageResult<Note>, String> {
     let db = &app_state.database_connection;
 
     service::note::search_page(db, &search_param)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn note_stats(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    search_param: NoteSearchPageParam,
+) -> Result<NoteStatsResult, String> {
+    let db = &app_state.database_connection;
+
+    service::note::stats(db, &search_param)
         .await
         .map_err(|e| e.to_string())
 }

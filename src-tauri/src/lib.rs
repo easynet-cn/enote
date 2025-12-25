@@ -97,6 +97,7 @@ pub fn run() {
             command::update_note,
             command::delete_note_by_id,
             command::search_page_notes,
+            command::note_stats,
             // 历史记录相关命令
             command::search_page_note_histories,
         ])

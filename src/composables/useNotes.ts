@@ -6,8 +6,9 @@ import type {
   ShowNotebook,
   ShowTag,
   ShowNote,
-  NotePageResult,
   NoteHistory,
+  Note,
+  PageResult,
 } from '../types'
 import { showNotification } from '../components/ui/notification'
 import { noteApi } from '../api/note'
@@ -83,27 +84,11 @@ export function useNotes() {
         state.noteSearchPageParam.pageIndex = state.notePageIndex
         state.noteSearchPageParam.pageSize = state.notePageSize
 
-        const pageResult: NotePageResult = await noteApi.searchPageNotes(state.noteSearchPageParam)
+        const pageResult: PageResult<Note> = await noteApi.searchPageNotes(
+          state.noteSearchPageParam,
+        )
 
         state.noteTotal = pageResult.total
-
-        const countMap = new Map<number, number>()
-        let totalCount = 0
-
-        Object.entries(pageResult.notebookCounts).forEach(([k, v]) => {
-          const id = parseId(k)
-          countMap.set(id, v)
-          totalCount += v
-        })
-
-        notebooks.value.forEach((e) => {
-          if (e.id === '0') {
-            e.count = totalCount
-          } else {
-            const id = parseId(e.id)
-            e.count = countMap.get(id) || 0
-          }
-        })
 
         return pageResult.data.map(
           (note): ShowNote => ({
@@ -153,6 +138,35 @@ export function useNotes() {
     if (result) {
       tags.value = [tags.value[0], ...result]
     }
+  }
+
+  const stats = async () => {
+    return await withNotification(
+      async () => {
+        const result = await noteApi.noteStats(state.noteSearchPageParam)
+
+        const countMap = new Map<number, number>()
+        let totalCount = 0
+
+        Object.entries(result.notebookCounts).forEach(([k, v]) => {
+          const id = parseId(k)
+          countMap.set(id, v)
+          totalCount += v
+        })
+
+        notebooks.value.forEach((e) => {
+          if (e.id === '0') {
+            e.count = totalCount
+          } else {
+            const id = parseId(e.id)
+            e.count = countMap.get(id) || 0
+          }
+        })
+
+        return result
+      },
+      { loading: '正在统计笔记', error: '统计笔记失败' },
+    )
   }
 
   const activeNoteData = computed(() => {
@@ -440,6 +454,8 @@ export function useNotes() {
   const handleUpdateSearchQuery = async () => {
     state.noteSearchPageParam.keyword = query.value
     notes.value = await searchNotes()
+
+    await stats()
   }
 
   const handleNoteSizeChange = async (pageSize: number) => {
@@ -498,7 +514,10 @@ export function useNotes() {
       await setActiveNotebook(notebooks.value[0].id)
       await getTags()
       await setActiveTag(tags.value[0].id)
+
       notes.value = await searchNotes()
+
+      await stats()
     } catch (error) {
       showError(error, '初始化失败，请刷新页面重试')
     } finally {

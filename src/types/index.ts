@@ -83,7 +83,9 @@ export interface ShowNote {
   createTime?: string | null
   updateTime?: string | null
 }
-export interface NotePageResult extends PageResult<Note> {
+
+export interface NoteStatsResult {
+  total: number
   notebookCounts: Map<number, number>
 }
 

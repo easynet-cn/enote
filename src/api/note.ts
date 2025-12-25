@@ -6,8 +6,8 @@ import {
   Notebook,
   NoteHistory,
   NoteHistorySearchPageParam,
-  NotePageResult,
   NoteSearchPageParam,
+  NoteStatsResult,
   PageResult,
   Tag,
 } from '../types'
@@ -76,8 +76,12 @@ export const noteApi = {
     return await invoke('delete_note_by_id', { id })
   },
 
-  async searchPageNotes(searchParam: NoteSearchPageParam): Promise<NotePageResult> {
+  async searchPageNotes(searchParam: NoteSearchPageParam): Promise<PageResult<Note>> {
     return await invoke('search_page_notes', { searchParam })
+  },
+
+  async noteStats(searchParam: NoteSearchPageParam): Promise<NoteStatsResult> {
+    return await invoke('note_stats', { searchParam })
   },
 
   async geTags(): Promise<Tag[]> {
