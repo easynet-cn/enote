@@ -7,21 +7,7 @@
 <script setup lang="ts">
 import { watch, onBeforeUnmount } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
-import StarterKit from '@tiptap/starter-kit'
-import TextAlign from '@tiptap/extension-text-align'
-import { TextStyle } from '@tiptap/extension-text-style'
-import Color from '@tiptap/extension-color'
-import Highlight from '@tiptap/extension-highlight'
-import Underline from '@tiptap/extension-underline'
-import Link from '@tiptap/extension-link'
-import Image from '@tiptap/extension-image'
-import { Table } from '@tiptap/extension-table'
-import { TableRow } from '@tiptap/extension-table-row'
-import { TableCell } from '@tiptap/extension-table-cell'
-import { TableHeader } from '@tiptap/extension-table-header'
-import FontFamily from '@tiptap/extension-font-family'
-import TaskList from '@tiptap/extension-task-list'
-import TaskItem from '@tiptap/extension-task-item'
+import { getViewerExtensions } from '../config/editorExtensions'
 
 interface Props {
   modelValue: string
@@ -34,39 +20,9 @@ const props = withDefaults(defineProps<Props>(), {
   showToolbar: false,
 })
 
-// TipTap 编辑器实例 - 只读模式
+// TipTap 编辑器实例 - 只读模式（使用精简扩展）
 const editor = useEditor({
-  extensions: [
-    StarterKit,
-    TextAlign.configure({
-      types: ['heading', 'paragraph'],
-    }),
-    TextStyle,
-    Color,
-    Highlight.configure({ multicolor: true }),
-    Underline,
-    Link.configure({
-      openOnClick: true,
-      HTMLAttributes: {
-        class: 'text-blue-500 underline cursor-pointer',
-      },
-    }),
-    Image.configure({
-      inline: true,
-      allowBase64: true,
-    }),
-    Table.configure({
-      resizable: false,
-    }),
-    TableRow,
-    TableCell,
-    TableHeader,
-    FontFamily,
-    TaskList,
-    TaskItem.configure({
-      nested: true,
-    }),
-  ],
+  extensions: getViewerExtensions(),
   content: props.modelValue || '',
   editable: props.editable,
   editorProps: {

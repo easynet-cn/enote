@@ -62,6 +62,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useNotes } from './composables/useNotes'
+import { useKeyboardShortcuts } from './composables/useKeyboardShortcuts'
 import Sidebar from './components/Sidebar.vue'
 import NoteList from './components/NoteList.vue'
 import Editor from './components/Editor.vue'
@@ -106,4 +107,53 @@ const {
   handleNoteHistorySizeChange,
   handleNoteHistoryCurrentChange,
 } = useNotes()
+
+// 键盘快捷键
+useKeyboardShortcuts([
+  {
+    key: 's',
+    ctrl: true,
+    handler: () => {
+      if (state.editMode && state.activeNote) {
+        saveNote()
+      }
+    },
+    description: '保存笔记',
+  },
+  {
+    key: 'n',
+    ctrl: true,
+    handler: () => {
+      createNewNote()
+    },
+    description: '新建笔记',
+  },
+  {
+    key: 'e',
+    ctrl: true,
+    handler: () => {
+      if (state.activeNote && !state.editMode) {
+        state.editMode = true
+      }
+    },
+    description: '编辑笔记',
+  },
+  {
+    key: 'Escape',
+    handler: () => {
+      if (state.editMode) {
+        cancelEdit()
+      }
+    },
+    description: '取消编辑',
+  },
+  {
+    key: 'b',
+    ctrl: true,
+    handler: () => {
+      sidebarCollapsed.value = !sidebarCollapsed.value
+    },
+    description: '切换侧边栏',
+  },
+])
 </script>

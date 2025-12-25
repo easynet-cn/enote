@@ -98,50 +98,14 @@
   </div>
 
   <!-- 设置弹窗 -->
-  <Dialog v-model="settingDialog" title="设置" :width="500">
-    <div class="space-y-4" role="form" aria-label="笔记设置">
-      <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">笔记本</label>
-        <Select
-          v-model="settingForm.notebookId"
-          :options="notebookOptions"
-          placeholder="请选择笔记本"
-          clearable
-          filterable
-        />
-      </div>
-      <div>
-        <span class="block text-sm font-medium text-slate-700 mb-2" id="tags-label">标签</span>
-        <div class="flex flex-wrap gap-2" role="group" aria-labelledby="tags-label">
-          <label
-            v-for="tag in tags.filter((t) => t.id !== '0')"
-            :key="tag.id"
-            class="tag-select-item"
-            :class="{ 'tag-select-item-active': settingForm.tagIds.includes(tag.id) }"
-          >
-            <input
-              type="checkbox"
-              :value="tag.id"
-              v-model="settingForm.tagIds"
-              class="sr-only"
-              :aria-label="tag.name"
-            />
-            <span class="tag-select-check">
-              <Check class="w-3 h-3" />
-            </span>
-            <span :class="tag.cls" aria-hidden="true">●</span>
-            <span class="text-sm">{{ tag.name }}</span>
-          </label>
-        </div>
-      </div>
-    </div>
-    <template #footer>
-      <div class="flex justify-end gap-3">
-        <Button type="secondary" @click="settingDialog = false">取消</Button>
-        <Button type="primary" @click="handleSettingFormSubmit">保存</Button>
-      </div>
-    </template>
-  </Dialog>
+  <EditorSettingsDialog
+    v-model="settingDialog"
+    :notebooks="notebooks"
+    :tags="tags"
+    :notebook-id="activeNote?.notebookId ?? ''"
+    :selected-tag-ids="activeNote?.tags?.map((t) => t.id) ?? []"
+    @save="handleSettingFormSubmit"
+  />
 
   <History
     v-model:visible="historyVisible"
@@ -166,28 +130,12 @@
 </template>
 
 <script setup lang="ts">
-import { watch, onBeforeUnmount, ref, reactive, computed } from 'vue'
+import { watch, onBeforeUnmount, ref, computed } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
-import StarterKit from '@tiptap/starter-kit'
-import TextAlign from '@tiptap/extension-text-align'
-import { TextStyle } from '@tiptap/extension-text-style'
-import Color from '@tiptap/extension-color'
-import Highlight from '@tiptap/extension-highlight'
-import Underline from '@tiptap/extension-underline'
-import Link from '@tiptap/extension-link'
-import Image from '@tiptap/extension-image'
-import { Table } from '@tiptap/extension-table'
-import { TableRow } from '@tiptap/extension-table-row'
-import { TableCell } from '@tiptap/extension-table-cell'
-import { TableHeader } from '@tiptap/extension-table-header'
-import FontFamily from '@tiptap/extension-font-family'
-import TaskList from '@tiptap/extension-task-list'
-import TaskItem from '@tiptap/extension-task-item'
-import { Markdown } from 'tiptap-markdown'
+import { getMarkdownExtensions } from '../config/editorExtensions'
 import TiptapToolbar from './TiptapToolbar.vue'
-import { Check } from 'lucide-vue-next'
-import { Button, Select, Dialog, ConfirmDialog } from './ui'
-import type { SelectOption } from './ui'
+import EditorSettingsDialog from './EditorSettingsDialog.vue'
+import { ConfirmDialog } from './ui'
 import { ContentType, MarkdownLayout } from '../types'
 import type { NoteHistory, ShowNote, ShowNotebook, ShowTag } from '../types'
 import { getMarkdownFromEditor } from '../types/tiptap-markdown'
@@ -217,28 +165,8 @@ const emit = defineEmits<{
   open: []
 }>()
 
-interface Setting {
-  notebookId: string
-  tagIds: string[]
-}
-
-const settingForm = reactive<Setting>({
-  notebookId: '',
-  tagIds: [],
-})
-
 // 判断是否为新建笔记
 const isNewNote = computed(() => isTemporaryId(props.activeNote?.id))
-
-// 笔记本选项（过滤掉"全部"）
-const notebookOptions = computed<SelectOption[]>(() => {
-  return props.notebooks
-    .filter((n) => n.id !== '0')
-    .map((n) => ({
-      label: n.name || '',
-      value: n.id,
-    }))
-})
 
 const settingDialog = ref(false)
 const deleteNoteConfirm = ref(false)
@@ -278,49 +206,9 @@ const splitPanelStyle = computed(() => {
   }
 })
 
-// TipTap 编辑器实例
+// TipTap 编辑器实例（使用统一的扩展配置）
 const editor = useEditor({
-  extensions: [
-    StarterKit,
-    TextAlign.configure({
-      types: ['heading', 'paragraph'],
-    }),
-    TextStyle,
-    Color,
-    Highlight.configure({ multicolor: true }),
-    Underline,
-    Link.configure({
-      openOnClick: false,
-      HTMLAttributes: {
-        class: 'text-blue-500 underline cursor-pointer',
-      },
-    }),
-    Image.configure({
-      inline: true,
-      allowBase64: true,
-    }),
-    Table.configure({
-      resizable: true,
-    }),
-    TableRow,
-    TableCell,
-    TableHeader,
-    FontFamily,
-    TaskList,
-    TaskItem.configure({
-      nested: true,
-    }),
-    Markdown.configure({
-      html: true, // 允许解析 HTML
-      tightLists: true, // 紧凑列表
-      tightListClass: 'tight', // 紧凑列表 CSS 类
-      bulletListMarker: '-', // 无序列表标记
-      linkify: true, // 自动转换链接
-      breaks: true, // 换行符转为 <br>
-      transformPastedText: true, // 粘贴时转换 Markdown
-      transformCopiedText: true, // 复制时转换为 Markdown
-    }),
-  ],
+  extensions: getMarkdownExtensions(),
   content: props.activeNote?.content || '',
   editable: false,
   onUpdate: ({ editor }) => {
@@ -340,9 +228,6 @@ watch(
   (newNote) => {
     if (editor.value && newNote) {
       editor.value.commands.setContent(newNote.content)
-
-      settingForm.notebookId = props.activeNote?.notebookId ?? ''
-      settingForm.tagIds = props.activeNote?.tags?.map((t) => t.id) ?? []
 
       // 重置源码模式和布局
       sourceMode.value = false
@@ -418,13 +303,11 @@ const handleCurrentChange = (val: number) => {
   emit('currentChange', val)
 }
 
-const handleSettingFormSubmit = () => {
+const handleSettingFormSubmit = (notebookId: string, tagIds: string[]) => {
   if (props.activeNote) {
-    props.activeNote.notebookId = settingForm.notebookId
-    props.activeNote.tags = props.tags.filter((t) => settingForm.tagIds.includes(t.id))
+    props.activeNote.notebookId = notebookId
+    props.activeNote.tags = props.tags.filter((t) => tagIds.includes(t.id))
   }
-
-  settingDialog.value = false
 }
 
 const confirmDeleteNote = () => {
@@ -842,56 +725,6 @@ const handlePreviewScroll = () => {
 
 .markdown-source:focus {
   outline: none;
-}
-
-/* 标签选择样式 */
-.tag-select-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border: 2px solid #e2e8f0;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background: white;
-  user-select: none;
-}
-
-.tag-select-item:hover {
-  border-color: #cbd5e1;
-  background: #f8fafc;
-}
-
-.tag-select-item-active {
-  border-color: #4f46e5;
-  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
-  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
-}
-
-.tag-select-item-active:hover {
-  border-color: #4338ca;
-  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
-}
-
-.tag-select-check {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  border: 2px solid #cbd5e1;
-  background: white;
-  color: transparent;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-}
-
-.tag-select-item-active .tag-select-check {
-  border-color: #4f46e5;
-  background: #4f46e5;
-  color: white;
 }
 
 /* Markdown 分割布局样式 */

@@ -56,9 +56,12 @@
       </div>
 
       <div class="flex-1 overflow-y-auto">
+        <!-- 加载骨架屏 -->
+        <NoteListSkeleton v-if="loading" :count="5" />
+
         <!-- 空态 -->
         <div
-          v-if="notes.length === 0"
+          v-else-if="notes.length === 0"
           class="flex flex-col items-center justify-center h-full text-slate-400 py-12"
         >
           <FileText class="w-12 h-12 mb-3 opacity-50" />
@@ -108,6 +111,7 @@
 import { computed, ref, onUnmounted } from 'vue'
 import { Search, X, FileText, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { Pagination } from './ui'
+import NoteListSkeleton from './NoteListSkeleton.vue'
 import { stripHtml, truncateText, markdownToHtml } from '../utils'
 import { ContentType, type ShowNotebook, type ShowNote } from '../types'
 
