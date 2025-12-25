@@ -58,6 +58,16 @@ export enum ContentType {
   Markdown = 1,
 }
 
+/** Markdown 布局类型 */
+export enum MarkdownLayout {
+  /** 无布局（仅源码或预览） */
+  None = 'none',
+  /** 上下布局（上源码，下预览） */
+  Vertical = 'vertical',
+  /** 左右布局（左源码，右预览） */
+  Horizontal = 'horizontal',
+}
+
 export interface Note {
   id: number
   notebookId: number

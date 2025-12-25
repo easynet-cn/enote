@@ -423,16 +423,38 @@
 
       <!-- Markdown 源码/预览切换（Markdown 模式显示） -->
       <div v-if="isMarkdownMode" class="toolbar-section">
-        <Tooltip :content="sourceMode ? '预览模式' : 'Markdown 源码'" placement="bottom">
-          <button
-            :class="['toolbar-btn', { active: sourceMode }]"
-            @click="emit('toggle-source-mode')"
-            :disabled="!editMode"
-          >
-            <FileCode v-if="!sourceMode" class="w-4 h-4" />
-            <Eye v-else class="w-4 h-4" />
-          </button>
-        </Tooltip>
+        <div class="btn-group">
+          <Tooltip :content="sourceMode ? '预览模式' : 'Markdown 源码'" placement="bottom">
+            <button
+              :class="['toolbar-btn', { active: sourceMode }]"
+              @click="emit('toggle-source-mode')"
+              :disabled="!editMode"
+            >
+              <FileCode v-if="!sourceMode" class="w-4 h-4" />
+              <Eye v-else class="w-4 h-4" />
+            </button>
+          </Tooltip>
+
+          <Tooltip content="上下布局" placement="bottom">
+            <button
+              :class="['toolbar-btn', { active: markdownLayout === MarkdownLayout.Vertical }]"
+              @click="toggleLayout(MarkdownLayout.Vertical)"
+              :disabled="!editMode"
+            >
+              <PanelTop class="w-4 h-4" />
+            </button>
+          </Tooltip>
+
+          <Tooltip content="左右布局" placement="bottom">
+            <button
+              :class="['toolbar-btn', { active: markdownLayout === MarkdownLayout.Horizontal }]"
+              @click="toggleLayout(MarkdownLayout.Horizontal)"
+              :disabled="!editMode"
+            >
+              <PanelLeft class="w-4 h-4" />
+            </button>
+          </Tooltip>
+        </div>
       </div>
     </div>
 
@@ -573,7 +595,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import type { Editor } from '@tiptap/vue-3'
-import { ContentType } from '../types'
+import { ContentType, MarkdownLayout } from '../types'
 import { Tooltip, ColorPicker, Dialog } from './ui'
 import {
   Bold,
@@ -612,6 +634,8 @@ import {
   Trash2,
   Settings,
   History,
+  PanelTop,
+  PanelLeft,
 } from 'lucide-vue-next'
 
 interface Props {
@@ -620,6 +644,7 @@ interface Props {
   contentType?: ContentType
   isNewNote?: boolean
   editMode?: boolean
+  markdownLayout?: MarkdownLayout
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -627,11 +652,13 @@ const props = withDefaults(defineProps<Props>(), {
   contentType: ContentType.Html,
   isNewNote: false,
   editMode: false,
+  markdownLayout: MarkdownLayout.None,
 })
 
 const emit = defineEmits<{
   'toggle-source-mode': []
   'update:content-type': [contentType: ContentType]
+  'update:markdown-layout': [layout: MarkdownLayout]
   edit: []
   save: []
   cancel: []
@@ -639,6 +666,14 @@ const emit = defineEmits<{
   settings: []
   history: []
 }>()
+
+const toggleLayout = (layout: MarkdownLayout) => {
+  if (props.markdownLayout === layout) {
+    emit('update:markdown-layout', MarkdownLayout.None)
+  } else {
+    emit('update:markdown-layout', layout)
+  }
+}
 
 // 是否为 Markdown 模式
 const isMarkdownMode = computed(() => props.contentType === ContentType.Markdown)
