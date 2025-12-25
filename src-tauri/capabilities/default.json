@@ -9,7 +9,11 @@
     "core:default",
     "opener:default",
     "fs:default",
+    "fs:write-all",
+    "fs:allow-write-text-file",
     "shell:default",
-    "dialog:default"
+    "dialog:default",
+    "dialog:allow-save",
+    "dialog:allow-open"
   ]
 }

@@ -9,7 +9,11 @@
     "preview": "vite preview",
     "format": "prettier --write src/",
     "tauri": "tauri",
-    "tauri:icon": "tauri icon doc/enote-icon.svg"
+    "tauri:icon": "tauri icon doc/enote-icon.svg",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:coverage": "vitest --coverage"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.9.1",
@@ -69,10 +73,12 @@
     "@vue/tsconfig": "^0.8.1",
     "eslint": "^9.39.2",
     "eslint-plugin-vue": "^10.6.2",
+    "jsdom": "^27.3.0",
     "prettier": "^3.7.4",
     "tailwindcss": "^4.1.18",
     "typescript": "~5.9.3",
     "vite": "^7.3.0",
+    "vitest": "^4.0.16",
     "vue-tsc": "^3.2.1"
   }
 }
