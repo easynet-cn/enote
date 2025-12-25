@@ -70,6 +70,7 @@
           v-else
           v-for="note in notes"
           :key="note.id"
+          v-memo="[note.id, note.title, note.content, note.updateTime, activeNote === note.id]"
           class="note-item"
           :class="{ active: activeNote === note.id }"
           @click="$emit('setActiveNote', note.id)"

@@ -100,14 +100,11 @@ export function useNotebookManager() {
     let totalCount = 0
     countMap.forEach((v) => (totalCount += v))
 
-    notebooks.value.forEach((e) => {
-      if (e.id === '0') {
-        e.count = totalCount
-      } else {
-        const id = parseId(e.id)
-        e.count = countMap.get(id) || 0
-      }
-    })
+    // shallowRef 需要整体替换数组
+    notebooks.value = notebooks.value.map((e) => ({
+      ...e,
+      count: e.id === '0' ? totalCount : countMap.get(parseId(e.id)) || 0,
+    }))
   }
 
   return {

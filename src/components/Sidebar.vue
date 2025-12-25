@@ -75,6 +75,13 @@
           <li
             v-for="notebook in notebooks"
             :key="notebook.id"
+            v-memo="[
+              notebook.id,
+              notebook.name,
+              notebook.icon,
+              notebook.count,
+              activeNotebook === notebook.id,
+            ]"
             role="option"
             :aria-selected="activeNotebook === notebook.id"
             class="sidebar-item"
@@ -126,6 +133,7 @@
           <li
             v-for="tag in tags"
             :key="tag.id"
+            v-memo="[tag.id, tag.name, tag.icon, tag.cls, activeTag === tag.id]"
             role="option"
             :aria-selected="activeTag === tag.id"
             :class="['sidebar-item', { active: activeTag === tag.id }]"

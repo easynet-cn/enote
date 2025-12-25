@@ -12,11 +12,16 @@
   "app": {
     "windows": [
       {
-        "title": "",
+        "title": "ENote",
         "width": 1200,
         "height": 800,
+        "minWidth": 800,
+        "minHeight": 600,
         "maximized": true,
-        "fullscreen": true
+        "fullscreen": false,
+        "center": true,
+        "resizable": true,
+        "decorations": true
       }
     ],
     "security": {

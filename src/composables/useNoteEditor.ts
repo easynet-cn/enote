@@ -22,7 +22,8 @@ export function useNoteEditor() {
     const timestamp = Date.now()
     const newNote = createDefaultNote(state.activeNotebook, timestamp)
 
-    notes.value.unshift(newNote)
+    // shallowRef 需要整体替换数组
+    notes.value = [newNote, ...notes.value]
     state.activeNote = newNote.id
     state.editMode = true
   }
@@ -89,11 +90,9 @@ export function useNoteEditor() {
     if (!state.activeNote) return
 
     if (isTemporaryId(state.activeNote)) {
-      const noteIndex = notes.value.findIndex((note) => note.id === state.activeNote)
-      if (noteIndex !== -1) {
-        notes.value.splice(noteIndex, 1)
-        state.activeNote = null
-      }
+      // shallowRef 需要整体替换数组
+      notes.value = notes.value.filter((note) => note.id !== state.activeNote)
+      state.activeNote = null
     }
   }
 
@@ -104,11 +103,9 @@ export function useNoteEditor() {
     const noteId = state.activeNote
 
     if (isTemporaryId(noteId)) {
-      const noteIndex = notes.value.findIndex((note) => note.id === state.activeNote)
-      if (noteIndex !== -1) {
-        notes.value.splice(noteIndex, 1)
-        state.activeNote = null
-      }
+      // shallowRef 需要整体替换数组
+      notes.value = notes.value.filter((note) => note.id !== state.activeNote)
+      state.activeNote = null
     } else {
       await withNotification(
         async () => {
@@ -130,20 +127,20 @@ export function useNoteEditor() {
   const updateNoteTitle = (title: string) => {
     if (!state.activeNote) return
 
-    const noteIndex = notes.value.findIndex((note) => note.id === state.activeNote)
-    if (noteIndex !== -1) {
-      notes.value[noteIndex].title = title
-    }
+    // shallowRef 需要整体替换数组
+    notes.value = notes.value.map((note) =>
+      note.id === state.activeNote ? { ...note, title } : note,
+    )
   }
 
   // 更新笔记内容
   const updateNoteContent = (content: string) => {
     if (!state.activeNote) return
 
-    const noteIndex = notes.value.findIndex((note) => note.id === state.activeNote)
-    if (noteIndex !== -1) {
-      notes.value[noteIndex].content = content
-    }
+    // shallowRef 需要整体替换数组
+    notes.value = notes.value.map((note) =>
+      note.id === state.activeNote ? { ...note, content } : note,
+    )
   }
 
   return {

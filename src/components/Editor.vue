@@ -192,6 +192,7 @@ import { ContentType, MarkdownLayout } from '../types'
 import type { NoteHistory, ShowNote, ShowNotebook, ShowTag } from '../types'
 import { getMarkdownFromEditor } from '../types/tiptap-markdown'
 import { isTemporaryId } from '../utils/validation'
+import { throttle } from '../utils/debounce'
 import History from './History.vue'
 
 interface Props {
@@ -520,6 +521,14 @@ const preprocessMarkdown = (content: string): string => {
   })
 }
 
+// 节流的预览更新函数（100ms 间隔，提升大文件编辑性能）
+const throttledUpdatePreview = throttle((content: string) => {
+  if (editor.value) {
+    const processedContent = preprocessMarkdown(content)
+    editor.value.commands.setContent(processedContent)
+  }
+}, 100)
+
 // 处理源码内容变化
 const handleSourceChange = () => {
   // 根据内容类型决定保存格式
@@ -528,11 +537,9 @@ const handleSourceChange = () => {
     // Markdown 模式直接保存源码
     emit('updateNoteContent', markdownSource.value)
 
-    // 如果在双面板布局下，同步更新预览
-    if (markdownLayout.value !== MarkdownLayout.None && editor.value) {
-      // 预处理内容以保留多个空行
-      const processedContent = preprocessMarkdown(markdownSource.value)
-      editor.value.commands.setContent(processedContent)
+    // 如果在双面板布局下，使用节流更新预览（提升性能）
+    if (markdownLayout.value !== MarkdownLayout.None) {
+      throttledUpdatePreview(markdownSource.value)
     }
   } else {
     // HTML 模式需要先同步到编辑器再获取 HTML

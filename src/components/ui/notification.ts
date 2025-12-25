@@ -25,6 +25,43 @@ function ensureContainer() {
   return containerEl
 }
 
+function createSvgIcon(type: NotificationOptions['type']): SVGSVGElement {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+  svg.setAttribute('class', 'w-5 h-5')
+  svg.setAttribute('fill', 'none')
+  svg.setAttribute('stroke', 'currentColor')
+  svg.setAttribute('viewBox', '0 0 24 24')
+
+  const colorClass =
+    type === 'error'
+      ? 'text-red-500'
+      : type === 'warning'
+        ? 'text-yellow-500'
+        : type === 'info'
+          ? 'text-blue-500'
+          : 'text-green-500'
+  svg.classList.add(...colorClass.split(' '))
+
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+  path.setAttribute('stroke-linecap', 'round')
+  path.setAttribute('stroke-linejoin', 'round')
+  path.setAttribute('stroke-width', '2')
+
+  if (type === 'error') {
+    path.setAttribute('d', 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z')
+  } else if (type === 'warning') {
+    path.setAttribute(
+      'd',
+      'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
+    )
+  } else {
+    path.setAttribute('d', 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z')
+  }
+
+  svg.appendChild(path)
+  return svg
+}
+
 function createNotificationElement(
   id: number,
   options: NotificationOptions,
@@ -38,34 +75,47 @@ function createNotificationElement(
     min-w-[280px] max-w-[400px]
   `
 
-  const iconClass =
-    options.type === 'error'
-      ? 'text-red-500'
-      : options.type === 'warning'
-        ? 'text-yellow-500'
-        : options.type === 'info'
-          ? 'text-blue-500'
-          : 'text-green-500'
+  // Icon container
+  const iconContainer = document.createElement('div')
+  iconContainer.className = 'flex-shrink-0'
+  iconContainer.appendChild(createSvgIcon(options.type))
+  el.appendChild(iconContainer)
 
-  const iconSvg =
-    options.type === 'error'
-      ? `<svg class="w-5 h-5 ${iconClass}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`
-      : options.type === 'warning'
-        ? `<svg class="w-5 h-5 ${iconClass}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`
-        : `<svg class="w-5 h-5 ${iconClass}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`
+  // Content container
+  const contentContainer = document.createElement('div')
+  contentContainer.className = 'flex-1'
 
-  el.innerHTML = `
-    <div class="flex-shrink-0">${iconSvg}</div>
-    <div class="flex-1">
-      ${options.title ? `<div class="font-medium text-gray-900">${options.title}</div>` : ''}
-      <div class="text-sm text-gray-600">${options.message}</div>
-    </div>
-    <button class="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-      </svg>
-    </button>
-  `
+  if (options.title) {
+    const titleEl = document.createElement('div')
+    titleEl.className = 'font-medium text-gray-900'
+    titleEl.textContent = options.title
+    contentContainer.appendChild(titleEl)
+  }
+
+  const messageEl = document.createElement('div')
+  messageEl.className = 'text-sm text-gray-600'
+  messageEl.textContent = options.message
+  contentContainer.appendChild(messageEl)
+  el.appendChild(contentContainer)
+
+  // Close button
+  const closeBtn = document.createElement('button')
+  closeBtn.className = 'flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors'
+
+  const closeSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+  closeSvg.setAttribute('class', 'w-4 h-4')
+  closeSvg.setAttribute('fill', 'none')
+  closeSvg.setAttribute('stroke', 'currentColor')
+  closeSvg.setAttribute('viewBox', '0 0 24 24')
+
+  const closePath = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+  closePath.setAttribute('stroke-linecap', 'round')
+  closePath.setAttribute('stroke-linejoin', 'round')
+  closePath.setAttribute('stroke-width', '2')
+  closePath.setAttribute('d', 'M6 18L18 6M6 6l12 12')
+  closeSvg.appendChild(closePath)
+  closeBtn.appendChild(closeSvg)
+  el.appendChild(closeBtn)
 
   const close = () => {
     el.style.transform = 'translateX(100%)'
@@ -76,7 +126,7 @@ function createNotificationElement(
     }, 300)
   }
 
-  el.querySelector('button')?.addEventListener('click', close)
+  closeBtn.addEventListener('click', close)
 
   return { el, close }
 }
