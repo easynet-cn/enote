@@ -51,6 +51,24 @@ impl MigrationTrait for Migration {
                 .await?;
         }
 
+        // 创建复合唯一索引（note_id + tag_id，防止重复关联）
+        if !manager
+            .has_index("note_tags", "idx_note_tags_unique")
+            .await?
+        {
+            manager
+                .create_index(
+                    Index::create()
+                        .name("idx_note_tags_unique")
+                        .table(NoteTags::Table)
+                        .col(NoteTags::NoteId)
+                        .col(NoteTags::TagId)
+                        .unique()
+                        .to_owned(),
+                )
+                .await?;
+        }
+
         Ok(())
     }
 

@@ -1,24 +1,26 @@
 import { histories, state } from './store'
 import { noteApi } from '../api/note'
 import { parseId } from '../utils/validation'
-import { withNotification } from '../utils/errorHandler'
+import { showError } from '../utils/errorHandler'
 
 export function useNoteHistory() {
   // 搜索历史记录
   const searchNoteHistories = async () => {
-    await withNotification(
-      async () => {
-        const pageResult = await noteApi.searchPageNoteHistories({
-          pageIndex: state.historyPageIndex,
-          pageSize: state.historyPageSize,
-          noteId: parseId(state.activeNote ?? ''),
-        })
+    state.historyLoading = true
+    try {
+      const pageResult = await noteApi.searchPageNoteHistories({
+        pageIndex: state.historyPageIndex,
+        pageSize: state.historyPageSize,
+        noteId: parseId(state.activeNote ?? ''),
+      })
 
-        histories.value = pageResult.data
-        state.historyTotal = pageResult.total
-      },
-      { loading: '正在加载历史记录', error: '加载历史记录失败' },
-    )
+      histories.value = pageResult.data
+      state.historyTotal = pageResult.total
+    } catch (error) {
+      showError(error, '加载历史记录失败')
+    } finally {
+      state.historyLoading = false
+    }
   }
 
   // 打开历史对话框

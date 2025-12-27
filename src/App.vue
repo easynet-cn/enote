@@ -46,6 +46,7 @@
       :tags="tags"
       :active-note="activeNoteData"
       :edit-mode="state.editMode"
+      :history-loading="state.historyLoading"
       @save-note="saveNote"
       @cancel-edit="cancelEdit"
       @delete-note="deleteNote"

@@ -37,12 +37,46 @@ pub struct PageParam {
 }
 
 impl PageParam {
+    /// 最大每页数量限制
+    const MAX_PAGE_SIZE: i64 = 1000;
+
     /// 计算数据库查询的起始偏移量
     ///
     /// # 返回
     /// (page_index - 1) * page_size
     pub fn start(&self) -> i64 {
         (self.page_index - 1) * self.page_size
+    }
+
+    /// 验证分页参数
+    ///
+    /// # 返回
+    /// - `Ok(())`: 参数有效
+    /// - `Err`: 参数无效，包含错误信息
+    pub fn validate(&self) -> anyhow::Result<()> {
+        if self.page_index < 1 {
+            anyhow::bail!("页码必须大于等于 1")
+        }
+        if self.page_size < 1 {
+            anyhow::bail!("每页数量必须大于等于 1")
+        }
+        if self.page_size > Self::MAX_PAGE_SIZE {
+            anyhow::bail!("每页数量不能超过 {}", Self::MAX_PAGE_SIZE)
+        }
+        Ok(())
+    }
+
+    /// 规范化分页参数（自动修正无效值）
+    pub fn normalize(&mut self) {
+        if self.page_index < 1 {
+            self.page_index = 1;
+        }
+        if self.page_size < 1 {
+            self.page_size = Self::default_page_size();
+        }
+        if self.page_size > Self::MAX_PAGE_SIZE {
+            self.page_size = Self::MAX_PAGE_SIZE;
+        }
     }
 
     fn default_page_index() -> i64 {
@@ -398,6 +432,35 @@ pub struct NoteSearchPageParam {
     /// 搜索关键词（搜索标题和内容）
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub keyword: String,
+}
+
+impl NoteSearchPageParam {
+    /// 最大关键词长度
+    const MAX_KEYWORD_LENGTH: usize = 500;
+
+    /// 验证搜索参数
+    pub fn validate(&self) -> anyhow::Result<()> {
+        self.page_param.validate()?;
+
+        if self.keyword.len() > Self::MAX_KEYWORD_LENGTH {
+            anyhow::bail!("搜索关键词不能超过 {} 个字符", Self::MAX_KEYWORD_LENGTH)
+        }
+
+        Ok(())
+    }
+
+    /// 规范化搜索参数
+    pub fn normalize(&mut self) {
+        self.page_param.normalize();
+
+        // 截断过长的关键词
+        if self.keyword.len() > Self::MAX_KEYWORD_LENGTH {
+            self.keyword = self.keyword.chars().take(Self::MAX_KEYWORD_LENGTH).collect();
+        }
+
+        // 去除关键词首尾空格
+        self.keyword = self.keyword.trim().to_string();
+    }
 }
 
 /// 笔记历史记录额外信息

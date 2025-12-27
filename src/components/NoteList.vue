@@ -68,27 +68,28 @@
           <p class="text-sm">{{ emptyMessage }}</p>
         </div>
 
-        <!-- 笔记列表 -->
-        <div
-          v-else
-          v-for="note in notes"
-          :key="note.id"
-          v-memo="[note.id, note.title, note.content, note.updateTime, activeNote === note.id]"
-          class="note-item"
-          :class="{ active: activeNote === note.id }"
-          @click="$emit('setActiveNote', note.id)"
-        >
-          <div class="font-semibold text-slate-900 mb-1 truncate">
-            {{ note.title || '无标题' }}
+        <!-- 笔记列表（带过渡动画） -->
+        <TransitionGroup v-else name="note-list" tag="div">
+          <div
+            v-for="note in notes"
+            :key="note.id"
+            v-memo="[note.id, note.title, note.updateTime, activeNote === note.id]"
+            class="note-item"
+            :class="{ active: activeNote === note.id }"
+            @click="$emit('setActiveNote', note.id)"
+          >
+            <div class="font-semibold text-slate-900 mb-1 truncate">
+              {{ note.title || '无标题' }}
+            </div>
+            <div class="text-sm text-slate-500 mb-2 line-clamp-2">
+              {{ getPreviewText(note) }}
+            </div>
+            <div class="flex justify-between items-center text-xs text-slate-400">
+              <span class="truncate mr-2">{{ note.notebookName }}</span>
+              <span class="shrink-0">{{ note.updateTime }}</span>
+            </div>
           </div>
-          <div class="text-sm text-slate-500 mb-2 line-clamp-2">
-            {{ getPreviewText(note) }}
-          </div>
-          <div class="flex justify-between items-center text-xs text-slate-400">
-            <span class="truncate mr-2">{{ note.notebookName }}</span>
-            <span class="shrink-0">{{ note.updateTime }}</span>
-          </div>
-        </div>
+        </TransitionGroup>
       </div>
 
       <div
@@ -114,6 +115,24 @@ import { Pagination } from './ui'
 import NoteListSkeleton from './NoteListSkeleton.vue'
 import { stripHtml, truncateText, markdownToHtml } from '../utils'
 import { ContentType, type ShowNotebook, type ShowNote } from '../types'
+import { PREVIEW_CACHE_MAX_SIZE, PREVIEW_TEXT_MAX_LENGTH } from '../config/constants'
+
+// 预览文本缓存（使用 Map 实现简单的 LRU 缓存）
+const previewTextCache = new Map<string, string>()
+
+// 生成缓存 key：使用 id + 内容长度 + 内容类型作为标识
+const getCacheKey = (note: ShowNote): string => {
+  return `${note.id}-${note.content.length}-${note.contentType ?? 0}`
+}
+
+// 清理过期缓存
+const cleanupCache = () => {
+  if (previewTextCache.size > PREVIEW_CACHE_MAX_SIZE) {
+    // 删除最早的一半缓存
+    const keysToDelete = Array.from(previewTextCache.keys()).slice(0, PREVIEW_CACHE_MAX_SIZE / 2)
+    keysToDelete.forEach((key) => previewTextCache.delete(key))
+  }
+}
 
 interface Props {
   notebooks: ShowNotebook[]
@@ -200,14 +219,29 @@ const emptyMessage = computed(() => {
 /**
  * 获取预览文本（纯文本，无 HTML）
  * 如果是 Markdown 类型，先转换为 HTML 再提取纯文本
+ * 使用缓存避免重复的 Markdown 转换
  */
 const getPreviewText = (note: ShowNote): string => {
+  const cacheKey = getCacheKey(note)
+
+  // 检查缓存
+  if (previewTextCache.has(cacheKey)) {
+    return previewTextCache.get(cacheKey)!
+  }
+
+  // 计算预览文本
   let html = note.content
   if (note.contentType === ContentType.Markdown) {
     html = markdownToHtml(note.content)
   }
   const text = stripHtml(html)
-  return truncateText(text, 80) || '无内容'
+  const result = truncateText(text, PREVIEW_TEXT_MAX_LENGTH) || '无内容'
+
+  // 存入缓存并清理过期项
+  previewTextCache.set(cacheKey, result)
+  cleanupCache()
+
+  return result
 }
 
 const handleCurrentChange = (val: number) => {
@@ -219,3 +253,28 @@ const handlerQueryChange = () => {
   emit('updateSearchQuery')
 }
 </script>
+
+<style scoped>
+/* 笔记列表过渡动画 */
+.note-list-move,
+.note-list-enter-active,
+.note-list-leave-active {
+  transition: all 0.2s ease;
+}
+
+.note-list-enter-from {
+  opacity: 0;
+  transform: translateX(-10px);
+}
+
+.note-list-leave-to {
+  opacity: 0;
+  transform: translateX(10px);
+}
+
+/* 确保离开的元素不影响布局 */
+.note-list-leave-active {
+  position: absolute;
+  width: 100%;
+}
+</style>

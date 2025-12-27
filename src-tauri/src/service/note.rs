@@ -200,51 +200,39 @@ pub async fn create(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
 /// - 如果笔记不存在，不会报错，直接返回成功
 /// - 删除前会保存完整的笔记信息到历史记录
 pub async fn delete_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<()> {
-    if let Some(entity) = entity::note::Entity::find_by_id(id).one(db).await? {
-        let tag_ids = entity::note_tags::Entity::find()
+    // 优化：使用 find_also_related 减少查询次数
+    let result = entity::note::Entity::find_by_id(id)
+        .find_also_related(entity::notebook::Entity)
+        .one(db)
+        .await?;
+
+    if let Some((entity, notebook_opt)) = result {
+        // 优化：使用 find_also_related 一次性获取标签（2 次查询变 1 次）
+        let tags: Vec<Tag> = entity::note_tags::Entity::find()
             .filter(entity::note_tags::Column::NoteId.eq(id))
+            .find_also_related(entity::tag::Entity)
             .order_by_desc(entity::note_tags::Column::SortOrder)
             .all(db)
             .await?
-            .iter()
-            .map(|e| e.tag_id)
-            .collect::<Vec<i64>>();
+            .into_iter()
+            .filter_map(|(_, tag_opt)| tag_opt.map(|t| Tag::from(t)))
+            .collect();
 
-        let mut tags = Vec::<Tag>::with_capacity(tag_ids.len());
-
-        if !tag_ids.is_empty() {
-            tags = entity::tag::Entity::find()
-                .filter(entity::tag::Column::Id.is_in(tag_ids))
-                .all(db)
-                .await?
-                .iter()
-                .map(Tag::from)
-                .collect::<Vec<Tag>>();
-        }
-
-        let mut notebook_id = 0_i64;
-        let mut notebook_name = String::default();
-
-        if entity.notebook_id > 0 {
-            if let Some(notebook) = entity::notebook::Entity::find_by_id(entity.notebook_id)
-                .one(db)
-                .await?
-            {
-                notebook_id = notebook.id;
-                notebook_name = notebook.name.clone();
-            }
-        }
+        let (notebook_id, notebook_name) = match notebook_opt {
+            Some(notebook) => (notebook.id, notebook.name.clone()),
+            None => (0, String::default()),
+        };
 
         let txn = db.begin().await?;
 
         let now = Local::now().naive_local();
 
         let note_history_extra = NoteHistoryExtra {
-            notebook_id: notebook_id,
-            notebook_name: notebook_name.clone(),
+            notebook_id,
+            notebook_name,
             content_type: entity.content_type,
             title: entity.title.clone(),
-            tags: tags,
+            tags,
         };
 
         let extra = serde_json::to_string(&note_history_extra).unwrap_or_default();
@@ -445,6 +433,9 @@ pub async fn search_page(
     db: &DatabaseConnection,
     search_param: &NoteSearchPageParam,
 ) -> anyhow::Result<PageResult<Note>> {
+    // 验证搜索参数
+    search_param.validate()?;
+
     // 构建计数查询、数据查询、分组统计查询
     let mut count_builder = entity::note::Entity::find();
     let mut query_builder = entity::note::Entity::find();

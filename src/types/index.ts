@@ -20,7 +20,7 @@ export interface Notebook {
 export interface ShowNotebook {
   id: string
   parentId?: number
-  name?: string
+  name: string
   description?: string
   icon?: string
   cls?: string
@@ -83,11 +83,24 @@ export interface Note {
 
 export interface ShowNote {
   id: string
-  notebookId?: string
+  notebookId: string
   notebookName?: string
   title: string
   content: string
   /** 内容类型：0 = HTML，1 = Markdown */
+  contentType: ContentType
+  tags: ShowTag[]
+  createTime: string | null
+  updateTime: string | null
+}
+
+/** 新建笔记时的部分类型（某些字段可以为空） */
+export interface PartialShowNote {
+  id: string
+  notebookId?: string
+  notebookName?: string
+  title: string
+  content: string
   contentType?: ContentType
   tags?: ShowTag[]
   createTime?: string | null
@@ -146,4 +159,5 @@ export interface AppState {
   historyPageIndex: number
   historyPageSize: number
   historyTotal: number
+  historyLoading: boolean
 }

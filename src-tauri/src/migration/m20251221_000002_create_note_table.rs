@@ -40,6 +40,36 @@ impl MigrationTrait for Migration {
                 .await?;
         }
 
+        // 创建更新时间索引（用于排序优化）
+        if !manager.has_index("note", "idx_note_update_time").await? {
+            manager
+                .create_index(
+                    Index::create()
+                        .name("idx_note_update_time")
+                        .table(Note::Table)
+                        .col(Note::UpdateTime)
+                        .to_owned(),
+                )
+                .await?;
+        }
+
+        // 创建复合索引（笔记本ID + 更新时间，用于分页查询优化）
+        if !manager
+            .has_index("note", "idx_note_notebook_update")
+            .await?
+        {
+            manager
+                .create_index(
+                    Index::create()
+                        .name("idx_note_notebook_update")
+                        .table(Note::Table)
+                        .col(Note::NotebookId)
+                        .col(Note::UpdateTime)
+                        .to_owned(),
+                )
+                .await?;
+        }
+
         Ok(())
     }
 

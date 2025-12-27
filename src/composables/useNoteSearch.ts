@@ -3,44 +3,66 @@ import { noteApi } from '../api/note'
 import { parseId } from '../utils/validation'
 import { withNotification } from '../utils/errorHandler'
 import { debounce } from '../utils/debounce'
-import type { ShowNote, Note, PageResult } from '../types'
+import { noteToShowNote } from '../utils/converters'
+import { SEARCH_DEBOUNCE_DELAY, SEARCH_CACHE_TTL } from '../config/constants'
+import type { ShowNote, Note, PageResult, NoteSearchPageParam } from '../types'
 
-// 搜索防抖延迟（毫秒）
-const SEARCH_DEBOUNCE_DELAY = 300
+// 搜索结果缓存
+interface SearchCache {
+  key: string
+  result: ShowNote[]
+  total: number
+  timestamp: number
+}
+
+let searchCache: SearchCache | null = null
+
+// 生成缓存 key
+const getSearchCacheKey = (param: NoteSearchPageParam): string => {
+  return `${param.pageIndex}-${param.pageSize}-${param.notebookId}-${param.tagId}-${param.keyword}`
+}
+
+// 检查缓存是否有效
+const isCacheValid = (key: string): boolean => {
+  if (!searchCache) return false
+  if (searchCache.key !== key) return false
+  if (Date.now() - searchCache.timestamp > SEARCH_CACHE_TTL) return false
+  return true
+}
 
 export function useNoteSearch() {
-  // 搜索笔记
-  const searchNotes = async (): Promise<ShowNote[]> => {
+  // 搜索笔记（带缓存）
+  const searchNotes = async (skipCache = false): Promise<ShowNote[]> => {
+    // 更新搜索参数
+    state.noteSearchPageParam.pageIndex = state.notePageIndex
+    state.noteSearchPageParam.pageSize = state.notePageSize
+
+    // 检查缓存
+    const cacheKey = getSearchCacheKey(state.noteSearchPageParam)
+    if (!skipCache && isCacheValid(cacheKey)) {
+      state.noteTotal = searchCache!.total
+      return searchCache!.result
+    }
+
     const result = await withNotification(
       async () => {
-        state.noteSearchPageParam.pageIndex = state.notePageIndex
-        state.noteSearchPageParam.pageSize = state.notePageSize
-
         const pageResult: PageResult<Note> = await noteApi.searchPageNotes(
           state.noteSearchPageParam,
         )
 
         state.noteTotal = pageResult.total
 
-        return pageResult.data.map(
-          (note): ShowNote => ({
-            id: String(note.id),
-            notebookId: String(note.notebookId),
-            notebookName: note.notebookName,
-            title: note.title,
-            content: note.content,
-            contentType: note.contentType,
-            tags: note.tags.map((e) => ({
-              id: String(e.id),
-              name: e.name,
-              icon: e.icon,
-              cls: e.cls,
-              sortOrder: e.sortOrder,
-            })),
-            createTime: note.createTime,
-            updateTime: note.updateTime,
-          }),
-        )
+        const notes = pageResult.data.map(noteToShowNote)
+
+        // 更新缓存
+        searchCache = {
+          key: cacheKey,
+          result: notes,
+          total: pageResult.total,
+          timestamp: Date.now(),
+        }
+
+        return notes
       },
       { loading: '正在加载笔记', error: '加载笔记失败' },
     )
@@ -48,9 +70,15 @@ export function useNoteSearch() {
     return result || []
   }
 
-  // 刷新笔记列表
+  // 清除搜索缓存（在数据变更后调用）
+  const clearSearchCache = () => {
+    searchCache = null
+  }
+
+  // 刷新笔记列表（跳过缓存）
   const refreshNotes = async () => {
-    notes.value = await searchNotes()
+    clearSearchCache()
+    notes.value = await searchNotes(true)
   }
 
   // 统计
@@ -111,6 +139,7 @@ export function useNoteSearch() {
     query,
     searchNotes,
     refreshNotes,
+    clearSearchCache,
     stats,
     handleUpdateSearchQuery,
     handleImmediateSearch,

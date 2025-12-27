@@ -117,6 +117,7 @@
     v-model:current-page="currentPage"
     v-model:page-size="pageSize"
     v-model:total="total"
+    :loading="historyLoading"
     @open="$emit('open')"
     @size-change="handleSizeChange"
     @current-change="handleCurrentChange"
@@ -153,6 +154,7 @@ interface Props {
   tags: ShowTag[]
   activeNote: ShowNote | null
   editMode: boolean
+  historyLoading?: boolean
 }
 
 const props = defineProps<Props>()
@@ -449,8 +451,8 @@ const handleSourceChange = () => {
   }
 }
 
-// 滚动同步：源码面板滚动时同步预览面板
-const handleSourceScroll = () => {
+// 滚动同步核心逻辑：源码面板滚动时同步预览面板
+const syncSourceToPreview = () => {
   if (isScrollSyncing.value || !sourcePanel.value || !previewPanel.value) return
 
   isScrollSyncing.value = true
@@ -470,8 +472,8 @@ const handleSourceScroll = () => {
   })
 }
 
-// 滚动同步：预览面板滚动时同步源码面板
-const handlePreviewScroll = () => {
+// 滚动同步核心逻辑：预览面板滚动时同步源码面板
+const syncPreviewToSource = () => {
   if (isScrollSyncing.value || !sourcePanel.value || !previewPanel.value) return
 
   isScrollSyncing.value = true
@@ -490,6 +492,10 @@ const handlePreviewScroll = () => {
     isScrollSyncing.value = false
   })
 }
+
+// 节流的滚动同步处理（16ms ≈ 60fps，确保流畅体验）
+const handleSourceScroll = throttle(syncSourceToPreview, 16)
+const handlePreviewScroll = throttle(syncPreviewToSource, 16)
 </script>
 
 <style scoped>

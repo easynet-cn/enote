@@ -29,9 +29,18 @@
               <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">操作</th>
             </tr>
           </thead>
-          <tbody>
+          <!-- 加载骨架屏 -->
+          <HistoryTableSkeleton v-if="loading" :count="5" />
+
+          <!-- 数据内容 -->
+          <tbody v-else>
             <tr v-if="!showData?.length">
-              <td colspan="7" class="px-4 py-8 text-center text-gray-500">没有数据</td>
+              <td colspan="8" class="px-4 py-12 text-center text-gray-500">
+                <div class="flex flex-col items-center">
+                  <Clock class="w-10 h-10 mb-2 opacity-40" />
+                  <span>暂无历史记录</span>
+                </div>
+              </td>
             </tr>
             <tr v-for="row in showData" :key="row.id" class="hover:bg-gray-50 transition-colors">
               <td class="px-4 py-3 text-sm text-gray-900 border-b">{{ row.id }}</td>
@@ -104,9 +113,19 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { Clock } from 'lucide-vue-next'
 import { ContentType, NoteHistory } from '../types'
 import TipTapEditor from './TipTapEditor.vue'
+import HistoryTableSkeleton from './HistoryTableSkeleton.vue'
 import { Dialog, Pagination } from './ui'
+
+interface Props {
+  loading?: boolean
+}
+
+withDefaults(defineProps<Props>(), {
+  loading: false,
+})
 
 const visible = defineModel<boolean>('visible')
 const data = defineModel<NoteHistory[]>('data')
