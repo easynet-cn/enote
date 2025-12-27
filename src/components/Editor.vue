@@ -231,8 +231,14 @@ const editor = useEditor({
 // 监听活动笔记变化
 watch(
   () => props.activeNote,
-  (newNote) => {
+  (newNote, oldNote) => {
     if (editor.value && newNote) {
+      // 编辑模式下，如果只是内容变化（同一笔记），不重置编辑器
+      // 避免输入时因响应式更新导致光标跳转
+      if (props.editMode && oldNote && newNote.id === oldNote.id) {
+        return
+      }
+
       editor.value.commands.setContent(newNote.content)
 
       // 重置源码模式和布局
