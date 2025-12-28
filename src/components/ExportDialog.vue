@@ -80,8 +80,7 @@ const handleExport = async () => {
       showNotification({ type: 'success', message: '笔记导出成功' })
       visible.value = false
     }
-  } catch (error) {
-    console.error('导出失败:', error)
+  } catch {
     showNotification({ type: 'error', message: '导出失败，请重试' })
   } finally {
     exporting.value = false

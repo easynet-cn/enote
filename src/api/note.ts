@@ -84,7 +84,7 @@ export const noteApi = {
     return await invoke('note_stats', { searchParam })
   },
 
-  async geTags(): Promise<Tag[]> {
+  async getTags(): Promise<Tag[]> {
     return await invoke('find_all_tags')
   },
 

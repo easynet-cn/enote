@@ -1,10 +1,12 @@
-import { notebooks, state } from './store'
+import { useAppStore } from '../stores/app'
 import { noteApi } from '../api/note'
 import { parseId, validateNotebookName } from '../utils/validation'
 import { showError, withNotification } from '../utils/errorHandler'
 import type { ShowNotebook } from '../types'
 
 export function useNotebookManager() {
+  const store = useAppStore()
+
   // 获取笔记本列表
   const getNotebooks = async () => {
     const result = await withNotification(
@@ -28,7 +30,7 @@ export function useNotebookManager() {
     )
 
     if (result) {
-      notebooks.value = [notebooks.value[0], ...result]
+      store.setNotebooks(result)
     }
   }
 
@@ -89,9 +91,9 @@ export function useNotebookManager() {
 
   // 设置活动笔记本
   const setActiveNotebook = async (notebookId: string, searchNotes: () => Promise<void>) => {
-    state.activeNotebook = notebookId
-    state.activeNote = null
-    state.noteSearchPageParam.notebookId = parseId(notebookId)
+    store.activeNotebook = notebookId
+    store.activeNote = null
+    store.noteSearchPageParam.notebookId = parseId(notebookId)
     await searchNotes()
   }
 
@@ -100,15 +102,14 @@ export function useNotebookManager() {
     let totalCount = 0
     countMap.forEach((v) => (totalCount += v))
 
-    // shallowRef 需要整体替换数组
-    notebooks.value = notebooks.value.map((e) => ({
-      ...e,
-      count: e.id === '0' ? totalCount : countMap.get(parseId(e.id)) || 0,
-    }))
+    // 更新每个笔记本的计数
+    for (const notebook of store.notebooks) {
+      const count = notebook.id === '0' ? totalCount : countMap.get(parseId(notebook.id)) || 0
+      store.updateNotebook({ ...notebook, count })
+    }
   }
 
   return {
-    notebooks,
     getNotebooks,
     saveNotebook,
     deleteNotebook,

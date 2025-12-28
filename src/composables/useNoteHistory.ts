@@ -1,25 +1,27 @@
-import { histories, state } from './store'
+import { useAppStore } from '../stores/app'
 import { noteApi } from '../api/note'
 import { parseId } from '../utils/validation'
 import { showError } from '../utils/errorHandler'
 
 export function useNoteHistory() {
+  const store = useAppStore()
+
   // 搜索历史记录
   const searchNoteHistories = async () => {
-    state.historyLoading = true
+    store.historyLoading = true
     try {
       const pageResult = await noteApi.searchPageNoteHistories({
-        pageIndex: state.historyPageIndex,
-        pageSize: state.historyPageSize,
-        noteId: parseId(state.activeNote ?? ''),
+        pageIndex: store.historyPageIndex,
+        pageSize: store.historyPageSize,
+        noteId: parseId(store.activeNote ?? ''),
       })
 
-      histories.value = pageResult.data
-      state.historyTotal = pageResult.total
+      store.histories = pageResult.data
+      store.historyTotal = pageResult.total
     } catch (error) {
       showError(error, '加载历史记录失败')
     } finally {
-      state.historyLoading = false
+      store.historyLoading = false
     }
   }
 
@@ -30,18 +32,17 @@ export function useNoteHistory() {
 
   // 历史记录分页大小变化
   const handleNoteHistorySizeChange = async (pageSize: number) => {
-    state.historyPageSize = pageSize
+    store.historyPageSize = pageSize
     await searchNoteHistories()
   }
 
   // 历史记录页码变化
   const handleNoteHistoryCurrentChange = async (pageIndex: number) => {
-    state.historyPageIndex = pageIndex
+    store.historyPageIndex = pageIndex
     await searchNoteHistories()
   }
 
   return {
-    histories,
     searchNoteHistories,
     openHistoryDialog,
     handleNoteHistorySizeChange,

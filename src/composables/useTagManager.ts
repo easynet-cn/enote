@@ -1,15 +1,17 @@
-import { tags, state } from './store'
+import { useAppStore } from '../stores/app'
 import { noteApi } from '../api/note'
 import { parseId, validateTagName } from '../utils/validation'
 import { showError, withNotification } from '../utils/errorHandler'
 import type { ShowTag } from '../types'
 
 export function useTagManager() {
+  const store = useAppStore()
+
   // 获取标签列表
   const getTags = async () => {
     const result = await withNotification(
       async () => {
-        const data = (await noteApi.geTags()).map(
+        const data = (await noteApi.getTags()).map(
           (tag): ShowTag => ({
             id: String(tag.id),
             name: tag.name,
@@ -25,7 +27,7 @@ export function useTagManager() {
     )
 
     if (result) {
-      tags.value = [tags.value[0], ...result]
+      store.setTags(result)
     }
   }
 
@@ -84,19 +86,18 @@ export function useTagManager() {
 
   // 设置活动标签
   const setActiveTag = async (tagId: string, searchNotes: () => Promise<void>) => {
-    state.activeTag = tagId
-    state.activeNote = null
-    state.noteSearchPageParam.tagId = parseId(tagId)
+    store.activeTag = tagId
+    store.activeNote = null
+    store.noteSearchPageParam.tagId = parseId(tagId)
     await searchNotes()
   }
 
   // 根据ID获取标签
   const getTagById = (tagId: string) => {
-    return tags.value.find((tag) => tag.id === tagId)
+    return store.getTagById(tagId)
   }
 
   return {
-    tags,
     getTags,
     saveTag,
     deleteTag,

@@ -147,6 +147,7 @@ import type { NoteHistory, ShowNote, ShowNotebook, ShowTag } from '../types'
 import { getMarkdownFromEditor } from '../types/tiptap-markdown'
 import { isTemporaryId } from '../utils/validation'
 import { throttle } from '../utils/debounce'
+import { preprocessMarkdown } from '../utils/markdownWorker'
 import History from './History.vue'
 
 interface Props {
@@ -194,10 +195,15 @@ const markdownLayout = ref<MarkdownLayout>(MarkdownLayout.None)
 const splitRatio = ref(50) // 分割比例，默认 50%
 const isResizing = ref(false)
 
-// 滚动同步相关
+// 滚动同步相关 - 使用状态机管理滚动方向
 const sourcePanel = ref<HTMLTextAreaElement | null>(null)
 const previewPanel = ref<HTMLDivElement | null>(null)
-const isScrollSyncing = ref(false) // 标志位，避免滚动循环触发
+// 滚动状态：'idle' | 'source' | 'preview'
+// idle: 无滚动同步进行中
+// source: 源码面板主导滚动，预览面板被动跟随
+// preview: 预览面板主导滚动，源码面板被动跟随
+const scrollState = ref<'idle' | 'source' | 'preview'>('idle')
+let scrollResetTimer: ReturnType<typeof setTimeout> | null = null
 
 // 标题输入框引用
 const titleInput = ref<HTMLInputElement | null>(null)
@@ -451,20 +457,11 @@ const toggleSourceMode = () => {
   sourceMode.value = !sourceMode.value
 }
 
-// 预处理Markdown内容，保留多个连续空行
-const preprocessMarkdown = (content: string): string => {
-  // 将连续的空行（3个及以上换行）转换为带 <br> 的格式，保留空行效果
-  return content.replace(/\n{3,}/g, (match) => {
-    // 每个额外的换行转换为 <br>
-    const extraLines = match.length - 2
-    return '\n\n' + '<br>\n'.repeat(extraLines)
-  })
-}
-
 // 节流的预览更新函数（100ms 间隔，提升大文件编辑性能）
-const throttledUpdatePreview = throttle((content: string) => {
+// 使用 Web Worker 处理大文件的 Markdown 预处理
+const throttledUpdatePreview = throttle(async (content: string) => {
   if (editor.value) {
-    const processedContent = preprocessMarkdown(content)
+    const processedContent = await preprocessMarkdown(content)
     editor.value.commands.setContent(processedContent)
   }
 }, 100)
@@ -490,46 +487,68 @@ const handleSourceChange = () => {
   }
 }
 
+// 重置滚动状态（延迟执行，避免频繁切换）
+const resetScrollState = () => {
+  if (scrollResetTimer) {
+    clearTimeout(scrollResetTimer)
+  }
+  scrollResetTimer = setTimeout(() => {
+    scrollState.value = 'idle'
+  }, 150) // 150ms 后重置为 idle 状态
+}
+
 // 滚动同步核心逻辑：源码面板滚动时同步预览面板
 const syncSourceToPreview = () => {
-  if (isScrollSyncing.value || !sourcePanel.value || !previewPanel.value) return
+  if (!sourcePanel.value || !previewPanel.value) return
 
-  isScrollSyncing.value = true
+  // 如果预览面板正在主导滚动，忽略此次同步
+  if (scrollState.value === 'preview') return
+
+  // 标记源码面板为主导
+  scrollState.value = 'source'
 
   const source = sourcePanel.value
   const preview = previewPanel.value
 
   // 计算滚动比例
-  const scrollRatio = source.scrollTop / (source.scrollHeight - source.clientHeight || 1)
+  const maxSourceScroll = source.scrollHeight - source.clientHeight
+  if (maxSourceScroll <= 0) return
+
+  const scrollRatio = source.scrollTop / maxSourceScroll
 
   // 应用到预览面板
-  preview.scrollTop = scrollRatio * (preview.scrollHeight - preview.clientHeight)
+  const maxPreviewScroll = preview.scrollHeight - preview.clientHeight
+  preview.scrollTop = scrollRatio * maxPreviewScroll
 
-  // 重置标志位
-  requestAnimationFrame(() => {
-    isScrollSyncing.value = false
-  })
+  // 延迟重置状态
+  resetScrollState()
 }
 
 // 滚动同步核心逻辑：预览面板滚动时同步源码面板
 const syncPreviewToSource = () => {
-  if (isScrollSyncing.value || !sourcePanel.value || !previewPanel.value) return
+  if (!sourcePanel.value || !previewPanel.value) return
 
-  isScrollSyncing.value = true
+  // 如果源码面板正在主导滚动，忽略此次同步
+  if (scrollState.value === 'source') return
+
+  // 标记预览面板为主导
+  scrollState.value = 'preview'
 
   const source = sourcePanel.value
   const preview = previewPanel.value
 
   // 计算滚动比例
-  const scrollRatio = preview.scrollTop / (preview.scrollHeight - preview.clientHeight || 1)
+  const maxPreviewScroll = preview.scrollHeight - preview.clientHeight
+  if (maxPreviewScroll <= 0) return
+
+  const scrollRatio = preview.scrollTop / maxPreviewScroll
 
   // 应用到源码面板
-  source.scrollTop = scrollRatio * (source.scrollHeight - source.clientHeight)
+  const maxSourceScroll = source.scrollHeight - source.clientHeight
+  source.scrollTop = scrollRatio * maxSourceScroll
 
-  // 重置标志位
-  requestAnimationFrame(() => {
-    isScrollSyncing.value = false
-  })
+  // 延迟重置状态
+  resetScrollState()
 }
 
 // 节流的滚动同步处理（16ms ≈ 60fps，确保流畅体验）

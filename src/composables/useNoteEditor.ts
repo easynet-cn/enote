@@ -1,5 +1,5 @@
 import { computed, watch } from 'vue'
-import { notes, state, createDefaultNote, editingNote } from './store'
+import { useAppStore } from '../stores/app'
 import { noteApi } from '../api/note'
 import { parseId, isTemporaryId, validateNoteTitle, validateNoteContent } from '../utils/validation'
 import { showError, withNotification } from '../utils/errorHandler'
@@ -7,27 +7,23 @@ import { showTagsToTags } from '../utils/converters'
 import { ContentType } from '../types'
 
 export function useNoteEditor() {
+  const store = useAppStore()
+
   // 当前活动笔记数据
-  // 编辑模式下返回编辑缓冲区，避免频繁触发 notes 数组替换
-  const activeNoteData = computed(() => {
-    if (state.editMode && editingNote.value) {
-      return editingNote.value
-    }
-    return notes.value.find((note) => note.id === state.activeNote) || null
-  })
+  const activeNoteData = computed(() => store.activeNoteData)
 
   // 监听活动笔记变化，同步到编辑缓冲区
   watch(
-    () => state.activeNote,
+    () => store.activeNote,
     (noteId) => {
       if (noteId) {
-        const note = notes.value.find((n) => n.id === noteId)
+        const note = store.getNoteById(noteId)
         if (note) {
-          // 深拷贝到编辑缓冲区
-          editingNote.value = JSON.parse(JSON.stringify(note))
+          // 深拷贝到编辑缓冲区（使用 structuredClone 性能更好）
+          store.editingNote = structuredClone(note)
         }
       } else {
-        editingNote.value = null
+        store.editingNote = null
       }
     },
     { immediate: true },
@@ -35,26 +31,25 @@ export function useNoteEditor() {
 
   // 设置活动笔记
   const setActiveNote = (noteId: string) => {
-    state.activeNote = noteId
-    state.editMode = false
+    store.setActiveNote(noteId)
   }
 
   // 创建新笔记
   const createNewNote = () => {
     const timestamp = Date.now()
-    const newNote = createDefaultNote(state.activeNotebook, timestamp)
+    const newNote = store.createDefaultNote(store.activeNotebook, timestamp)
 
-    // shallowRef 需要整体替换数组
-    notes.value = [newNote, ...notes.value]
-    state.activeNote = newNote.id
-    // 同步到编辑缓冲区
-    editingNote.value = JSON.parse(JSON.stringify(newNote))
-    state.editMode = true
+    // 添加到笔记列表开头
+    store.prependNote(newNote)
+    store.activeNote = newNote.id
+    // 同步到编辑缓冲区（使用 structuredClone 性能更好）
+    store.editingNote = structuredClone(newNote)
+    store.editMode = true
   }
 
   // 保存笔记
   const saveNote = async (refreshNotes: () => Promise<void>) => {
-    if (!state.activeNote || !activeNoteData.value) return
+    if (!store.activeNote || !activeNoteData.value) return
 
     // 验证标题
     const titleValidation = validateNoteTitle(activeNoteData.value.title)
@@ -70,7 +65,7 @@ export function useNoteEditor() {
       return
     }
 
-    const noteId = state.activeNote
+    const noteId = store.activeNote
     let newNoteId = noteId
 
     await withNotification(
@@ -110,34 +105,34 @@ export function useNoteEditor() {
 
   // 取消编辑
   const cancelEdit = () => {
-    state.editMode = false
+    store.editMode = false
 
-    if (!state.activeNote) return
+    if (!store.activeNote) return
 
-    if (isTemporaryId(state.activeNote)) {
-      // shallowRef 需要整体替换数组
-      notes.value = notes.value.filter((note) => note.id !== state.activeNote)
-      state.activeNote = null
+    if (isTemporaryId(store.activeNote)) {
+      // 移除临时笔记
+      store.removeNote(store.activeNote)
+      store.activeNote = null
     }
   }
 
   // 删除笔记
   const deleteNote = async (refreshNotes: () => Promise<void>) => {
-    if (!state.activeNote) return
+    if (!store.activeNote) return
 
-    const noteId = state.activeNote
+    const noteId = store.activeNote
 
     if (isTemporaryId(noteId)) {
-      // shallowRef 需要整体替换数组
-      notes.value = notes.value.filter((note) => note.id !== state.activeNote)
-      state.activeNote = null
+      // 移除临时笔记
+      store.removeNote(noteId)
+      store.activeNote = null
     } else {
       await withNotification(
         async () => {
           await noteApi.deleteNote(parseId(noteId))
-          state.noteSearchPageParam.pageIndex = 1
+          store.noteSearchPageParam.pageIndex = 1
           await refreshNotes()
-          state.activeNote = null
+          store.activeNote = null
         },
         {
           loading: '正在删除笔记',
@@ -150,18 +145,18 @@ export function useNoteEditor() {
 
   // 更新笔记标题
   const updateNoteTitle = (title: string) => {
-    if (!state.activeNote || !editingNote.value) return
+    if (!store.activeNote || !store.editingNote) return
 
     // 只更新编辑缓冲区，避免触发 notes 数组替换
-    editingNote.value.title = title
+    store.editingNote.title = title
   }
 
   // 更新笔记内容
   const updateNoteContent = (content: string) => {
-    if (!state.activeNote || !editingNote.value) return
+    if (!store.activeNote || !store.editingNote) return
 
     // 只更新编辑缓冲区，避免触发 notes 数组替换
-    editingNote.value.content = content
+    store.editingNote.content = content
   }
 
   return {

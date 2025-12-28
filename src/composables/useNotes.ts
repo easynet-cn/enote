@@ -1,5 +1,6 @@
 import { onBeforeMount } from 'vue'
-import { notebooks, tags, notes, query, histories, state } from './store'
+import { storeToRefs } from 'pinia'
+import { useAppStore } from '../stores/app'
 import { useNotebookManager } from './useNotebookManager'
 import { useTagManager } from './useTagManager'
 import { useNoteSearch } from './useNoteSearch'
@@ -10,6 +11,127 @@ import { showError } from '../utils/errorHandler'
 import type { ShowNotebook, ShowTag } from '../types'
 
 export function useNotes() {
+  const store = useAppStore()
+
+  // 使用 storeToRefs 保持响应式
+  const {
+    notebooks,
+    tags,
+    notes,
+    query,
+    histories,
+    activeNotebook,
+    activeTag,
+    activeNote,
+    editMode,
+    loading,
+    notePageIndex,
+    notePageSize,
+    noteTotal,
+    noteSearchPageParam,
+    historyPageIndex,
+    historyPageSize,
+    historyTotal,
+    historyLoading,
+  } = storeToRefs(store)
+
+  // 兼容旧的 state 对象格式（使用 reactive proxy）
+  const state = new Proxy(
+    {} as {
+      notePageIndex: number
+      notePageSize: number
+      noteTotal: number
+      activeNotebook: string
+      activeTag: string
+      activeNote: string | null
+      noteSearchPageParam: typeof noteSearchPageParam.value
+      editMode: boolean
+      loading: boolean
+      historyPageIndex: number
+      historyPageSize: number
+      historyTotal: number
+      historyLoading: boolean
+    },
+    {
+      get(_, prop) {
+        switch (prop) {
+          case 'notePageIndex':
+            return notePageIndex.value
+          case 'notePageSize':
+            return notePageSize.value
+          case 'noteTotal':
+            return noteTotal.value
+          case 'activeNotebook':
+            return activeNotebook.value
+          case 'activeTag':
+            return activeTag.value
+          case 'activeNote':
+            return activeNote.value
+          case 'noteSearchPageParam':
+            return noteSearchPageParam.value
+          case 'editMode':
+            return editMode.value
+          case 'loading':
+            return loading.value
+          case 'historyPageIndex':
+            return historyPageIndex.value
+          case 'historyPageSize':
+            return historyPageSize.value
+          case 'historyTotal':
+            return historyTotal.value
+          case 'historyLoading':
+            return historyLoading.value
+          default:
+            return undefined
+        }
+      },
+      set(_, prop, value) {
+        switch (prop) {
+          case 'notePageIndex':
+            notePageIndex.value = value
+            break
+          case 'notePageSize':
+            notePageSize.value = value
+            break
+          case 'noteTotal':
+            noteTotal.value = value
+            break
+          case 'activeNotebook':
+            activeNotebook.value = value
+            break
+          case 'activeTag':
+            activeTag.value = value
+            break
+          case 'activeNote':
+            activeNote.value = value
+            break
+          case 'noteSearchPageParam':
+            Object.assign(noteSearchPageParam.value, value)
+            break
+          case 'editMode':
+            editMode.value = value
+            break
+          case 'loading':
+            loading.value = value
+            break
+          case 'historyPageIndex':
+            historyPageIndex.value = value
+            break
+          case 'historyPageSize':
+            historyPageSize.value = value
+            break
+          case 'historyTotal':
+            historyTotal.value = value
+            break
+          case 'historyLoading':
+            historyLoading.value = value
+            break
+        }
+        return true
+      },
+    },
+  )
+
   const notebookManager = useNotebookManager()
   const tagManager = useTagManager()
   const noteSearch = useNoteSearch()
@@ -78,7 +200,7 @@ export function useNotes() {
 
   // 初始化 - 使用 Promise.all 并行化
   const initialize = async () => {
-    state.loading = true
+    store.loading = true
 
     const notification = showNotification({
       message: '正在加载',
@@ -91,15 +213,15 @@ export function useNotes() {
       await Promise.all([notebookManager.getNotebooks(), tagManager.getTags()])
 
       // 第二阶段：设置默认选中（需要等第一阶段完成）
-      state.activeNotebook = notebooks.value[0].id
-      state.activeTag = tags.value[0].id
+      store.activeNotebook = store.notebooks[0].id
+      store.activeTag = store.tags[0].id
 
       // 第三阶段：并行加载笔记和统计
       await Promise.all([noteSearch.refreshNotes(), updateStats()])
     } catch (error) {
       showError(error, '初始化失败，请刷新页面重试')
     } finally {
-      state.loading = false
+      store.loading = false
       notification.close()
     }
   }

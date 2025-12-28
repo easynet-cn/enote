@@ -64,7 +64,6 @@ export const parseId = (id: string | undefined): number => {
   const parsed = Number.parseInt(id, 10)
 
   if (isNaN(parsed) || parsed < 0) {
-    console.warn(`Invalid ID: ${id}`)
     return 0
   }
 

@@ -330,22 +330,37 @@ pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
             active_model.update(&txn).await?;
         }
 
-        let tag_ids = note.tags.iter().map(|e| e.id).collect::<Vec<i64>>();
+        let new_tag_ids = note.tags.iter().map(|e| e.id).collect::<Vec<i64>>();
 
-        let tags_changed: bool = old_tag_ids != tag_ids;
+        let tags_changed: bool = old_tag_ids != new_tag_ids;
 
         if tags_changed {
-            if !old_tag_ids.is_empty() && note.tags.is_empty() {
+            // 使用差集计算，只删除和添加变化的部分
+            use std::collections::HashSet;
+
+            let old_set: HashSet<i64> = old_tag_ids.iter().cloned().collect();
+            let new_set: HashSet<i64> = new_tag_ids.iter().cloned().collect();
+
+            // 需要删除的标签：旧的有，新的没有
+            let to_delete: Vec<i64> = old_set.difference(&new_set).cloned().collect();
+            // 需要添加的标签：新的有，旧的没有
+            let to_add: Vec<i64> = new_set.difference(&old_set).cloned().collect();
+
+            // 删除不再需要的标签关联
+            if !to_delete.is_empty() {
                 entity::note_tags::Entity::delete_many()
-                    .filter(entity::note_tags::Column::Id.is_in(old_tag_ids))
+                    .filter(entity::note_tags::Column::NoteId.eq(note.id))
+                    .filter(entity::note_tags::Column::TagId.is_in(to_delete))
                     .exec(&txn)
                     .await?;
             }
 
-            if !note.tags.is_empty() {
-                let note_tags = note
+            // 添加新的标签关联
+            if !to_add.is_empty() {
+                let new_note_tags = note
                     .tags
                     .iter()
+                    .filter(|e| to_add.contains(&e.id))
                     .map(|e| entity::note_tags::ActiveModel {
                         id: NotSet,
                         note_id: Set(note.id),
@@ -356,7 +371,7 @@ pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
                     })
                     .collect::<Vec<entity::note_tags::ActiveModel>>();
 
-                entity::note_tags::Entity::insert_many(note_tags)
+                entity::note_tags::Entity::insert_many(new_note_tags)
                     .exec(&txn)
                     .await?;
             }
