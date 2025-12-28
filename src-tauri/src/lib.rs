@@ -11,6 +11,7 @@ use std::sync::Arc;
 
 use sea_orm_migration::MigratorTrait;
 use tauri::Manager;
+use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 
 use crate::config::AppState;
 
@@ -60,14 +61,36 @@ pub fn run() {
                     Ok(conn) => conn,
                     Err(e) => {
                         eprintln!("数据库连接失败: {:#}", e);
-                        return Err(e.to_string().into());
+                        // 显示友好的错误提示对话框
+                        handle
+                            .dialog()
+                            .message(format!(
+                                "无法连接到数据库，请检查数据库服务是否已启动。\n\n错误详情：{}",
+                                e
+                            ))
+                            .kind(MessageDialogKind::Error)
+                            .title("数据库连接失败")
+                            .blocking_show();
+                        // 退出应用
+                        std::process::exit(1);
                     }
                 };
 
                 // 运行数据库迁移，自动创建表结构
                 if let Err(e) = migration::Migrator::up(&database_connection, None).await {
                     eprintln!("数据库迁移失败: {:#}", e);
-                    return Err(e.to_string().into());
+                    // 显示友好的错误提示对话框
+                    handle
+                        .dialog()
+                        .message(format!(
+                            "数据库迁移失败，请检查数据库配置。\n\n错误详情：{}",
+                            e
+                        ))
+                        .kind(MessageDialogKind::Error)
+                        .title("数据库迁移失败")
+                        .blocking_show();
+                    // 退出应用
+                    std::process::exit(1);
                 }
                 println!("数据库迁移完成");
 

@@ -135,9 +135,9 @@
 </template>
 
 <script setup lang="ts">
-import { watch, onBeforeUnmount, ref, computed } from 'vue'
-import { useEditor, EditorContent } from '@tiptap/vue-3'
-import { getMarkdownExtensions } from '../config/editorExtensions'
+import { watch, onBeforeUnmount, ref, computed, shallowRef } from 'vue'
+import { Editor, EditorContent } from '@tiptap/vue-3'
+import { getMarkdownExtensions, getRichTextExtensions } from '../config/editorExtensions'
 import TiptapToolbar from './TiptapToolbar.vue'
 import EditorSettingsDialog from './EditorSettingsDialog.vue'
 import ExportDialog from './ExportDialog.vue'
@@ -214,34 +214,63 @@ const splitPanelStyle = computed(() => {
   }
 })
 
-// TipTap 编辑器实例（使用统一的扩展配置）
-const editor = useEditor({
-  extensions: getMarkdownExtensions(),
-  content: props.activeNote?.content || '',
-  editable: false,
-  onUpdate: ({ editor }) => {
-    // 根据内容类型决定保存格式
-    const contentType = props.activeNote?.contentType ?? ContentType.Html
-    if (contentType === ContentType.Markdown) {
-      emit('updateNoteContent', getMarkdownFromEditor(editor))
-    } else {
-      emit('updateNoteContent', editor.getHTML())
-    }
-  },
-})
+// TipTap 编辑器实例（根据内容类型动态选择扩展）
+const editor = shallowRef<Editor | undefined>(undefined)
+
+// 创建编辑器实例
+const createEditor = (contentType: ContentType, content: string) => {
+  // 销毁旧编辑器
+  if (editor.value) {
+    editor.value.destroy()
+  }
+
+  // 根据内容类型选择扩展：Markdown 模式使用 Markdown 扩展，富文本模式不使用
+  const extensions =
+    contentType === ContentType.Markdown ? getMarkdownExtensions() : getRichTextExtensions()
+
+  editor.value = new Editor({
+    extensions,
+    content,
+    editable: false,
+    onUpdate: ({ editor: ed }) => {
+      // 根据内容类型决定保存格式
+      if (contentType === ContentType.Markdown) {
+        emit('updateNoteContent', getMarkdownFromEditor(ed))
+      } else {
+        emit('updateNoteContent', ed.getHTML())
+      }
+    },
+  })
+}
+
+// 初始化编辑器
+if (props.activeNote) {
+  createEditor(props.activeNote.contentType ?? ContentType.Html, props.activeNote.content)
+}
 
 // 监听活动笔记变化
 watch(
   () => props.activeNote,
   (newNote, oldNote) => {
-    if (editor.value && newNote) {
+    if (newNote) {
       // 编辑模式下，如果只是内容变化（同一笔记），不重置编辑器
       // 避免输入时因响应式更新导致光标跳转
       if (props.editMode && oldNote && newNote.id === oldNote.id) {
         return
       }
 
-      editor.value.commands.setContent(newNote.content)
+      // 检查内容类型是否变化，需要重新创建编辑器
+      const newContentType = newNote.contentType ?? ContentType.Html
+      const oldContentType = oldNote?.contentType ?? ContentType.Html
+      const contentTypeChanged = newContentType !== oldContentType
+
+      if (contentTypeChanged || !editor.value) {
+        // 内容类型变化或编辑器不存在，重新创建
+        createEditor(newContentType, newNote.content)
+      } else {
+        // 仅内容变化，直接设置内容
+        editor.value.commands.setContent(newNote.content)
+      }
 
       // 重置源码模式和布局
       sourceMode.value = false
@@ -335,8 +364,18 @@ const confirmDeleteNote = () => {
 // 处理内容类型变化（仅新建笔记时可用）
 const handleContentTypeChange = (contentType: ContentType) => {
   if (props.activeNote && isNewNote.value) {
+    const oldContentType = props.activeNote.contentType
     props.activeNote.contentType = contentType
     emit('updateNoteContentType', contentType)
+
+    // 内容类型变化时，重新创建编辑器以使用正确的扩展配置
+    if (oldContentType !== contentType) {
+      createEditor(contentType, props.activeNote.content)
+      // 重新设置可编辑状态
+      if (props.editMode) {
+        editor.value?.setEditable(true)
+      }
+    }
   }
 }
 
