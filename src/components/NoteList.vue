@@ -114,24 +114,17 @@ import { Search, X, FileText, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { Pagination } from './ui'
 import NoteListSkeleton from './NoteListSkeleton.vue'
 import { stripHtml, truncateText, markdownToHtml } from '../utils'
+import { LRUCache } from '../utils/lruCache'
+import { throttle } from '../utils/debounce'
 import { ContentType, type ShowNotebook, type ShowNote } from '../types'
 import { PREVIEW_CACHE_MAX_SIZE, PREVIEW_TEXT_MAX_LENGTH } from '../config/constants'
 
-// 预览文本缓存（使用 Map 实现简单的 LRU 缓存）
-const previewTextCache = new Map<string, string>()
+// 预览文本缓存（使用 LRUCache 自动淘汰最久未使用的项）
+const previewTextCache = new LRUCache<string, string>(PREVIEW_CACHE_MAX_SIZE, 0)
 
 // 生成缓存 key：使用 id + 内容长度 + 内容类型作为标识
 const getCacheKey = (note: ShowNote): string => {
   return `${note.id}-${note.content.length}-${note.contentType ?? 0}`
-}
-
-// 清理过期缓存
-const cleanupCache = () => {
-  if (previewTextCache.size > PREVIEW_CACHE_MAX_SIZE) {
-    // 删除最早的一半缓存
-    const keysToDelete = Array.from(previewTextCache.keys()).slice(0, PREVIEW_CACHE_MAX_SIZE / 2)
-    keysToDelete.forEach((key) => previewTextCache.delete(key))
-  }
 }
 
 interface Props {
@@ -173,6 +166,15 @@ const isResizing = ref(false)
 const startX = ref(0)
 const startWidth = ref(0)
 
+// 节流处理拖拽移动（约 60fps）
+const handleMouseMove = throttle((e: MouseEvent) => {
+  if (!isResizing.value) return
+  const delta = e.clientX - startX.value
+  let newWidth = startWidth.value + delta
+  newWidth = Math.max(props.minWidth, Math.min(props.maxWidth, newWidth))
+  emit('update:width', newWidth)
+}, 16)
+
 const startResize = (e: MouseEvent) => {
   isResizing.value = true
   startX.value = e.clientX
@@ -181,14 +183,6 @@ const startResize = (e: MouseEvent) => {
   document.addEventListener('mouseup', stopResize)
   document.body.style.cursor = 'ew-resize'
   document.body.style.userSelect = 'none'
-}
-
-const handleMouseMove = (e: MouseEvent) => {
-  if (!isResizing.value) return
-  const delta = e.clientX - startX.value
-  let newWidth = startWidth.value + delta
-  newWidth = Math.max(props.minWidth, Math.min(props.maxWidth, newWidth))
-  emit('update:width', newWidth)
 }
 
 const stopResize = () => {
@@ -219,14 +213,15 @@ const emptyMessage = computed(() => {
 /**
  * 获取预览文本（纯文本，无 HTML）
  * 如果是 Markdown 类型，先转换为 HTML 再提取纯文本
- * 使用缓存避免重复的 Markdown 转换
+ * 使用 LRUCache 缓存避免重复的 Markdown 转换
  */
 const getPreviewText = (note: ShowNote): string => {
   const cacheKey = getCacheKey(note)
 
-  // 检查缓存
-  if (previewTextCache.has(cacheKey)) {
-    return previewTextCache.get(cacheKey)!
+  // 检查缓存（LRUCache 自动处理淘汰）
+  const cached = previewTextCache.get(cacheKey)
+  if (cached !== undefined) {
+    return cached
   }
 
   // 计算预览文本
@@ -237,9 +232,8 @@ const getPreviewText = (note: ShowNote): string => {
   const text = stripHtml(html)
   const result = truncateText(text, PREVIEW_TEXT_MAX_LENGTH) || '无内容'
 
-  // 存入缓存并清理过期项
+  // 存入缓存（LRUCache 自动淘汰旧项）
   previewTextCache.set(cacheKey, result)
-  cleanupCache()
 
   return result
 }

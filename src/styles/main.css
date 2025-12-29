@@ -1,26 +1,4 @@
 @import 'tailwindcss';
-@source inline("text-red-{50,{100..900..100},950}");
-@source inline("text-orange-{50,{100..900..100},950}");
-@source inline("text-amber-{50,{100..900..100},950}");
-@source inline("text-yellow-{50,{100..900..100},950}");
-@source inline("text-lime-{50,{100..900..100},950}");
-@source inline("text-green-{50,{100..900..100},950}");
-@source inline("text-emerald-{50,{100..900..100},950}");
-@source inline("text-teal-{50,{100..900..100},950}");
-@source inline("text-cyan-{50,{100..900..100},950}");
-@source inline("text-sky-{50,{100..900..100},950}");
-@source inline("text-blue-{50,{100..900..100},950}");
-@source inline("text-indigo-{50,{100..900..100},950}");
-@source inline("text-violet-{50,{100..900..100},950}");
-@source inline("text-purple-{50,{100..900..100},950}");
-@source inline("text-fuchsia-{50,{100..900..100},950}");
-@source inline("text-pink-{50,{100..900..100},950}");
-@source inline("text-rose-{50,{100..900..100},950}");
-@source inline("text-slate-{50,{100..900..100},950}");
-@source inline("text-gray-{50,{100..900..100},950}");
-@source inline("text-zinc-{50,{100..900..100},950}");
-@source inline("text-neutral-{50,{100..900..100},950}");
-@source inline("text-stone-{50,{100..900..100},950}");
 
 /* ============================================
    Material Design 风格的设计系统
@@ -295,10 +273,6 @@ pre {
 
 /* 编辑器内容区域优化 */
 .tiptap-editor {
-  padding: 1.5rem;
-  min-height: 500px;
-  max-height: calc(100vh - 200px);
-  overflow-y: auto;
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }

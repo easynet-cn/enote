@@ -28,109 +28,11 @@ export function useNotes() {
     notePageIndex,
     notePageSize,
     noteTotal,
-    noteSearchPageParam,
     historyPageIndex,
     historyPageSize,
     historyTotal,
     historyLoading,
   } = storeToRefs(store)
-
-  // 兼容旧的 state 对象格式（使用 reactive proxy）
-  const state = new Proxy(
-    {} as {
-      notePageIndex: number
-      notePageSize: number
-      noteTotal: number
-      activeNotebook: string
-      activeTag: string
-      activeNote: string | null
-      noteSearchPageParam: typeof noteSearchPageParam.value
-      editMode: boolean
-      loading: boolean
-      historyPageIndex: number
-      historyPageSize: number
-      historyTotal: number
-      historyLoading: boolean
-    },
-    {
-      get(_, prop) {
-        switch (prop) {
-          case 'notePageIndex':
-            return notePageIndex.value
-          case 'notePageSize':
-            return notePageSize.value
-          case 'noteTotal':
-            return noteTotal.value
-          case 'activeNotebook':
-            return activeNotebook.value
-          case 'activeTag':
-            return activeTag.value
-          case 'activeNote':
-            return activeNote.value
-          case 'noteSearchPageParam':
-            return noteSearchPageParam.value
-          case 'editMode':
-            return editMode.value
-          case 'loading':
-            return loading.value
-          case 'historyPageIndex':
-            return historyPageIndex.value
-          case 'historyPageSize':
-            return historyPageSize.value
-          case 'historyTotal':
-            return historyTotal.value
-          case 'historyLoading':
-            return historyLoading.value
-          default:
-            return undefined
-        }
-      },
-      set(_, prop, value) {
-        switch (prop) {
-          case 'notePageIndex':
-            notePageIndex.value = value
-            break
-          case 'notePageSize':
-            notePageSize.value = value
-            break
-          case 'noteTotal':
-            noteTotal.value = value
-            break
-          case 'activeNotebook':
-            activeNotebook.value = value
-            break
-          case 'activeTag':
-            activeTag.value = value
-            break
-          case 'activeNote':
-            activeNote.value = value
-            break
-          case 'noteSearchPageParam':
-            Object.assign(noteSearchPageParam.value, value)
-            break
-          case 'editMode':
-            editMode.value = value
-            break
-          case 'loading':
-            loading.value = value
-            break
-          case 'historyPageIndex':
-            historyPageIndex.value = value
-            break
-          case 'historyPageSize':
-            historyPageSize.value = value
-            break
-          case 'historyTotal':
-            historyTotal.value = value
-            break
-          case 'historyLoading':
-            historyLoading.value = value
-            break
-        }
-        return true
-      },
-    },
-  )
 
   const notebookManager = useNotebookManager()
   const tagManager = useTagManager()
@@ -231,13 +133,26 @@ export function useNotes() {
   })
 
   return {
-    // 状态
+    // 数据状态
     notebooks,
     tags,
     notes,
     query,
     histories,
-    state,
+
+    // UI 状态 refs（直接导出，不再使用 Proxy 兼容层）
+    activeNotebook,
+    activeTag,
+    activeNote,
+    editMode,
+    loading,
+    notePageIndex,
+    notePageSize,
+    noteTotal,
+    historyPageIndex,
+    historyPageSize,
+    historyTotal,
+    historyLoading,
 
     // 笔记数据
     activeNoteData: noteEditor.activeNoteData,
@@ -261,6 +176,8 @@ export function useNotes() {
     deleteNote,
     updateNoteTitle: noteEditor.updateNoteTitle,
     updateNoteContent: noteEditor.updateNoteContent,
+    updateNoteContentType: noteEditor.updateNoteContentType,
+    updateNoteSetting: noteEditor.updateNoteSetting,
 
     // 搜索操作
     handleUpdateSearchQuery,

@@ -1,6 +1,10 @@
 <template>
-  <div class="flex-1 flex flex-col overflow-hidden bg-white shadow-sm">
-    <main class="flex-1 flex flex-col overflow-hidden p-4" role="main" aria-label="笔记编辑区">
+  <div class="flex-1 h-full flex flex-col overflow-hidden bg-white shadow-sm">
+    <main
+      class="flex-1 flex flex-col min-h-0 overflow-hidden px-4 pt-4 pb-2"
+      role="main"
+      aria-label="笔记编辑区"
+    >
       <!-- TipTap 编辑器工具栏（始终显示） -->
       <div v-if="activeNote">
         <TiptapToolbar
@@ -24,7 +28,7 @@
       </div>
 
       <!-- 标题输入区域 -->
-      <div v-if="activeNote" class="flex items-center my-4">
+      <div v-if="activeNote" class="flex items-center mt-4 mb-2">
         <div class="flex-1">
           <input
             ref="titleInput"
@@ -40,7 +44,7 @@
       </div>
 
       <!-- TipTap 编辑器 / Markdown 源码编辑器 -->
-      <div v-if="activeNote" class="flex-1 overflow-hidden">
+      <div v-if="activeNote" class="relative flex-1">
         <!-- Markdown 双面板布局 -->
         <div
           v-if="isMarkdownMode && markdownLayout !== MarkdownLayout.None && editMode"
@@ -96,42 +100,42 @@
         <editor-content v-else :editor="editor" :class="editorCls" />
       </div>
     </main>
+
+    <!-- 设置弹窗 -->
+    <EditorSettingsDialog
+      v-model="settingDialog"
+      :notebooks="notebooks"
+      :tags="tags"
+      :notebook-id="activeNote?.notebookId ?? ''"
+      :selected-tag-ids="activeNote?.tags?.map((t) => t.id) ?? []"
+      @save="handleSettingFormSubmit"
+    />
+
+    <!-- 导出对话框 -->
+    <ExportDialog v-model="exportDialog" :note="activeNote" />
+
+    <NoteHistoryDialog
+      v-model:visible="historyVisible"
+      v-model:data="historyData"
+      v-model:current-page="currentPage"
+      v-model:page-size="pageSize"
+      v-model:total="total"
+      :loading="historyLoading"
+      @open="$emit('open')"
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+    />
+
+    <!-- 删除笔记确认弹窗 -->
+    <ConfirmDialog
+      v-model="deleteNoteConfirm"
+      title="删除笔记"
+      message="确定要删除这篇笔记吗？此操作不可恢复。"
+      type="danger"
+      confirm-text="删除"
+      @confirm="confirmDeleteNote"
+    />
   </div>
-
-  <!-- 设置弹窗 -->
-  <EditorSettingsDialog
-    v-model="settingDialog"
-    :notebooks="notebooks"
-    :tags="tags"
-    :notebook-id="activeNote?.notebookId ?? ''"
-    :selected-tag-ids="activeNote?.tags?.map((t) => t.id) ?? []"
-    @save="handleSettingFormSubmit"
-  />
-
-  <!-- 导出对话框 -->
-  <ExportDialog v-model="exportDialog" :note="activeNote" />
-
-  <History
-    v-model:visible="historyVisible"
-    v-model:data="historyData"
-    v-model:current-page="currentPage"
-    v-model:page-size="pageSize"
-    v-model:total="total"
-    :loading="historyLoading"
-    @open="$emit('open')"
-    @size-change="handleSizeChange"
-    @current-change="handleCurrentChange"
-  />
-
-  <!-- 删除笔记确认弹窗 -->
-  <ConfirmDialog
-    v-model="deleteNoteConfirm"
-    title="删除笔记"
-    message="确定要删除这篇笔记吗？此操作不可恢复。"
-    type="danger"
-    confirm-text="删除"
-    @confirm="confirmDeleteNote"
-  />
 </template>
 
 <script setup lang="ts">
@@ -148,7 +152,7 @@ import { getMarkdownFromEditor } from '../types/tiptap-markdown'
 import { isTemporaryId } from '../utils/validation'
 import { throttle } from '../utils/debounce'
 import { preprocessMarkdown } from '../utils/markdownWorker'
-import History from './History.vue'
+import NoteHistoryDialog from './NoteHistoryDialog.vue'
 
 interface Props {
   notebooks: ShowNotebook[]
@@ -168,6 +172,7 @@ const emit = defineEmits<{
   updateNoteTitle: [title: string]
   updateNoteContent: [content: string]
   updateNoteContentType: [contentType: ContentType]
+  updateNoteSetting: [notebookId: string, tagIds: string[]]
   sizeChange: [pageSize: number]
   currentChange: [currentPage: number]
   open: []
@@ -238,6 +243,14 @@ const createEditor = (contentType: ContentType, content: string) => {
     extensions,
     content,
     editable: false,
+    editorProps: {
+      attributes: {
+        // 禁用浏览器自动大写
+        autocapitalize: 'off',
+        autocorrect: 'off',
+        spellcheck: 'false',
+      },
+    },
     onUpdate: ({ editor: ed }) => {
       // 根据内容类型决定保存格式
       if (contentType === ContentType.Markdown) {
@@ -358,8 +371,7 @@ const handleCurrentChange = (val: number) => {
 
 const handleSettingFormSubmit = (notebookId: string, tagIds: string[]) => {
   if (props.activeNote) {
-    props.activeNote.notebookId = notebookId
-    props.activeNote.tags = props.tags.filter((t) => tagIds.includes(t.id))
+    emit('updateNoteSetting', notebookId, tagIds)
   }
 }
 
@@ -371,7 +383,6 @@ const confirmDeleteNote = () => {
 const handleContentTypeChange = (contentType: ContentType) => {
   if (props.activeNote && isNewNote.value) {
     const oldContentType = props.activeNote.contentType
-    props.activeNote.contentType = contentType
     emit('updateNoteContentType', contentType)
 
     // 内容类型变化时，重新创建编辑器以使用正确的扩展配置
@@ -557,17 +568,11 @@ const handlePreviewScroll = throttle(syncPreviewToSource, 16)
 </script>
 
 <style scoped>
-.tiptap-editor {
-  padding: 1.5rem;
-  min-height: 500px;
-  max-height: 92vh;
-  overflow-y: auto;
-}
-
+.tiptap-editor,
 .tiptap-editor-edit {
-  padding: 1.5rem;
-  min-height: 500px;
-  max-height: 88vh;
+  position: absolute;
+  inset: 0;
+  padding: 1rem 1.5rem;
   overflow-y: auto;
 }
 
@@ -579,7 +584,6 @@ const handlePreviewScroll = throttle(syncPreviewToSource, 16)
 :deep(.ProseMirror) {
   outline: none;
   line-height: 1.6;
-  min-height: 100%;
 }
 
 /* 占位符样式 */
@@ -680,6 +684,14 @@ const handlePreviewScroll = throttle(syncPreviewToSource, 16)
     ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
   overflow-x: auto;
   margin: 1rem 0;
+}
+
+:deep(.ProseMirror pre code) {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  border-radius: 0;
+  font-size: 0.875rem;
 }
 
 :deep(.ProseMirror a) {
@@ -785,8 +797,6 @@ const handlePreviewScroll = throttle(syncPreviewToSource, 16)
 .markdown-source {
   width: 100%;
   height: 100%;
-  min-height: 500px;
-  max-height: 88vh;
   padding: 1.5rem;
   border: none;
   outline: none;

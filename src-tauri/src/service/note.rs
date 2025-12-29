@@ -14,9 +14,9 @@
 //! - 历史记录的同步写入
 //!
 //! # 历史记录类型
-//! - 操作类型 1: 创建
-//! - 操作类型 2: 更新
-//! - 操作类型 3: 删除
+//! - OperationType::Create (1): 创建
+//! - OperationType::Update (2): 更新
+//! - OperationType::Delete (3): 删除
 
 use std::collections::{HashMap, HashSet};
 
@@ -32,7 +32,7 @@ use sea_orm::{
 
 use crate::{
     entity::{self, notebook},
-    model::{Note, NoteHistoryExtra, NoteSearchPageParam, NoteStatsResult, PageResult, Tag},
+    model::{Note, NoteHistoryExtra, NoteSearchPageParam, NoteStatsResult, OperationType, PageResult, Tag},
 };
 
 /// 根据 ID 查询笔记（优化版本：2 次查询代替 4 次）
@@ -168,7 +168,7 @@ pub async fn create(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
         old_content: Set(String::default()),
         new_content: Set(note.content.clone()),
         extra: Set(extra),
-        operate_type: Set(1),
+        operate_type: Set(OperationType::Create.as_i32()),
         operate_time: Set(now),
         create_time: Set(now),
     }
@@ -243,7 +243,7 @@ pub async fn delete_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<()
             old_content: Set(entity.content),
             new_content: Set(String::default()),
             extra: Set(extra),
-            operate_type: Set(3),
+            operate_type: Set(OperationType::Delete.as_i32()),
             operate_time: Set(now),
             create_time: Set(now),
         }
@@ -407,7 +407,7 @@ pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
                 old_content: Set(old_content),
                 new_content: Set(note.content.clone()),
                 extra: Set(extra),
-                operate_type: Set(2),
+                operate_type: Set(OperationType::Update.as_i32()),
                 operate_time: Set(now),
                 create_time: Set(now),
             }

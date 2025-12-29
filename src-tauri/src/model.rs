@@ -19,6 +19,37 @@ use serde_with::{DefaultOnNull, serde_as};
 use crate::entity;
 
 // ============================================================================
+// 操作类型枚举
+// ============================================================================
+
+/// 笔记历史操作类型
+///
+/// 用于记录笔记的创建、更新、删除等操作
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[repr(i32)]
+pub enum OperationType {
+    /// 创建操作
+    Create = 1,
+    /// 更新操作
+    Update = 2,
+    /// 删除操作
+    Delete = 3,
+}
+
+impl OperationType {
+    /// 转换为 i32 值（用于数据库存储）
+    pub fn as_i32(self) -> i32 {
+        self as i32
+    }
+}
+
+impl From<OperationType> for i32 {
+    fn from(op: OperationType) -> Self {
+        op as i32
+    }
+}
+
+// ============================================================================
 // 分页相关结构体
 // ============================================================================
 

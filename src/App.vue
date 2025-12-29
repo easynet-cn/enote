@@ -1,11 +1,11 @@
 <template>
   <div class="flex h-screen bg-slate-50">
     <!-- 侧边栏组件 -->
-    <Sidebar
+    <AppSidebar
       :notebooks="notebooks"
       :tags="tags"
-      :active-notebook="state.activeNotebook"
-      :active-tag="state.activeTag"
+      :active-notebook="activeNotebook"
+      :active-tag="activeTag"
       :collapsed="sidebarCollapsed"
       @set-active-notebook="setActiveNotebook"
       @set-active-tag="setActiveTag"
@@ -21,12 +21,12 @@
     <NoteList
       :notebooks="notebooks"
       :notes="notes"
-      :active-notebook="state.activeNotebook"
-      :active-note="state.activeNote"
+      :active-notebook="activeNotebook"
+      :active-note="activeNote"
       :collapsed="noteListCollapsed"
-      v-model:current-page="state.notePageIndex"
-      v-model:page-size="state.notePageSize"
-      v-model:total="state.noteTotal"
+      v-model:current-page="notePageIndex"
+      v-model:page-size="notePageSize"
+      v-model:total="noteTotal"
       v-model:query="query"
       v-model:width="noteListWidth"
       @set-active-note="setActiveNote"
@@ -37,22 +37,24 @@
     />
 
     <!-- 编辑器组件 -->
-    <Editor
+    <NoteEditor
       v-model:history-data="histories"
-      v-model:current-page="state.historyPageIndex"
-      v-model:page-size="state.historyPageSize"
-      v-model:total="state.historyTotal"
+      v-model:current-page="historyPageIndex"
+      v-model:page-size="historyPageSize"
+      v-model:total="historyTotal"
       :notebooks="notebooks"
       :tags="tags"
       :active-note="activeNoteData"
-      :edit-mode="state.editMode"
-      :history-loading="state.historyLoading"
+      :edit-mode="editMode"
+      :history-loading="historyLoading"
       @save-note="saveNote"
       @cancel-edit="cancelEdit"
       @delete-note="deleteNote"
-      @toggle-edit-mode="state.editMode = !state.editMode"
+      @toggle-edit-mode="editMode = !editMode"
       @update-note-title="updateNoteTitle"
       @update-note-content="updateNoteContent"
+      @update-note-content-type="updateNoteContentType"
+      @update-note-setting="(notebookId, tagIds) => updateNoteSetting(notebookId, tagIds, tags)"
       @open="openHistoryDialog"
       @size-change="handleNoteHistorySizeChange"
       @current-change="handleNoteHistoryCurrentChange"
@@ -64,9 +66,9 @@
 import { ref } from 'vue'
 import { useNotes } from './composables/useNotes'
 import { useKeyboardShortcuts } from './composables/useKeyboardShortcuts'
-import Sidebar from './components/Sidebar.vue'
+import AppSidebar from './components/AppSidebar.vue'
 import NoteList from './components/NoteList.vue'
-import Editor from './components/Editor.vue'
+import NoteEditor from './components/NoteEditor.vue'
 
 // 折叠状态
 const sidebarCollapsed = ref(false)
@@ -81,13 +83,27 @@ const handleNoteListToggle = () => {
 }
 
 const {
+  // 数据状态
   notebooks,
   notes,
   tags,
   query,
   histories,
-  state,
+  // UI 状态 refs
+  activeNotebook,
+  activeTag,
+  activeNote,
+  editMode,
+  notePageIndex,
+  notePageSize,
+  noteTotal,
+  historyPageIndex,
+  historyPageSize,
+  historyTotal,
+  historyLoading,
+  // 笔记数据
   activeNoteData,
+  // 操作方法
   saveNotebook,
   deleteNotebook,
   saveTag,
@@ -101,6 +117,8 @@ const {
   deleteNote,
   updateNoteTitle,
   updateNoteContent,
+  updateNoteContentType,
+  updateNoteSetting,
   handleUpdateSearchQuery,
   handleNoteSizeChange,
   handleNoteCurrentChange,
@@ -115,7 +133,7 @@ useKeyboardShortcuts([
     key: 's',
     ctrl: true,
     handler: () => {
-      if (state.editMode && state.activeNote) {
+      if (editMode.value && activeNote.value) {
         saveNote()
       }
     },
@@ -133,8 +151,8 @@ useKeyboardShortcuts([
     key: 'e',
     ctrl: true,
     handler: () => {
-      if (state.activeNote && !state.editMode) {
-        state.editMode = true
+      if (activeNote.value && !editMode.value) {
+        editMode.value = true
       }
     },
     description: '编辑笔记',
@@ -142,7 +160,7 @@ useKeyboardShortcuts([
   {
     key: 'Escape',
     handler: () => {
-      if (state.editMode) {
+      if (editMode.value) {
         cancelEdit()
       }
     },

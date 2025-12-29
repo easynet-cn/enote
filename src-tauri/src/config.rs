@@ -95,7 +95,7 @@ impl Configuration {
             db_path.to_str().context("数据库路径包含无效字符")?
         );
 
-        // 默认配置内容
+        // 默认配置内容（优化的连接池参数）
         let default_config = format!(
             r#"# ENote 应用配置文件
 # 此文件由应用自动生成
@@ -106,12 +106,18 @@ datasource:
   url: "{}"
 
   # 连接池配置
-  max-connections: 5
-  min-connections: 1
-  connect_timeout: 30
-  acquire-timeout: 8
-  idle-time: 10
-  max-lifetime: 30
+  # 最大连接数：适应并发操作
+  max-connections: 20
+  # 最小连接数：保持常驻连接减少重连开销
+  min-connections: 2
+  # 连接超时（秒）：建立新连接的超时时间
+  connect_timeout: 10
+  # 获取连接超时（秒）：从池中获取连接的超时时间
+  acquire-timeout: 5
+  # 空闲超时（秒）：空闲连接保持时间
+  idle-time: 300
+  # 最大生命周期（秒）：连接最长存活时间
+  max-lifetime: 1800
 "#,
             db_url
         );
@@ -148,31 +154,31 @@ datasource:
             .get_string("datasource.url")
             .context("配置文件中缺少 datasource.url")?;
 
-        // 读取连接池配置，使用默认值作为回退
+        // 读取连接池配置，使用优化的默认值作为回退
         let max_connections = self
             .config
             .get_int("datasource.max-connections")
-            .unwrap_or(100) as u32;
+            .unwrap_or(20) as u32;
         let min_connections = self
             .config
             .get_int("datasource.min-connections")
-            .unwrap_or(1) as u32;
+            .unwrap_or(2) as u32;
         let connect_timeout = self
             .config
             .get_int("datasource.connect_timeout")
-            .unwrap_or(30) as u64;
+            .unwrap_or(10) as u64;
         let acquire_timeout = self
             .config
             .get_int("datasource.acquire-timeout")
-            .unwrap_or(8) as u64;
+            .unwrap_or(5) as u64;
         let idle_timeout = self
             .config
             .get_int("datasource.idle-time")
-            .unwrap_or(10) as u64;
+            .unwrap_or(300) as u64;
         let max_lifetime = self
             .config
             .get_int("datasource.max-lifetime")
-            .unwrap_or(30) as u64;
+            .unwrap_or(1800) as u64;
 
         // 配置数据库连接选项
         let mut opt = ConnectOptions::new(url);

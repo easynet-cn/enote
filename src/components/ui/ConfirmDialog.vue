@@ -27,8 +27,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { AlertTriangle, HelpCircle } from 'lucide-vue-next'
-import Dialog from './Dialog.vue'
-import Button from './Button.vue'
+import Dialog from './BaseDialog.vue'
+import Button from './BaseButton.vue'
 
 interface Props {
   modelValue: boolean

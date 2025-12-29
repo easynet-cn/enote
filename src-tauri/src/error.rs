@@ -47,12 +47,21 @@ pub struct ErrorResponse {
 
 impl From<AppError> for ErrorResponse {
     fn from(error: AppError) -> Self {
+        // 安全处理：不向前端暴露敏感的内部错误细节
         let (code, message, details) = match &error {
-            AppError::Database(e) => (
-                "DATABASE_ERROR".to_string(),
-                "数据库操作失败".to_string(),
-                Some(e.to_string()),
-            ),
+            AppError::Database(_e) => {
+                // 数据库错误不暴露具体SQL或结构信息
+                #[cfg(debug_assertions)]
+                let detail = Some(_e.to_string());
+                #[cfg(not(debug_assertions))]
+                let detail: Option<String> = None;
+
+                (
+                    "DATABASE_ERROR".to_string(),
+                    "数据库操作失败，请稍后重试".to_string(),
+                    detail,
+                )
+            }
             AppError::NotFound { resource, id } => (
                 "NOT_FOUND".to_string(),
                 format!("{}不存在", resource),
@@ -68,16 +77,32 @@ impl From<AppError> for ErrorResponse {
                 msg.clone(),
                 None,
             ),
-            AppError::Config(msg) => (
-                "CONFIG_ERROR".to_string(),
-                "配置错误".to_string(),
-                Some(msg.clone()),
-            ),
-            AppError::Internal(e) => (
-                "INTERNAL_ERROR".to_string(),
-                "内部错误".to_string(),
-                Some(e.to_string()),
-            ),
+            AppError::Config(_msg) => {
+                // 配置错误不暴露具体配置细节
+                #[cfg(debug_assertions)]
+                let detail = Some(_msg.clone());
+                #[cfg(not(debug_assertions))]
+                let detail: Option<String> = None;
+
+                (
+                    "CONFIG_ERROR".to_string(),
+                    "配置错误，请检查应用配置".to_string(),
+                    detail,
+                )
+            }
+            AppError::Internal(_e) => {
+                // 内部错误不暴露堆栈或实现细节
+                #[cfg(debug_assertions)]
+                let detail = Some(_e.to_string());
+                #[cfg(not(debug_assertions))]
+                let detail: Option<String> = None;
+
+                (
+                    "INTERNAL_ERROR".to_string(),
+                    "系统内部错误，请稍后重试".to_string(),
+                    detail,
+                )
+            }
         };
 
         ErrorResponse {

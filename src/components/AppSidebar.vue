@@ -424,7 +424,7 @@ const handleNotebookCommand = (command: string) => {
     notebookDialogTitle.value = '添加笔记本'
     notebookDialog.value = true
   } else if (command === 'edit') {
-    let notebook = props.notebooks.find((n) => n.id === props.activeNotebook)
+    const notebook = props.notebooks.find((n) => n.id === props.activeNotebook)
 
     if (notebook) {
       notebookForm.id = notebook.id ?? ''
@@ -462,7 +462,7 @@ const handleTagCommand = (command: string) => {
     tagDialogTitle.value = '添加标签'
     tagDialog.value = true
   } else if (command === 'edit') {
-    let tag = props.tags.find((t) => t.id === props.activeTag)
+    const tag = props.tags.find((t) => t.id === props.activeTag)
 
     if (tag) {
       tagForm.id = tag.id ?? ''

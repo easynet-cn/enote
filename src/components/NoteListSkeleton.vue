@@ -13,7 +13,7 @@
 </template>
 
 <script setup lang="ts">
-import Skeleton from './ui/Skeleton.vue'
+import Skeleton from './ui/BaseSkeleton.vue'
 
 interface Props {
   count?: number

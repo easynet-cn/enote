@@ -159,6 +159,25 @@ export function useNoteEditor() {
     store.editingNote.content = content
   }
 
+  // 更新笔记内容类型
+  const updateNoteContentType = (contentType: ContentType) => {
+    if (!store.activeNote || !store.editingNote) return
+
+    store.editingNote.contentType = contentType
+  }
+
+  // 更新笔记设置（笔记本和标签）
+  const updateNoteSetting = (
+    notebookId: string,
+    tagIds: string[],
+    allTags: { id: string; name: string }[],
+  ) => {
+    if (!store.activeNote || !store.editingNote) return
+
+    store.editingNote.notebookId = notebookId
+    store.editingNote.tags = allTags.filter((t) => tagIds.includes(t.id))
+  }
+
   return {
     activeNoteData,
     setActiveNote,
@@ -168,5 +187,7 @@ export function useNoteEditor() {
     deleteNote,
     updateNoteTitle,
     updateNoteContent,
+    updateNoteContentType,
+    updateNoteSetting,
   }
 }
