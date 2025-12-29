@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, toRaw } from 'vue'
 import { ContentType } from '../types'
 import type { ShowNotebook, ShowTag, ShowNote, NoteHistory, NoteSearchPageParam } from '../types'
 import {
@@ -185,7 +185,8 @@ export const useAppStore = defineStore('app', () => {
     if (noteId) {
       const note = notesMap.value.get(noteId)
       if (note) {
-        editingNote.value = structuredClone(note)
+        // 使用 toRaw 获取原始对象，避免 structuredClone 无法克隆响应式代理
+        editingNote.value = structuredClone(toRaw(note))
       }
     } else {
       editingNote.value = null
@@ -219,7 +220,8 @@ export const useAppStore = defineStore('app', () => {
     if (activeNote.value) {
       const note = notesMap.value.get(activeNote.value)
       if (note) {
-        editingNote.value = structuredClone(note)
+        // 使用 toRaw 获取原始对象，避免 structuredClone 无法克隆响应式代理
+        editingNote.value = structuredClone(toRaw(note))
       }
     }
   }

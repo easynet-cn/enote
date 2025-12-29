@@ -1,4 +1,4 @@
-import { computed, watch } from 'vue'
+import { computed, watch, toRaw } from 'vue'
 import { useAppStore } from '../stores/app'
 import { noteApi } from '../api/note'
 import { parseId, isTemporaryId, validateNoteTitle, validateNoteContent } from '../utils/validation'
@@ -19,8 +19,8 @@ export function useNoteEditor() {
       if (noteId) {
         const note = store.getNoteById(noteId)
         if (note) {
-          // 深拷贝到编辑缓冲区（使用 structuredClone 性能更好）
-          store.editingNote = structuredClone(note)
+          // 深拷贝到编辑缓冲区（使用 toRaw 获取原始对象，避免克隆响应式代理）
+          store.editingNote = structuredClone(toRaw(note))
         }
       } else {
         store.editingNote = null
@@ -42,7 +42,7 @@ export function useNoteEditor() {
     // 添加到笔记列表开头
     store.prependNote(newNote)
     store.activeNote = newNote.id
-    // 同步到编辑缓冲区（使用 structuredClone 性能更好）
+    // 同步到编辑缓冲区（新笔记是普通对象，无需 toRaw）
     store.editingNote = structuredClone(newNote)
     store.editMode = true
   }
