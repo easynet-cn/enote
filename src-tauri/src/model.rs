@@ -15,6 +15,7 @@ use chrono::NaiveDateTime;
 use sea_orm::ActiveValue::Set;
 use serde::{Deserialize, Serialize};
 use serde_with::{DefaultOnNull, serde_as};
+use tracing::warn;
 
 use crate::entity;
 
@@ -558,7 +559,10 @@ impl From<entity::note_history::Model> for NoteHistory {
             note_id: value.note_id,
             old_content: value.old_content,
             new_content: value.new_content,
-            extra: serde_json::from_str(&value.extra).unwrap_or_default(),
+            extra: serde_json::from_str(&value.extra).unwrap_or_else(|e| {
+                warn!("笔记历史记录 extra 反序列化失败: {}", e);
+                NoteHistoryExtra::default()
+            }),
             operate_type: value.operate_type,
             operate_time: value.operate_time,
             create_time: value.create_time,
@@ -573,7 +577,10 @@ impl From<&entity::note_history::Model> for NoteHistory {
             note_id: value.note_id,
             old_content: value.old_content.clone(),
             new_content: value.new_content.clone(),
-            extra: serde_json::from_str(&value.extra).unwrap_or_default(),
+            extra: serde_json::from_str(&value.extra).unwrap_or_else(|e| {
+                warn!("笔记历史记录 extra 反序列化失败: {}", e);
+                NoteHistoryExtra::default()
+            }),
             operate_type: value.operate_type,
             operate_time: value.operate_time,
             create_time: value.create_time,

@@ -34,6 +34,8 @@ chrono = "0.4.42"
 clap = { version = "4.5.53", features = ["derive", "env"] }
 config = "0.15.19"
 serde_with = "3.16.1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [profile.dev]
 incremental = true # Compile your binary in smaller steps.

@@ -14,6 +14,7 @@ use anyhow::{Context, Result};
 use config::Config;
 use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 use tauri::{AppHandle, Manager};
+use tracing::info;
 
 /// 应用配置结构体
 ///
@@ -125,8 +126,8 @@ datasource:
         // 写入配置文件
         fs::write(config_file_path, default_config).context("无法写入配置文件")?;
 
-        println!("已创建默认配置文件: {:?}", config_file_path);
-        println!("数据库文件: {:?}", db_path);
+        info!("已创建默认配置文件: {:?}", config_file_path);
+        info!("数据库文件: {:?}", db_path);
 
         Ok(())
     }

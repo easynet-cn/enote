@@ -12,6 +12,8 @@ use std::sync::Arc;
 use sea_orm_migration::MigratorTrait;
 use tauri::Manager;
 use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
+use tracing::{error, info};
+use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
 use crate::config::AppState;
 
@@ -27,15 +29,23 @@ mod service; // 业务逻辑服务层
 /// 应用程序入口函数
 ///
 /// 该函数执行以下操作：
-/// 1. 初始化 Tauri 插件（文件系统、打开器、Shell）
-/// 2. 加载应用配置（自动创建默认配置文件）
-/// 3. 建立数据库连接
-/// 4. 运行数据库迁移（自动创建表结构）
-/// 5. 将应用状态注入到 Tauri 管理器
-/// 6. 注册所有前端可调用的命令
-/// 7. 启动应用程序主循环
+/// 1. 初始化日志系统
+/// 2. 初始化 Tauri 插件（文件系统、打开器、Shell）
+/// 3. 加载应用配置（自动创建默认配置文件）
+/// 4. 建立数据库连接
+/// 5. 运行数据库迁移（自动创建表结构）
+/// 6. 将应用状态注入到 Tauri 管理器
+/// 7. 注册所有前端可调用的命令
+/// 8. 启动应用程序主循环
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // 初始化 tracing 日志系统
+    // 默认日志级别为 info，可通过 RUST_LOG 环境变量覆盖
+    tracing_subscriber::registry()
+        .with(EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")))
+        .with(fmt::layer())
+        .init();
+
     tauri::Builder::default()
         // 注册 Tauri 插件
         .plugin(tauri_plugin_fs::init()) // 文件系统访问
@@ -51,7 +61,7 @@ pub fn run() {
                 let configuration = match config::Configuration::new(handle) {
                     Ok(config) => config,
                     Err(e) => {
-                        eprintln!("配置加载失败: {:#}", e);
+                        error!("配置加载失败: {:#}", e);
                         return Err(e.to_string().into());
                     }
                 };
@@ -60,7 +70,7 @@ pub fn run() {
                 let database_connection = match configuration.database_connection().await {
                     Ok(conn) => conn,
                     Err(e) => {
-                        eprintln!("数据库连接失败: {:#}", e);
+                        error!("数据库连接失败: {:#}", e);
                         // 显示友好的错误提示对话框
                         handle
                             .dialog()
@@ -78,7 +88,7 @@ pub fn run() {
 
                 // 运行数据库迁移，自动创建表结构
                 if let Err(e) = migration::Migrator::up(&database_connection, None).await {
-                    eprintln!("数据库迁移失败: {:#}", e);
+                    error!("数据库迁移失败: {:#}", e);
                     // 显示友好的错误提示对话框
                     handle
                         .dialog()
@@ -92,7 +102,7 @@ pub fn run() {
                     // 退出应用
                     std::process::exit(1);
                 }
-                println!("数据库迁移完成");
+                info!("数据库迁移完成");
 
                 // 创建应用状态并注入到 Tauri 管理器
                 let app_state = Arc::new(AppState {

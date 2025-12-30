@@ -5,7 +5,7 @@ import { withNotification } from '../utils/errorHandler'
 import { debounce } from '../utils/debounce'
 import { noteToShowNote } from '../utils/converters'
 import { LRUCache } from '../utils/lruCache'
-import { SEARCH_DEBOUNCE_DELAY, SEARCH_CACHE_TTL } from '../config/constants'
+import { SEARCH_DEBOUNCE_DELAY, SEARCH_CACHE_TTL, SEARCH_CACHE_MAX_SIZE } from '../config/constants'
 import type { ShowNote, Note, PageResult, NoteSearchPageParam } from '../types'
 
 // 搜索结果缓存项
@@ -14,8 +14,8 @@ interface SearchCacheEntry {
   total: number
 }
 
-// LRU 缓存：最多缓存 20 个搜索结果，TTL 由配置决定
-const searchCache = new LRUCache<string, SearchCacheEntry>(20, SEARCH_CACHE_TTL)
+// LRU 缓存：缓存搜索结果，自动淘汰最久未使用的项
+const searchCache = new LRUCache<string, SearchCacheEntry>(SEARCH_CACHE_MAX_SIZE, SEARCH_CACHE_TTL)
 
 // 生成缓存 key
 const getSearchCacheKey = (param: NoteSearchPageParam): string => {

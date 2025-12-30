@@ -9,6 +9,7 @@
 //! - m20251221_000003: 创建 tag 表
 //! - m20251221_000004: 创建 note_tags 表
 //! - m20251221_000005: 创建 note_history 表
+//! - m20251230_000001: 创建 note_fts 全文搜索表（仅 SQLite）
 
 pub use sea_orm_migration::prelude::*;
 
@@ -17,6 +18,7 @@ mod m20251221_000002_create_note_table;
 mod m20251221_000003_create_tag_table;
 mod m20251221_000004_create_note_tags_table;
 mod m20251221_000005_create_note_history_table;
+mod m20251230_000001_create_note_fts_table;
 
 /// 数据库迁移器
 ///
@@ -32,6 +34,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20251221_000003_create_tag_table::Migration),
             Box::new(m20251221_000004_create_note_tags_table::Migration),
             Box::new(m20251221_000005_create_note_history_table::Migration),
+            Box::new(m20251230_000001_create_note_fts_table::Migration),
         ]
     }
 }

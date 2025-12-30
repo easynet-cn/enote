@@ -22,6 +22,9 @@ export const MAX_TAG_NAME_LENGTH = 30
 /** 预览文本缓存最大条目数 */
 export const PREVIEW_CACHE_MAX_SIZE = 200
 
+/** 搜索结果缓存最大条目数 */
+export const SEARCH_CACHE_MAX_SIZE = 50
+
 /** 搜索结果缓存有效期（毫秒） */
 export const SEARCH_CACHE_TTL = 5000
 
