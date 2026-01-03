@@ -1062,7 +1062,7 @@ const handleCaseSensitiveChange = () => {
 
 const updateSearchState = () => {
   if (!props.editor) return
-  const storage = (props.editor.storage as Record<string, unknown>).searchAndReplace as
+  const storage = (props.editor.storage as unknown as Record<string, unknown>).searchAndReplace as
     | { results: unknown[]; currentIndex: number }
     | undefined
   if (storage) {

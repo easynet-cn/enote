@@ -388,7 +388,7 @@ const toggleToc = () => {
 // 更新目录项
 const updateTocItems = () => {
   if (!editor.value) return
-  const storage = (editor.value.storage as Record<string, unknown>).tableOfContents as
+  const storage = (editor.value.storage as unknown as Record<string, unknown>).tableOfContents as
     | { items: typeof tocItems.value }
     | undefined
   if (storage) {
