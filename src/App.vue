@@ -15,6 +15,7 @@
       @save-tag="saveTag"
       @delete-tag="deleteTag"
       @toggle-collapse="sidebarCollapsed = !sidebarCollapsed"
+      @open-import="importDialogVisible = true"
     />
 
     <!-- 笔记列表组件 -->
@@ -59,6 +60,14 @@
       @size-change="handleNoteHistorySizeChange"
       @current-change="handleNoteHistoryCurrentChange"
     />
+
+    <!-- 导入对话框 -->
+    <ImportDialog
+      v-model="importDialogVisible"
+      :notebooks="notebooks"
+      :tags="tags"
+      @imported="refreshAllData"
+    />
   </div>
 </template>
 
@@ -69,10 +78,14 @@ import { useKeyboardShortcuts } from './composables/useKeyboardShortcuts'
 import AppSidebar from './components/AppSidebar.vue'
 import NoteList from './components/NoteList.vue'
 import NoteEditor from './components/NoteEditor.vue'
+import ImportDialog from './components/ImportDialog.vue'
 
 // 折叠状态
 const sidebarCollapsed = ref(false)
 const noteListCollapsed = ref(false)
+
+// 导入对话框
+const importDialogVisible = ref(false)
 // NoteList宽度
 const noteListWidth = ref(320)
 const DEFAULT_NOTE_LIST_WIDTH = 320
@@ -125,6 +138,7 @@ const {
   openHistoryDialog,
   handleNoteHistorySizeChange,
   handleNoteHistoryCurrentChange,
+  refreshAllData,
 } = useNotes()
 
 // 键盘快捷键

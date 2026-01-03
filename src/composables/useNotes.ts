@@ -188,5 +188,8 @@ export function useNotes() {
     openHistoryDialog: noteHistory.openHistoryDialog,
     handleNoteHistorySizeChange: noteHistory.handleNoteHistorySizeChange,
     handleNoteHistoryCurrentChange: noteHistory.handleNoteHistoryCurrentChange,
+
+    // 刷新数据
+    refreshAllData,
   }
 }

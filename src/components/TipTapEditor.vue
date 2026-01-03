@@ -245,4 +245,101 @@ onBeforeUnmount(() => {
 :deep(.ProseMirror[contenteditable='false']:focus) {
   outline: none;
 }
+
+/* 上标和下标样式 */
+:deep(.ProseMirror sup) {
+  font-size: 0.75em;
+  vertical-align: super;
+}
+
+:deep(.ProseMirror sub) {
+  font-size: 0.75em;
+  vertical-align: sub;
+}
+
+/* 代码高亮样式 (One Dark 主题) */
+:deep(.ProseMirror pre code.hljs) {
+  display: block;
+  overflow-x: auto;
+  padding: 1em;
+}
+
+:deep(.ProseMirror code.hljs) {
+  padding: 3px 5px;
+}
+
+:deep(.ProseMirror .hljs) {
+  color: #abb2bf;
+  background: #282c34;
+}
+
+:deep(.ProseMirror .hljs-comment),
+:deep(.ProseMirror .hljs-quote) {
+  color: #5c6370;
+  font-style: italic;
+}
+
+:deep(.ProseMirror .hljs-doctag),
+:deep(.ProseMirror .hljs-keyword),
+:deep(.ProseMirror .hljs-formula) {
+  color: #c678dd;
+}
+
+:deep(.ProseMirror .hljs-section),
+:deep(.ProseMirror .hljs-name),
+:deep(.ProseMirror .hljs-selector-tag),
+:deep(.ProseMirror .hljs-deletion),
+:deep(.ProseMirror .hljs-subst) {
+  color: #e06c75;
+}
+
+:deep(.ProseMirror .hljs-literal) {
+  color: #56b6c2;
+}
+
+:deep(.ProseMirror .hljs-string),
+:deep(.ProseMirror .hljs-regexp),
+:deep(.ProseMirror .hljs-addition),
+:deep(.ProseMirror .hljs-attribute),
+:deep(.ProseMirror .hljs-meta .hljs-string) {
+  color: #98c379;
+}
+
+:deep(.ProseMirror .hljs-attr),
+:deep(.ProseMirror .hljs-variable),
+:deep(.ProseMirror .hljs-template-variable),
+:deep(.ProseMirror .hljs-type),
+:deep(.ProseMirror .hljs-selector-class),
+:deep(.ProseMirror .hljs-selector-attr),
+:deep(.ProseMirror .hljs-selector-pseudo),
+:deep(.ProseMirror .hljs-number) {
+  color: #d19a66;
+}
+
+:deep(.ProseMirror .hljs-symbol),
+:deep(.ProseMirror .hljs-bullet),
+:deep(.ProseMirror .hljs-link),
+:deep(.ProseMirror .hljs-meta),
+:deep(.ProseMirror .hljs-selector-id),
+:deep(.ProseMirror .hljs-title) {
+  color: #61aeee;
+}
+
+:deep(.ProseMirror .hljs-built_in),
+:deep(.ProseMirror .hljs-title.class_),
+:deep(.ProseMirror .hljs-class .hljs-title) {
+  color: #e6c07b;
+}
+
+:deep(.ProseMirror .hljs-emphasis) {
+  font-style: italic;
+}
+
+:deep(.ProseMirror .hljs-strong) {
+  font-weight: bold;
+}
+
+:deep(.ProseMirror .hljs-link) {
+  text-decoration: underline;
+}
 </style>

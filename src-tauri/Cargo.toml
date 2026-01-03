@@ -1,6 +1,6 @@
 [package]
 name = "enote"
-version = "0.3.2"
+version = "0.3.3"
 description = "个人笔记"
 authors = ["124244236@qq.com"]
 edition = "2024"
@@ -29,9 +29,9 @@ sea-orm = { version = "1.1.19", features = ["sqlx-mysql", "sqlx-sqlite", "sqlx-p
 sea-orm-migration = { version = "1.1", features = ["runtime-tokio", "sqlx-sqlite", "sqlx-mysql", "sqlx-postgres"] }
 anyhow = "1.0.100"
 thiserror = "2.0.17"
-tokio = { version = "1.48.0", features = ["full"] }
+tokio = { version = "1.49.0", features = ["full"] }
 chrono = "0.4.42"
-clap = { version = "4.5.53", features = ["derive", "env"] }
+clap = { version = "4.5.54", features = ["derive", "env"] }
 config = "0.15.19"
 serde_with = "3.16.1"
 tracing = "0.1"

@@ -9,24 +9,24 @@
     <div class="h-[88vh] overflow-hidden flex flex-col">
       <div class="flex-1 overflow-auto">
         <table class="w-full border-collapse">
-          <thead class="bg-gray-50 sticky top-0">
+          <thead class="bg-slate-50 sticky top-0">
             <tr>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">ID</th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">
+              <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">ID</th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">
                 笔记本名称
               </th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">标题</th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">
+              <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">标题</th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">
                 内容类型
               </th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">标签</th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">
+              <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">标签</th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">
                 操作类型
               </th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">
+              <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">
                 操作时间
               </th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">操作</th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">操作</th>
             </tr>
           </thead>
           <!-- 加载骨架屏 -->
@@ -35,25 +35,25 @@
           <!-- 数据内容 -->
           <tbody v-else>
             <tr v-if="!showData?.length">
-              <td colspan="8" class="px-4 py-12 text-center text-gray-500">
+              <td colspan="8" class="px-4 py-12 text-center text-slate-500">
                 <div class="flex flex-col items-center">
                   <Clock class="w-10 h-10 mb-2 opacity-40" />
                   <span>暂无历史记录</span>
                 </div>
               </td>
             </tr>
-            <tr v-for="row in showData" :key="row.id" class="hover:bg-gray-50 transition-colors">
-              <td class="px-4 py-3 text-sm text-gray-900 border-b">{{ row.id }}</td>
-              <td class="px-4 py-3 text-sm text-gray-900 border-b">{{ row.notebookName }}</td>
-              <td class="px-4 py-3 text-sm text-gray-900 border-b">{{ row.title }}</td>
-              <td class="px-4 py-3 text-sm text-gray-900 border-b">{{ row.contentType }}</td>
-              <td class="px-4 py-3 text-sm text-gray-900 border-b">{{ row.tags }}</td>
-              <td class="px-4 py-3 text-sm text-gray-900 border-b">{{ row.operateType }}</td>
-              <td class="px-4 py-3 text-sm text-gray-900 border-b">{{ row.operateTime }}</td>
+            <tr v-for="row in showData" :key="row.id" class="hover:bg-slate-50 transition-colors">
+              <td class="px-4 py-3 text-sm text-slate-900 border-b">{{ row.id }}</td>
+              <td class="px-4 py-3 text-sm text-slate-900 border-b">{{ row.notebookName }}</td>
+              <td class="px-4 py-3 text-sm text-slate-900 border-b">{{ row.title }}</td>
+              <td class="px-4 py-3 text-sm text-slate-900 border-b">{{ row.contentType }}</td>
+              <td class="px-4 py-3 text-sm text-slate-900 border-b">{{ row.tags }}</td>
+              <td class="px-4 py-3 text-sm text-slate-900 border-b">{{ row.operateType }}</td>
+              <td class="px-4 py-3 text-sm text-slate-900 border-b">{{ row.operateTime }}</td>
               <td class="px-4 py-3 text-sm border-b">
                 <button
                   @click="handleView(row)"
-                  class="px-3 py-1 text-sm text-white bg-green-500 rounded hover:bg-green-600 transition-colors"
+                  class="px-3 py-1 text-sm text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
                 >
                   查看
                 </button>
@@ -83,9 +83,9 @@
   <Dialog v-model="viewVisible" title="内容查看" :width="1200">
     <div class="h-[70vh] overflow-hidden flex">
       <!-- 旧内容区域 -->
-      <div class="flex-1 border-r border-gray-200 pr-4">
-        <div class="text-lg font-semibold mb-4">旧内容</div>
-        <div class="h-full overflow-auto bg-gray-50 p-4 rounded border">
+      <div class="flex-1 border-r border-slate-200 pr-4">
+        <div class="text-lg font-semibold mb-4 text-slate-700">旧内容</div>
+        <div class="h-full overflow-auto bg-slate-50 p-4 rounded-lg border border-slate-200">
           <TipTapEditor
             :model-value="viewOldContent"
             :editable="false"
@@ -97,8 +97,8 @@
 
       <!-- 新内容区域 -->
       <div class="flex-1 pl-4">
-        <div class="text-lg font-semibold mb-4">新内容</div>
-        <div class="h-full overflow-auto bg-green-50 p-4 rounded border">
+        <div class="text-lg font-semibold mb-4 text-slate-700">新内容</div>
+        <div class="h-full overflow-auto bg-indigo-50 p-4 rounded-lg border border-indigo-200">
           <TipTapEditor
             :model-value="viewNewContent"
             :editable="false"

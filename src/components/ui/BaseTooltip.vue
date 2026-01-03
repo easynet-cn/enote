@@ -6,11 +6,11 @@
         <div
           v-if="visible"
           ref="tooltipRef"
-          class="fixed z-[9999] px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap pointer-events-none"
+          class="fixed z-[9999] px-2 py-1 text-xs text-white bg-slate-800 rounded whitespace-nowrap pointer-events-none"
           :style="tooltipStyle"
         >
           {{ content }}
-          <div class="absolute w-2 h-2 bg-gray-800 rotate-45" :style="arrowStyle"></div>
+          <div class="absolute w-2 h-2 bg-slate-800 rotate-45" :style="arrowStyle"></div>
         </div>
       </Transition>
     </Teleport>

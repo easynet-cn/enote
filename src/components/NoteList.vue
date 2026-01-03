@@ -69,14 +69,28 @@
         </div>
 
         <!-- 笔记列表（带过渡动画） -->
-        <TransitionGroup v-else name="note-list" tag="div">
-          <div
-            v-for="note in notes"
+        <TransitionGroup
+          v-else
+          name="note-list"
+          tag="ul"
+          role="listbox"
+          aria-label="笔记列表"
+          class="note-list-container"
+        >
+          <li
+            v-for="(note, index) in notes"
             :key="note.id"
             v-memo="[note.id, note.title, note.updateTime, activeNote === note.id]"
+            role="option"
+            :aria-selected="activeNote === note.id"
+            tabindex="0"
             class="note-item"
             :class="{ active: activeNote === note.id }"
             @click="$emit('setActiveNote', note.id)"
+            @keydown.enter="$emit('setActiveNote', note.id)"
+            @keydown.space.prevent="$emit('setActiveNote', note.id)"
+            @keydown.up.prevent="focusPreviousNote(index)"
+            @keydown.down.prevent="focusNextNote(index)"
           >
             <div class="font-semibold text-slate-900 mb-1 truncate">
               {{ note.title || '无标题' }}
@@ -86,15 +100,17 @@
             </div>
             <div class="flex justify-between items-center text-xs text-slate-400">
               <span class="truncate mr-2">{{ note.notebookName }}</span>
-              <span class="shrink-0">{{ note.updateTime }}</span>
+              <span class="shrink-0" :aria-label="`更新时间: ${note.updateTime}`">{{
+                note.updateTime
+              }}</span>
             </div>
-          </div>
+          </li>
         </TransitionGroup>
       </div>
 
       <div
         v-if="notes.length > 0"
-        class="sticky bottom-0 bg-white border-t border-slate-200 py-2 px-4"
+        class="sticky bottom-0 bg-white border-t border-slate-200 h-12 px-4 flex items-center justify-center"
       >
         <Pagination
           :current-page="currentPage!"
@@ -246,6 +262,24 @@ const handlerQueryChange = () => {
   query.value = ''
   emit('updateSearchQuery')
 }
+
+// 键盘导航：聚焦上一个笔记
+const focusPreviousNote = (currentIndex: number) => {
+  if (currentIndex > 0) {
+    const noteItems = document.querySelectorAll('.note-item')
+    const prevItem = noteItems[currentIndex - 1] as HTMLElement
+    prevItem?.focus()
+  }
+}
+
+// 键盘导航：聚焦下一个笔记
+const focusNextNote = (currentIndex: number) => {
+  if (currentIndex < props.notes.length - 1) {
+    const noteItems = document.querySelectorAll('.note-item')
+    const nextItem = noteItems[currentIndex + 1] as HTMLElement
+    nextItem?.focus()
+  }
+}
 </script>
 
 <style scoped>
@@ -270,5 +304,23 @@ const handlerQueryChange = () => {
 .note-list-leave-active {
   position: absolute;
   width: 100%;
+}
+
+/* 笔记列表容器 */
+.note-list-container {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* 笔记项聚焦样式 */
+.note-item:focus {
+  outline: 2px solid #4f46e5;
+  outline-offset: -2px;
+}
+
+.note-item:focus-visible {
+  outline: 2px solid #4f46e5;
+  outline-offset: -2px;
 }
 </style>

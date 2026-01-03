@@ -83,6 +83,117 @@ Frontend invokes these Tauri commands:
 - New notes get temporary IDs (`'0-' + timestamp`) before saving
 - Note content stored as HTML (TipTap output)
 
+## Style Guide
+
+### Design System (Material Design 风格)
+
+**主题色 (Primary - Indigo)**
+- `--color-primary`: #4f46e5 (主色)
+- `--color-primary-hover`: #4338ca (悬浮)
+- `--color-primary-active`: #3730a3 (激活)
+- `--color-primary-light`: #e0e7ff (浅色背景)
+- `--color-primary-lighter`: #eef2ff (更浅背景)
+
+**语义色**
+- Success: #10b981 (绿色)
+- Warning: #f59e0b (橙色)
+- Danger: #ef4444 (红色)
+- Info: #3b82f6 (蓝色)
+
+**中性色 (Slate 灰色调)**
+- 文本主色: #0f172a
+- 文本次色: #64748b
+- 边框色: #e2e8f0
+- 背景主色: #ffffff
+- 背景次色: #f8fafc
+
+### CSS 变量使用
+
+优先使用 CSS 变量而非硬编码颜色值：
+```css
+/* 正确 */
+color: var(--color-primary);
+background: var(--color-bg-secondary);
+box-shadow: var(--shadow-md);
+border-radius: var(--radius-lg);
+transition: all var(--transition-normal) var(--ease-default);
+
+/* 避免 */
+color: #4f46e5;
+background: #f8fafc;
+```
+
+**阴影 (Elevation)**
+- `--shadow-xs` ~ `--shadow-2xl`: 6 级阴影
+- `--shadow-primary`: 带主题色的悬浮阴影
+
+**圆角**
+- `--radius-sm`: 4px
+- `--radius-md`: 6px
+- `--radius-lg`: 8px
+- `--radius-xl`: 12px
+- `--radius-full`: 9999px (圆形)
+
+**过渡**
+- `--transition-fast`: 0.15s
+- `--transition-normal`: 0.2s
+- `--transition-slow`: 0.3s
+
+### Tailwind CSS 规范
+
+- 使用 Tailwind CSS v4
+- 优先使用 Tailwind 工具类，复杂样式使用 scoped CSS
+- 颜色使用 Tailwind 内置调色板 (slate, indigo, etc.)
+- 常用类名模式:
+  ```html
+  <!-- 按钮 -->
+  <button class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+
+  <!-- 输入框 -->
+  <input class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+
+  <!-- 卡片 -->
+  <div class="p-4 bg-white rounded-xl shadow-sm border border-slate-200">
+  ```
+
+### Vue 组件样式规范
+
+- 使用 `<style scoped>` 避免样式污染
+- 深度选择器使用 `:deep(.class-name)`
+- 组件内样式按功能分组，添加注释分隔
+- 复杂状态样式使用 computed 计算类名：
+  ```typescript
+  const buttonClasses = computed(() => {
+    const classes = ['btn', `btn-${props.type}`, `btn-${props.size}`]
+    if (props.disabled) classes.push('btn-disabled')
+    return classes
+  })
+  ```
+
+### 响应式设计
+
+- 断点: 768px (移动端)
+- 使用 Tailwind 响应式前缀: `sm:`, `md:`, `lg:`, `xl:`
+- 工具栏等组件需处理窄屏滚动
+
+### 图标规范
+
+- 使用 Lucide Vue Next 图标库
+- 默认尺寸: `class="w-4 h-4"` 或 `class="w-5 h-5"`
+- 导入方式:
+  ```typescript
+  import { IconName } from 'lucide-vue-next'
+  ```
+
+### TipTap 编辑器扩展
+
+自定义扩展存放在 `src/extensions/` 目录：
+- `FontSize.ts` - 字体大小
+- `Indent.ts` - 缩进控制
+- `SearchAndReplace.ts` - 查找替换
+
+扩展配置在 `src/config/editorExtensions.ts` 中集中管理
+
 ## Database
 
 Supports SQLite (default), MySQL, and PostgreSQL via SeaORM. Configuration in `doc/application.yml`.

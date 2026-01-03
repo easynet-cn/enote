@@ -154,6 +154,17 @@
           </li>
         </ul>
       </div>
+
+      <!-- 底部工具区域 -->
+      <div class="h-12 px-4 border-t border-slate-200 flex items-center">
+        <button
+          class="w-full flex items-center justify-center gap-2 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+          @click="$emit('openImport')"
+        >
+          <Import class="w-4 h-4" />
+          <span>导入笔记</span>
+        </button>
+      </div>
     </template>
   </aside>
 
@@ -278,7 +289,7 @@
 </template>
 
 <script setup lang="ts">
-import { Plus, Pencil, Trash2, Menu, ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import { Plus, Pencil, Trash2, Menu, ChevronLeft, ChevronRight, Import } from 'lucide-vue-next'
 import {
   Button,
   IconPicker,
@@ -355,6 +366,7 @@ const emit = defineEmits<{
   saveTag: [tag: ShowTag]
   deleteTag: [id: string]
   'toggle-collapse': []
+  openImport: []
 }>()
 
 const showNotebookEditAndDelete = computed(() => {

@@ -1,20 +1,31 @@
 <template>
   <Teleport to="body">
-    <Transition name="dialog">
+    <Transition name="dialog" @after-enter="handleAfterEnter" @after-leave="handleAfterLeave">
       <div v-if="modelValue" class="dialog-overlay" @click.self="handleOverlayClick">
         <!-- Overlay -->
-        <div class="dialog-backdrop"></div>
+        <div class="dialog-backdrop" aria-hidden="true"></div>
 
         <!-- Dialog -->
         <div
+          ref="dialogRef"
+          role="dialog"
+          aria-modal="true"
+          :aria-labelledby="titleId"
           :class="['dialog-content', { 'dialog-fullscreen': fullscreen }]"
           :style="!fullscreen ? { width: width + 'px' } : {}"
+          @keydown.esc="handleClose"
         >
           <!-- Header -->
           <div class="dialog-header">
-            <h3 class="dialog-title">{{ title }}</h3>
-            <button class="dialog-close" @click="handleClose" aria-label="关闭">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <h3 :id="titleId" class="dialog-title">{{ title }}</h3>
+            <button class="dialog-close" @click="handleClose" aria-label="关闭对话框">
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -41,7 +52,7 @@
 </template>
 
 <script setup lang="ts">
-import { watch } from 'vue'
+import { watch, ref, computed } from 'vue'
 
 interface Props {
   modelValue: boolean
@@ -64,10 +75,21 @@ const emit = defineEmits<{
   close: []
 }>()
 
+// 生成唯一的 title ID
+const titleId = computed(() => `dialog-title-${Math.random().toString(36).slice(2, 9)}`)
+
+// Dialog 元素引用
+const dialogRef = ref<HTMLElement | null>(null)
+
+// 保存打开对话框前的焦点元素
+let previousActiveElement: HTMLElement | null = null
+
 watch(
   () => props.modelValue,
   (val) => {
     if (val) {
+      // 保存当前焦点元素
+      previousActiveElement = document.activeElement as HTMLElement
       emit('open')
       document.body.style.overflow = 'hidden'
     } else {
@@ -75,6 +97,22 @@ watch(
     }
   },
 )
+
+// 对话框打开后聚焦
+const handleAfterEnter = () => {
+  // 聚焦到对话框内的第一个可聚焦元素
+  const focusable = dialogRef.value?.querySelector<HTMLElement>(
+    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+  )
+  focusable?.focus()
+}
+
+// 对话框关闭后恢复焦点
+const handleAfterLeave = () => {
+  // 恢复之前的焦点
+  previousActiveElement?.focus()
+  previousActiveElement = null
+}
 
 const handleClose = () => {
   emit('update:modelValue', false)

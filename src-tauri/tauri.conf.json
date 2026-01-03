@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "ENote",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "identifier": "net.easycloudcn.enote",
   "build": {
     "beforeDevCommand": "pnpm run dev",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "ENote",
+        "title": "",
         "width": 1200,
         "height": 800,
         "minWidth": 800,

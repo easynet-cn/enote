@@ -14,9 +14,11 @@
           :is-new-note="isNewNote"
           :edit-mode="editMode"
           :markdown-layout="markdownLayout"
+          :toc-visible="tocVisible"
           @toggle-source-mode="toggleSourceMode"
           @update:content-type="handleContentTypeChange"
           @update:markdown-layout="handleMarkdownLayoutChange"
+          @toggle-toc="toggleToc"
           @edit="handleEdit"
           @save="handleSave"
           @cancel="handleCancel"
@@ -98,6 +100,14 @@
 
         <!-- 富文本模式 -->
         <editor-content v-else :editor="editor" :class="editorCls" />
+
+        <!-- 目录面板 -->
+        <TableOfContents
+          :items="tocItems"
+          :visible="tocVisible"
+          :editor="editor ?? null"
+          @close="tocVisible = false"
+        />
       </div>
     </main>
 
@@ -135,6 +145,21 @@
       confirm-text="删除"
       @confirm="confirmDeleteNote"
     />
+
+    <!-- 底部状态栏：字符统计和光标位置 -->
+    <footer
+      v-if="activeNote && editor"
+      class="h-12 flex items-center justify-between px-4 text-xs text-slate-500 border-t border-slate-200 bg-slate-50"
+    >
+      <div class="flex items-center gap-4">
+        <span>行 {{ cursorPosition.line }}, 列 {{ cursorPosition.column }}</span>
+        <span v-if="hasSelection" class="text-indigo-600">已选择 {{ selectedText }} 字符</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <span>{{ characterCount }} 字符</span>
+        <span>{{ wordCount }} 词</span>
+      </div>
+    </footer>
   </div>
 </template>
 
@@ -153,6 +178,8 @@ import { isTemporaryId } from '../utils/validation'
 import { throttle } from '../utils/debounce'
 import { preprocessMarkdown } from '../utils/markdownWorker'
 import NoteHistoryDialog from './NoteHistoryDialog.vue'
+import TableOfContents from './TableOfContents.vue'
+import type { TocItem } from '../extensions'
 
 interface Props {
   notebooks: ShowNotebook[]
@@ -258,6 +285,15 @@ const createEditor = (contentType: ContentType, content: string) => {
       } else {
         emit('updateNoteContent', ed.getHTML())
       }
+      // 更新目录
+      updateTocItems()
+    },
+    onSelectionUpdate: () => {
+      updateCursorPosition()
+    },
+    onCreate: () => {
+      // 编辑器创建后更新目录
+      updateTocItems()
     },
   })
 }
@@ -324,6 +360,60 @@ watch(
 const editorCls = computed(() => {
   return props.editMode ? 'tiptap-editor-edit' : 'tiptap-editor'
 })
+
+// 字符统计
+const characterCount = computed(() => {
+  return editor.value?.storage.characterCount.characters() ?? 0
+})
+
+// 词数统计
+const wordCount = computed(() => {
+  return editor.value?.storage.characterCount.words() ?? 0
+})
+
+// 光标位置
+const cursorPosition = ref({ line: 1, column: 1 })
+const selectedText = ref(0)
+const hasSelection = computed(() => selectedText.value > 0)
+
+// 目录
+const tocVisible = ref(false)
+const tocItems = ref<TocItem[]>([])
+
+// 切换目录显示
+const toggleToc = () => {
+  tocVisible.value = !tocVisible.value
+}
+
+// 更新目录项
+const updateTocItems = () => {
+  if (!editor.value) return
+  const storage = (editor.value.storage as Record<string, unknown>).tableOfContents as
+    | { items: typeof tocItems.value }
+    | undefined
+  if (storage) {
+    tocItems.value = storage.items
+  }
+}
+
+// 计算光标所在行列
+const updateCursorPosition = () => {
+  if (!editor.value) return
+
+  const { state } = editor.value
+  const { from, to } = state.selection
+
+  // 计算选中文本长度
+  selectedText.value = to - from
+
+  // 获取光标前的文本来计算行列
+  const textBeforeCursor = state.doc.textBetween(0, from, '\n', '\n')
+  const lines = textBeforeCursor.split('\n')
+  const line = lines.length
+  const column = (lines[lines.length - 1]?.length ?? 0) + 1
+
+  cursorPosition.value = { line, column }
+}
 
 // 组件卸载时销毁编辑器
 onBeforeUnmount(() => {
@@ -938,5 +1028,146 @@ const handlePreviewScroll = throttle(syncPreviewToSource, 16)
   outline: none;
   line-height: 1.6;
   min-height: 100%;
+}
+
+/* 上标和下标样式 */
+:deep(.ProseMirror sup) {
+  font-size: 0.75em;
+  vertical-align: super;
+}
+
+:deep(.ProseMirror sub) {
+  font-size: 0.75em;
+  vertical-align: sub;
+}
+
+/* 代码高亮样式 (One Dark 主题) */
+:deep(.ProseMirror pre code.hljs) {
+  display: block;
+  overflow-x: auto;
+  padding: 1em;
+}
+
+:deep(.ProseMirror code.hljs) {
+  padding: 3px 5px;
+}
+
+:deep(.ProseMirror .hljs) {
+  color: #abb2bf;
+  background: #282c34;
+}
+
+:deep(.ProseMirror .hljs-comment),
+:deep(.ProseMirror .hljs-quote) {
+  color: #5c6370;
+  font-style: italic;
+}
+
+:deep(.ProseMirror .hljs-doctag),
+:deep(.ProseMirror .hljs-keyword),
+:deep(.ProseMirror .hljs-formula) {
+  color: #c678dd;
+}
+
+:deep(.ProseMirror .hljs-section),
+:deep(.ProseMirror .hljs-name),
+:deep(.ProseMirror .hljs-selector-tag),
+:deep(.ProseMirror .hljs-deletion),
+:deep(.ProseMirror .hljs-subst) {
+  color: #e06c75;
+}
+
+:deep(.ProseMirror .hljs-literal) {
+  color: #56b6c2;
+}
+
+:deep(.ProseMirror .hljs-string),
+:deep(.ProseMirror .hljs-regexp),
+:deep(.ProseMirror .hljs-addition),
+:deep(.ProseMirror .hljs-attribute),
+:deep(.ProseMirror .hljs-meta .hljs-string) {
+  color: #98c379;
+}
+
+:deep(.ProseMirror .hljs-attr),
+:deep(.ProseMirror .hljs-variable),
+:deep(.ProseMirror .hljs-template-variable),
+:deep(.ProseMirror .hljs-type),
+:deep(.ProseMirror .hljs-selector-class),
+:deep(.ProseMirror .hljs-selector-attr),
+:deep(.ProseMirror .hljs-selector-pseudo),
+:deep(.ProseMirror .hljs-number) {
+  color: #d19a66;
+}
+
+:deep(.ProseMirror .hljs-symbol),
+:deep(.ProseMirror .hljs-bullet),
+:deep(.ProseMirror .hljs-link),
+:deep(.ProseMirror .hljs-meta),
+:deep(.ProseMirror .hljs-selector-id),
+:deep(.ProseMirror .hljs-title) {
+  color: #61aeee;
+}
+
+:deep(.ProseMirror .hljs-built_in),
+:deep(.ProseMirror .hljs-title.class_),
+:deep(.ProseMirror .hljs-class .hljs-title) {
+  color: #e6c07b;
+}
+
+:deep(.ProseMirror .hljs-emphasis) {
+  font-style: italic;
+}
+
+:deep(.ProseMirror .hljs-strong) {
+  font-weight: bold;
+}
+
+:deep(.ProseMirror .hljs-link) {
+  text-decoration: underline;
+}
+
+/* 搜索结果高亮样式 */
+:deep(.ProseMirror .search-result) {
+  background-color: #fef08a;
+  border-radius: 2px;
+}
+
+:deep(.ProseMirror .search-result-current) {
+  background-color: #fb923c;
+  color: #fff;
+}
+
+/* 图片懒加载占位符样式 */
+:deep(.ProseMirror img.lazy-image:not([src])),
+:deep(.ProseMirror img.lazy-image[src='']) {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  min-height: 100px;
+  border-radius: 0.75rem;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* 图片加载完成后的过渡效果 */
+:deep(.ProseMirror img.lazy-image[src]:not([src=''])) {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 </style>
