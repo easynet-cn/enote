@@ -202,7 +202,8 @@ datasource:
 ///
 /// 存储应用运行时需要的共享状态，通过 Tauri 状态管理器在各命令间共享
 pub struct AppState {
-    /// 应用配置
+    /// 应用配置（保留以备将来使用）
+    #[allow(dead_code)]
     pub configuration: Configuration,
     /// 数据库连接（连接池）
     pub database_connection: DatabaseConnection,

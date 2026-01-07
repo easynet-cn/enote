@@ -99,6 +99,7 @@ impl PageParam {
     }
 
     /// 规范化分页参数（自动修正无效值）
+    #[allow(dead_code)]
     pub fn normalize(&mut self) {
         if self.page_index < 1 {
             self.page_index = 1;
@@ -139,6 +140,7 @@ pub struct PageResult<T> {
 
 impl<T> PageResult<T> {
     /// 创建新的分页结果
+    #[allow(dead_code)]
     pub fn new(total: i64, total_pages: i64, data: Vec<T>) -> Self {
         Self {
             total,
@@ -468,9 +470,11 @@ pub struct NoteSearchPageParam {
 
 impl NoteSearchPageParam {
     /// 最大关键词长度
+    #[allow(dead_code)]
     const MAX_KEYWORD_LENGTH: usize = 500;
 
     /// 验证搜索参数
+    #[allow(dead_code)]
     pub fn validate(&self) -> anyhow::Result<()> {
         self.page_param.validate()?;
 
@@ -482,6 +486,7 @@ impl NoteSearchPageParam {
     }
 
     /// 规范化搜索参数
+    #[allow(dead_code)]
     pub fn normalize(&mut self) {
         self.page_param.normalize();
 

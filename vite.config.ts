@@ -10,6 +10,9 @@ const host = process.env.TAURI_DEV_HOST
 export default defineConfig(async () => ({
   plugins: [vue(), tailwindcss()],
 
+  // Use relative paths for Tauri production build
+  base: './',
+
   // Path aliases (must match tsconfig.json paths)
   resolve: {
     alias: {
@@ -46,25 +49,14 @@ export default defineConfig(async () => ({
 
   // Build optimizations
   build: {
-    // Chunk splitting for better caching
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          tiptap: [
-            '@tiptap/vue-3',
-            '@tiptap/starter-kit',
-            'tiptap-markdown',
-          ],
-          vendor: ['vue', 'pinia', 'marked'],
-        },
-      },
-    },
     // Faster builds by not reporting compressed size
     reportCompressedSize: false,
     // Target modern browsers for smaller bundle
     target: 'esnext',
     // Minification settings
     minify: 'esbuild',
+    // Increase warning limit since Tauri apps load locally
+    chunkSizeWarningLimit: 1000,
   },
 
   // Vite options tailored for Tauri development

@@ -8,6 +8,7 @@ use thiserror::Error;
 
 /// 应用程序错误类型
 #[derive(Error, Debug)]
+#[allow(dead_code)]
 pub enum AppError {
     /// 数据库操作错误
     #[error("数据库错误: {0}")]
@@ -146,16 +147,19 @@ impl AppError {
     }
 
     /// 创建验证错误
+    #[allow(dead_code)]
     pub fn validation(message: impl Into<String>) -> Self {
         AppError::Validation(message.into())
     }
 
     /// 创建业务错误
+    #[allow(dead_code)]
     pub fn business(message: impl Into<String>) -> Self {
         AppError::Business(message.into())
     }
 
     /// 创建资源未找到错误
+    #[allow(dead_code)]
     pub fn not_found(resource: impl Into<String>, id: i64) -> Self {
         AppError::NotFound {
             resource: resource.into(),
@@ -165,4 +169,5 @@ impl AppError {
 }
 
 /// 结果类型别名
+#[allow(dead_code)]
 pub type AppResult<T> = Result<T, AppError>;

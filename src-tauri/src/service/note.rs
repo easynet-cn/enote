@@ -78,6 +78,7 @@ pub async fn find_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<Opti
 /// # 返回
 /// - `Ok(i64)`: 笔记总数
 /// - `Err`: 查询失败
+#[allow(dead_code)]
 pub async fn total_count(db: &DatabaseConnection) -> anyhow::Result<i64> {
     let total_count = entity::note::Entity::find()
         .select_only()
@@ -343,8 +344,6 @@ pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
 
         if tags_changed {
             // 使用差集计算，只删除和添加变化的部分
-            use std::collections::HashSet;
-
             let old_set: HashSet<i64> = old_tag_ids.iter().cloned().collect();
             let new_set: HashSet<i64> = new_tag_ids.iter().cloned().collect();
 
@@ -633,6 +632,9 @@ pub async fn stats(
     db: &DatabaseConnection,
     search_param: &NoteSearchPageParam,
 ) -> anyhow::Result<NoteStatsResult> {
+    // 检查是否为 SQLite 数据库（支持 FTS5）
+    let is_sqlite = db.get_database_backend() == sea_orm::DatabaseBackend::Sqlite;
+
     // 构建计数查询、数据查询、分组统计查询
     let mut count_builder = entity::note::Entity::find();
     let mut count_map_builder = entity::note::Entity::find()
@@ -662,20 +664,35 @@ pub async fn stats(
     if !search_param.keyword.is_empty() {
         let keyword = search_param.keyword.as_str();
 
-        count_builder = count_builder.filter(
-            Condition::all().add(
-                Condition::any()
-                    .add(entity::note::Column::Title.contains(keyword))
-                    .add(entity::note::Column::Content.contains(keyword)),
-            ),
-        );
-        count_map_builder = count_map_builder.filter(
-            Condition::all().add(
-                Condition::any()
-                    .add(entity::note::Column::Title.contains(keyword))
-                    .add(entity::note::Column::Content.contains(keyword)),
-            ),
-        );
+        if is_sqlite {
+            // SQLite: 使用 FTS5 全文搜索（高性能）
+            let fts_keyword = keyword.replace('"', "\"\"");
+            let fts_query = format!("\"{}\"", fts_keyword);
+
+            let fts_condition = Expr::cust_with_values(
+                "id IN (SELECT rowid FROM note_fts WHERE note_fts MATCH ?)",
+                [fts_query.clone()],
+            );
+
+            count_builder = count_builder.filter(fts_condition.clone());
+            count_map_builder = count_map_builder.filter(fts_condition);
+        } else {
+            // MySQL/PostgreSQL: 使用 LIKE 查询
+            count_builder = count_builder.filter(
+                Condition::all().add(
+                    Condition::any()
+                        .add(entity::note::Column::Title.contains(keyword))
+                        .add(entity::note::Column::Content.contains(keyword)),
+                ),
+            );
+            count_map_builder = count_map_builder.filter(
+                Condition::all().add(
+                    Condition::any()
+                        .add(entity::note::Column::Title.contains(keyword))
+                        .add(entity::note::Column::Content.contains(keyword)),
+                ),
+            );
+        }
     }
 
     let total = count_builder
