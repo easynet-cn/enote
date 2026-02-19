@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed, toRaw } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ContentType } from '../types'
 import type { ShowNotebook, ShowTag, ShowNote, NoteHistory, NoteSearchPageParam } from '../types'
 import {
@@ -9,6 +10,8 @@ import {
 } from '../config/constants'
 
 export const useAppStore = defineStore('app', () => {
+  const { t } = useI18n()
+
   // ==================== 数据状态 ====================
   // 使用 Map 优化查询性能 O(1)
   const notebooksMap = ref<Map<string, ShowNotebook>>(new Map())
@@ -20,13 +23,23 @@ export const useAppStore = defineStore('app', () => {
   const tagIds = ref<string[]>(['0'])
   const noteIds = ref<string[]>([])
 
-  // 默认项
-  const defaultNotebook: ShowNotebook = { id: '0', name: '全部', count: 0, icon: 'BookOpen' }
-  const defaultTag: ShowTag = { id: '0', name: '全部', icon: 'Tags' }
+  // 默认项（使用计算属性支持国际化）
+  const defaultNotebook = computed<ShowNotebook>(() => ({
+    id: '0',
+    name: t('notebook.all'),
+    count: 0,
+    icon: 'BookOpen',
+  }))
+
+  const defaultTag = computed<ShowTag>(() => ({
+    id: '0',
+    name: t('tag.all'),
+    icon: 'Tags',
+  }))
 
   // 初始化默认项
-  notebooksMap.value.set('0', defaultNotebook)
-  tagsMap.value.set('0', defaultTag)
+  notebooksMap.value.set('0', defaultNotebook.value)
+  tagsMap.value.set('0', defaultTag.value)
 
   // 历史记录
   const histories = ref<NoteHistory[]>([])
@@ -91,7 +104,7 @@ export const useAppStore = defineStore('app', () => {
   // 设置笔记本列表
   const setNotebooks = (items: ShowNotebook[]) => {
     notebooksMap.value.clear()
-    notebooksMap.value.set('0', defaultNotebook)
+    notebooksMap.value.set('0', defaultNotebook.value)
     notebookIds.value = ['0']
 
     for (const item of items) {
@@ -114,7 +127,7 @@ export const useAppStore = defineStore('app', () => {
   // 设置标签列表
   const setTags = (items: ShowTag[]) => {
     tagsMap.value.clear()
-    tagsMap.value.set('0', defaultTag)
+    tagsMap.value.set('0', defaultTag.value)
     tagIds.value = ['0']
 
     for (const item of items) {
@@ -132,6 +145,12 @@ export const useAppStore = defineStore('app', () => {
   const removeTag = (id: string) => {
     tagsMap.value.delete(id)
     tagIds.value = tagIds.value.filter((tid) => tid !== id)
+  }
+
+  // 更新默认项的语言（用于语言切换时调用）
+  const updateDefaultItems = () => {
+    notebooksMap.value.set('0', defaultNotebook.value)
+    tagsMap.value.set('0', defaultTag.value)
   }
 
   // 设置笔记列表
@@ -291,5 +310,8 @@ export const useAppStore = defineStore('app', () => {
     startEdit,
     cancelEdit,
     resetSearchParam,
+
+    // Actions - 国际化
+    updateDefaultItems,
   }
 })

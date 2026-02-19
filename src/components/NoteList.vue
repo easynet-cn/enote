@@ -20,7 +20,7 @@
       @click="$emit('toggle-collapse')"
       class="absolute -right-3.5 top-1/2 -translate-y-1/2 z-30 w-7 h-7 bg-white border border-slate-200 rounded-full shadow-sm flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-all hover:scale-110 active:scale-95"
       :aria-label="collapsed ? '展开列表' : '收起列表'"
-      :title="collapsed ? '展开列表' : '收起列表'"
+      :title="collapsed ? t('noteList.expandList') : t('noteList.collapseList')"
     >
       <ChevronRight v-if="collapsed" class="w-4 h-4" aria-hidden="true" />
       <ChevronLeft v-else class="w-4 h-4" aria-hidden="true" />
@@ -39,7 +39,7 @@
           <input
             v-model="query"
             type="text"
-            placeholder="搜索笔记..."
+            :placeholder="t('noteList.searchPlaceholder')"
             aria-label="搜索笔记"
             class="w-full pl-9 pr-8 py-2.5 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all"
             @keyup.enter="$emit('updateSearchQuery')"
@@ -47,7 +47,7 @@
           <button
             v-if="query"
             @click="handlerQueryChange"
-            aria-label="清除搜索"
+            :aria-label="t('noteList.clearSearch')"
             class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
           >
             <X class="w-4 h-4" />
@@ -93,7 +93,7 @@
             @keydown.down.prevent="focusNextNote(index)"
           >
             <div class="font-semibold text-slate-900 mb-1 truncate">
-              {{ note.title || '无标题' }}
+              {{ note.title || t('noteList.noTitle') }}
             </div>
             <div class="text-sm text-slate-500 mb-2 line-clamp-2">
               {{ getPreviewText(note) }}
@@ -126,6 +126,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Search, X, FileText, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { Pagination } from './ui'
 import NoteListSkeleton from './NoteListSkeleton.vue'
@@ -134,6 +135,8 @@ import { LRUCache } from '../utils/lruCache'
 import { throttle } from '../utils/debounce'
 import { ContentType, type ShowNotebook, type ShowNote } from '../types'
 import { PREVIEW_CACHE_MAX_SIZE, PREVIEW_TEXT_MAX_LENGTH } from '../config/constants'
+
+const { t } = useI18n()
 
 // 预览文本缓存（使用 LRUCache 自动淘汰最久未使用的项）
 const previewTextCache = new LRUCache<string, string>(PREVIEW_CACHE_MAX_SIZE, 0)
@@ -221,9 +224,9 @@ const activeNotebookName = computed(() => {
 
 const emptyMessage = computed(() => {
   if (query.value) {
-    return '没有找到匹配的笔记'
+    return t('noteList.noResults')
   }
-  return '还没有笔记，点击创建新笔记'
+  return t('noteList.empty')
 })
 
 /**
@@ -246,7 +249,7 @@ const getPreviewText = (note: ShowNote): string => {
     html = markdownToHtml(note.content)
   }
   const text = stripHtml(html)
-  const result = truncateText(text, PREVIEW_TEXT_MAX_LENGTH) || '无内容'
+  const result = truncateText(text, PREVIEW_TEXT_MAX_LENGTH) || t('noteList.noContent')
 
   // 存入缓存（LRUCache 自动淘汰旧项）
   previewTextCache.set(cacheKey, result)

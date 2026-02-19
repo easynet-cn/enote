@@ -34,17 +34,18 @@
         @click="handleSelectFile"
       >
         <Upload class="w-12 h-12 mx-auto mb-3 text-slate-400" />
-        <p v-if="!selectedFilePath" class="text-slate-600">点击选择文件</p>
+        <p v-if="!selectedFilePath" class="text-slate-600">{{ t('import.selectFile') }}</p>
         <p v-else class="text-indigo-600 font-medium break-all">{{ selectedFileName }}</p>
         <p class="text-xs text-slate-400 mt-2">
-          支持格式: {{ currentSourceConfig?.fileTypes.map((t) => '.' + t).join(', ') }}
+          {{ t('import.supportedFormats') }}:
+          {{ currentSourceConfig?.fileTypes.map((t) => '.' + t).join(', ') }}
         </p>
       </div>
     </div>
 
     <!-- 步骤 3: 选择目标笔记本 -->
     <div v-else-if="step === 3" class="space-y-4">
-      <p class="text-sm text-slate-500">选择要导入到的笔记本:</p>
+      <p class="text-sm text-slate-500">{{ t('import.selectNotebook') }}:</p>
 
       <select
         v-model="targetNotebookId"
@@ -57,7 +58,7 @@
 
       <div class="flex items-center gap-2 text-sm text-slate-600">
         <input id="createTags" v-model="createTags" type="checkbox" class="rounded" />
-        <label for="createTags">自动创建不存在的标签</label>
+        <label for="createTags">{{ t('import.autoCreateTags') }}</label>
       </div>
     </div>
 
@@ -66,7 +67,8 @@
       <div v-if="importing" class="text-center py-4">
         <Loader2 class="w-10 h-10 mx-auto mb-3 text-indigo-500 animate-spin" />
         <p class="text-slate-600 mb-2">
-          {{ progress.phase === 'parsing' ? '正在解析' : '正在导入' }}: {{ progress.currentTitle }}
+          {{ progress.phase === 'parsing' ? t('import.parsing') : t('import.importing') }}:
+          {{ progress.currentTitle }}
         </p>
         <div class="w-full bg-slate-200 rounded-full h-2">
           <div
@@ -85,17 +87,17 @@
         <AlertCircle v-else class="w-12 h-12 mx-auto mb-3 text-amber-500" />
 
         <p class="text-lg font-medium text-slate-800 mb-2">
-          {{ importResult?.failed === 0 ? '导入完成' : '导入完成（部分失败）' }}
+          {{ importResult?.failed === 0 ? t('import.success') : t('import.partialSuccess') }}
         </p>
 
         <div class="flex justify-center gap-6 text-sm">
           <div class="text-green-600">
             <span class="font-bold text-lg">{{ importResult?.success }}</span>
-            <span class="ml-1">成功</span>
+            <span class="ml-1">{{ t('import.success') }}</span>
           </div>
           <div v-if="importResult?.failed" class="text-red-600">
             <span class="font-bold text-lg">{{ importResult?.failed }}</span>
-            <span class="ml-1">失败</span>
+            <span class="ml-1">{{ t('import.error') }}</span>
           </div>
         </div>
 
@@ -117,7 +119,7 @@
           class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
           @click="prevStep"
         >
-          上一步
+          {{ t('import.prevStep') }}
         </button>
         <div v-else></div>
 
@@ -127,7 +129,7 @@
             class="px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
             @click="handleClose"
           >
-            {{ step === 4 ? '关闭' : '取消' }}
+            {{ step === 4 ? t('common.close') : t('common.cancel') }}
           </button>
 
           <button
@@ -163,6 +165,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Dialog } from './ui'
 import {
   FileText,
@@ -185,6 +188,8 @@ import {
 } from '../utils/import'
 import { noteApi } from '../api/note'
 import { ContentType, type ShowNotebook, type ShowTag, type Tag } from '../types'
+
+const { t } = useI18n()
 
 interface Props {
   notebooks: ShowNotebook[]
@@ -220,15 +225,17 @@ const importResult = ref<ImportResult | null>(null)
 const dialogTitle = computed(() => {
   switch (step.value) {
     case 1:
-      return '导入笔记 - 选择来源'
+      return `${t('import.title')} - ${t('import.selectFile')}`
     case 2:
-      return '导入笔记 - 选择文件'
+      return `${t('import.title')} - ${t('import.format')}`
     case 3:
-      return '导入笔记 - 选择笔记本'
+      return `${t('import.title')} - ${t('import.selectNotebook')}`
     case 4:
-      return importing.value ? '导入笔记 - 导入中' : '导入笔记 - 完成'
+      return importing.value
+        ? `${t('import.title')} - ${t('import.importing')}`
+        : `${t('import.title')} - ${t('import.success')}`
     default:
-      return '导入笔记'
+      return t('import.title')
   }
 })
 

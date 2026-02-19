@@ -12,7 +12,7 @@
       @click="$emit('toggle-collapse')"
       class="absolute -right-3.5 top-1/2 -translate-y-1/2 z-10 w-7 h-7 bg-white border border-slate-200 rounded-full shadow-sm flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-all hover:scale-110 active:scale-95"
       :aria-label="collapsed ? '展开侧边栏' : '收起侧边栏'"
-      :title="collapsed ? '展开侧边栏' : '收起侧边栏'"
+      :title="collapsed ? t('sidebar.expand') : t('sidebar.collapse')"
     >
       <ChevronRight v-if="collapsed" class="w-4 h-4" aria-hidden="true" />
       <ChevronLeft v-else class="w-4 h-4" aria-hidden="true" />
@@ -26,7 +26,7 @@
         circle
         @click="$emit('createNewNote')"
         aria-label="创建新笔记"
-        title="创建新笔记"
+        title="{{ t('sidebar.createNotebook') }}"
       >
         <template #icon>
           <Plus class="w-5 h-5" aria-hidden="true" />
@@ -36,21 +36,23 @@
         <template #icon>
           <Plus class="w-4 h-4" aria-hidden="true" />
         </template>
-        创建新笔记
+        {{ t('sidebar.createNotebook') }}
       </Button>
     </div>
 
     <template v-if="!collapsed">
       <div class="p-4 border-b border-slate-200">
         <div class="flex justify-between items-center mb-3">
-          <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider">笔记本</h2>
+          <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider">
+            {{ t('sidebar.notebooks') }}
+          </h2>
           <Dropdown ref="notebookDropdownRef" @command="handleNotebookCommand">
             <template #trigger>
               <Menu class="w-4 h-4 text-slate-500 hover:text-slate-700 cursor-pointer" />
             </template>
             <DropdownItem command="create" @command="handleNotebookCommand">
               <Plus class="w-4 h-4" />
-              <span>添加</span>
+              <span>{{ t('common.add') }}</span>
             </DropdownItem>
             <DropdownItem
               v-if="showNotebookEditAndDelete"
@@ -58,7 +60,7 @@
               @command="handleNotebookCommand"
             >
               <Pencil class="w-4 h-4" />
-              <span>编辑</span>
+              <span>{{ t('common.edit') }}</span>
             </DropdownItem>
             <DropdownItem
               v-if="showNotebookEditAndDelete"
@@ -66,7 +68,7 @@
               @command="handleNotebookCommand"
             >
               <Trash2 class="w-4 h-4" />
-              <span>删除</span>
+              <span>{{ t('common.delete') }}</span>
             </DropdownItem>
           </Dropdown>
         </div>
@@ -101,7 +103,11 @@
                 >●</span
               >
               <span class="flex-1">{{ notebook.name }}</span>
-              <span class="text-xs text-slate-400" aria-label="笔记数量">{{ notebook.count }}</span>
+              <span
+                class="text-xs text-slate-400"
+                :aria-label="`${t('sidebar.notesCount')}: ${notebook.count}`"
+                >{{ notebook.count }}</span
+              >
             </div>
           </li>
         </ul>
@@ -109,22 +115,24 @@
 
       <div class="p-4 flex-1 overflow-y-auto">
         <div class="flex justify-between items-center mb-3">
-          <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider">标签</h2>
+          <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider">
+            {{ t('sidebar.tags') }}
+          </h2>
           <Dropdown ref="tagDropdownRef" @command="handleTagCommand">
             <template #trigger>
               <Menu class="w-4 h-4 text-slate-500 hover:text-slate-700 cursor-pointer" />
             </template>
             <DropdownItem command="create" @command="handleTagCommand">
               <Plus class="w-4 h-4" />
-              <span>添加</span>
+              <span>{{ t('common.add') }}</span>
             </DropdownItem>
             <DropdownItem v-if="showTagEditAndDelete" command="edit" @command="handleTagCommand">
               <Pencil class="w-4 h-4" />
-              <span>编辑</span>
+              <span>{{ t('common.edit') }}</span>
             </DropdownItem>
             <DropdownItem v-if="showTagEditAndDelete" command="delete" @command="handleTagCommand">
               <Trash2 class="w-4 h-4" />
-              <span>删除</span>
+              <span>{{ t('common.delete') }}</span>
             </DropdownItem>
           </Dropdown>
         </div>
@@ -156,13 +164,20 @@
       </div>
 
       <!-- 底部工具区域 -->
-      <div class="h-12 px-4 border-t border-slate-200 flex items-center">
+      <div class="h-12 px-4 border-t border-slate-200 flex items-center gap-2">
         <button
-          class="w-full flex items-center justify-center gap-2 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+          class="flex items-center justify-center gap-2 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors flex-1"
           @click="$emit('openImport')"
         >
           <Import class="w-4 h-4" />
-          <span>导入笔记</span>
+          <span>{{ t('sidebar.importNotes') }}</span>
+        </button>
+        <button
+          class="flex items-center justify-center p-1.5 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+          :title="t('common.settings')"
+          @click="handleLocaleChange"
+        >
+          <Languages class="w-4 h-4" />
         </button>
       </div>
     </template>
@@ -174,7 +189,8 @@
       <div class="space-y-4">
         <div>
           <label for="notebook-name" class="block text-sm font-medium text-slate-700 mb-1"
-            >名称 <span class="text-red-500" aria-hidden="true">*</span></label
+            >{{ t('sidebar.notebookForm.nameLabel') }}
+            <span class="text-red-500" aria-hidden="true">*</span></label
           >
           <input
             id="notebook-name"
@@ -182,33 +198,42 @@
             type="text"
             required
             aria-required="true"
+            :placeholder="t('sidebar.notebookForm.namePlaceholder')"
             class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
         <div>
-          <label for="notebook-desc" class="block text-sm font-medium text-slate-700 mb-1"
-            >描述</label
-          >
+          <label for="notebook-desc" class="block text-sm font-medium text-slate-700 mb-1">{{
+            t('sidebar.notebookForm.descriptionLabel')
+          }}</label>
           <input
             id="notebook-desc"
             v-model="notebookForm.description"
             type="text"
+            :placeholder="t('sidebar.notebookForm.descriptionPlaceholder')"
             class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">图标</label>
-          <IconPicker v-model="notebookForm.icon" placeholder="选择图标" clearable />
+          <label class="block text-sm font-medium text-slate-700 mb-2">{{
+            t('common.icon')
+          }}</label>
+          <IconPicker
+            v-model="notebookForm.icon"
+            :placeholder="t('sidebar.selectIcon')"
+            clearable
+          />
         </div>
         <div>
-          <label for="notebook-sort" class="block text-sm font-medium text-slate-700 mb-1"
-            >排序</label
-          >
+          <label for="notebook-sort" class="block text-sm font-medium text-slate-700 mb-1">{{
+            t('sidebar.notebookForm.sortOrderLabel')
+          }}</label>
           <input
             id="notebook-sort"
             v-model.number="notebookForm.sortOrder"
             type="number"
             min="0"
+            :placeholder="t('sidebar.notebookForm.sortOrderPlaceholder')"
             class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
@@ -216,8 +241,8 @@
     </form>
     <template #footer>
       <div class="flex justify-end gap-3">
-        <Button type="secondary" @click="closeNotebookDialog">取消</Button>
-        <Button type="primary" @click="submitNotebookForm">保存</Button>
+        <Button type="secondary" @click="closeNotebookDialog">{{ t('common.cancel') }}</Button>
+        <Button type="primary" @click="submitNotebookForm">{{ t('common.save') }}</Button>
       </div>
     </template>
   </Dialog>
@@ -228,7 +253,8 @@
       <div class="space-y-4">
         <div>
           <label for="tag-name" class="block text-sm font-medium text-slate-700 mb-1"
-            >名称 <span class="text-red-500" aria-hidden="true">*</span></label
+            >{{ t('sidebar.tagForm.nameLabel') }}
+            <span class="text-red-500" aria-hidden="true">*</span></label
           >
           <input
             id="tag-name"
@@ -236,24 +262,40 @@
             type="text"
             required
             aria-required="true"
+            :placeholder="t('sidebar.tagForm.namePlaceholder')"
             class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">图标</label>
-          <IconPicker v-model="tagForm.icon" placeholder="选择图标" clearable />
+          <label class="block text-sm font-medium text-slate-700 mb-2">{{
+            t('common.icon')
+          }}</label>
+          <IconPicker
+            v-model="tagForm.icon"
+            :placeholder="t('sidebar.tagForm.iconPlaceholder')"
+            clearable
+          />
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">样式颜色</label>
-          <StylePicker v-model="tagForm.cls" placeholder="选择颜色样式" clearable />
+          <label class="block text-sm font-medium text-slate-700 mb-2">{{
+            t('sidebar.tagForm.colorLabel')
+          }}</label>
+          <StylePicker
+            v-model="tagForm.cls"
+            :placeholder="t('sidebar.tagForm.colorPlaceholder')"
+            clearable
+          />
         </div>
         <div>
-          <label for="tag-sort" class="block text-sm font-medium text-slate-700 mb-1">排序</label>
+          <label for="tag-sort" class="block text-sm font-medium text-slate-700 mb-1">{{
+            t('sidebar.tagForm.sortOrderLabel')
+          }}</label>
           <input
             id="tag-sort"
             v-model.number="tagForm.sortOrder"
             type="number"
             min="0"
+            :placeholder="t('sidebar.tagForm.sortOrderPlaceholder')"
             class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
@@ -261,8 +303,8 @@
     </form>
     <template #footer>
       <div class="flex justify-end gap-3">
-        <Button type="secondary" @click="closeTagDialog">取消</Button>
-        <Button type="primary" @click="submitTagForm">保存</Button>
+        <Button type="secondary" @click="closeTagDialog">{{ t('common.cancel') }}</Button>
+        <Button type="primary" @click="submitTagForm">{{ t('common.save') }}</Button>
       </div>
     </template>
   </Dialog>
@@ -270,26 +312,35 @@
   <!-- 删除笔记本确认弹窗 -->
   <ConfirmDialog
     v-model="deleteNotebookConfirm"
-    title="删除笔记本"
-    message="确定要删除这个笔记本吗？笔记本下的所有笔记也将被删除，此操作不可恢复。"
+    :title="t('sidebar.deleteNotebookConfirm.title')"
+    :message="t('sidebar.deleteNotebookConfirm.message')"
     type="danger"
-    confirm-text="删除"
+    :confirm-text="t('sidebar.deleteNotebookConfirm.confirmText')"
     @confirm="confirmDeleteNotebook"
   />
 
   <!-- 删除标签确认弹窗 -->
   <ConfirmDialog
     v-model="deleteTagConfirm"
-    title="删除标签"
-    message="确定要删除这个标签吗？此操作不可恢复。"
+    :title="t('sidebar.deleteTagConfirm.title')"
+    :message="t('sidebar.deleteTagConfirm.message')"
     type="danger"
-    confirm-text="删除"
+    :confirm-text="t('sidebar.deleteTagConfirm.confirmText')"
     @confirm="confirmDeleteTag"
   />
 </template>
 
 <script setup lang="ts">
-import { Plus, Pencil, Trash2, Menu, ChevronLeft, ChevronRight, Import } from 'lucide-vue-next'
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Menu,
+  ChevronLeft,
+  ChevronRight,
+  Import,
+  Languages,
+} from 'lucide-vue-next'
 import {
   Button,
   IconPicker,
@@ -302,6 +353,21 @@ import {
 import { iconComponents } from './ui/icons'
 import type { ShowNotebook, ShowTag } from '../types'
 import { computed, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { setLocale, type LocaleType } from '../i18n'
+import { useAppStore } from '../stores/app'
+
+const { t, locale } = useI18n()
+const appStore = useAppStore()
+
+const currentLocale = computed(() => locale.value as LocaleType)
+
+const handleLocaleChange = () => {
+  // 在两种语言之间切换
+  const newLocale: LocaleType = currentLocale.value === 'zh-CN' ? 'en-US' : 'zh-CN'
+  setLocale(newLocale)
+  appStore.updateDefaultItems()
+}
 
 interface NotebookForm {
   id: string
@@ -338,9 +404,9 @@ const tagForm = reactive<TagForm>({
 })
 
 const notebookDialog = ref(false)
-const notebookDialogTitle = ref('添加笔记本')
+const notebookDialogTitle = ref(t('sidebar.notebookForm.createTitle'))
 const tagDialog = ref(false)
-const tagDialogTitle = ref('添加标签')
+const tagDialogTitle = ref(t('sidebar.tagForm.createTitle'))
 
 // 删除确认弹窗状态
 const deleteNotebookConfirm = ref(false)
@@ -433,7 +499,7 @@ const handleNotebookCommand = (command: string) => {
 
   if (command === 'create') {
     resetNotebookForm()
-    notebookDialogTitle.value = '添加笔记本'
+    notebookDialogTitle.value = t('sidebar.notebookForm.createTitle')
     notebookDialog.value = true
   } else if (command === 'edit') {
     const notebook = props.notebooks.find((n) => n.id === props.activeNotebook)
@@ -447,7 +513,7 @@ const handleNotebookCommand = (command: string) => {
       notebookForm.sortOrder = notebook.sortOrder ?? 0
     }
 
-    notebookDialogTitle.value = '编辑笔记本'
+    notebookDialogTitle.value = t('sidebar.notebookForm.editTitle')
     notebookDialog.value = true
   } else if (command === 'delete') {
     deleteNotebookConfirm.value = true
@@ -471,7 +537,7 @@ const handleTagCommand = (command: string) => {
 
   if (command === 'create') {
     resetTagForm()
-    tagDialogTitle.value = '添加标签'
+    tagDialogTitle.value = t('sidebar.tagForm.createTitle')
     tagDialog.value = true
   } else if (command === 'edit') {
     const tag = props.tags.find((t) => t.id === props.activeTag)
@@ -484,7 +550,7 @@ const handleTagCommand = (command: string) => {
       tagForm.sortOrder = tag.sortOrder ?? 0
     }
 
-    tagDialogTitle.value = '编辑标签'
+    tagDialogTitle.value = t('sidebar.tagForm.editTitle')
     tagDialog.value = true
   } else if (command === 'delete') {
     deleteTagConfirm.value = true

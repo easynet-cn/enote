@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-screen bg-slate-50">
+  <div class="flex h-screen bg-slate-50 relative">
     <!-- 侧边栏组件 -->
     <AppSidebar
       :notebooks="notebooks"
@@ -73,12 +73,15 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useNotes } from './composables/useNotes'
 import { useKeyboardShortcuts } from './composables/useKeyboardShortcuts'
 import AppSidebar from './components/AppSidebar.vue'
 import NoteList from './components/NoteList.vue'
 import NoteEditor from './components/NoteEditor.vue'
 import ImportDialog from './components/ImportDialog.vue'
+
+const { t } = useI18n()
 
 // 折叠状态
 const sidebarCollapsed = ref(false)
@@ -151,7 +154,7 @@ useKeyboardShortcuts([
         saveNote()
       }
     },
-    description: '保存笔记',
+    description: t('shortcuts.save'),
   },
   {
     key: 'n',
@@ -159,7 +162,7 @@ useKeyboardShortcuts([
     handler: () => {
       createNewNote()
     },
-    description: '新建笔记',
+    description: t('shortcuts.newNote'),
   },
   {
     key: 'e',
@@ -169,7 +172,7 @@ useKeyboardShortcuts([
         editMode.value = true
       }
     },
-    description: '编辑笔记',
+    description: t('shortcuts.editNote'),
   },
   {
     key: 'Escape',
@@ -178,7 +181,7 @@ useKeyboardShortcuts([
         cancelEdit()
       }
     },
-    description: '取消编辑',
+    description: t('shortcuts.cancelEdit'),
   },
   {
     key: 'b',
@@ -186,7 +189,7 @@ useKeyboardShortcuts([
     handler: () => {
       sidebarCollapsed.value = !sidebarCollapsed.value
     },
-    description: '切换侧边栏',
+    description: t('shortcuts.toggleSidebar'),
   },
 ])
 </script>
