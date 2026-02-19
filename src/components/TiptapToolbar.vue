@@ -4,7 +4,7 @@
     <div class="toolbar-fixed toolbar-fixed-left">
       <!-- 新建笔记时的模式选择 -->
       <div v-if="isNewNote" class="toolbar-section">
-        <Tooltip content="内容格式（保存后不可更改）" placement="bottom">
+        <Tooltip :content="t('editor.toolbarTooltip.contentType')" placement="bottom">
           <select
             :value="contentType"
             @change="
@@ -17,8 +17,8 @@
                 : 'bg-indigo-50 text-indigo-700 border-indigo-300'
             "
           >
-            <option :value="ContentType.Html">富文本</option>
-            <option :value="ContentType.Markdown">Markdown</option>
+            <option :value="ContentType.Html">{{ t('editor.contentType.richText') }}</option>
+            <option :value="ContentType.Markdown">{{ t('editor.contentType.markdown') }}</option>
           </select>
         </Tooltip>
       </div>
@@ -29,7 +29,7 @@
           class="h-8 px-3 text-sm rounded-lg flex items-center font-medium"
           :class="isMarkdownMode ? 'bg-slate-800 text-white' : 'bg-indigo-50 text-indigo-700'"
         >
-          {{ isMarkdownMode ? 'Markdown' : '富文本' }}
+          {{ isMarkdownMode ? 'Markdown' : t('editor.contentType.richText') }}
         </span>
       </div>
     </div>
@@ -50,32 +50,32 @@
       <template v-if="!isMarkdownMode && editor">
         <!-- 标题和字体 -->
         <div class="toolbar-section">
-          <Tooltip content="标题级别" placement="bottom">
+          <Tooltip :content="t('editor.toolbarTooltip.headingLevel')" placement="bottom">
             <select
               v-model="headingLevel"
               @change="setHeading"
               :disabled="!editMode"
               class="h-8 px-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <option value="0">正文</option>
-              <option value="1">标题 1</option>
-              <option value="2">标题 2</option>
-              <option value="3">标题 3</option>
-              <option value="4">标题 4</option>
-              <option value="5">标题 5</option>
-              <option value="6">标题 6</option>
+              <option value="0">{{ t('editor.headingOptions.normal') }}</option>
+              <option value="1">{{ t('editor.headingOptions.h1') }}</option>
+              <option value="2">{{ t('editor.headingOptions.h2') }}</option>
+              <option value="3">{{ t('editor.headingOptions.h3') }}</option>
+              <option value="4">{{ t('editor.headingOptions.h4') }}</option>
+              <option value="5">{{ t('editor.headingOptions.h5') }}</option>
+              <option value="6">{{ t('editor.headingOptions.h6') }}</option>
             </select>
           </Tooltip>
 
-          <Tooltip content="字体" placement="bottom">
+          <Tooltip :content="t('editor.toolbarTooltip.fontFamily')" placement="bottom">
             <select
               v-model="fontFamily"
               @change="setFontFamily"
               :disabled="!editMode"
               class="h-8 px-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ml-1 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <option value="">默认字体</option>
-              <optgroup label="无衬线字体">
+              <option value="">{{ t('editor.fontOptions.default') }}</option>
+              <optgroup :label="t('editor.fontOptions.sansSerif')">
                 <option value="Arial, sans-serif">Arial</option>
                 <option value="Helvetica, sans-serif">Helvetica</option>
                 <option value="Verdana, sans-serif">Verdana</option>
@@ -84,7 +84,7 @@
                 <option value="Microsoft YaHei, sans-serif">微软雅黑</option>
                 <option value="PingFang SC, sans-serif">苹方</option>
               </optgroup>
-              <optgroup label="衬线字体">
+              <optgroup :label="t('editor.fontOptions.serif')">
                 <option value="Times New Roman, serif">Times New Roman</option>
                 <option value="Georgia, serif">Georgia</option>
                 <option value="Palatino, serif">Palatino</option>
@@ -92,13 +92,13 @@
                 <option value="KaiTi, serif">楷体</option>
                 <option value="FangSong, serif">仿宋</option>
               </optgroup>
-              <optgroup label="等宽字体">
+              <optgroup :label="t('editor.fontOptions.monospace')">
                 <option value="Courier New, monospace">Courier New</option>
                 <option value="Consolas, monospace">Consolas</option>
                 <option value="Monaco, monospace">Monaco</option>
                 <option value="Source Code Pro, monospace">Source Code Pro</option>
               </optgroup>
-              <optgroup label="艺术字体">
+              <optgroup :label="t('editor.fontOptions.artistic')">
                 <option value="Comic Sans MS, cursive">Comic Sans MS</option>
                 <option value="Impact, fantasy">Impact</option>
                 <option value="Brush Script MT, cursive">Brush Script</option>
@@ -106,14 +106,14 @@
             </select>
           </Tooltip>
 
-          <Tooltip content="字号" placement="bottom">
+          <Tooltip :content="t('editor.toolbarTooltip.fontSize')" placement="bottom">
             <select
               v-model="fontSize"
               @change="setFontSize"
               :disabled="!editMode"
               class="h-8 px-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ml-1 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <option value="">默认</option>
+              <option value="">{{ t('editor.fontOptions.defaultSize') }}</option>
               <option value="12px">12px</option>
               <option value="14px">14px</option>
               <option value="16px">16px</option>
@@ -132,7 +132,7 @@
         <!-- 字体样式 -->
         <div class="toolbar-section">
           <div class="btn-group">
-            <Tooltip content="粗体" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.bold')" placement="bottom">
               <button
                 :class="['toolbar-btn', { active: editor.isActive('bold') }]"
                 @click="editor.chain().focus().toggleBold().run()"
@@ -142,7 +142,7 @@
               </button>
             </Tooltip>
 
-            <Tooltip content="斜体" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.italic')" placement="bottom">
               <button
                 :class="['toolbar-btn', { active: editor.isActive('italic') }]"
                 @click="editor.chain().focus().toggleItalic().run()"
@@ -152,7 +152,7 @@
               </button>
             </Tooltip>
 
-            <Tooltip content="下划线" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.underline')" placement="bottom">
               <button
                 :class="['toolbar-btn', { active: editor.isActive('underline') }]"
                 @click="editor.chain().focus().toggleUnderline().run()"
@@ -162,7 +162,7 @@
               </button>
             </Tooltip>
 
-            <Tooltip content="删除线" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.strikethrough')" placement="bottom">
               <button
                 :class="['toolbar-btn', { active: editor.isActive('strike') }]"
                 @click="editor.chain().focus().toggleStrike().run()"
@@ -172,7 +172,7 @@
               </button>
             </Tooltip>
 
-            <Tooltip content="上标" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.superscript')" placement="bottom">
               <button
                 :class="['toolbar-btn', { active: editor.isActive('superscript') }]"
                 @click="editor.chain().focus().toggleSuperscript().run()"
@@ -182,7 +182,7 @@
               </button>
             </Tooltip>
 
-            <Tooltip content="下标" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.subscript')" placement="bottom">
               <button
                 :class="['toolbar-btn', { active: editor.isActive('subscript') }]"
                 @click="editor.chain().focus().toggleSubscript().run()"
@@ -197,7 +197,7 @@
         <!-- 文本对齐 -->
         <div class="toolbar-section">
           <div class="btn-group">
-            <Tooltip content="左对齐" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.alignLeft')" placement="bottom">
               <button
                 :class="['toolbar-btn', { active: editor.isActive({ textAlign: 'left' }) }]"
                 @click="editor.chain().focus().setTextAlign('left').run()"
@@ -207,7 +207,7 @@
               </button>
             </Tooltip>
 
-            <Tooltip content="居中" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.alignCenter')" placement="bottom">
               <button
                 :class="['toolbar-btn', { active: editor.isActive({ textAlign: 'center' }) }]"
                 @click="editor.chain().focus().setTextAlign('center').run()"
@@ -217,7 +217,7 @@
               </button>
             </Tooltip>
 
-            <Tooltip content="右对齐" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.alignRight')" placement="bottom">
               <button
                 :class="['toolbar-btn', { active: editor.isActive({ textAlign: 'right' }) }]"
                 @click="editor.chain().focus().setTextAlign('right').run()"
@@ -227,7 +227,7 @@
               </button>
             </Tooltip>
 
-            <Tooltip content="两端对齐" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.alignJustify')" placement="bottom">
               <button
                 :class="['toolbar-btn', { active: editor.isActive({ textAlign: 'justify' }) }]"
                 @click="editor.chain().focus().setTextAlign('justify').run()"
@@ -242,7 +242,7 @@
         <!-- 列表 -->
         <div class="toolbar-section">
           <div class="btn-group">
-            <Tooltip content="无序列表" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.bulletList')" placement="bottom">
               <button
                 :class="['toolbar-btn', { active: editor.isActive('bulletList') }]"
                 @click="editor.chain().focus().toggleBulletList().run()"
@@ -252,7 +252,7 @@
               </button>
             </Tooltip>
 
-            <Tooltip content="有序列表" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.orderedList')" placement="bottom">
               <button
                 :class="['toolbar-btn', { active: editor.isActive('orderedList') }]"
                 @click="editor.chain().focus().toggleOrderedList().run()"
@@ -262,7 +262,7 @@
               </button>
             </Tooltip>
 
-            <Tooltip content="任务列表" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.taskList')" placement="bottom">
               <button
                 :class="['toolbar-btn', { active: editor.isActive('taskList') }]"
                 @click="editor.chain().focus().toggleTaskList().run()"
@@ -277,7 +277,7 @@
         <!-- 缩进 -->
         <div class="toolbar-section">
           <div class="btn-group">
-            <Tooltip content="减少缩进" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.outdent')" placement="bottom">
               <button
                 class="toolbar-btn"
                 @click="editor.chain().focus().outdent().run()"
@@ -287,7 +287,7 @@
               </button>
             </Tooltip>
 
-            <Tooltip content="增加缩进" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.indent')" placement="bottom">
               <button
                 class="toolbar-btn"
                 @click="editor.chain().focus().indent().run()"
@@ -302,7 +302,7 @@
         <!-- 引用和代码 -->
         <div class="toolbar-section">
           <div class="btn-group">
-            <Tooltip content="引用" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.quote')" placement="bottom">
               <button
                 :class="['toolbar-btn', { active: editor.isActive('blockquote') }]"
                 @click="editor.chain().focus().toggleBlockquote().run()"
@@ -312,7 +312,7 @@
               </button>
             </Tooltip>
 
-            <Tooltip content="代码块" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.codeBlock')" placement="bottom">
               <button
                 :class="['toolbar-btn', { active: editor.isActive('codeBlock') }]"
                 @click="editor.chain().focus().toggleCodeBlock().run()"
@@ -322,7 +322,7 @@
               </button>
             </Tooltip>
 
-            <Tooltip content="行内代码" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.inlineCode')" placement="bottom">
               <button
                 :class="['toolbar-btn', { active: editor.isActive('code') }]"
                 @click="editor.chain().focus().toggleCode().run()"
@@ -337,7 +337,7 @@
         <!-- 链接和图片 -->
         <div class="toolbar-section">
           <div class="btn-group">
-            <Tooltip content="链接" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.link')" placement="bottom">
               <button
                 :class="['toolbar-btn', { active: editor.isActive('link') }]"
                 @click="openLinkDialog"
@@ -347,7 +347,7 @@
               </button>
             </Tooltip>
 
-            <Tooltip content="取消链接" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.unlink')" placement="bottom">
               <button
                 class="toolbar-btn"
                 @click="editor.chain().focus().unsetLink().run()"
@@ -357,7 +357,7 @@
               </button>
             </Tooltip>
 
-            <Tooltip content="图片" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.image')" placement="bottom">
               <button class="toolbar-btn" @click="openImageDialog" :disabled="!editMode">
                 <ImageIcon class="w-4 h-4" />
               </button>
@@ -368,13 +368,13 @@
         <!-- 表格 -->
         <div class="toolbar-section">
           <div class="btn-group">
-            <Tooltip content="插入表格" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.insertTable')" placement="bottom">
               <button class="toolbar-btn" @click="insertTable" :disabled="!editMode">
                 <TableIcon class="w-4 h-4" />
               </button>
             </Tooltip>
 
-            <Tooltip content="添加列" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.addColumn')" placement="bottom">
               <button
                 class="toolbar-btn"
                 @click="editor.chain().focus().addColumnAfter().run()"
@@ -384,7 +384,7 @@
               </button>
             </Tooltip>
 
-            <Tooltip content="添加行" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.addRow')" placement="bottom">
               <button
                 class="toolbar-btn"
                 @click="editor.chain().focus().addRowAfter().run()"
@@ -394,7 +394,7 @@
               </button>
             </Tooltip>
 
-            <Tooltip content="删除表格" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.deleteTable')" placement="bottom">
               <button
                 class="toolbar-btn"
                 @click="editor.chain().focus().deleteTable().run()"
@@ -409,7 +409,7 @@
         <!-- 其他功能 -->
         <div class="toolbar-section">
           <div class="btn-group">
-            <Tooltip content="高亮" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.highlight')" placement="bottom">
               <button
                 :class="['toolbar-btn', { active: editor.isActive('highlight') }]"
                 @click="editor.chain().focus().toggleHighlight().run()"
@@ -419,7 +419,7 @@
               </button>
             </Tooltip>
 
-            <Tooltip content="分隔线" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.divider')" placement="bottom">
               <button
                 class="toolbar-btn"
                 @click="editor.chain().focus().setHorizontalRule().run()"
@@ -429,7 +429,7 @@
               </button>
             </Tooltip>
 
-            <Tooltip content="清除格式" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.clearFormat')" placement="bottom">
               <button
                 class="toolbar-btn"
                 @click="editor.chain().focus().clearNodes().unsetAllMarks().run()"
@@ -439,7 +439,7 @@
               </button>
             </Tooltip>
 
-            <Tooltip content="查找替换" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.findReplace')" placement="bottom">
               <button
                 :class="['toolbar-btn', { active: searchDialogVisible }]"
                 @click="toggleSearchDialog"
@@ -449,7 +449,7 @@
               </button>
             </Tooltip>
 
-            <Tooltip content="目录" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.toc')" placement="bottom">
               <button :class="['toolbar-btn', { active: tocVisible }]" @click="emit('toggle-toc')">
                 <ListTree class="w-4 h-4" />
               </button>
@@ -460,7 +460,7 @@
         <!-- 撤销和重做 -->
         <div class="toolbar-section">
           <div class="btn-group">
-            <Tooltip content="撤销" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.undo')" placement="bottom">
               <button
                 class="toolbar-btn"
                 @click="editor.chain().focus().undo().run()"
@@ -470,7 +470,7 @@
               </button>
             </Tooltip>
 
-            <Tooltip content="重做" placement="bottom">
+            <Tooltip :content="t('editor.toolbarTooltip.redo')" placement="bottom">
               <button
                 class="toolbar-btn"
                 @click="editor.chain().focus().redo().run()"
@@ -484,7 +484,7 @@
 
         <!-- 颜色选择器 -->
         <div class="toolbar-section">
-          <Tooltip content="文本颜色" placement="bottom">
+          <Tooltip :content="t('editor.toolbarTooltip.textColor')" placement="bottom">
             <ColorPicker
               v-model="textColor"
               @change="setTextColor"
@@ -493,7 +493,7 @@
             />
           </Tooltip>
 
-          <Tooltip content="背景颜色" placement="bottom">
+          <Tooltip :content="t('editor.toolbarTooltip.backgroundColor')" placement="bottom">
             <ColorPicker
               v-model="highlightColor"
               @change="setHighlightColor"
@@ -507,7 +507,14 @@
       <!-- Markdown 源码/预览切换（Markdown 模式显示） -->
       <div v-if="isMarkdownMode" class="toolbar-section">
         <div class="btn-group">
-          <Tooltip :content="sourceMode ? '预览模式' : 'Markdown 源码'" placement="bottom">
+          <Tooltip
+            :content="
+              sourceMode
+                ? t('editor.toolbarTooltip.sourceMode')
+                : t('editor.toolbarTooltip.markdownSource')
+            "
+            placement="bottom"
+          >
             <button
               :class="['toolbar-btn', { active: sourceMode }]"
               @click="emit('toggle-source-mode')"
@@ -518,7 +525,7 @@
             </button>
           </Tooltip>
 
-          <Tooltip content="上下布局" placement="bottom">
+          <Tooltip :content="t('editor.toolbarTooltip.verticalLayout')" placement="bottom">
             <button
               :class="['toolbar-btn', { active: markdownLayout === MarkdownLayout.Vertical }]"
               @click="toggleLayout(MarkdownLayout.Vertical)"
@@ -528,7 +535,7 @@
             </button>
           </Tooltip>
 
-          <Tooltip content="左右布局" placement="bottom">
+          <Tooltip :content="t('editor.toolbarTooltip.horizontalLayout')" placement="bottom">
             <button
               :class="['toolbar-btn', { active: markdownLayout === MarkdownLayout.Horizontal }]"
               @click="toggleLayout(MarkdownLayout.Horizontal)"
@@ -555,21 +562,21 @@
     <div class="toolbar-fixed toolbar-fixed-right">
       <div class="toolbar-actions">
         <!-- 编辑按钮（非编辑模式显示） -->
-        <Tooltip v-if="!editMode" content="编辑" placement="bottom">
+        <Tooltip v-if="!editMode" :content="t('editor.toolbarTooltip.edit')" placement="bottom">
           <button class="action-btn action-btn-primary" @click="emit('edit')">
             <Pencil class="w-4 h-4" />
           </button>
         </Tooltip>
 
         <!-- 保存按钮（编辑模式显示） -->
-        <Tooltip v-if="editMode" content="保存" placement="bottom">
+        <Tooltip v-if="editMode" :content="t('editor.toolbarTooltip.save')" placement="bottom">
           <button class="action-btn action-btn-success" @click="emit('save')">
             <Check class="w-4 h-4" />
           </button>
         </Tooltip>
 
         <!-- 取消按钮（编辑模式显示） -->
-        <Tooltip v-if="editMode" content="取消" placement="bottom">
+        <Tooltip v-if="editMode" :content="t('editor.toolbarTooltip.cancel')" placement="bottom">
           <button class="action-btn action-btn-secondary" @click="emit('cancel')">
             <X class="w-4 h-4" />
           </button>
@@ -579,28 +586,28 @@
         <div class="action-divider"></div>
 
         <!-- 设置按钮（编辑模式显示） -->
-        <Tooltip v-if="editMode" content="设置" placement="bottom">
+        <Tooltip v-if="editMode" :content="t('editor.toolbarTooltip.settings')" placement="bottom">
           <button class="action-btn action-btn-ghost" @click="emit('settings')">
             <Settings class="w-4 h-4" />
           </button>
         </Tooltip>
 
         <!-- 导出按钮 -->
-        <Tooltip content="导出" placement="bottom">
+        <Tooltip :content="t('editor.toolbarTooltip.export')" placement="bottom">
           <button class="action-btn action-btn-ghost" @click="emit('export')">
             <Download class="w-4 h-4" />
           </button>
         </Tooltip>
 
         <!-- 历史记录按钮 -->
-        <Tooltip content="历史记录" placement="bottom">
+        <Tooltip :content="t('editor.toolbarTooltip.history')" placement="bottom">
           <button class="action-btn action-btn-ghost" @click="emit('history')">
             <History class="w-4 h-4" />
           </button>
         </Tooltip>
 
         <!-- 删除按钮 -->
-        <Tooltip content="删除" placement="bottom">
+        <Tooltip :content="t('editor.toolbarTooltip.delete')" placement="bottom">
           <button class="action-btn action-btn-danger" @click="emit('delete')">
             <Trash2 class="w-4 h-4" />
           </button>
@@ -610,14 +617,16 @@
   </div>
 
   <!-- 链接弹窗 -->
-  <Dialog v-model="linkDialogVisible" title="插入链接" :width="400">
+  <Dialog v-model="linkDialogVisible" :title="t('editor.linkDialog.title')" :width="400">
     <div class="space-y-4">
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">链接地址</label>
+        <label class="block text-sm font-medium text-slate-700 mb-1">{{
+          t('editor.linkDialog.urlLabel')
+        }}</label>
         <input
           v-model="linkUrl"
           type="text"
-          placeholder="https://example.com"
+          :placeholder="t('editor.linkDialog.url')"
           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
         />
       </div>
@@ -628,33 +637,37 @@
           @click="linkDialogVisible = false"
           class="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
         >
-          取消
+          {{ t('common.cancel') }}
         </button>
         <button
           @click="setLink"
           class="px-4 py-2 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
         >
-          确定
+          {{ t('common.confirm') }}
         </button>
       </div>
     </template>
   </Dialog>
 
   <!-- 图片弹窗 -->
-  <Dialog v-model="imageDialogVisible" title="插入图片" :width="400">
+  <Dialog v-model="imageDialogVisible" :title="t('editor.toolbar.image')" :width="400">
     <div class="space-y-4">
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">图片地址</label>
+        <label class="block text-sm font-medium text-slate-700 mb-1">{{
+          t('editor.linkDialog.imageUrlLabel')
+        }}</label>
         <input
           v-model="imageUrl"
           type="text"
-          placeholder="https://example.com/image.png"
+          :placeholder="t('editor.linkDialog.imageUrl')"
           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
         />
       </div>
-      <div class="text-center text-slate-500 text-sm">- 或 -</div>
+      <div class="text-center text-slate-500 text-sm">{{ t('editor.linkDialog.or') }}</div>
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">上传图片</label>
+        <label class="block text-sm font-medium text-slate-700 mb-1">{{
+          t('editor.linkDialog.uploadImage')
+        }}</label>
         <input
           type="file"
           accept="image/*"
@@ -669,38 +682,42 @@
           @click="imageDialogVisible = false"
           class="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
         >
-          取消
+          {{ t('common.cancel') }}
         </button>
         <button
           @click="insertImage"
           class="px-4 py-2 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
         >
-          确定
+          {{ t('common.confirm') }}
         </button>
       </div>
     </template>
   </Dialog>
 
   <!-- 查找替换弹窗 -->
-  <Dialog v-model="searchDialogVisible" title="查找替换" :width="400">
+  <Dialog v-model="searchDialogVisible" :title="t('editor.searchDialog.title')" :width="400">
     <div class="space-y-4">
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">查找</label>
+        <label class="block text-sm font-medium text-slate-700 mb-1">{{
+          t('editor.searchDialog.findLabel')
+        }}</label>
         <input
           v-model="searchTerm"
           type="text"
-          placeholder="输入要查找的文本"
+          :placeholder="t('editor.linkDialog.findPlaceholder')"
           @input="handleSearchInput"
           @keydown.enter="findNext"
           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
         />
       </div>
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">替换为</label>
+        <label class="block text-sm font-medium text-slate-700 mb-1">{{
+          t('editor.searchDialog.replaceLabel')
+        }}</label>
         <input
           v-model="replaceTerm"
           type="text"
-          placeholder="输入替换文本"
+          :placeholder="t('editor.linkDialog.replacePlaceholder')"
           @input="handleReplaceInput"
           class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
         />
@@ -713,12 +730,14 @@
             @change="handleCaseSensitiveChange"
             class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
           />
-          区分大小写
+          {{ t('editor.searchDialog.caseSensitive') }}
         </label>
         <span v-if="searchResultCount > 0" class="text-sm text-slate-500">
           {{ currentSearchIndex + 1 }} / {{ searchResultCount }}
         </span>
-        <span v-else-if="searchTerm" class="text-sm text-slate-400"> 无结果 </span>
+        <span v-else-if="searchTerm" class="text-sm text-slate-400">
+          {{ t('editor.searchDialog.noResults') }}
+        </span>
       </div>
     </div>
     <template #footer>
@@ -745,14 +764,14 @@
             :disabled="searchResultCount === 0"
             class="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            替换
+            {{ t('editor.searchDialog.replace') }}
           </button>
           <button
             @click="replaceAll"
             :disabled="searchResultCount === 0"
             class="px-4 py-2 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            全部替换
+            {{ t('editor.searchDialog.replaceAll') }}
           </button>
         </div>
       </div>
@@ -762,6 +781,7 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Editor } from '@tiptap/vue-3'
 import { ContentType, MarkdownLayout } from '../types'
 import { Tooltip, ColorPicker, Dialog } from './ui'
@@ -814,6 +834,8 @@ import {
   Search,
   ListTree,
 } from 'lucide-vue-next'
+
+const { t } = useI18n()
 
 interface Props {
   editor: Editor | null
