@@ -1,4 +1,5 @@
 import { showNotification } from '../components/ui/notification'
+import i18n from '../i18n'
 
 /**
  * 应用错误类型
@@ -11,6 +12,9 @@ export enum AppErrorCode {
   VALIDATION_ERROR = 'VALIDATION_ERROR',
   DATABASE_ERROR = 'DATABASE_ERROR',
   UNKNOWN_ERROR = 'UNKNOWN_ERROR',
+  BUSINESS_ERROR = 'BUSINESS_ERROR',
+  CONFIG_ERROR = 'CONFIG_ERROR',
+  INTERNAL_ERROR = 'INTERNAL_ERROR',
 }
 
 /**
@@ -24,16 +28,12 @@ export interface AppError {
 }
 
 /**
- * 错误消息映射
+ * 后端错误响应结构
  */
-const ErrorMessages: Record<AppErrorCode, string> = {
-  [AppErrorCode.NETWORK_ERROR]: '网络连接失败，请检查您的网络',
-  [AppErrorCode.TIMEOUT_ERROR]: '请求超时，请稍后重试',
-  [AppErrorCode.NOT_FOUND]: '请求的资源不存在',
-  [AppErrorCode.PERMISSION_DENIED]: '没有权限执行此操作',
-  [AppErrorCode.VALIDATION_ERROR]: '输入数据验证失败',
-  [AppErrorCode.DATABASE_ERROR]: '数据库操作失败',
-  [AppErrorCode.UNKNOWN_ERROR]: '操作失败，请稍后重试',
+export interface BackendErrorResponse {
+  code: string
+  message: string
+  details?: string
 }
 
 /**
@@ -46,17 +46,48 @@ const RETRYABLE_ERRORS = new Set([
 ])
 
 /**
+ * 将后端错误码映射到前端错误码
+ */
+const mapBackendErrorCode = (backendCode: string): AppErrorCode => {
+  const codeMap: Record<string, AppErrorCode> = {
+    DATABASE_ERROR: AppErrorCode.DATABASE_ERROR,
+    NOT_FOUND: AppErrorCode.NOT_FOUND,
+    VALIDATION_ERROR: AppErrorCode.VALIDATION_ERROR,
+    BUSINESS_ERROR: AppErrorCode.BUSINESS_ERROR,
+    CONFIG_ERROR: AppErrorCode.CONFIG_ERROR,
+    INTERNAL_ERROR: AppErrorCode.INTERNAL_ERROR,
+  }
+  return codeMap[backendCode] || AppErrorCode.UNKNOWN_ERROR
+}
+
+/**
+ * 根据错误码获取本地化的错误消息
+ */
+const getLocalizedErrorMessage = (code: AppErrorCode, fallbackMessage?: string): string => {
+  // 优先使用后端消息（作为备选）
+  if (fallbackMessage) {
+    return fallbackMessage
+  }
+
+  // 使用 i18n 实例获取翻译
+  const errorMessages = i18n.global.messages.value[i18n.global.locale.value as 'zh-CN' | 'en-US']
+    .errorCodes as Record<string, string>
+  return errorMessages[code] || errorMessages.UNKNOWN_ERROR || 'Unknown error'
+}
+
+/**
  * 解析错误为结构化类型
  */
 export const parseErrorToAppError = (error: unknown): AppError => {
   // 处理 Tauri 后端返回的结构化错误
   if (error && typeof error === 'object' && 'code' in error) {
-    const structuredError = error as { code: string; message?: string }
-    const code = (structuredError.code as AppErrorCode) || AppErrorCode.UNKNOWN_ERROR
+    const structuredError = error as BackendErrorResponse
+    const frontendCode = mapBackendErrorCode(structuredError.code)
     return {
-      code,
-      message: structuredError.message || ErrorMessages[code],
-      retryable: RETRYABLE_ERRORS.has(code),
+      code: frontendCode,
+      message: getLocalizedErrorMessage(frontendCode, structuredError.message),
+      details: structuredError.details,
+      retryable: RETRYABLE_ERRORS.has(frontendCode),
     }
   }
 
@@ -67,7 +98,7 @@ export const parseErrorToAppError = (error: unknown): AppError => {
     if (msg.includes('fetch') || msg.includes('network') || msg.includes('connection')) {
       return {
         code: AppErrorCode.NETWORK_ERROR,
-        message: ErrorMessages[AppErrorCode.NETWORK_ERROR],
+        message: getLocalizedErrorMessage(AppErrorCode.NETWORK_ERROR),
         details: error.message,
         retryable: true,
       }
@@ -77,7 +108,7 @@ export const parseErrorToAppError = (error: unknown): AppError => {
     if (msg.includes('timeout')) {
       return {
         code: AppErrorCode.TIMEOUT_ERROR,
-        message: ErrorMessages[AppErrorCode.TIMEOUT_ERROR],
+        message: getLocalizedErrorMessage(AppErrorCode.TIMEOUT_ERROR),
         details: error.message,
         retryable: true,
       }
@@ -87,7 +118,7 @@ export const parseErrorToAppError = (error: unknown): AppError => {
     if (msg.includes('database') || msg.includes('sql') || msg.includes('db')) {
       return {
         code: AppErrorCode.DATABASE_ERROR,
-        message: ErrorMessages[AppErrorCode.DATABASE_ERROR],
+        message: getLocalizedErrorMessage(AppErrorCode.DATABASE_ERROR),
         details: error.message,
         retryable: true,
       }
@@ -97,7 +128,7 @@ export const parseErrorToAppError = (error: unknown): AppError => {
     if (msg.includes('/') || msg.includes('\\')) {
       return {
         code: AppErrorCode.UNKNOWN_ERROR,
-        message: ErrorMessages[AppErrorCode.UNKNOWN_ERROR],
+        message: getLocalizedErrorMessage(AppErrorCode.UNKNOWN_ERROR),
         retryable: false,
       }
     }
@@ -119,7 +150,7 @@ export const parseErrorToAppError = (error: unknown): AppError => {
 
   return {
     code: AppErrorCode.UNKNOWN_ERROR,
-    message: ErrorMessages[AppErrorCode.UNKNOWN_ERROR],
+    message: getLocalizedErrorMessage(AppErrorCode.UNKNOWN_ERROR),
     retryable: false,
   }
 }

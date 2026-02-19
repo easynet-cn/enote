@@ -214,7 +214,7 @@ export default {
       history: 'History',
       delete: 'Delete',
     },
-    editorPlaceholder: {
+    editorDialog: {
       title: 'Note title',
       content: 'Type your note content here...',
       markdownSource: 'Type Markdown source here...',
@@ -386,5 +386,20 @@ export default {
     created: 'Created successfully',
     networkError: 'Network error, please try again later',
     serverError: 'Server error',
+  },
+
+  // Backend Error Codes
+  errorCodes: {
+    DATABASE_ERROR: 'Database operation failed, please try again later',
+    NOT_FOUND: 'Resource not found',
+    VALIDATION_ERROR: 'Validation failed',
+    BUSINESS_ERROR: 'Operation failed',
+    CONFIG_ERROR: 'Configuration error',
+    INTERNAL_ERROR: 'Internal system error, please try again later',
+    // Frontend Error Codes
+    NETWORK_ERROR: 'Network connection failed, please check your network',
+    TIMEOUT_ERROR: 'Request timeout, please try again later',
+    PERMISSION_DENIED: 'Permission denied',
+    UNKNOWN_ERROR: 'Operation failed, please try again later',
   },
 } as const

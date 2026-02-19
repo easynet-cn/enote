@@ -213,7 +213,7 @@ export default {
       history: '历史记录',
       delete: '删除',
     },
-    editorPlaceholder: {
+    editorDialog: {
       title: '笔记标题',
       content: '在此输入笔记内容...',
       markdownSource: '在此输入 Markdown 源码...',
@@ -384,5 +384,20 @@ export default {
     created: '创建成功',
     networkError: '网络错误，请稍后重试',
     serverError: '服务器错误',
+  },
+
+  // 后端错误码
+  errorCodes: {
+    DATABASE_ERROR: '数据库操作失败，请稍后重试',
+    NOT_FOUND: '资源不存在',
+    VALIDATION_ERROR: '验证失败',
+    BUSINESS_ERROR: '操作失败',
+    CONFIG_ERROR: '配置错误',
+    INTERNAL_ERROR: '系统内部错误，请稍后重试',
+    // 前端错误码
+    NETWORK_ERROR: '网络连接失败，请检查您的网络',
+    TIMEOUT_ERROR: '请求超时，请稍后重试',
+    PERMISSION_DENIED: '没有权限执行此操作',
+    UNKNOWN_ERROR: '操作失败，请稍后重试',
   },
 } as const
