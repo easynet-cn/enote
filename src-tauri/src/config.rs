@@ -16,6 +16,8 @@ use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 use tauri::{AppHandle, Manager};
 use tracing::info;
 
+use crate::i18n::t_simple;
+
 /// 应用配置结构体
 ///
 /// 封装了从 YAML 配置文件加载的所有配置项
@@ -47,11 +49,11 @@ impl Configuration {
         let app_data_dir = app_handle
             .path()
             .app_data_dir()
-            .context("无法获取应用数据目录")?;
+            .context(t_simple("config.get_app_data_dir.failed"))?;
 
         // 确保目录存在
         if !app_data_dir.exists() {
-            fs::create_dir_all(&app_data_dir).context("无法创建应用数据目录")?;
+            fs::create_dir_all(&app_data_dir).context(t_simple("config.create_app_data_dir.failed"))?;
         }
 
         // 配置文件路径
@@ -64,13 +66,13 @@ impl Configuration {
 
         let config_path = config_file_path
             .to_str()
-            .context("配置文件路径包含无效字符")?;
+            .context(t_simple("config.invalid_config_path"))?;
 
         // 加载并解析配置文件
         let config = Config::builder()
             .add_source(config::File::with_name(config_path))
             .build()
-            .context("无法加载配置文件，请确保 application.yml 存在且格式正确")?;
+            .context(t_simple("config.load_file.failed"))?;
 
         Ok(Self { config })
     }
@@ -93,7 +95,7 @@ impl Configuration {
         let db_path = app_data_dir.join("enote.db");
         let db_url = format!(
             "sqlite:{}?mode=rwc",
-            db_path.to_str().context("数据库路径包含无效字符")?
+            db_path.to_str().context(t_simple("config.invalid_db_path"))?
         );
 
         // 默认配置内容（优化的连接池参数）
@@ -124,7 +126,7 @@ datasource:
         );
 
         // 写入配置文件
-        fs::write(config_file_path, default_config).context("无法写入配置文件")?;
+        fs::write(config_file_path, default_config).context(t_simple("config.write_file.failed"))?;
 
         info!("已创建默认配置文件: {:?}", config_file_path);
         info!("数据库文件: {:?}", db_path);
@@ -153,7 +155,7 @@ datasource:
         let url = self
             .config
             .get_string("datasource.url")
-            .context("配置文件中缺少 datasource.url")?;
+            .context(t_simple("config.missing_datasource_url"))?;
 
         // 读取连接池配置，使用优化的默认值作为回退
         let max_connections = self
@@ -194,7 +196,7 @@ datasource:
         // 建立数据库连接
         Database::connect(opt)
             .await
-            .context("无法连接数据库，请检查数据库配置和网络连接")
+            .context(t_simple("config.database.connect.failed"))
     }
 }
 

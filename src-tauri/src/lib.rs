@@ -16,12 +16,14 @@ use tracing::{error, info};
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
 use crate::config::AppState;
+use crate::i18n::{t, t_simple};
 
 // 模块声明
 mod command; // Tauri 命令处理器
 mod config; // 配置管理
 mod entity; // SeaORM 数据库实体
 mod error; // 错误处理
+mod i18n; // 国际化支持（必须在 config 之前声明）
 mod migration; // 数据库迁移
 mod model; // 数据传输对象（DTO）
 mod service; // 业务逻辑服务层
@@ -62,7 +64,19 @@ pub fn run() {
                     Ok(config) => config,
                     Err(e) => {
                         error!("配置加载失败: {:#}", e);
-                        return Err(e.to_string().into());
+                        // 显示友好的错误提示对话框（根据系统语言国际化）
+                        let error_msg = format!("{}", e);
+                        handle
+                            .dialog()
+                            .message(t(
+                                "config.load.failed.message",
+                                &[&error_msg]
+                            ))
+                            .kind(MessageDialogKind::Error)
+                            .title(t_simple("config.load.failed.title"))
+                            .blocking_show();
+                        // 退出应用
+                        std::process::exit(1);
                     }
                 };
 
@@ -71,15 +85,16 @@ pub fn run() {
                     Ok(conn) => conn,
                     Err(e) => {
                         error!("数据库连接失败: {:#}", e);
-                        // 显示友好的错误提示对话框
+                        // 显示友好的错误提示对话框（根据系统语言国际化）
+                        let error_msg = format!("{}", e);
                         handle
                             .dialog()
-                            .message(format!(
-                                "无法连接到数据库，请检查数据库服务是否已启动。\n\n错误详情：{}",
-                                e
+                            .message(t(
+                                "database.connection.failed.message",
+                                &[&error_msg]
                             ))
                             .kind(MessageDialogKind::Error)
-                            .title("数据库连接失败")
+                            .title(t_simple("database.connection.failed.title"))
                             .blocking_show();
                         // 退出应用
                         std::process::exit(1);
@@ -89,15 +104,16 @@ pub fn run() {
                 // 运行数据库迁移，自动创建表结构
                 if let Err(e) = migration::Migrator::up(&database_connection, None).await {
                     error!("数据库迁移失败: {:#}", e);
-                    // 显示友好的错误提示对话框
+                    // 显示友好的错误提示对话框（根据系统语言国际化）
+                    let error_msg = format!("{}", e);
                     handle
                         .dialog()
-                        .message(format!(
-                            "数据库迁移失败，请检查数据库配置。\n\n错误详情：{}",
-                            e
+                        .message(t(
+                            "database.migration.failed.message",
+                            &[&error_msg]
                         ))
                         .kind(MessageDialogKind::Error)
-                        .title("数据库迁移失败")
+                        .title(t_simple("database.migration.failed.title"))
                         .blocking_show();
                     // 退出应用
                     std::process::exit(1);
