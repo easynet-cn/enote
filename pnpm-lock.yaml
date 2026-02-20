@@ -108,8 +108,8 @@ importers:
         specifier: ^3.3.0
         version: 3.3.0
       lucide-vue-next:
-        specifier: ^0.574.0
-        version: 0.574.0(vue@3.5.28(typescript@5.9.3))
+        specifier: ^0.575.0
+        version: 0.575.0(vue@3.5.28(typescript@5.9.3))
       marked:
         specifier: ^17.0.3
         version: 17.0.3
@@ -698,6 +698,12 @@ packages:
     engines: {node: '>= 20'}
     cpu: [x64]
     os: [darwin]
+
+  '@tailwindcss/oxide-freebsd-x64@4.2.0':
+    resolution: {integrity: sha512-qBudxDvAa2QwGlq9y7VIzhTvp2mLJ6nD/G8/tI70DCDoneaUeLWBJaPcbfzqRIWraj+o969aDQKvKW9dvkUizw==}
+    engines: {node: '>= 20'}
+    cpu: [x64]
+    os: [freebsd]
 
   '@tailwindcss/oxide-linux-arm-gnueabihf@4.2.0':
     resolution: {integrity: sha512-7XKkitpy5NIjFZNUQPeUyNJNJn1CJeV7rmMR+exHfTuOsg8rxIO9eNV5TSEnqRcaOK77zQpsyUkBWmPy8FgdSg==}
@@ -2026,8 +2032,8 @@ packages:
     resolution: {integrity: sha512-ESL2CrkS/2wTPfuend7Zhkzo2u0daGJ/A2VucJOgQ/C48S/zB8MMeMHSGKYpXhIjbPxfuezITkaBH1wqv00DDQ==}
     engines: {node: 20 || >=22}
 
-  lucide-vue-next@0.574.0:
-    resolution: {integrity: sha512-WzsTQJ2YLINuGeN2iM2fmhHmgkyhGdAADbiXnbAvOuizry4ISFbE2oQGRz3ExjwK3wunW9oGe9EC8WNiXW2b9A==}
+  lucide-vue-next@0.575.0:
+    resolution: {integrity: sha512-UHzA3cYMCgBLyGay5R9IQaidwV0NLocx7cIBnFt8vJ9Xhl6IM/oKD0fUhoCUuouFta15SX1rLXVoko9s3TzWMA==}
     peerDependencies:
       vue: '>=3.0.1'
 
@@ -3016,6 +3022,9 @@ snapshots:
   '@tailwindcss/oxide-darwin-x64@4.2.0':
     optional: true
 
+  '@tailwindcss/oxide-freebsd-x64@4.2.0':
+    optional: true
+
   '@tailwindcss/oxide-linux-arm-gnueabihf@4.2.0':
     optional: true
 
@@ -3045,6 +3054,7 @@ snapshots:
       '@tailwindcss/oxide-android-arm64': 4.2.0
       '@tailwindcss/oxide-darwin-arm64': 4.2.0
       '@tailwindcss/oxide-darwin-x64': 4.2.0
+      '@tailwindcss/oxide-freebsd-x64': 4.2.0
       '@tailwindcss/oxide-linux-arm-gnueabihf': 4.2.0
       '@tailwindcss/oxide-linux-arm64-gnu': 4.2.0
       '@tailwindcss/oxide-linux-arm64-musl': 4.2.0
@@ -4386,7 +4396,7 @@ snapshots:
 
   lru-cache@11.2.6: {}
 
-  lucide-vue-next@0.574.0(vue@3.5.28(typescript@5.9.3)):
+  lucide-vue-next@0.575.0(vue@3.5.28(typescript@5.9.3)):
     dependencies:
       vue: 3.5.28(typescript@5.9.3)
 
