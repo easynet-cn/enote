@@ -19,7 +19,7 @@
     <button
       @click="$emit('toggle-collapse')"
       class="absolute -right-3.5 top-1/2 -translate-y-1/2 z-30 w-7 h-7 bg-white border border-slate-200 rounded-full shadow-sm flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-all hover:scale-110 active:scale-95"
-      :aria-label="collapsed ? '展开列表' : '收起列表'"
+      :aria-label="collapsed ? t('noteList.expandList') : t('noteList.collapseList')"
       :title="collapsed ? t('noteList.expandList') : t('noteList.collapseList')"
     >
       <ChevronRight v-if="collapsed" class="w-4 h-4" aria-hidden="true" />
@@ -40,7 +40,7 @@
             v-model="query"
             type="text"
             :placeholder="t('noteList.searchPlaceholder')"
-            aria-label="搜索笔记"
+            :aria-label="t('noteList.searchPlaceholder')"
             class="w-full pl-9 pr-8 py-2.5 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all"
             @keyup.enter="$emit('updateSearchQuery')"
           />
@@ -74,7 +74,7 @@
           name="note-list"
           tag="ul"
           role="listbox"
-          aria-label="笔记列表"
+          :aria-label="t('aria.noteList')"
           class="note-list-container"
         >
           <li
@@ -100,9 +100,11 @@
             </div>
             <div class="flex justify-between items-center text-xs text-slate-400">
               <span class="truncate mr-2">{{ note.notebookName }}</span>
-              <span class="shrink-0" :aria-label="`更新时间: ${note.updateTime}`">{{
-                note.updateTime
-              }}</span>
+              <span
+                class="shrink-0"
+                :aria-label="`${t('noteList.updateTime')}: ${note.updateTime}`"
+                >{{ note.updateTime }}</span
+              >
             </div>
           </li>
         </TransitionGroup>
@@ -143,7 +145,7 @@ const previewTextCache = new LRUCache<string, string>(PREVIEW_CACHE_MAX_SIZE, 0)
 
 // 生成缓存 key：使用 id + 内容长度 + 内容类型作为标识
 const getCacheKey = (note: ShowNote): string => {
-  return `${note.id}-${note.content.length}-${note.contentType ?? 0}`
+  return `${note.id}-${note.updateTime}-${note.contentType ?? 0}`
 }
 
 interface Props {

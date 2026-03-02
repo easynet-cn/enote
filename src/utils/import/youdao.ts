@@ -13,6 +13,9 @@
 
 import JSZip from 'jszip'
 import type { ImportedNote, ImportResult, ImportProgressCallback } from './types'
+import i18n from '../../i18n'
+
+const t = i18n.global.t
 
 /** 获取文件的 MIME 类型 */
 function getMimeType(filename: string): string {
@@ -111,7 +114,7 @@ function extractTitleFromPath(path: string): string {
   // 获取文件名（不含扩展名）
   const filename = path.split('/').pop() || ''
   const title = filename.replace(/\.(html?|md|markdown)$/i, '')
-  return title || '未命名笔记'
+  return title || t('importYoudao.untitledNote')
 }
 
 /** 判断是否为笔记文件 */
@@ -156,7 +159,7 @@ export async function parseYoudaoZip(
     })
 
     if (noteFiles.length === 0) {
-      throw new Error('ZIP 文件中没有找到笔记文件 (.html, .md)')
+      throw new Error(t('importYoudao.noNotesFound'))
     }
 
     const total = noteFiles.length
@@ -202,11 +205,11 @@ export async function parseYoudaoZip(
         result.success++
       } catch (error) {
         result.failed++
-        result.errors.push(`解析 ${filepath} 失败: ${error}`)
+        result.errors.push(t('importYoudao.parseFailed', { filepath, error: String(error) }))
       }
     }
   } catch (error) {
-    result.errors.push(error instanceof Error ? error.message : '未知错误')
+    result.errors.push(error instanceof Error ? error.message : t('importYoudao.unknownError'))
   }
 
   return result

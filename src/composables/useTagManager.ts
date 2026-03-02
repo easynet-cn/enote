@@ -2,6 +2,7 @@ import { useAppStore } from '../stores/app'
 import { noteApi } from '../api/note'
 import { parseId, validateTagName } from '../utils/validation'
 import { showError, withNotification } from '../utils/errorHandler'
+import i18n from '../i18n'
 import type { ShowTag } from '../types'
 
 export function useTagManager() {
@@ -23,7 +24,10 @@ export function useTagManager() {
         )
         return data
       },
-      { loading: '正在加载标签', error: '加载标签失败' },
+      {
+        loading: i18n.global.t('composable.loadingTags'),
+        error: i18n.global.t('composable.loadTagsFailed'),
+      },
     )
 
     if (result) {
@@ -59,9 +63,9 @@ export function useTagManager() {
         await refreshData()
       },
       {
-        loading: '正在保存标签',
-        success: '标签保存成功',
-        error: '保存标签失败',
+        loading: i18n.global.t('composable.savingTag'),
+        success: i18n.global.t('composable.tagSaved'),
+        error: i18n.global.t('composable.saveTagFailed'),
       },
     )
   }
@@ -77,9 +81,9 @@ export function useTagManager() {
         await refreshData()
       },
       {
-        loading: '正在删除标签',
-        success: '标签已删除',
-        error: '删除标签失败',
+        loading: i18n.global.t('composable.deletingTag'),
+        success: i18n.global.t('composable.tagDeleted'),
+        error: i18n.global.t('composable.deleteTagFailed'),
       },
     )
   }

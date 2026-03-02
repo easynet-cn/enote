@@ -23,7 +23,9 @@
   <!-- 完整模式 -->
   <div v-else class="flex items-center gap-2">
     <!-- Total -->
-    <span v-if="showTotal" class="text-sm text-slate-600">共 {{ total }} 条</span>
+    <span v-if="showTotal" class="text-sm text-slate-600">{{
+      t('pagination.total', { total })
+    }}</span>
 
     <!-- Page size selector -->
     <select
@@ -32,7 +34,9 @@
       @change="handleSizeChange"
       class="h-8 px-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
     >
-      <option v-for="size in pageSizes" :key="size" :value="size">{{ size }} 条/页</option>
+      <option v-for="size in pageSizes" :key="size" :value="size">
+        {{ t('pagination.itemsPerPage', { size }) }}
+      </option>
     </select>
 
     <!-- Prev button -->
@@ -41,7 +45,7 @@
       @click="handlePrev"
       class="h-8 px-3 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
     >
-      上一页
+      {{ t('pagination.prevPage') }}
     </button>
 
     <!-- Page numbers -->
@@ -70,14 +74,17 @@
       @click="handleNext"
       class="h-8 px-3 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
     >
-      下一页
+      {{ t('pagination.nextPage') }}
     </button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
+
+const { t } = useI18n()
 
 interface Props {
   currentPage: number

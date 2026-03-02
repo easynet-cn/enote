@@ -12,7 +12,8 @@ use chrono::Local;
 use sea_orm::{
     ActiveModelTrait,
     ActiveValue::{NotSet, Set},
-    DatabaseConnection, EntityTrait, IntoActiveModel, QueryOrder,
+    ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, QueryFilter, QueryOrder,
+    TransactionTrait,
 };
 
 use crate::{entity, model::Tag};
@@ -80,9 +81,20 @@ pub async fn create(db: &DatabaseConnection, tag: &Tag) -> anyhow::Result<Option
 /// - `Err`: 删除失败
 ///
 /// # 注意
-/// 删除标签不会自动删除笔记与标签的关联，需要前端或业务层处理
+/// 级联删除：事务中先删除 note_tags 关联行，再删除 tag
 pub async fn delete_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<()> {
-    entity::tag::Entity::delete_by_id(id).exec(db).await?;
+    let txn = db.begin().await?;
+
+    // Delete all note_tags associations for this tag
+    entity::note_tags::Entity::delete_many()
+        .filter(entity::note_tags::Column::TagId.eq(id))
+        .exec(&txn)
+        .await?;
+
+    // Delete the tag itself
+    entity::tag::Entity::delete_by_id(id).exec(&txn).await?;
+
+    txn.commit().await?;
 
     Ok(())
 }

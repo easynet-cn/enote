@@ -100,6 +100,18 @@ export const useAppStore = defineStore('app', () => {
     return notesMap.value.get(activeNote.value) || null
   })
 
+  // 脏状态检测：编辑中的笔记与原始笔记是否有差异
+  const isDirty = computed<boolean>(() => {
+    if (!editMode.value || !editingNote.value || !activeNote.value) return false
+    const original = notesMap.value.get(activeNote.value)
+    if (!original) return false
+    return (
+      editingNote.value.title !== original.title ||
+      editingNote.value.content !== original.content ||
+      editingNote.value.contentType !== original.contentType
+    )
+  })
+
   // ==================== Actions ====================
   // 设置笔记本列表
   const setNotebooks = (items: ShowNotebook[]) => {
@@ -284,6 +296,7 @@ export const useAppStore = defineStore('app', () => {
 
     // Getters
     activeNoteData,
+    isDirty,
 
     // Actions - 笔记本
     setNotebooks,

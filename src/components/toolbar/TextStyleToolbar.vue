@@ -2,7 +2,7 @@
   <div class="toolbar-section">
     <div class="btn-group">
       <ToolbarButton
-        tooltip="粗体"
+        :tooltip="t('editor.toolbarTooltip.bold')"
         :active="editor?.isActive('bold')"
         :disabled="!editMode || !editor?.can().chain().focus().toggleBold().run()"
         @click="editor?.chain().focus().toggleBold().run()"
@@ -11,7 +11,7 @@
       </ToolbarButton>
 
       <ToolbarButton
-        tooltip="斜体"
+        :tooltip="t('editor.toolbarTooltip.italic')"
         :active="editor?.isActive('italic')"
         :disabled="!editMode || !editor?.can().chain().focus().toggleItalic().run()"
         @click="editor?.chain().focus().toggleItalic().run()"
@@ -20,7 +20,7 @@
       </ToolbarButton>
 
       <ToolbarButton
-        tooltip="下划线"
+        :tooltip="t('editor.toolbarTooltip.underline')"
         :active="editor?.isActive('underline')"
         :disabled="!editMode"
         @click="editor?.chain().focus().toggleUnderline().run()"
@@ -29,7 +29,7 @@
       </ToolbarButton>
 
       <ToolbarButton
-        tooltip="删除线"
+        :tooltip="t('editor.toolbarTooltip.strikethrough')"
         :active="editor?.isActive('strike')"
         :disabled="!editMode || !editor?.can().chain().focus().toggleStrike().run()"
         @click="editor?.chain().focus().toggleStrike().run()"
@@ -38,7 +38,7 @@
       </ToolbarButton>
 
       <ToolbarButton
-        tooltip="行内代码"
+        :tooltip="t('editor.toolbarTooltip.inlineCode')"
         :active="editor?.isActive('code')"
         :disabled="!editMode || !editor?.can().chain().focus().toggleCode().run()"
         @click="editor?.chain().focus().toggleCode().run()"
@@ -51,8 +51,11 @@
 
 <script setup lang="ts">
 import type { Editor } from '@tiptap/vue-3'
+import { useI18n } from 'vue-i18n'
 import { Bold, Italic, Underline as UnderlineIcon, Strikethrough, Code } from 'lucide-vue-next'
 import ToolbarButton from './ToolbarButton.vue'
+
+const { t } = useI18n()
 
 interface Props {
   editor: Editor | null

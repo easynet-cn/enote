@@ -10,15 +10,15 @@
         <HelpCircle v-else class="w-6 h-6" />
       </div>
       <div class="confirm-body">
-        <h3 class="confirm-title">{{ title }}</h3>
+        <h3 class="confirm-title">{{ displayTitle }}</h3>
         <p class="confirm-message">{{ message }}</p>
       </div>
     </div>
 
     <template #footer>
       <div class="flex justify-end gap-3">
-        <Button type="secondary" @click="handleCancel">{{ cancelText }}</Button>
-        <Button :type="confirmButtonType" @click="handleConfirm">{{ confirmText }}</Button>
+        <Button type="secondary" @click="handleCancel">{{ displayCancelText }}</Button>
+        <Button :type="confirmButtonType" @click="handleConfirm">{{ displayConfirmText }}</Button>
       </div>
     </template>
   </Dialog>
@@ -26,9 +26,12 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { AlertTriangle, HelpCircle } from 'lucide-vue-next'
 import Dialog from './BaseDialog.vue'
 import Button from './BaseButton.vue'
+
+const { t } = useI18n()
 
 interface Props {
   modelValue: boolean
@@ -40,11 +43,15 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  title: '确认操作',
+  title: '',
   type: 'info',
-  confirmText: '确定',
-  cancelText: '取消',
+  confirmText: '',
+  cancelText: '',
 })
+
+const displayTitle = computed(() => props.title || t('common.confirmAction'))
+const displayConfirmText = computed(() => props.confirmText || t('common.confirm'))
+const displayCancelText = computed(() => props.cancelText || t('common.cancel'))
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]

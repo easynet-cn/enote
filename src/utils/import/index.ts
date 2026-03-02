@@ -8,6 +8,7 @@ import { parseEvernoteEnex } from './evernote'
 import { parseYoudaoZip } from './youdao'
 import { parseNotionZip } from './notion'
 import type { ImportSource, ImportResult, ImportProgressCallback } from './types'
+import i18n from '../../i18n'
 
 export * from './types'
 
@@ -20,11 +21,12 @@ export async function selectImportFile(source: ImportSource): Promise<string | n
   const sourceConfig = (await import('./types')).IMPORT_SOURCES.find((s) => s.id === source)
   if (!sourceConfig) return null
 
+  const sourceName = sourceConfig.name()
   const result = await open({
-    title: `选择 ${sourceConfig.name} 导出文件`,
+    title: `${i18n.global.t('import.selectFile')} - ${sourceName}`,
     filters: [
       {
-        name: sourceConfig.name,
+        name: sourceName,
         extensions: sourceConfig.fileTypes,
       },
     ],
@@ -69,7 +71,7 @@ export async function parseImportFile(
       return {
         success: 0,
         failed: 0,
-        errors: [`不支持的导入来源: ${source}`],
+        errors: [`${i18n.global.t('import.errorFileFormat')}: ${source}`],
         notes: [],
       }
   }

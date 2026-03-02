@@ -24,8 +24,8 @@ use chrono::Local;
 use sea_orm::{
     ActiveModelTrait,
     ActiveValue::{NotSet, Set},
-    ColumnTrait, Condition, ConnectionTrait, DatabaseConnection, EntityTrait, IntoActiveModel,
-    QueryFilter, QueryOrder, QuerySelect, TransactionTrait,
+    ColumnTrait, Condition, ConnectionTrait, DatabaseBackend, DatabaseConnection, EntityTrait,
+    IntoActiveModel, QueryFilter, QueryOrder, QuerySelect, Select, TransactionTrait,
     prelude::Expr,
     sea_query::{Asterisk, Query},
 };
@@ -35,6 +35,62 @@ use crate::{
     entity::{self, notebook},
     model::{Note, NoteHistoryExtra, NoteSearchPageParam, NoteStatsResult, OperationType, PageResult, Tag},
 };
+
+/// Build keyword filter condition based on database backend
+fn apply_keyword_filter<E: EntityTrait>(
+    builder: Select<E>,
+    keyword: &str,
+    is_sqlite: bool,
+) -> Select<E> {
+    if is_sqlite {
+        let fts_keyword = keyword
+            .replace('"', "\"\"")
+            .replace('*', "")
+            .replace('(', "")
+            .replace(')', "")
+            .replace('{', "")
+            .replace('}', "");
+        let fts_query = format!("\"{}\"", fts_keyword);
+        let fts_condition = Expr::cust_with_values(
+            "id IN (SELECT rowid FROM note_fts WHERE note_fts MATCH ?)",
+            [fts_query],
+        );
+        builder.filter(fts_condition)
+    } else {
+        builder.filter(
+            Condition::all().add(
+                Condition::any()
+                    .add(entity::note::Column::Title.contains(keyword))
+                    .add(entity::note::Column::Content.contains(keyword)),
+            ),
+        )
+    }
+}
+
+/// Apply common search filters (notebook, tag, keyword) to a query builder
+fn apply_search_filters<E: EntityTrait>(
+    builder: Select<E>,
+    search_param: &NoteSearchPageParam,
+    is_sqlite: bool,
+) -> Select<E> {
+    let mut b = builder;
+    if search_param.notebook_id > 0 {
+        b = b.filter(entity::note::Column::NotebookId.eq(search_param.notebook_id));
+    }
+    if search_param.tag_id > 0 {
+        let sub_query = Query::select()
+            .column(entity::note_tags::Column::NoteId)
+            .distinct()
+            .and_where(Expr::col(entity::note_tags::Column::TagId).eq(search_param.tag_id))
+            .from(entity::note_tags::Entity)
+            .to_owned();
+        b = b.filter(Condition::any().add(entity::note::Column::Id.in_subquery(sub_query)));
+    }
+    if !search_param.keyword.is_empty() {
+        b = apply_keyword_filter(b, search_param.keyword.as_str(), is_sqlite);
+    }
+    b
+}
 
 /// 根据 ID 查询笔记（优化版本：2 次查询代替 4 次）
 pub async fn find_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<Option<Note>> {
@@ -132,7 +188,7 @@ pub async fn create(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
                 tag_id: Set(e.id),
                 sort_order: Set(e.sort_order),
                 create_time: Set(now),
-                upate_time: Set(now),
+                update_time: Set(now),
             })
             .collect::<Vec<entity::note_tags::ActiveModel>>();
 
@@ -146,7 +202,7 @@ pub async fn create(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
 
     if note.notebook_id > 0 {
         if let Some(notebook) = entity::notebook::Entity::find_by_id(note.notebook_id)
-            .one(db)
+            .one(&txn)
             .await?
         {
             notebook_id = notebook.id;
@@ -155,7 +211,7 @@ pub async fn create(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
     }
 
     let note_history_extra = NoteHistoryExtra {
-        notebook_id: notebook_id,
+        notebook_id,
         notebook_name: notebook_name.clone(),
         content_type: note.content_type,
         title: note.title.clone(),
@@ -205,19 +261,19 @@ pub async fn create(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
 /// - 如果笔记不存在，不会报错，直接返回成功
 /// - 删除前会保存完整的笔记信息到历史记录
 pub async fn delete_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<()> {
-    // 优化：使用 find_also_related 减少查询次数
+    let txn = db.begin().await?;
+
     let result = entity::note::Entity::find_by_id(id)
         .find_also_related(entity::notebook::Entity)
-        .one(db)
+        .one(&txn)
         .await?;
 
     if let Some((entity, notebook_opt)) = result {
-        // 优化：使用 find_also_related 一次性获取标签（2 次查询变 1 次）
         let tags: Vec<Tag> = entity::note_tags::Entity::find()
             .filter(entity::note_tags::Column::NoteId.eq(id))
             .find_also_related(entity::tag::Entity)
             .order_by_desc(entity::note_tags::Column::SortOrder)
-            .all(db)
+            .all(&txn)
             .await?
             .into_iter()
             .filter_map(|(_, tag_opt)| tag_opt.map(|t| Tag::from(t)))
@@ -227,8 +283,6 @@ pub async fn delete_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<()
             Some(notebook) => (notebook.id, notebook.name.clone()),
             None => (0, String::default()),
         };
-
-        let txn = db.begin().await?;
 
         let now = Local::now().naive_local();
 
@@ -265,6 +319,8 @@ pub async fn delete_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<()
             .await?;
 
         txn.commit().await?;
+    } else {
+        txn.commit().await?;
     }
 
     Ok(())
@@ -294,30 +350,22 @@ pub async fn delete_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<()
 pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Option<Note>> {
     if let Some(entity) = entity::note::Entity::find_by_id(note.id).one(db).await? {
         let old_title = entity.title.clone();
-        let old_tag_ids = entity::note_tags::Entity::find()
-            .filter(entity::note_tags::Column::NoteId.eq(note.id))
-            .order_by_desc(entity::note_tags::Column::SortOrder)
-            .all(db)
-            .await?
-            .iter()
-            .map(|e| e.tag_id)
-            .collect::<Vec<i64>>();
-
-        let mut old_tags = Vec::<Tag>::with_capacity(old_tag_ids.len());
-
-        if !old_tag_ids.is_empty() {
-            let tags = entity::tag::Entity::find()
-                .filter(entity::tag::Column::Id.is_in(old_tag_ids.clone()))
-                .all(db)
-                .await?
-                .iter()
-                .map(Tag::from)
-                .collect::<Vec<Tag>>();
-
-            old_tags = tags;
-        }
 
         let txn = db.begin().await?;
+
+        // Single JOIN query to get both note_tags and tag info (inside transaction for consistency)
+        let old_tag_results = entity::note_tags::Entity::find()
+            .filter(entity::note_tags::Column::NoteId.eq(note.id))
+            .find_also_related(entity::tag::Entity)
+            .order_by_desc(entity::note_tags::Column::SortOrder)
+            .all(&txn)
+            .await?;
+
+        let old_tag_ids: Vec<i64> = old_tag_results.iter().map(|(nt, _)| nt.tag_id).collect();
+        let old_tags: Vec<Tag> = old_tag_results
+            .into_iter()
+            .filter_map(|(_, tag_opt)| tag_opt.map(|t| Tag::from(t)))
+            .collect();
 
         let old_content_type = entity.content_type;
         let old_content = entity.content.clone();
@@ -327,12 +375,13 @@ pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
         active_model.notebook_id.set_if_not_equals(note.notebook_id);
         active_model.title.set_if_not_equals(note.title.clone());
         active_model.content.set_if_not_equals(note.content.clone());
+        active_model.content_type.set_if_not_equals(note.content_type);
 
         let now = Local::now().naive_local();
 
         let note_changed = active_model.is_changed();
 
-        if active_model.is_changed() {
+        if note_changed {
             active_model.update_time = Set(now);
 
             active_model.update(&txn).await?;
@@ -373,7 +422,7 @@ pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
                         tag_id: Set(e.id),
                         sort_order: Set(e.sort_order),
                         create_time: Set(now),
-                        upate_time: Set(now),
+                        update_time: Set(now),
                     })
                     .collect::<Vec<entity::note_tags::ActiveModel>>();
 
@@ -389,7 +438,7 @@ pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
 
             if note.notebook_id > 0 {
                 if let Some(notebook) = entity::notebook::Entity::find_by_id(note.notebook_id)
-                    .one(db)
+                    .one(&txn)
                     .await?
                 {
                     notebook_id = notebook.id;
@@ -398,7 +447,7 @@ pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
             }
 
             let note_history_extra = NoteHistoryExtra {
-                notebook_id: notebook_id,
+                notebook_id,
                 notebook_name: notebook_name.clone(),
                 content_type: old_content_type,
                 title: old_title,
@@ -458,70 +507,12 @@ pub async fn search_page(
     db: &DatabaseConnection,
     search_param: &NoteSearchPageParam,
 ) -> anyhow::Result<PageResult<Note>> {
-    // 验证搜索参数
     search_param.validate()?;
 
-    // 检查是否为 SQLite 数据库（支持 FTS5）
-    let is_sqlite = db.get_database_backend() == sea_orm::DatabaseBackend::Sqlite;
+    let is_sqlite = db.get_database_backend() == DatabaseBackend::Sqlite;
 
-    // 构建计数查询、数据查询、分组统计查询
-    let mut count_builder = entity::note::Entity::find();
-    let mut query_builder = entity::note::Entity::find();
-
-    if search_param.notebook_id > 0 {
-        count_builder =
-            count_builder.filter(entity::note::Column::NotebookId.eq(search_param.notebook_id));
-        query_builder =
-            query_builder.filter(entity::note::Column::NotebookId.eq(search_param.notebook_id));
-    }
-    if search_param.tag_id > 0 {
-        let sub_query = Query::select()
-            .column(entity::note_tags::Column::NoteId)
-            .distinct()
-            .and_where(Expr::col(entity::note_tags::Column::TagId).eq(search_param.tag_id))
-            .from(entity::note_tags::Entity)
-            .to_owned();
-
-        count_builder = count_builder
-            .filter(Condition::any().add(entity::note::Column::Id.in_subquery(sub_query.clone())));
-        query_builder = query_builder
-            .filter(Condition::any().add(entity::note::Column::Id.in_subquery(sub_query.clone())));
-    }
-    if !search_param.keyword.is_empty() {
-        let keyword = search_param.keyword.as_str();
-
-        if is_sqlite {
-            // SQLite: 使用 FTS5 全文搜索（高性能）
-            // 转义特殊字符并构建 FTS5 查询
-            let fts_keyword = keyword.replace('"', "\"\"");
-            let fts_query = format!("\"{}\"", fts_keyword);
-
-            // 使用 FTS5 子查询获取匹配的笔记 ID
-            let fts_condition = Expr::cust_with_values(
-                "id IN (SELECT rowid FROM note_fts WHERE note_fts MATCH ?)",
-                [fts_query.clone()],
-            );
-
-            count_builder = count_builder.filter(fts_condition.clone());
-            query_builder = query_builder.filter(fts_condition);
-        } else {
-            // MySQL/PostgreSQL: 使用 LIKE 查询
-            count_builder = count_builder.filter(
-                Condition::all().add(
-                    Condition::any()
-                        .add(entity::note::Column::Title.contains(keyword))
-                        .add(entity::note::Column::Content.contains(keyword)),
-                ),
-            );
-            query_builder = query_builder.filter(
-                Condition::all().add(
-                    Condition::any()
-                        .add(entity::note::Column::Title.contains(keyword))
-                        .add(entity::note::Column::Content.contains(keyword)),
-                ),
-            );
-        }
-    }
+    let count_builder = apply_search_filters(entity::note::Entity::find(), search_param, is_sqlite);
+    let query_builder = apply_search_filters(entity::note::Entity::find(), search_param, is_sqlite);
 
     let total = count_builder
         .select_only()
@@ -632,68 +623,19 @@ pub async fn stats(
     db: &DatabaseConnection,
     search_param: &NoteSearchPageParam,
 ) -> anyhow::Result<NoteStatsResult> {
-    // 检查是否为 SQLite 数据库（支持 FTS5）
-    let is_sqlite = db.get_database_backend() == sea_orm::DatabaseBackend::Sqlite;
+    search_param.validate()?;
 
-    // 构建计数查询、数据查询、分组统计查询
-    let mut count_builder = entity::note::Entity::find();
-    let mut count_map_builder = entity::note::Entity::find()
-        .select_only()
-        .column(entity::note::Column::NotebookId)
-        .column_as(entity::note::Column::Id.count(), "n");
+    let is_sqlite = db.get_database_backend() == DatabaseBackend::Sqlite;
 
-    if search_param.notebook_id > 0 {
-        count_builder =
-            count_builder.filter(entity::note::Column::NotebookId.eq(search_param.notebook_id));
-        count_map_builder =
-            count_map_builder.filter(entity::note::Column::NotebookId.eq(search_param.notebook_id));
-    }
-    if search_param.tag_id > 0 {
-        let sub_query = Query::select()
-            .column(entity::note_tags::Column::NoteId)
-            .distinct()
-            .and_where(Expr::col(entity::note_tags::Column::TagId).eq(search_param.tag_id))
-            .from(entity::note_tags::Entity)
-            .to_owned();
-
-        count_builder = count_builder
-            .filter(Condition::any().add(entity::note::Column::Id.in_subquery(sub_query.clone())));
-        count_map_builder = count_map_builder
-            .filter(Condition::any().add(entity::note::Column::Id.in_subquery(sub_query.clone())));
-    }
-    if !search_param.keyword.is_empty() {
-        let keyword = search_param.keyword.as_str();
-
-        if is_sqlite {
-            // SQLite: 使用 FTS5 全文搜索（高性能）
-            let fts_keyword = keyword.replace('"', "\"\"");
-            let fts_query = format!("\"{}\"", fts_keyword);
-
-            let fts_condition = Expr::cust_with_values(
-                "id IN (SELECT rowid FROM note_fts WHERE note_fts MATCH ?)",
-                [fts_query.clone()],
-            );
-
-            count_builder = count_builder.filter(fts_condition.clone());
-            count_map_builder = count_map_builder.filter(fts_condition);
-        } else {
-            // MySQL/PostgreSQL: 使用 LIKE 查询
-            count_builder = count_builder.filter(
-                Condition::all().add(
-                    Condition::any()
-                        .add(entity::note::Column::Title.contains(keyword))
-                        .add(entity::note::Column::Content.contains(keyword)),
-                ),
-            );
-            count_map_builder = count_map_builder.filter(
-                Condition::all().add(
-                    Condition::any()
-                        .add(entity::note::Column::Title.contains(keyword))
-                        .add(entity::note::Column::Content.contains(keyword)),
-                ),
-            );
-        }
-    }
+    let count_builder = apply_search_filters(entity::note::Entity::find(), search_param, is_sqlite);
+    let count_map_builder = apply_search_filters(
+        entity::note::Entity::find()
+            .select_only()
+            .column(entity::note::Column::NotebookId)
+            .column_as(entity::note::Column::Id.count(), "n"),
+        search_param,
+        is_sqlite,
+    );
 
     let total = count_builder
         .select_only()

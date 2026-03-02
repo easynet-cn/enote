@@ -2,7 +2,7 @@
   <Dialog v-model="visible" :title="dialogTitle" :width="520" @close="handleClose">
     <!-- 步骤 1: 选择来源 -->
     <div v-if="step === 1" class="space-y-3">
-      <p class="text-sm text-slate-500 mb-4">选择要导入的笔记来源:</p>
+      <p class="text-sm text-slate-500 mb-4">{{ t('import.selectFile') }}:</p>
       <div
         v-for="source in IMPORT_SOURCES"
         :key="source.id"
@@ -16,8 +16,8 @@
           <component :is="getIcon(source.icon)" class="w-5 h-5" />
         </div>
         <div class="flex-1">
-          <div class="font-medium text-slate-800">{{ source.name }}</div>
-          <div class="text-sm text-slate-500">{{ source.description }}</div>
+          <div class="font-medium text-slate-800">{{ source.name() }}</div>
+          <div class="text-sm text-slate-500">{{ source.description() }}</div>
         </div>
         <div v-if="selectedSource === source.id" class="text-indigo-500">
           <Check class="w-5 h-5" />
@@ -27,7 +27,7 @@
 
     <!-- 步骤 2: 选择文件 -->
     <div v-else-if="step === 2" class="space-y-4">
-      <p class="text-sm text-slate-500">选择要导入的文件:</p>
+      <p class="text-sm text-slate-500">{{ t('import.format') }}:</p>
 
       <div
         class="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center cursor-pointer hover:border-indigo-400 hover:bg-slate-50 transition-colors"
@@ -138,7 +138,7 @@
             :disabled="!selectedSource"
             @click="nextStep"
           >
-            下一步
+            {{ t('import.nextStep') }}
           </button>
 
           <button
@@ -147,7 +147,7 @@
             :disabled="!selectedFilePath"
             @click="nextStep"
           >
-            下一步
+            {{ t('import.nextStep') }}
           </button>
 
           <button
@@ -155,7 +155,7 @@
             class="px-4 py-2 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
             @click="startImport"
           >
-            开始导入
+            {{ t('import.startImport') }}
           </button>
         </div>
       </div>
@@ -372,7 +372,7 @@ async function startImport() {
         successCount++
       } catch (error) {
         failedCount++
-        errors.push(`导入 "${note.title}" 失败: ${error}`)
+        errors.push(`${t('import.error')}: "${note.title}" - ${error}`)
       }
     }
 
@@ -390,7 +390,7 @@ async function startImport() {
     importResult.value = {
       success: 0,
       failed: 0,
-      errors: [error instanceof Error ? error.message : '导入失败'],
+      errors: [error instanceof Error ? error.message : t('import.error')],
       notes: [],
     }
   } finally {

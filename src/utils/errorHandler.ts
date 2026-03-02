@@ -70,8 +70,9 @@ const getLocalizedErrorMessage = (code: AppErrorCode, fallbackMessage?: string):
   }
 
   // 使用 i18n 实例获取翻译
-  const errorMessages = i18n.global.messages.value[i18n.global.locale.value as 'zh-CN' | 'en-US']
-    .errorCodes as Record<string, string>
+  const locale = i18n.global.locale.value
+  const messages = i18n.global.messages.value[locale]
+  const errorMessages = (messages?.errorCodes ?? {}) as Record<string, string>
   return errorMessages[code] || errorMessages.UNKNOWN_ERROR || 'Unknown error'
 }
 

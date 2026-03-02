@@ -3,7 +3,7 @@
     <main
       class="flex-1 flex flex-col min-h-0 overflow-hidden px-4 pt-4 pb-2"
       role="main"
-      aria-label="笔记编辑区"
+      :aria-label="t('aria.noteEditor')"
     >
       <!-- TipTap 编辑器工具栏（始终显示） -->
       <div v-if="activeNote">
@@ -36,9 +36,9 @@
             ref="titleInput"
             :value="activeNote.title"
             @input="$emit('updateNoteTitle', ($event.target as HTMLInputElement).value)"
-            placeholder="笔记标题"
+            :placeholder="t('editor.noteTitlePlaceholder')"
             :readonly="!editMode"
-            aria-label="笔记标题"
+            :aria-label="t('editor.noteTitle')"
             class="w-full text-xl font-bold border-0 outline-none bg-transparent focus:ring-0"
             :class="{ 'cursor-default': !editMode }"
           />
@@ -57,12 +57,12 @@
         >
           <!-- 源码编辑面板 -->
           <div class="split-panel source-panel" :style="splitPanelStyle">
-            <div class="panel-header">源码</div>
+            <div class="panel-header">{{ t('editor.markdownEditor.source') }}</div>
             <textarea
               ref="sourcePanel"
               v-model="markdownSource"
               class="markdown-source-panel"
-              placeholder="在此输入 Markdown 源码..."
+              :placeholder="t('editor.editorDialog.markdownSource')"
               @input="handleSourceChange"
               @scroll="handleSourceScroll"
             />
@@ -79,7 +79,7 @@
 
           <!-- 预览面板 -->
           <div class="split-panel preview-panel">
-            <div class="panel-header">预览</div>
+            <div class="panel-header">{{ t('editor.markdownEditor.preview') }}</div>
             <div ref="previewPanel" class="markdown-preview-panel" @scroll="handlePreviewScroll">
               <editor-content :editor="editor" />
             </div>
@@ -92,7 +92,7 @@
             v-if="sourceMode && editMode"
             v-model="markdownSource"
             class="markdown-source"
-            placeholder="在此输入 Markdown 源码..."
+            :placeholder="t('editor.editorDialog.markdownSource')"
             @input="handleSourceChange"
           />
           <editor-content v-else :editor="editor" :class="editorCls" />
@@ -139,10 +139,10 @@
     <!-- 删除笔记确认弹窗 -->
     <ConfirmDialog
       v-model="deleteNoteConfirm"
-      title="删除笔记"
-      message="确定要删除这篇笔记吗？此操作不可恢复。"
+      :title="t('editor.deleteNoteConfirm.title')"
+      :message="t('editor.deleteNoteConfirm.message')"
       type="danger"
-      confirm-text="删除"
+      :confirm-text="t('editor.deleteNoteConfirm.confirmText')"
       @confirm="confirmDeleteNote"
     />
 
@@ -152,12 +152,18 @@
       class="h-12 flex items-center justify-between px-4 text-xs text-slate-500 border-t border-slate-200 bg-slate-50"
     >
       <div class="flex items-center gap-4">
-        <span>行 {{ cursorPosition.line }}, 列 {{ cursorPosition.column }}</span>
-        <span v-if="hasSelection" class="text-indigo-600">已选择 {{ selectedText }} 字符</span>
+        <span
+          >{{ t('editor.statusBar.line') }} {{ cursorPosition.line }},
+          {{ t('editor.statusBar.column') }} {{ cursorPosition.column }}</span
+        >
+        <span v-if="hasSelection" class="text-indigo-600"
+          >{{ t('editor.statusBar.selected') }} {{ selectedText }}
+          {{ t('editor.statusBar.characters') }}</span
+        >
       </div>
       <div class="flex items-center gap-4">
-        <span>{{ characterCount }} 字符</span>
-        <span>{{ wordCount }} 词</span>
+        <span>{{ characterCount }} {{ t('editor.statusBar.characters') }}</span>
+        <span>{{ wordCount }} {{ t('editor.statusBar.words') }}</span>
       </div>
     </footer>
   </div>
@@ -165,6 +171,7 @@
 
 <script setup lang="ts">
 import { watch, onBeforeUnmount, ref, computed, shallowRef } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Editor, EditorContent } from '@tiptap/vue-3'
 import { getMarkdownExtensions, getRichTextExtensions } from '../config/editorExtensions'
 import TiptapToolbar from './TiptapToolbar.vue'
@@ -188,6 +195,8 @@ interface Props {
   editMode: boolean
   historyLoading?: boolean
 }
+
+const { t } = useI18n()
 
 const props = defineProps<Props>()
 
@@ -240,6 +249,9 @@ let scrollResetTimer: ReturnType<typeof setTimeout> | null = null
 // 标题输入框引用
 const titleInput = ref<HTMLInputElement | null>(null)
 
+// Timer refs for cleanup
+let editModeFocusTimer: ReturnType<typeof setTimeout> | null = null
+
 // 是否为 Markdown 模式
 const isMarkdownMode = computed(() => props.activeNote?.contentType === ContentType.Markdown)
 
@@ -287,13 +299,16 @@ const createEditor = (contentType: ContentType, content: string) => {
       }
       // 更新目录
       updateTocItems()
+      // 更新字符和词数统计
+      updateCharacterCount()
     },
     onSelectionUpdate: () => {
       updateCursorPosition()
     },
     onCreate: () => {
-      // 编辑器创建后更新目录
+      // 编辑器创建后更新目录和统计
       updateTocItems()
+      updateCharacterCount()
     },
   })
 }
@@ -342,7 +357,9 @@ watch(
     if (editor.value && newMode) {
       editor.value?.setEditable(true)
       // 切换到编辑模式时，根据是否为新建笔记决定焦点位置
-      setTimeout(() => {
+      if (editModeFocusTimer) clearTimeout(editModeFocusTimer)
+      editModeFocusTimer = setTimeout(() => {
+        editModeFocusTimer = null
         if (isNewNote.value) {
           // 新建笔记：焦点在标题
           titleInput.value?.focus()
@@ -362,14 +379,16 @@ const editorCls = computed(() => {
 })
 
 // 字符统计
-const characterCount = computed(() => {
-  return editor.value?.storage.characterCount.characters() ?? 0
-})
+const characterCount = ref(0)
 
 // 词数统计
-const wordCount = computed(() => {
-  return editor.value?.storage.characterCount.words() ?? 0
-})
+const wordCount = ref(0)
+
+// 更新字符和词数统计
+const updateCharacterCount = () => {
+  characterCount.value = editor.value?.storage.characterCount.characters() ?? 0
+  wordCount.value = editor.value?.storage.characterCount.words() ?? 0
+}
 
 // 光标位置
 const cursorPosition = ref({ line: 1, column: 1 })
@@ -415,10 +434,18 @@ const updateCursorPosition = () => {
   cursorPosition.value = { line, column }
 }
 
-// 组件卸载时销毁编辑器
+// 组件卸载时销毁编辑器和清理定时器
 onBeforeUnmount(() => {
   if (editor.value) {
     editor.value.destroy()
+  }
+  if (editModeFocusTimer) {
+    clearTimeout(editModeFocusTimer)
+    editModeFocusTimer = null
+  }
+  if (scrollResetTimer) {
+    clearTimeout(scrollResetTimer)
+    scrollResetTimer = null
   }
 })
 
@@ -657,6 +684,9 @@ const handleSourceScroll = throttle(syncSourceToPreview, 16)
 const handlePreviewScroll = throttle(syncPreviewToSource, 16)
 </script>
 
+<!-- 共享 ProseMirror 样式 -->
+<style src="../styles/prosemirror.css"></style>
+
 <style scoped>
 .tiptap-editor,
 .tiptap-editor-edit {
@@ -670,12 +700,6 @@ const handlePreviewScroll = throttle(syncPreviewToSource, 16)
   outline: none;
 }
 
-/* 为ProseMirror内容区域设置基本样式 */
-:deep(.ProseMirror) {
-  outline: none;
-  line-height: 1.6;
-}
-
 /* 占位符样式 */
 :deep(.ProseMirror p.is-editor-empty:first-child::before) {
   content: attr(data-placeholder);
@@ -685,81 +709,23 @@ const handlePreviewScroll = throttle(syncPreviewToSource, 16)
   height: 0;
 }
 
-:deep(.ProseMirror h1) {
-  font-size: 2rem;
-  font-weight: bold;
-  margin: 1rem 0;
-  color: #1f2937;
-}
-
-:deep(.ProseMirror h2) {
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin: 0.875rem 0;
-  color: #374151;
-}
-
-:deep(.ProseMirror h3) {
-  font-size: 1.25rem;
-  font-weight: bold;
-  margin: 0.75rem 0;
-  color: #4b5563;
-}
-
-:deep(.ProseMirror h4) {
-  font-size: 1.125rem;
-  font-weight: 600;
-  margin: 0.625rem 0;
-  color: #4b5563;
-}
-
-:deep(.ProseMirror h5) {
-  font-size: 1rem;
-  font-weight: 600;
-  margin: 0.5rem 0;
-  color: #6b7280;
-}
-
-:deep(.ProseMirror h6) {
-  font-size: 0.875rem;
-  font-weight: 600;
-  margin: 0.5rem 0;
-  color: #6b7280;
-}
-
+/* NoteEditor 特有覆盖样式 */
 :deep(.ProseMirror p) {
-  margin-bottom: 0.75rem;
-  min-height: 1.6em; /* 确保空段落也有高度 */
+  min-height: 1.6em;
 }
 
 :deep(.ProseMirror p:empty::before) {
-  content: '\00a0'; /* 空段落显示不可见空格，保持高度 */
-}
-
-:deep(.ProseMirror ul),
-:deep(.ProseMirror ol) {
-  padding-left: 1.5rem;
-  margin-bottom: 0.75rem;
-}
-
-:deep(.ProseMirror li) {
-  margin-bottom: 0.25rem;
+  content: '\00a0';
 }
 
 :deep(.ProseMirror blockquote) {
-  border-left: 4px solid #4f46e5;
-  padding-left: 1rem;
-  margin-left: 0;
-  margin-right: 0;
-  font-style: italic;
-  margin-bottom: 0.75rem;
+  border-left-color: #4f46e5;
   color: #64748b;
 }
 
 :deep(.ProseMirror code) {
   background: #f1f5f9;
   padding: 0.2rem 0.4rem;
-  border-radius: 0.25rem;
   font-family:
     ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
   font-size: 0.9em;
@@ -772,7 +738,6 @@ const handlePreviewScroll = throttle(syncPreviewToSource, 16)
   border-radius: 0.75rem;
   font-family:
     ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
-  overflow-x: auto;
   margin: 1rem 0;
 }
 
@@ -784,20 +749,8 @@ const handlePreviewScroll = throttle(syncPreviewToSource, 16)
   font-size: 0.875rem;
 }
 
-:deep(.ProseMirror a) {
-  color: #3b82f6;
-  text-decoration: underline;
-}
-
-:deep(.ProseMirror mark) {
-  background-color: #fef08a;
-  padding: 0.125rem 0.25rem;
-}
-
 :deep(.ProseMirror table) {
-  border-collapse: collapse;
   table-layout: fixed;
-  width: 100%;
   margin: 1rem 0;
   overflow: hidden;
 }
@@ -805,7 +758,7 @@ const handlePreviewScroll = throttle(syncPreviewToSource, 16)
 :deep(.ProseMirror th),
 :deep(.ProseMirror td) {
   min-width: 1em;
-  border: 1px solid #e2e8f0;
+  border-color: #e2e8f0;
   padding: 6px 10px;
   vertical-align: top;
   box-sizing: border-box;
@@ -815,51 +768,24 @@ const handlePreviewScroll = throttle(syncPreviewToSource, 16)
 :deep(.ProseMirror th) {
   background-color: #f8fafc;
   font-weight: bold;
-  text-align: left;
 }
 
 :deep(.ProseMirror img) {
-  max-width: 100%;
-  height: auto;
   border-radius: 0.75rem;
   margin: 1rem 0;
   display: block;
 }
 
-/* 任务列表样式 */
-:deep(.ProseMirror ul[data-type='taskList']) {
-  list-style: none;
-  padding-left: 0;
-}
-
-:deep(.ProseMirror ul[data-type='taskList'] li) {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  margin-bottom: 0.25rem;
-}
-
+/* 任务列表覆盖样式 */
 :deep(.ProseMirror ul[data-type='taskList'] li > label) {
-  flex-shrink: 0;
   user-select: none;
   margin-right: 0.75rem;
-  margin-top: 0.25rem;
 }
 
 :deep(.ProseMirror ul[data-type='taskList'] li > label input[type='checkbox']) {
   width: 1.1rem;
   height: 1.1rem;
-  cursor: pointer;
   accent-color: #4f46e5;
-}
-
-:deep(.ProseMirror ul[data-type='taskList'] li > div) {
-  flex: 1;
-}
-
-:deep(.ProseMirror ul[data-type='taskList'] li[data-checked='true'] > div) {
-  text-decoration: line-through;
-  color: #9ca3af;
 }
 
 /* 表格选中样式 */
@@ -876,11 +802,6 @@ const handlePreviewScroll = throttle(syncPreviewToSource, 16)
 :deep(.ProseMirror .tableWrapper) {
   overflow-x: auto;
   margin-bottom: 0.75rem;
-}
-
-/* 链接悬停样式 */
-:deep(.ProseMirror a:hover) {
-  color: #2563eb;
 }
 
 /* Markdown 源码编辑器样式 */
@@ -1025,106 +946,7 @@ const handlePreviewScroll = throttle(syncPreviewToSource, 16)
 
 /* 预览面板中的 ProseMirror 样式继承 */
 .markdown-preview-panel :deep(.ProseMirror) {
-  outline: none;
-  line-height: 1.6;
   min-height: 100%;
-}
-
-/* 上标和下标样式 */
-:deep(.ProseMirror sup) {
-  font-size: 0.75em;
-  vertical-align: super;
-}
-
-:deep(.ProseMirror sub) {
-  font-size: 0.75em;
-  vertical-align: sub;
-}
-
-/* 代码高亮样式 (One Dark 主题) */
-:deep(.ProseMirror pre code.hljs) {
-  display: block;
-  overflow-x: auto;
-  padding: 1em;
-}
-
-:deep(.ProseMirror code.hljs) {
-  padding: 3px 5px;
-}
-
-:deep(.ProseMirror .hljs) {
-  color: #abb2bf;
-  background: #282c34;
-}
-
-:deep(.ProseMirror .hljs-comment),
-:deep(.ProseMirror .hljs-quote) {
-  color: #5c6370;
-  font-style: italic;
-}
-
-:deep(.ProseMirror .hljs-doctag),
-:deep(.ProseMirror .hljs-keyword),
-:deep(.ProseMirror .hljs-formula) {
-  color: #c678dd;
-}
-
-:deep(.ProseMirror .hljs-section),
-:deep(.ProseMirror .hljs-name),
-:deep(.ProseMirror .hljs-selector-tag),
-:deep(.ProseMirror .hljs-deletion),
-:deep(.ProseMirror .hljs-subst) {
-  color: #e06c75;
-}
-
-:deep(.ProseMirror .hljs-literal) {
-  color: #56b6c2;
-}
-
-:deep(.ProseMirror .hljs-string),
-:deep(.ProseMirror .hljs-regexp),
-:deep(.ProseMirror .hljs-addition),
-:deep(.ProseMirror .hljs-attribute),
-:deep(.ProseMirror .hljs-meta .hljs-string) {
-  color: #98c379;
-}
-
-:deep(.ProseMirror .hljs-attr),
-:deep(.ProseMirror .hljs-variable),
-:deep(.ProseMirror .hljs-template-variable),
-:deep(.ProseMirror .hljs-type),
-:deep(.ProseMirror .hljs-selector-class),
-:deep(.ProseMirror .hljs-selector-attr),
-:deep(.ProseMirror .hljs-selector-pseudo),
-:deep(.ProseMirror .hljs-number) {
-  color: #d19a66;
-}
-
-:deep(.ProseMirror .hljs-symbol),
-:deep(.ProseMirror .hljs-bullet),
-:deep(.ProseMirror .hljs-link),
-:deep(.ProseMirror .hljs-meta),
-:deep(.ProseMirror .hljs-selector-id),
-:deep(.ProseMirror .hljs-title) {
-  color: #61aeee;
-}
-
-:deep(.ProseMirror .hljs-built_in),
-:deep(.ProseMirror .hljs-title.class_),
-:deep(.ProseMirror .hljs-class .hljs-title) {
-  color: #e6c07b;
-}
-
-:deep(.ProseMirror .hljs-emphasis) {
-  font-style: italic;
-}
-
-:deep(.ProseMirror .hljs-strong) {
-  font-weight: bold;
-}
-
-:deep(.ProseMirror .hljs-link) {
-  text-decoration: underline;
 }
 
 /* 搜索结果高亮样式 */

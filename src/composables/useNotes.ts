@@ -8,6 +8,7 @@ import { useNoteEditor } from './useNoteEditor'
 import { useNoteHistory } from './useNoteHistory'
 import { showNotification } from '../components/ui/notification'
 import { showError } from '../utils/errorHandler'
+import i18n from '../i18n'
 import type { ShowNotebook, ShowTag } from '../types'
 
 export function useNotes() {
@@ -105,7 +106,7 @@ export function useNotes() {
     store.loading = true
 
     const notification = showNotification({
-      message: '正在加载',
+      message: i18n.global.t('composable.loadingData'),
       type: 'success',
       duration: 0,
     })
@@ -115,13 +116,13 @@ export function useNotes() {
       await Promise.all([notebookManager.getNotebooks(), tagManager.getTags()])
 
       // 第二阶段：设置默认选中（需要等第一阶段完成）
-      store.activeNotebook = store.notebooks[0].id
-      store.activeTag = store.tags[0].id
+      store.activeNotebook = store.notebooks[0]?.id ?? '0'
+      store.activeTag = store.tags[0]?.id ?? '0'
 
       // 第三阶段：并行加载笔记和统计
       await Promise.all([noteSearch.refreshNotes(), updateStats()])
     } catch (error) {
-      showError(error, '初始化失败，请刷新页面重试')
+      showError(error, i18n.global.t('composable.initFailed'))
     } finally {
       store.loading = false
       notification.close()

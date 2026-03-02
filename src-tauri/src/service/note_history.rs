@@ -22,6 +22,7 @@ use sea_orm::{
 
 use crate::{
     entity::{self},
+    i18n::t_simple,
     model::{NoteHistory, NoteHistorySearchPageParam, PageResult},
 };
 
@@ -43,17 +44,19 @@ pub async fn search_page(
     db: &DatabaseConnection,
     search_param: &NoteHistorySearchPageParam,
 ) -> anyhow::Result<PageResult<NoteHistory>> {
-    // 构建计数查询和数据查询
+    search_param.page_param.validate()?;
+
+    if search_param.note_id <= 0 {
+        return Err(anyhow::anyhow!(t_simple("error.invalidNoteId")));
+    }
+
     let mut count_builder = entity::note_history::Entity::find();
     let mut query_builder = entity::note_history::Entity::find();
 
-    // 按笔记 ID 过滤
-    if search_param.note_id > 0 {
-        count_builder =
-            count_builder.filter(entity::note_history::Column::NoteId.eq(search_param.note_id));
-        query_builder =
-            query_builder.filter(entity::note_history::Column::NoteId.eq(search_param.note_id));
-    }
+    count_builder =
+        count_builder.filter(entity::note_history::Column::NoteId.eq(search_param.note_id));
+    query_builder =
+        query_builder.filter(entity::note_history::Column::NoteId.eq(search_param.note_id));
 
     // 查询总数
     let total = count_builder

@@ -2,31 +2,37 @@
   <Dialog
     :model-value="visible ?? false"
     @update:model-value="visible = $event"
-    title="历史记录"
+    :title="t('history.title')"
     :fullscreen="true"
     @open="$emit('open')"
   >
     <div class="h-[88vh] overflow-hidden flex flex-col">
       <div class="flex-1 overflow-auto">
-        <table class="w-full border-collapse">
+        <table class="w-full border-collapse" role="table" :aria-label="t('history.title')">
           <thead class="bg-slate-50 sticky top-0">
             <tr>
               <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">ID</th>
               <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">
-                笔记本名称
-              </th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">标题</th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">
-                内容类型
-              </th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">标签</th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">
-                操作类型
+                {{ t('history.notebookName') }}
               </th>
               <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">
-                操作时间
+                {{ t('history.noteTitle') }}
               </th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">操作</th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">
+                {{ t('history.contentType') }}
+              </th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">
+                {{ t('history.tags') }}
+              </th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">
+                {{ t('history.operateType') }}
+              </th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">
+                {{ t('history.operateTime') }}
+              </th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">
+                {{ t('history.action') }}
+              </th>
             </tr>
           </thead>
           <!-- 加载骨架屏 -->
@@ -38,7 +44,7 @@
               <td colspan="8" class="px-4 py-12 text-center text-slate-500">
                 <div class="flex flex-col items-center">
                   <Clock class="w-10 h-10 mb-2 opacity-40" />
-                  <span>暂无历史记录</span>
+                  <span>{{ t('history.empty') }}</span>
                 </div>
               </td>
             </tr>
@@ -54,8 +60,9 @@
                 <button
                   @click="handleView(row)"
                   class="px-3 py-1 text-sm text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
+                  :aria-label="`${t('history.view')} #${row.id}`"
                 >
-                  查看
+                  {{ t('history.view') }}
                 </button>
               </td>
             </tr>
@@ -80,11 +87,11 @@
   </Dialog>
 
   <!-- 内容查看对话框 -->
-  <Dialog v-model="viewVisible" title="内容查看" :width="1200">
+  <Dialog v-model="viewVisible" :title="t('history.contentView')" :width="1200">
     <div class="h-[70vh] overflow-hidden flex">
       <!-- 旧内容区域 -->
       <div class="flex-1 border-r border-slate-200 pr-4">
-        <div class="text-lg font-semibold mb-4 text-slate-700">旧内容</div>
+        <div class="text-lg font-semibold mb-4 text-slate-700">{{ t('history.oldContent') }}</div>
         <div class="h-full overflow-auto bg-slate-50 p-4 rounded-lg border border-slate-200">
           <TipTapEditor
             :model-value="viewOldContent"
@@ -97,7 +104,7 @@
 
       <!-- 新内容区域 -->
       <div class="flex-1 pl-4">
-        <div class="text-lg font-semibold mb-4 text-slate-700">新内容</div>
+        <div class="text-lg font-semibold mb-4 text-slate-700">{{ t('history.newContent') }}</div>
         <div class="h-full overflow-auto bg-indigo-50 p-4 rounded-lg border border-indigo-200">
           <TipTapEditor
             :model-value="viewNewContent"
@@ -113,11 +120,14 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Clock } from 'lucide-vue-next'
 import { ContentType, NoteHistory } from '../types'
 import TipTapEditor from './TipTapEditor.vue'
 import HistoryTableSkeleton from './HistoryTableSkeleton.vue'
 import { Dialog, Pagination } from './ui'
+
+const { t } = useI18n()
 
 interface Props {
   loading?: boolean
@@ -158,17 +168,18 @@ const showData = computed(() => {
       notebookId: item.extra.notebookId,
       notebookName: item.extra.notebookName,
       title: item.extra.title,
-      contentType: item.extra.contentType === ContentType.Markdown ? 'Markdown' : '富文本',
+      contentType:
+        item.extra.contentType === ContentType.Markdown ? 'Markdown' : t('history.richText'),
       tags: item.extra.tags.map((t) => t.name).join(' '),
       oldContent: item.oldContent,
       newContent: item.newContent,
       operateType:
         item.operateType === 1
-          ? '添加'
+          ? t('history.operateCreate')
           : item.operateType === 2
-            ? '修改'
+            ? t('history.operateUpdate')
             : item.operateType === 3
-              ? '删除'
+              ? t('history.operateDelete')
               : '',
       operateTime: item.operateTime,
     }

@@ -1,5 +1,3 @@
-import { ref } from 'vue'
-
 interface NotificationOptions {
   title?: string
   message: string
@@ -11,7 +9,6 @@ interface NotificationInstance {
   close: () => void
 }
 
-const notifications = ref<{ id: number; options: NotificationOptions }[]>([])
 let notificationId = 0
 let containerEl: HTMLDivElement | null = null
 
@@ -20,6 +17,7 @@ function ensureContainer() {
     containerEl = document.createElement('div')
     containerEl.id = 'notification-container'
     containerEl.className = 'fixed top-4 right-4 z-50 flex flex-col gap-2'
+    containerEl.setAttribute('aria-live', 'polite')
     document.body.appendChild(containerEl)
   }
   return containerEl
@@ -63,7 +61,7 @@ function createSvgIcon(type: NotificationOptions['type']): SVGSVGElement {
 }
 
 function createNotificationElement(
-  id: number,
+  _id: number,
   options: NotificationOptions,
 ): { el: HTMLDivElement; close: () => void } {
   const el = document.createElement('div')
@@ -75,13 +73,11 @@ function createNotificationElement(
     min-w-[280px] max-w-[400px]
   `
 
-  // Icon container
   const iconContainer = document.createElement('div')
   iconContainer.className = 'flex-shrink-0'
   iconContainer.appendChild(createSvgIcon(options.type))
   el.appendChild(iconContainer)
 
-  // Content container
   const contentContainer = document.createElement('div')
   contentContainer.className = 'flex-1'
 
@@ -98,7 +94,6 @@ function createNotificationElement(
   contentContainer.appendChild(messageEl)
   el.appendChild(contentContainer)
 
-  // Close button
   const closeBtn = document.createElement('button')
   closeBtn.className = 'flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors'
 
@@ -117,13 +112,24 @@ function createNotificationElement(
   closeBtn.appendChild(closeSvg)
   el.appendChild(closeBtn)
 
+  let autoCloseTimer: ReturnType<typeof setTimeout> | null = null
+
   const close = () => {
+    if (autoCloseTimer) {
+      clearTimeout(autoCloseTimer)
+      autoCloseTimer = null
+    }
     el.style.transform = 'translateX(100%)'
     el.style.opacity = '0'
     setTimeout(() => {
       el.remove()
-      notifications.value = notifications.value.filter((n) => n.id !== id)
     }, 300)
+  }
+
+  // Auto close timer managed inside the element
+  if (options.duration !== 0) {
+    const duration = options.duration ?? 3000
+    autoCloseTimer = setTimeout(close, duration)
   }
 
   closeBtn.addEventListener('click', close)
@@ -137,14 +143,6 @@ export function showNotification(options: NotificationOptions): NotificationInst
 
   const { el, close } = createNotificationElement(id, options)
   container.appendChild(el)
-
-  notifications.value.push({ id, options })
-
-  // Auto close if duration is set and not 0
-  if (options.duration !== 0) {
-    const duration = options.duration ?? 3000
-    setTimeout(close, duration)
-  }
 
   return { close }
 }

@@ -56,7 +56,10 @@ export function useKeyboardShortcuts(shortcuts: ShortcutHandler[]) {
  * 获取快捷键显示文本
  */
 export function getShortcutText(shortcut: ShortcutHandler): string {
-  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
+  const isMac =
+    (navigator as unknown as { userAgentData?: { platform?: string } }).userAgentData?.platform
+      ?.toUpperCase()
+      ?.includes('MAC') ?? navigator.platform.toUpperCase().indexOf('MAC') >= 0
   const parts: string[] = []
 
   if (shortcut.ctrl) {

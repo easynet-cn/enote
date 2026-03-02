@@ -25,6 +25,9 @@ export default {
     import: 'Import',
     settings: 'Settings',
     more: 'More',
+    pleaseSelect: 'Please select',
+    noMatchingOptions: 'No matching options',
+    confirmAction: 'Confirm Action',
   },
 
   // Sidebar
@@ -222,6 +225,7 @@ export default {
     markdownEditor: {
       source: 'Source',
       preview: 'Preview',
+      sourcePlaceholder: 'Enter Markdown source here...',
     },
     linkDialog: {
       title: 'Insert Link',
@@ -284,6 +288,13 @@ export default {
         confirmText: 'Restore',
       },
     },
+    statusBar: {
+      line: 'Ln',
+      column: 'Col',
+      characters: 'Characters',
+      words: 'Words',
+      selected: 'Selected',
+    },
   },
 
   // Export
@@ -305,6 +316,21 @@ export default {
     exporting: 'Exporting...',
     success: 'Export successful',
     error: 'Export failed',
+    wordDoc: 'Word Document',
+    evernote: 'Evernote',
+    untitledNote: 'Untitled Note',
+    exportNote: 'Export Note',
+    batchExport: 'Batch Export Notes',
+    zipArchive: 'ZIP Archive',
+    wordDocDesc: 'Export as .doc format, opens with Word',
+    markdownDesc: 'Export as .md format',
+    evernoteDesc: 'Export as .enex format, importable to Evernote',
+    jsonDesc: 'Export as JSON data format',
+    xmlDesc: 'Export as XML data format',
+    noTitle: 'Untitled',
+    createTime: 'Created',
+    updateTime: 'Updated',
+    tags: 'Tags',
   },
 
   // Import
@@ -396,10 +422,184 @@ export default {
     BUSINESS_ERROR: 'Operation failed',
     CONFIG_ERROR: 'Configuration error',
     INTERNAL_ERROR: 'Internal system error, please try again later',
-    // Frontend Error Codes
     NETWORK_ERROR: 'Network connection failed, please check your network',
     TIMEOUT_ERROR: 'Request timeout, please try again later',
     PERMISSION_DENIED: 'Permission denied',
     UNKNOWN_ERROR: 'Operation failed, please try again later',
+  },
+
+  // Composable notification strings
+  composable: {
+    loadingData: 'Loading',
+    initFailed: 'Initialization failed, please refresh the page',
+    savingNote: 'Saving note',
+    noteSaved: 'Note saved successfully',
+    saveNoteFailed: 'Failed to save note',
+    deletingNote: 'Deleting note',
+    noteDeleted: 'Note deleted',
+    deleteNoteFailed: 'Failed to delete note',
+    loadingNotebooks: 'Loading notebooks',
+    loadNotebooksFailed: 'Failed to load notebooks',
+    savingNotebook: 'Saving notebook',
+    notebookSaved: 'Notebook saved successfully',
+    saveNotebookFailed: 'Failed to save notebook',
+    deletingNotebook: 'Deleting notebook',
+    notebookDeleted: 'Notebook deleted',
+    deleteNotebookFailed: 'Failed to delete notebook',
+    loadingTags: 'Loading tags',
+    loadTagsFailed: 'Failed to load tags',
+    savingTag: 'Saving tag',
+    tagSaved: 'Tag saved successfully',
+    saveTagFailed: 'Failed to save tag',
+    deletingTag: 'Deleting tag',
+    tagDeleted: 'Tag deleted',
+    deleteTagFailed: 'Failed to delete tag',
+    loadingNotes: 'Loading notes',
+    loadNotesFailed: 'Failed to load notes',
+    countingNotes: 'Counting notes',
+    countNotesFailed: 'Failed to count notes',
+    loadHistoryFailed: 'Failed to load history',
+  },
+
+  // Validation error messages
+  validationError: {
+    notebookNameRequired: 'Notebook name cannot be empty',
+    notebookNameTooLong: 'Notebook name cannot exceed {max} characters',
+    tagNameRequired: 'Tag name cannot be empty',
+    tagNameTooLong: 'Tag name cannot exceed {max} characters',
+    noteTitleRequired: 'Note title cannot be empty',
+    noteTitleTooLong: 'Note title cannot exceed {max} characters',
+    urlRequired: 'URL cannot be empty',
+    urlInvalid: 'Please enter a valid URL',
+    noteContentTooLarge: 'Note content exceeds size limit (max {size}MB)',
+  },
+
+  // Accessibility labels
+  aria: {
+    sidebar: 'Sidebar navigation',
+    noteList: 'Note list',
+    noteEditor: 'Note editor',
+    toolbar: 'Editing toolbar',
+    closeDialog: 'Close dialog',
+    tocNavigation: 'Table of contents navigation',
+    searchInput: 'Search input',
+    noteItem: 'Note item',
+    notebookItem: 'Notebook item',
+    tagItem: 'Tag item',
+    prevPage: 'Previous page',
+    nextPage: 'Next page',
+    pageInfo: '{current} / {total}',
+    selectOption: 'Select option',
+    expandDropdown: 'Expand dropdown',
+  },
+
+  // Table of Contents component
+  toc: {
+    title: 'Table of Contents',
+    untitledHeading: '(Untitled)',
+  },
+
+  // Pagination component
+  pagination: {
+    total: 'Total {total}',
+    itemsPerPage: '{size} / page',
+    prevPage: 'Previous',
+    nextPage: 'Next',
+  },
+
+  // History dialog
+  history: {
+    title: 'History',
+    notebookName: 'Notebook',
+    noteTitle: 'Title',
+    contentType: 'Content Type',
+    tags: 'Tags',
+    operateType: 'Operation',
+    operateTime: 'Time',
+    action: 'Action',
+    empty: 'No history records',
+    view: 'View',
+    contentView: 'Content View',
+    oldContent: 'Old Content',
+    newContent: 'New Content',
+    richText: 'Rich Text',
+    operateCreate: 'Create',
+    operateUpdate: 'Update',
+    operateDelete: 'Delete',
+  },
+
+  // Editor settings dialog
+  editorSettings: {
+    title: 'Settings',
+    notebook: 'Notebook',
+    selectNotebook: 'Select notebook',
+    tags: 'Tags',
+    ariaLabel: 'Note Settings',
+  },
+
+  // Evernote import
+  importEvernote: {
+    untitledNote: 'Untitled Note',
+    parseNoteFailed: 'Failed to parse note',
+    enexFormatError: 'ENEX file format error',
+    enexNoNotes: 'No notes found in ENEX file',
+    untitled: 'Untitled',
+    parseNoteIndexFailed: 'Failed to parse note #{index}',
+    unknownError: 'Unknown error',
+  },
+
+  // Style picker
+  stylePicker: {
+    presetColors: 'Preset Colors',
+    shades: 'Shades',
+    customStyle: 'Custom Style',
+    inputPlaceholder: 'Enter Tailwind class, e.g. text-red-500',
+    apply: 'Apply',
+    preview: 'Preview:',
+    current: 'Current:',
+    selectStyle: 'Select style',
+  },
+
+  // Icon picker
+  iconPicker: {
+    searchPlaceholder: 'Search icons...',
+    noMatch: 'No matching icons found',
+    selected: 'Selected:',
+    selectIcon: 'Select icon',
+  },
+
+  // Import sources
+  importSource: {
+    evernoteName: 'Evernote',
+    evernoteDescription: 'Import .enex Evernote export files',
+    youdaoName: 'Youdao Note',
+    youdaoDescription: 'Import Youdao Note ZIP export files',
+    notionName: 'Notion',
+    notionDescription: 'Import Notion Markdown ZIP export files',
+  },
+
+  // Font names
+  fontName: {
+    microsoftYaHei: 'Microsoft YaHei',
+    pingFang: 'PingFang SC',
+    simSun: 'SimSun',
+    kaiTi: 'KaiTi',
+    fangSong: 'FangSong',
+  },
+
+  // Notion import
+  importNotion: {
+    untitledNote: 'Untitled Note',
+    noNotesFound: 'No Notion note files (.md) found in ZIP',
+    parseFailed: 'Failed to parse {filepath}: {error}',
+    unknownError: 'Unknown error',
+  },
+
+  // Youdao import
+  importYoudao: {
+    untitledNote: 'Untitled Note',
+    noNotesFound: 'No note files (.html, .md) found in ZIP',
+    parseFailed: 'Failed to parse {filepath}: {error}',
+    unknownError: 'Unknown error',
   },
 } as const

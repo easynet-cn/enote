@@ -14,11 +14,12 @@
           :class="['dialog-content', { 'dialog-fullscreen': fullscreen }]"
           :style="!fullscreen ? { width: width + 'px' } : {}"
           @keydown.esc="handleClose"
+          @keydown.tab="handleTabTrap"
         >
           <!-- Header -->
           <div class="dialog-header">
             <h3 :id="titleId" class="dialog-title">{{ title }}</h3>
-            <button class="dialog-close" @click="handleClose" aria-label="关闭对话框">
+            <button class="dialog-close" @click="handleClose" :aria-label="t('aria.closeDialog')">
               <svg
                 class="w-5 h-5"
                 fill="none"
@@ -52,7 +53,8 @@
 </template>
 
 <script setup lang="ts">
-import { watch, ref, computed } from 'vue'
+import { watch, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 interface Props {
   modelValue: boolean
@@ -69,14 +71,16 @@ const props = withDefaults(defineProps<Props>(), {
   closeOnClickOverlay: true,
 })
 
+const { t } = useI18n()
+
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
   open: []
   close: []
 }>()
 
-// 生成唯一的 title ID
-const titleId = computed(() => `dialog-title-${Math.random().toString(36).slice(2, 9)}`)
+// 生成唯一的 title ID（setup 时一次性生成）
+const titleId = `dialog-title-${Math.random().toString(36).slice(2, 9)}`
 
 // Dialog 元素引用
 const dialogRef = ref<HTMLElement | null>(null)
@@ -112,6 +116,33 @@ const handleAfterLeave = () => {
   // 恢复之前的焦点
   previousActiveElement?.focus()
   previousActiveElement = null
+}
+
+// 焦点陷阱：Tab/Shift+Tab 在对话框内循环
+const handleTabTrap = (e: KeyboardEvent) => {
+  if (!dialogRef.value) return
+
+  const focusableSelector =
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  const focusableElements = dialogRef.value.querySelectorAll<HTMLElement>(focusableSelector)
+  if (focusableElements.length === 0) return
+
+  const firstFocusable = focusableElements[0]
+  const lastFocusable = focusableElements[focusableElements.length - 1]
+
+  if (e.shiftKey) {
+    // Shift+Tab: 如果焦点在第一个元素，跳到最后一个
+    if (document.activeElement === firstFocusable) {
+      e.preventDefault()
+      lastFocusable.focus()
+    }
+  } else {
+    // Tab: 如果焦点在最后一个元素，跳到第一个
+    if (document.activeElement === lastFocusable) {
+      e.preventDefault()
+      firstFocusable.focus()
+    }
+  }
 }
 
 const handleClose = () => {

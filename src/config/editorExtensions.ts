@@ -50,12 +50,7 @@ export const coreExtensions: AnyExtension[] = [
     lowlight,
     defaultLanguage: 'plaintext',
   }),
-  // 占位符
-  Placeholder.configure({
-    placeholder: '开始编写笔记...',
-    emptyEditorClass: 'is-editor-empty',
-    emptyNodeClass: 'is-empty',
-  }),
+  // Placeholder is configured dynamically via getRichTextExtensions/getMarkdownExtensions
   // 字符统计
   CharacterCount,
   // 拖拽手柄
@@ -121,29 +116,37 @@ export const markdownExtension = Markdown.configure({
   transformCopiedText: true,
 })
 
+function buildPlaceholder(placeholder?: string): AnyExtension {
+  return Placeholder.configure({
+    placeholder: placeholder || '',
+    emptyEditorClass: 'is-editor-empty',
+    emptyNodeClass: 'is-empty',
+  })
+}
+
 /**
  * 获取富文本编辑器扩展
  */
-export function getRichTextExtensions(): AnyExtension[] {
-  return [...coreExtensions, ...formattingExtensions, ...mediaExtensions, ...taskExtensions]
+export function getRichTextExtensions(placeholder?: string): AnyExtension[] {
+  return [
+    ...coreExtensions,
+    buildPlaceholder(placeholder),
+    ...formattingExtensions,
+    ...mediaExtensions,
+    ...taskExtensions,
+  ]
 }
 
 /**
  * 获取 Markdown 编辑器扩展
  */
-export function getMarkdownExtensions(): AnyExtension[] {
+export function getMarkdownExtensions(placeholder?: string): AnyExtension[] {
   return [
     ...coreExtensions,
+    buildPlaceholder(placeholder),
     ...formattingExtensions,
     ...mediaExtensions,
     ...taskExtensions,
     markdownExtension,
   ]
-}
-
-/**
- * 获取只读查看器扩展（最小化）
- */
-export function getViewerExtensions(): AnyExtension[] {
-  return [...coreExtensions, ...formattingExtensions, ...mediaExtensions, ...taskExtensions]
 }

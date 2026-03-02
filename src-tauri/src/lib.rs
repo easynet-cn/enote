@@ -153,5 +153,5 @@ pub fn run() {
             command::search_page_note_histories,
         ])
         .run(tauri::generate_context!())
-        .expect("启动应用失败");
+        .expect(&t_simple("error.appStartFailed"));
 }

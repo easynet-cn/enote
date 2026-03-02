@@ -9,7 +9,9 @@
           :is="iconComponents[modelValue]"
           class="icon-picker-selected"
         />
-        <span v-else class="icon-picker-placeholder">{{ placeholder }}</span>
+        <span v-else class="icon-picker-placeholder">{{
+          placeholder || t('iconPicker.selectIcon')
+        }}</span>
       </div>
 
       <!-- 清除按钮 -->
@@ -34,7 +36,7 @@
               ref="searchInputRef"
               v-model="searchQuery"
               type="text"
-              placeholder="搜索图标..."
+              :placeholder="t('iconPicker.searchPlaceholder')"
               class="icon-picker-search-input"
             />
             <button v-if="searchQuery" class="icon-picker-search-clear" @click="searchQuery = ''">
@@ -73,12 +75,16 @@
             </div>
 
             <!-- 空状态 -->
-            <div v-if="displayedIcons.length === 0" class="icon-picker-empty">未找到匹配的图标</div>
+            <div v-if="displayedIcons.length === 0" class="icon-picker-empty">
+              {{ t('iconPicker.noMatch') }}
+            </div>
           </div>
 
           <!-- 已选信息 -->
           <div v-if="modelValue" class="icon-picker-footer">
-            <span class="icon-picker-footer-text">已选: {{ modelValue }}</span>
+            <span class="icon-picker-footer-text"
+              >{{ t('iconPicker.selected') }} {{ modelValue }}</span
+            >
           </div>
         </div>
       </Transition>
@@ -88,8 +94,11 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { X, ChevronDown, Search } from 'lucide-vue-next'
 import { iconComponents, iconCategories, getIconsByCategory } from './icons'
+
+const { t } = useI18n()
 
 interface Props {
   modelValue?: string | null
@@ -100,7 +109,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   modelValue: null,
-  placeholder: '选择图标',
+  placeholder: '',
   clearable: true,
   disabled: false,
 })

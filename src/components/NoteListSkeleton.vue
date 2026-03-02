@@ -31,4 +31,10 @@ withDefaults(defineProps<Props>(), {
   background: white;
   border: 1px solid #f1f5f9;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  :deep(.animate-pulse) {
+    animation: none;
+  }
+}
 </style>

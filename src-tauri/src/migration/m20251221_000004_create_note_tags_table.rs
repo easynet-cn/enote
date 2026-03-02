@@ -20,14 +20,16 @@ impl MigrationTrait for Migration {
                     .col(big_integer(NoteTags::TagId).not_null())
                     .col(integer(NoteTags::SortOrder).not_null().default(0))
                     .col(date_time(NoteTags::CreateTime).not_null())
-                    // 注意：保持与现有实体一致的拼写 "upate_time"
-                    .col(date_time(NoteTags::UpateTime).not_null())
+                    .col(date_time(NoteTags::UpdateTime).not_null())
                     .to_owned(),
             )
             .await?;
 
         // 创建索引加速查询（如果不存在）
-        if !manager.has_index("note_tags", "idx_note_tags_note_id").await? {
+        if !manager
+            .has_index("note_tags", "idx_note_tags_note_id")
+            .await?
+        {
             manager
                 .create_index(
                     Index::create()
@@ -39,7 +41,10 @@ impl MigrationTrait for Migration {
                 .await?;
         }
 
-        if !manager.has_index("note_tags", "idx_note_tags_tag_id").await? {
+        if !manager
+            .has_index("note_tags", "idx_note_tags_tag_id")
+            .await?
+        {
             manager
                 .create_index(
                     Index::create()
@@ -88,6 +93,5 @@ enum NoteTags {
     TagId,
     SortOrder,
     CreateTime,
-    #[sea_orm(iden = "upate_time")]
-    UpateTime,
+    UpdateTime,
 }

@@ -164,18 +164,16 @@ export const SearchAndReplace = Extension.create<SearchAndReplaceOptions, Search
           tr.insertText(this.storage.replaceTerm, result.from, result.to)
           editor.view.dispatch(tr)
 
-          // Update results after replacement
-          setTimeout(() => {
-            this.storage.results = findSearchResults(
-              editor.state.doc,
-              this.storage.searchTerm,
-              this.storage.caseSensitive,
-            )
-            if (this.storage.currentIndex >= this.storage.results.length) {
-              this.storage.currentIndex = Math.max(0, this.storage.results.length - 1)
-            }
-            editor.view.dispatch(editor.state.tr)
-          }, 0)
+          // Synchronously update results after replacement
+          this.storage.results = findSearchResults(
+            editor.state.doc,
+            this.storage.searchTerm,
+            this.storage.caseSensitive,
+          )
+          if (this.storage.currentIndex >= this.storage.results.length) {
+            this.storage.currentIndex = Math.max(0, this.storage.results.length - 1)
+          }
+          editor.view.dispatch(editor.state.tr)
 
           return true
         },

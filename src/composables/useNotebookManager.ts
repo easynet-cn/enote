@@ -2,6 +2,7 @@ import { useAppStore } from '../stores/app'
 import { noteApi } from '../api/note'
 import { parseId, validateNotebookName } from '../utils/validation'
 import { showError, withNotification } from '../utils/errorHandler'
+import i18n from '../i18n'
 import type { ShowNotebook } from '../types'
 
 export function useNotebookManager() {
@@ -26,7 +27,10 @@ export function useNotebookManager() {
         )
         return data
       },
-      { loading: '正在加载笔记本', error: '加载笔记本失败' },
+      {
+        loading: i18n.global.t('composable.loadingNotebooks'),
+        error: i18n.global.t('composable.loadNotebooksFailed'),
+      },
     )
 
     if (result) {
@@ -64,9 +68,9 @@ export function useNotebookManager() {
         await Promise.all([getNotebooks(), refreshNotes()])
       },
       {
-        loading: '正在保存笔记本',
-        success: '笔记本保存成功',
-        error: '保存笔记本失败',
+        loading: i18n.global.t('composable.savingNotebook'),
+        success: i18n.global.t('composable.notebookSaved'),
+        error: i18n.global.t('composable.saveNotebookFailed'),
       },
     )
   }
@@ -82,9 +86,9 @@ export function useNotebookManager() {
         await Promise.all([getNotebooks(), refreshNotes()])
       },
       {
-        loading: '正在删除笔记本',
-        success: '笔记本已删除',
-        error: '删除笔记本失败',
+        loading: i18n.global.t('composable.deletingNotebook'),
+        success: i18n.global.t('composable.notebookDeleted'),
+        error: i18n.global.t('composable.deleteNotebookFailed'),
       },
     )
   }

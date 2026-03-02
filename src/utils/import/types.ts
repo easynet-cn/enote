@@ -1,6 +1,7 @@
 /**
  * 导入功能类型定义
  */
+import i18n from '../../i18n'
 
 /** 导入来源类型 */
 export type ImportSource = 'evernote' | 'youdao' | 'notion'
@@ -8,8 +9,8 @@ export type ImportSource = 'evernote' | 'youdao' | 'notion'
 /** 导入来源配置 */
 export interface ImportSourceConfig {
   id: ImportSource
-  name: string
-  description: string
+  name: () => string
+  description: () => string
   icon: string
   fileTypes: string[]
   accept: string
@@ -64,24 +65,24 @@ export interface ImportOptions {
 export const IMPORT_SOURCES: ImportSourceConfig[] = [
   {
     id: 'evernote',
-    name: '印象笔记',
-    description: '导入 .enex 格式的印象笔记导出文件',
+    name: () => i18n.global.t('importSource.evernoteName'),
+    description: () => i18n.global.t('importSource.evernoteDescription'),
     icon: 'FileText',
     fileTypes: ['enex'],
     accept: '.enex',
   },
   {
     id: 'youdao',
-    name: '有道笔记',
-    description: '导入有道笔记导出的 ZIP 压缩包',
+    name: () => i18n.global.t('importSource.youdaoName'),
+    description: () => i18n.global.t('importSource.youdaoDescription'),
     icon: 'FileArchive',
     fileTypes: ['zip'],
     accept: '.zip',
   },
   {
     id: 'notion',
-    name: 'Notion',
-    description: '导入 Notion 导出的 Markdown ZIP 压缩包',
+    name: () => i18n.global.t('importSource.notionName'),
+    description: () => i18n.global.t('importSource.notionDescription'),
     icon: 'FileCode',
     fileTypes: ['zip'],
     accept: '.zip',

@@ -18,6 +18,7 @@ use serde_with::{DefaultOnNull, serde_as};
 use tracing::warn;
 
 use crate::entity;
+use crate::i18n::{t, t_simple};
 
 // ============================================================================
 // 操作类型枚举
@@ -87,13 +88,13 @@ impl PageParam {
     /// - `Err`: 参数无效，包含错误信息
     pub fn validate(&self) -> anyhow::Result<()> {
         if self.page_index < 1 {
-            anyhow::bail!("页码必须大于等于 1")
+            anyhow::bail!("{}", t_simple("validation.pageIndexMin"))
         }
         if self.page_size < 1 {
-            anyhow::bail!("每页数量必须大于等于 1")
+            anyhow::bail!("{}", t_simple("validation.pageSizeMin"))
         }
         if self.page_size > Self::MAX_PAGE_SIZE {
-            anyhow::bail!("每页数量不能超过 {}", Self::MAX_PAGE_SIZE)
+            anyhow::bail!("{}", t("validation.pageSizeMax", &[&Self::MAX_PAGE_SIZE.to_string()]))
         }
         Ok(())
     }
@@ -479,7 +480,7 @@ impl NoteSearchPageParam {
         self.page_param.validate()?;
 
         if self.keyword.len() > Self::MAX_KEYWORD_LENGTH {
-            anyhow::bail!("搜索关键词不能超过 {} 个字符", Self::MAX_KEYWORD_LENGTH)
+            anyhow::bail!("{}", t("validation.keywordTooLong", &[&Self::MAX_KEYWORD_LENGTH.to_string()]))
         }
 
         Ok(())

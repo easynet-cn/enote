@@ -12,7 +12,8 @@ use chrono::Local;
 use sea_orm::{
     ActiveModelTrait,
     ActiveValue::{NotSet, Set},
-    DatabaseConnection, EntityTrait, IntoActiveModel, QueryOrder,
+    ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, QueryFilter, QueryOrder,
+    TransactionTrait,
 };
 
 use crate::{entity, model::Notebook};
@@ -85,9 +86,39 @@ pub async fn create(
 /// - `Err`: 删除失败
 ///
 /// # 注意
-/// 删除笔记本不会自动删除其下的笔记，需要前端或业务层处理
+/// 级联删除：事务中先删除关联的 note_tags，再删除 notes，最后删除 notebook
 pub async fn delete_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<()> {
-    entity::notebook::Entity::delete_by_id(id).exec(db).await?;
+    let txn = db.begin().await?;
+
+    // Find all note IDs belonging to this notebook
+    let note_ids: Vec<i64> = entity::note::Entity::find()
+        .filter(entity::note::Column::NotebookId.eq(id))
+        .all(&txn)
+        .await?
+        .iter()
+        .map(|n| n.id)
+        .collect();
+
+    // Delete note_tags for those notes
+    if !note_ids.is_empty() {
+        entity::note_tags::Entity::delete_many()
+            .filter(entity::note_tags::Column::NoteId.is_in(note_ids))
+            .exec(&txn)
+            .await?;
+    }
+
+    // Delete all notes in this notebook
+    entity::note::Entity::delete_many()
+        .filter(entity::note::Column::NotebookId.eq(id))
+        .exec(&txn)
+        .await?;
+
+    // Delete the notebook itself
+    entity::notebook::Entity::delete_by_id(id)
+        .exec(&txn)
+        .await?;
+
+    txn.commit().await?;
 
     Ok(())
 }

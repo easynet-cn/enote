@@ -1,8 +1,18 @@
 <template>
-  <div v-if="visible && items.length > 0" class="toc-panel" role="navigation" aria-label="目录导航">
+  <div
+    v-if="visible && items.length > 0"
+    class="toc-panel"
+    role="navigation"
+    :aria-label="t('aria.tocNavigation')"
+  >
     <div class="toc-header">
-      <h3 class="toc-title">目录</h3>
-      <button class="toc-close" @click="$emit('close')" aria-label="关闭目录" title="关闭目录">
+      <h3 class="toc-title">{{ t('toc.title') }}</h3>
+      <button
+        class="toc-close"
+        @click="$emit('close')"
+        :aria-label="t('common.close')"
+        :title="t('common.close')"
+      >
         <X class="w-4 h-4" />
       </button>
     </div>
@@ -15,7 +25,7 @@
             :class="{ 'toc-link-active': activeId === item.id }"
             @click.prevent="scrollToHeading(item)"
           >
-            {{ item.text || '(无标题)' }}
+            {{ item.text || t('toc.untitledHeading') }}
           </a>
         </li>
       </ul>
@@ -25,8 +35,11 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { X } from 'lucide-vue-next'
 import type { Editor } from '@tiptap/vue-3'
+
+const { t } = useI18n()
 
 export interface TocItem {
   id: string

@@ -72,16 +72,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { getCurrentWindow } from '@tauri-apps/api/window'
 import { useNotes } from './composables/useNotes'
 import { useKeyboardShortcuts } from './composables/useKeyboardShortcuts'
+import { useAppStore } from './stores/app'
 import AppSidebar from './components/AppSidebar.vue'
 import NoteList from './components/NoteList.vue'
 import NoteEditor from './components/NoteEditor.vue'
 import ImportDialog from './components/ImportDialog.vue'
 
 const { t } = useI18n()
+const appStore = useAppStore()
 
 // 折叠状态
 const sidebarCollapsed = ref(false)
@@ -192,4 +195,17 @@ useKeyboardShortcuts([
     description: t('shortcuts.toggleSidebar'),
   },
 ])
+
+// 关闭窗口拦截：未保存时提示确认
+onMounted(async () => {
+  const currentWindow = getCurrentWindow()
+  await currentWindow.onCloseRequested(async (event) => {
+    if (appStore.isDirty) {
+      const confirmed = window.confirm(t('editor.unsavedChanges.message'))
+      if (!confirmed) {
+        event.preventDefault()
+      }
+    }
+  })
+})
 </script>

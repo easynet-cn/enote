@@ -25,6 +25,9 @@ export default {
     import: '导入',
     settings: '设置',
     more: '更多',
+    pleaseSelect: '请选择',
+    noMatchingOptions: '没有匹配的选项',
+    confirmAction: '确认操作',
   },
 
   // 侧边栏
@@ -221,6 +224,7 @@ export default {
     markdownEditor: {
       source: '源码',
       preview: '预览',
+      sourcePlaceholder: '在此输入 Markdown 源码...',
     },
     linkDialog: {
       title: '插入链接',
@@ -282,6 +286,13 @@ export default {
         confirmText: '恢复',
       },
     },
+    statusBar: {
+      line: '行',
+      column: '列',
+      characters: '字符',
+      words: '词',
+      selected: '已选择',
+    },
   },
 
   // 导出
@@ -303,6 +314,21 @@ export default {
     exporting: '正在导出...',
     success: '导出成功',
     error: '导出失败',
+    wordDoc: 'Word 文档',
+    evernote: '印象笔记',
+    untitledNote: '未命名笔记',
+    exportNote: '导出笔记',
+    batchExport: '批量导出笔记',
+    zipArchive: 'ZIP 压缩包',
+    wordDocDesc: '导出为 .doc 格式，可用 Word 打开',
+    markdownDesc: '导出为 .md 格式',
+    evernoteDesc: '导出为 .enex 格式，可导入印象笔记',
+    jsonDesc: '导出为 JSON 数据格式',
+    xmlDesc: '导出为 XML 数据格式',
+    noTitle: '无标题',
+    createTime: '创建时间',
+    updateTime: '更新时间',
+    tags: '标签',
   },
 
   // 导入
@@ -394,10 +420,184 @@ export default {
     BUSINESS_ERROR: '操作失败',
     CONFIG_ERROR: '配置错误',
     INTERNAL_ERROR: '系统内部错误，请稍后重试',
-    // 前端错误码
     NETWORK_ERROR: '网络连接失败，请检查您的网络',
     TIMEOUT_ERROR: '请求超时，请稍后重试',
     PERMISSION_DENIED: '没有权限执行此操作',
     UNKNOWN_ERROR: '操作失败，请稍后重试',
+  },
+
+  // Composable 通知字符串
+  composable: {
+    loadingData: '正在加载',
+    initFailed: '初始化失败，请刷新页面重试',
+    savingNote: '正在保存笔记',
+    noteSaved: '笔记保存成功',
+    saveNoteFailed: '保存笔记失败',
+    deletingNote: '正在删除笔记',
+    noteDeleted: '笔记已删除',
+    deleteNoteFailed: '删除笔记失败',
+    loadingNotebooks: '正在加载笔记本',
+    loadNotebooksFailed: '加载笔记本失败',
+    savingNotebook: '正在保存笔记本',
+    notebookSaved: '笔记本保存成功',
+    saveNotebookFailed: '保存笔记本失败',
+    deletingNotebook: '正在删除笔记本',
+    notebookDeleted: '笔记本已删除',
+    deleteNotebookFailed: '删除笔记本失败',
+    loadingTags: '正在加载标签',
+    loadTagsFailed: '加载标签失败',
+    savingTag: '正在保存标签',
+    tagSaved: '标签保存成功',
+    saveTagFailed: '保存标签失败',
+    deletingTag: '正在删除标签',
+    tagDeleted: '标签已删除',
+    deleteTagFailed: '删除标签失败',
+    loadingNotes: '正在加载笔记',
+    loadNotesFailed: '加载笔记失败',
+    countingNotes: '正在统计笔记',
+    countNotesFailed: '统计笔记失败',
+    loadHistoryFailed: '加载历史记录失败',
+  },
+
+  // 校验错误信息
+  validationError: {
+    notebookNameRequired: '笔记本名称不能为空',
+    notebookNameTooLong: '笔记本名称不能超过{max}个字符',
+    tagNameRequired: '标签名称不能为空',
+    tagNameTooLong: '标签名称不能超过{max}个字符',
+    noteTitleRequired: '笔记标题不能为空',
+    noteTitleTooLong: '笔记标题不能超过{max}个字符',
+    urlRequired: 'URL 不能为空',
+    urlInvalid: '请输入有效的 URL',
+    noteContentTooLarge: '笔记内容超过大小限制（最大 {size}MB）',
+  },
+
+  // 无障碍标签
+  aria: {
+    sidebar: '侧边栏导航',
+    noteList: '笔记列表',
+    noteEditor: '笔记编辑器',
+    toolbar: '编辑工具栏',
+    closeDialog: '关闭对话框',
+    tocNavigation: '目录导航',
+    searchInput: '搜索输入',
+    noteItem: '笔记项',
+    notebookItem: '笔记本项',
+    tagItem: '标签项',
+    prevPage: '上一页',
+    nextPage: '下一页',
+    pageInfo: '{current} / {total}',
+    selectOption: '选择选项',
+    expandDropdown: '展开下拉菜单',
+  },
+
+  // 目录组件
+  toc: {
+    title: '目录',
+    untitledHeading: '(无标题)',
+  },
+
+  // 分页组件
+  pagination: {
+    total: '共 {total} 条',
+    itemsPerPage: '{size} 条/页',
+    prevPage: '上一页',
+    nextPage: '下一页',
+  },
+
+  // 历史记录对话框
+  history: {
+    title: '历史记录',
+    notebookName: '笔记本名称',
+    noteTitle: '标题',
+    contentType: '内容类型',
+    tags: '标签',
+    operateType: '操作类型',
+    operateTime: '操作时间',
+    action: '操作',
+    empty: '暂无历史记录',
+    view: '查看',
+    contentView: '内容查看',
+    oldContent: '旧内容',
+    newContent: '新内容',
+    richText: '富文本',
+    operateCreate: '添加',
+    operateUpdate: '修改',
+    operateDelete: '删除',
+  },
+
+  // 编辑器设置对话框
+  editorSettings: {
+    title: '设置',
+    notebook: '笔记本',
+    selectNotebook: '请选择笔记本',
+    tags: '标签',
+    ariaLabel: '笔记设置',
+  },
+
+  // 印象笔记导入
+  importEvernote: {
+    untitledNote: '未命名笔记',
+    parseNoteFailed: '解析笔记失败',
+    enexFormatError: 'ENEX 文件格式错误',
+    enexNoNotes: 'ENEX 文件中没有找到笔记',
+    untitled: '未命名',
+    parseNoteIndexFailed: '解析第 {index} 个笔记失败',
+    unknownError: '未知错误',
+  },
+
+  // 样式选择器
+  stylePicker: {
+    presetColors: '预设颜色',
+    shades: '色阶',
+    customStyle: '自定义样式',
+    inputPlaceholder: '输入 Tailwind 类名，如 text-red-500',
+    apply: '应用',
+    preview: '预览:',
+    current: '当前:',
+    selectStyle: '选择样式',
+  },
+
+  // 图标选择器
+  iconPicker: {
+    searchPlaceholder: '搜索图标...',
+    noMatch: '未找到匹配的图标',
+    selected: '已选:',
+    selectIcon: '选择图标',
+  },
+
+  // 导入来源
+  importSource: {
+    evernoteName: '印象笔记',
+    evernoteDescription: '导入 .enex 格式的印象笔记导出文件',
+    youdaoName: '有道笔记',
+    youdaoDescription: '导入有道笔记导出的 ZIP 压缩包',
+    notionName: 'Notion',
+    notionDescription: '导入 Notion 导出的 Markdown ZIP 压缩包',
+  },
+
+  // 字体名称
+  fontName: {
+    microsoftYaHei: '微软雅黑',
+    pingFang: '苹方',
+    simSun: '宋体',
+    kaiTi: '楷体',
+    fangSong: '仿宋',
+  },
+
+  // Notion 导入
+  importNotion: {
+    untitledNote: '未命名笔记',
+    noNotesFound: 'ZIP 文件中没有找到 Notion 笔记文件 (.md)',
+    parseFailed: '解析 {filepath} 失败: {error}',
+    unknownError: '未知错误',
+  },
+
+  // 有道笔记导入
+  importYoudao: {
+    untitledNote: '未命名笔记',
+    noNotesFound: 'ZIP 文件中没有找到笔记文件 (.html, .md)',
+    parseFailed: '解析 {filepath} 失败: {error}',
+    unknownError: '未知错误',
   },
 } as const

@@ -5,12 +5,12 @@
   >
     <!-- 源码编辑面板 -->
     <div class="split-panel source-panel" :style="splitPanelStyle">
-      <div class="panel-header">源码</div>
+      <div class="panel-header">{{ t('markdownEditor.source') }}</div>
       <textarea
         ref="sourcePanel"
         :value="source"
         class="markdown-source-panel"
-        placeholder="在此输入 Markdown 源码..."
+        :placeholder="t('markdownEditor.sourcePlaceholder')"
         @input="handleInput"
         @scroll="handleSourceScroll"
       />
@@ -25,7 +25,7 @@
 
     <!-- 预览面板 -->
     <div class="split-panel preview-panel">
-      <div class="panel-header">预览</div>
+      <div class="panel-header">{{ t('markdownEditor.preview') }}</div>
       <div ref="previewPanel" class="markdown-preview-panel" @scroll="handlePreviewScroll">
         <slot name="preview" />
       </div>
@@ -34,8 +34,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { MarkdownLayout } from '../types'
+
+const { t } = useI18n()
 
 interface Props {
   layout: MarkdownLayout
@@ -68,7 +71,24 @@ const handleInput = (e: Event) => {
   emit('update:source', target.value)
 }
 
-// 拖拽调整面板大小
+// 拖拽调整面板大小 - 存储当前活动的事件处理器引用以便 onUnmounted 清理
+let activeMouseMove: ((e: MouseEvent) => void) | null = null
+let activeMouseUp: (() => void) | null = null
+
+const cleanupResize = () => {
+  if (activeMouseMove) {
+    document.removeEventListener('mousemove', activeMouseMove)
+    activeMouseMove = null
+  }
+  if (activeMouseUp) {
+    document.removeEventListener('mouseup', activeMouseUp)
+    activeMouseUp = null
+  }
+  isResizing.value = false
+  document.body.style.cursor = ''
+  document.body.style.userSelect = ''
+}
+
 const startResize = (e: MouseEvent) => {
   isResizing.value = true
   const startPos = props.layout === MarkdownLayout.Vertical ? e.clientY : e.clientX
@@ -94,12 +114,11 @@ const startResize = (e: MouseEvent) => {
   }
 
   const onMouseUp = () => {
-    isResizing.value = false
-    document.removeEventListener('mousemove', onMouseMove)
-    document.removeEventListener('mouseup', onMouseUp)
-    document.body.style.cursor = ''
-    document.body.style.userSelect = ''
+    cleanupResize()
   }
+
+  activeMouseMove = onMouseMove
+  activeMouseUp = onMouseUp
 
   document.addEventListener('mousemove', onMouseMove)
   document.addEventListener('mouseup', onMouseUp)
@@ -107,6 +126,10 @@ const startResize = (e: MouseEvent) => {
     props.layout === MarkdownLayout.Vertical ? 'row-resize' : 'col-resize'
   document.body.style.userSelect = 'none'
 }
+
+onUnmounted(() => {
+  cleanupResize()
+})
 
 // 滚动同步
 const handleSourceScroll = () => {

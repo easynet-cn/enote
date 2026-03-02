@@ -4,6 +4,8 @@
  * ENEX 是 Evernote 的 XML 导出格式，包含笔记内容、标签、附件等信息
  */
 
+import i18n from '../../i18n'
+import { sanitizeHtml } from '../sanitize'
 import type {
   ImportedNote,
   ImportedAttachment,
@@ -32,11 +34,11 @@ function extractHtmlFromEnml(enmlContent: string): string {
   // 查找 en-note 标签
   const enNote = doc.querySelector('en-note')
   if (enNote) {
-    return enNote.innerHTML
+    return sanitizeHtml(enNote.innerHTML)
   }
 
   // 如果没有 en-note 标签，直接返回 body 内容
-  return doc.body?.innerHTML || enmlContent
+  return sanitizeHtml(doc.body?.innerHTML || enmlContent)
 }
 
 /** 处理 ENML 中的媒体引用，将 en-media 替换为 img 标签 */
@@ -84,9 +86,11 @@ async function md5Hash(data: string): Promise<string> {
 
 /** 解析单个 note 节点 */
 async function parseNoteElement(noteElement: Element): Promise<ImportedNote | null> {
+  const t = i18n.global.t
   try {
     // 提取基本信息
-    const title = noteElement.querySelector('title')?.textContent || '未命名笔记'
+    const title =
+      noteElement.querySelector('title')?.textContent || t('importEvernote.untitledNote')
     const contentElement = noteElement.querySelector('content')
     const created = noteElement.querySelector('created')?.textContent || ''
     const updated = noteElement.querySelector('updated')?.textContent || ''
@@ -151,7 +155,7 @@ async function parseNoteElement(noteElement: Element): Promise<ImportedNote | nu
       attachments: attachments.length > 0 ? attachments : undefined,
     }
   } catch (error) {
-    console.error('解析笔记失败:', error)
+    console.error(t('importEvernote.parseNoteFailed') + ':', error)
     return null
   }
 }
@@ -166,6 +170,7 @@ export async function parseEvernoteEnex(
   content: string,
   onProgress?: ImportProgressCallback,
 ): Promise<ImportResult> {
+  const t = i18n.global.t
   const result: ImportResult = {
     success: 0,
     failed: 0,
@@ -181,7 +186,7 @@ export async function parseEvernoteEnex(
     // 检查解析错误
     const parseError = doc.querySelector('parsererror')
     if (parseError) {
-      throw new Error('ENEX 文件格式错误: ' + parseError.textContent)
+      throw new Error(t('importEvernote.enexFormatError') + ': ' + parseError.textContent)
     }
 
     // 获取所有笔记节点
@@ -189,7 +194,7 @@ export async function parseEvernoteEnex(
     const total = noteElements.length
 
     if (total === 0) {
-      throw new Error('ENEX 文件中没有找到笔记')
+      throw new Error(t('importEvernote.enexNoNotes'))
     }
 
     // 逐个解析笔记
@@ -198,7 +203,8 @@ export async function parseEvernoteEnex(
 
       // 报告进度
       if (onProgress) {
-        const title = noteElement.querySelector('title')?.textContent || '未命名'
+        const title =
+          noteElement.querySelector('title')?.textContent || t('importEvernote.untitled')
         onProgress({
           current: i + 1,
           total,
@@ -213,11 +219,11 @@ export async function parseEvernoteEnex(
         result.success++
       } else {
         result.failed++
-        result.errors.push(`解析第 ${i + 1} 个笔记失败`)
+        result.errors.push(t('importEvernote.parseNoteIndexFailed', { index: i + 1 }))
       }
     }
   } catch (error) {
-    result.errors.push(error instanceof Error ? error.message : '未知错误')
+    result.errors.push(error instanceof Error ? error.message : t('importEvernote.unknownError'))
   }
 
   return result

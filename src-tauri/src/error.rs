@@ -6,32 +6,21 @@
 use serde::Serialize;
 use thiserror::Error;
 
+use crate::i18n::t_simple;
+
 /// 应用程序错误类型
 #[derive(Error, Debug)]
-#[allow(dead_code)]
 pub enum AppError {
     /// 数据库操作错误
-    #[error("数据库错误: {0}")]
+    #[error("Database error: {0}")]
     Database(#[from] sea_orm::DbErr),
-
-    /// 资源未找到
-    #[error("{resource}不存在: ID {id}")]
-    NotFound { resource: String, id: i64 },
-
-    /// 验证错误
-    #[error("验证失败: {0}")]
-    Validation(String),
 
     /// 业务逻辑错误
     #[error("{0}")]
     Business(String),
 
-    /// 配置错误
-    #[error("配置错误: {0}")]
-    Config(String),
-
     /// 内部错误
-    #[error("内部错误: {0}")]
+    #[error("Internal error: {0}")]
     Internal(#[from] anyhow::Error),
 }
 
@@ -59,38 +48,15 @@ impl From<AppError> for ErrorResponse {
 
                 (
                     "DATABASE_ERROR".to_string(),
-                    "数据库操作失败，请稍后重试".to_string(),
+                    t_simple("error.databaseError"),
                     detail,
                 )
             }
-            AppError::NotFound { resource, id } => (
-                "NOT_FOUND".to_string(),
-                format!("{}不存在", resource),
-                Some(format!("ID: {}", id)),
-            ),
-            AppError::Validation(msg) => (
-                "VALIDATION_ERROR".to_string(),
-                msg.clone(),
-                None,
-            ),
             AppError::Business(msg) => (
                 "BUSINESS_ERROR".to_string(),
                 msg.clone(),
                 None,
             ),
-            AppError::Config(_msg) => {
-                // 配置错误不暴露具体配置细节
-                #[cfg(debug_assertions)]
-                let detail = Some(_msg.clone());
-                #[cfg(not(debug_assertions))]
-                let detail: Option<String> = None;
-
-                (
-                    "CONFIG_ERROR".to_string(),
-                    "配置错误，请检查应用配置".to_string(),
-                    detail,
-                )
-            }
             AppError::Internal(_e) => {
                 // 内部错误不暴露堆栈或实现细节
                 #[cfg(debug_assertions)]
@@ -100,7 +66,7 @@ impl From<AppError> for ErrorResponse {
 
                 (
                     "INTERNAL_ERROR".to_string(),
-                    "系统内部错误，请稍后重试".to_string(),
+                    t_simple("error.internalError"),
                     detail,
                 )
             }
@@ -135,39 +101,9 @@ impl AppError {
     fn clone_error(&self) -> AppError {
         match self {
             AppError::Database(e) => AppError::Business(e.to_string()),
-            AppError::NotFound { resource, id } => AppError::NotFound {
-                resource: resource.clone(),
-                id: *id,
-            },
-            AppError::Validation(msg) => AppError::Validation(msg.clone()),
             AppError::Business(msg) => AppError::Business(msg.clone()),
-            AppError::Config(msg) => AppError::Config(msg.clone()),
             AppError::Internal(e) => AppError::Business(e.to_string()),
         }
     }
 
-    /// 创建验证错误
-    #[allow(dead_code)]
-    pub fn validation(message: impl Into<String>) -> Self {
-        AppError::Validation(message.into())
-    }
-
-    /// 创建业务错误
-    #[allow(dead_code)]
-    pub fn business(message: impl Into<String>) -> Self {
-        AppError::Business(message.into())
-    }
-
-    /// 创建资源未找到错误
-    #[allow(dead_code)]
-    pub fn not_found(resource: impl Into<String>, id: i64) -> Self {
-        AppError::NotFound {
-            resource: resource.into(),
-            id,
-        }
-    }
 }
-
-/// 结果类型别名
-#[allow(dead_code)]
-pub type AppResult<T> = Result<T, AppError>;

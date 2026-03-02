@@ -6,6 +6,7 @@
 let worker: Worker | null = null
 let requestId = 0
 const pendingRequests = new Map<number, (result: string) => void>()
+const pendingTimeouts = new Map<number, ReturnType<typeof setTimeout>>()
 
 // 大文件阈值（字节），超过此大小使用 Worker
 const LARGE_FILE_THRESHOLD = 50 * 1024 // 50KB
@@ -32,6 +33,12 @@ const initWorker = () => {
       if (type === 'result') {
         const resolve = pendingRequests.get(id)
         if (resolve) {
+          // Clear the timeout since worker responded in time
+          const timeoutId = pendingTimeouts.get(id)
+          if (timeoutId) {
+            clearTimeout(timeoutId)
+            pendingTimeouts.delete(id)
+          }
           resolve(result)
           pendingRequests.delete(id)
         }
@@ -78,12 +85,14 @@ export const preprocessMarkdown = async (content: string): Promise<string> => {
     w.postMessage({ type: 'preprocess', content, id })
 
     // 超时处理（2秒）
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       if (pendingRequests.has(id)) {
         pendingRequests.delete(id)
+        pendingTimeouts.delete(id)
         resolve(preprocessMarkdownSync(content))
       }
     }, 2000)
+    pendingTimeouts.set(id, timeoutId)
   })
 }
 
@@ -100,5 +109,7 @@ export const terminateMarkdownWorker = () => {
     worker.terminate()
     worker = null
     pendingRequests.clear()
+    pendingTimeouts.forEach((timeoutId) => clearTimeout(timeoutId))
+    pendingTimeouts.clear()
   }
 }

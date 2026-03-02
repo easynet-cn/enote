@@ -4,6 +4,7 @@ import {
   MAX_NOTEBOOK_NAME_LENGTH,
   MAX_TAG_NAME_LENGTH,
 } from '../config/constants'
+import i18n from '../i18n'
 
 /**
  * 验证结果类型
@@ -13,15 +14,20 @@ export interface ValidationResult {
   error?: string
 }
 
+const t = i18n.global.t
+
 /**
  * 验证笔记本名称
  */
 export const validateNotebookName = (name: string | undefined): ValidationResult => {
   if (!name?.trim()) {
-    return { valid: false, error: '笔记本名称不能为空' }
+    return { valid: false, error: t('validationError.notebookNameRequired') }
   }
   if (name.length > MAX_NOTEBOOK_NAME_LENGTH) {
-    return { valid: false, error: `笔记本名称不能超过${MAX_NOTEBOOK_NAME_LENGTH}个字符` }
+    return {
+      valid: false,
+      error: t('validationError.notebookNameTooLong', { max: MAX_NOTEBOOK_NAME_LENGTH }),
+    }
   }
   return { valid: true }
 }
@@ -31,10 +37,13 @@ export const validateNotebookName = (name: string | undefined): ValidationResult
  */
 export const validateTagName = (name: string | undefined): ValidationResult => {
   if (!name?.trim()) {
-    return { valid: false, error: '标签名称不能为空' }
+    return { valid: false, error: t('validationError.tagNameRequired') }
   }
   if (name.length > MAX_TAG_NAME_LENGTH) {
-    return { valid: false, error: `标签名称不能超过${MAX_TAG_NAME_LENGTH}个字符` }
+    return {
+      valid: false,
+      error: t('validationError.tagNameTooLong', { max: MAX_TAG_NAME_LENGTH }),
+    }
   }
   return { valid: true }
 }
@@ -44,10 +53,13 @@ export const validateTagName = (name: string | undefined): ValidationResult => {
  */
 export const validateNoteTitle = (title: string | undefined): ValidationResult => {
   if (!title?.trim()) {
-    return { valid: false, error: '笔记标题不能为空' }
+    return { valid: false, error: t('validationError.noteTitleRequired') }
   }
   if (title.length > MAX_NOTE_TITLE_LENGTH) {
-    return { valid: false, error: `笔记标题不能超过${MAX_NOTE_TITLE_LENGTH}个字符` }
+    return {
+      valid: false,
+      error: t('validationError.noteTitleTooLong', { max: MAX_NOTE_TITLE_LENGTH }),
+    }
   }
   return { valid: true }
 }
@@ -83,13 +95,13 @@ export const isTemporaryId = (id: string | undefined): boolean => {
  */
 export const validateUrl = (url: string | undefined): ValidationResult => {
   if (!url?.trim()) {
-    return { valid: false, error: 'URL 不能为空' }
+    return { valid: false, error: t('validationError.urlRequired') }
   }
   try {
     new URL(url)
     return { valid: true }
   } catch {
-    return { valid: false, error: '请输入有效的 URL' }
+    return { valid: false, error: t('validationError.urlInvalid') }
   }
 }
 
@@ -114,7 +126,7 @@ export const validateNoteContent = (
     const sizeMB = (maxSize / 1024 / 1024).toFixed(1)
     return {
       valid: false,
-      error: `笔记内容超过大小限制（最大 ${sizeMB}MB）`,
+      error: t('validationError.noteContentTooLarge', { size: sizeMB }),
     }
   }
 

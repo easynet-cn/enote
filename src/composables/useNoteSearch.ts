@@ -2,6 +2,7 @@ import { useAppStore } from '../stores/app'
 import { noteApi } from '../api/note'
 import { parseId } from '../utils/validation'
 import { withNotification } from '../utils/errorHandler'
+import i18n from '../i18n'
 import { debounce } from '../utils/debounce'
 import { noteToShowNote } from '../utils/converters'
 import { LRUCache } from '../utils/lruCache'
@@ -60,7 +61,10 @@ export function useNoteSearch() {
 
         return notes
       },
-      { loading: '正在加载笔记', error: '加载笔记失败' },
+      {
+        loading: i18n.global.t('composable.loadingNotes'),
+        error: i18n.global.t('composable.loadNotesFailed'),
+      },
     )
 
     return result || []
@@ -93,7 +97,10 @@ export function useNoteSearch() {
 
         return result
       },
-      { loading: '正在统计笔记', error: '统计笔记失败' },
+      {
+        loading: i18n.global.t('composable.countingNotes'),
+        error: i18n.global.t('composable.countNotesFailed'),
+      },
     )
 
     return countMap
@@ -113,11 +120,6 @@ export function useNoteSearch() {
   // 更新搜索关键词（带防抖）
   const handleUpdateSearchQuery = (updateStats: () => Promise<void>) => {
     debouncedSearch(updateStats)
-  }
-
-  // 立即搜索（不带防抖，用于分页等需要即时响应的场景）
-  const handleImmediateSearch = async (updateStats: () => Promise<void>) => {
-    await executeSearch(updateStats)
   }
 
   // 分页大小变化
@@ -140,7 +142,6 @@ export function useNoteSearch() {
     clearSearchCache,
     stats,
     handleUpdateSearchQuery,
-    handleImmediateSearch,
     handleNoteSizeChange,
     handleNoteCurrentChange,
   }

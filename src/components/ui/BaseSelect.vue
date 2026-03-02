@@ -1,5 +1,12 @@
 <template>
-  <div ref="selectRef" :class="wrapperClasses" @keydown="handleKeydown">
+  <div
+    ref="selectRef"
+    :class="wrapperClasses"
+    @keydown="handleKeydown"
+    role="combobox"
+    :aria-expanded="isOpen"
+    aria-haspopup="listbox"
+  >
     <!-- 触发器 -->
     <div class="select-trigger" @click="toggleDropdown">
       <!-- 前置图标 -->
@@ -14,12 +21,12 @@
           ref="inputRef"
           v-model="searchQuery"
           class="select-search"
-          :placeholder="selectedLabel || placeholder"
+          :placeholder="selectedLabel || displayPlaceholder"
           @input="handleSearch"
           @click.stop
         />
         <span v-else-if="selectedLabel" class="select-value">{{ selectedLabel }}</span>
-        <span v-else class="select-placeholder">{{ placeholder }}</span>
+        <span v-else class="select-placeholder">{{ displayPlaceholder }}</span>
       </div>
 
       <!-- 清除按钮 -->
@@ -48,11 +55,11 @@
         <div v-if="isOpen" ref="dropdownRef" class="select-dropdown" :style="dropdownStyle">
           <!-- 空状态 -->
           <div v-if="filteredOptions.length === 0" class="select-empty">
-            <span>{{ emptyText }}</span>
+            <span>{{ displayEmptyText }}</span>
           </div>
 
           <!-- 选项列表 -->
-          <div v-else class="select-options">
+          <div v-else class="select-options" role="listbox">
             <template v-for="(option, index) in filteredOptions" :key="option.value">
               <!-- 分组标题 -->
               <div v-if="option.isGroup" class="select-group-label">
@@ -61,6 +68,8 @@
               <!-- 选项 -->
               <div
                 v-else
+                role="option"
+                :aria-selected="option.value === modelValue"
                 :class="[
                   'select-option',
                   {
@@ -92,6 +101,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 export interface SelectOption {
   label: string
@@ -115,17 +125,22 @@ interface Props {
   emptyText?: string
 }
 
+const { t } = useI18n()
+
 const props = withDefaults(defineProps<Props>(), {
   modelValue: null,
   options: () => [],
-  placeholder: '请选择',
+  placeholder: '',
   disabled: false,
   clearable: false,
   filterable: false,
   size: 'medium',
   status: 'default',
-  emptyText: '无匹配选项',
+  emptyText: '',
 })
+
+const displayPlaceholder = computed(() => props.placeholder || t('common.pleaseSelect'))
+const displayEmptyText = computed(() => props.emptyText || t('common.noMatchingOptions'))
 
 const emit = defineEmits<{
   'update:modelValue': [value: string | number | null]

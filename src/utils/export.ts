@@ -4,6 +4,9 @@ import JSZip from 'jszip'
 import type { ShowNote } from '../types'
 import { ContentType } from '../types'
 import { markdownToHtml } from './markdown'
+import i18n from '../i18n'
+
+const t = i18n.global.t
 
 export type ExportFormat = 'json' | 'xml' | 'word' | 'enex' | 'markdown'
 
@@ -112,11 +115,11 @@ function exportToWord(note: ShowNote): string {
   </style>
 </head>
 <body>
-  <h1>${note.title || '无标题'}</h1>
+  <h1>${note.title || t('export.noTitle')}</h1>
   <div class="meta">
-    <div>创建时间: ${note.createTime}</div>
-    <div>更新时间: ${note.updateTime}</div>
-    ${tags ? `<div class="tags">标签: ${note.tags?.map((t) => `<span class="tag">${t.name}</span>`).join(' ') || ''}</div>` : ''}
+    <div>${t('export.createTime')}: ${note.createTime}</div>
+    <div>${t('export.updateTime')}: ${note.updateTime}</div>
+    ${tags ? `<div class="tags">${t('export.tags')}: ${note.tags?.map((tag) => `<span class="tag">${tag.name}</span>`).join(' ') || ''}</div>` : ''}
   </div>
   <hr>
   <div class="content">
@@ -285,9 +288,9 @@ function getFileFilters(format: ExportFormat) {
     case 'xml':
       return [{ name: 'XML', extensions: ['xml'] }]
     case 'word':
-      return [{ name: 'Word 文档', extensions: ['doc'] }]
+      return [{ name: t('export.wordDoc'), extensions: ['doc'] }]
     case 'enex':
-      return [{ name: '印象笔记', extensions: ['enex'] }]
+      return [{ name: t('export.evernote'), extensions: ['enex'] }]
     case 'markdown':
       return [{ name: 'Markdown', extensions: ['md'] }]
   }
@@ -320,13 +323,13 @@ export async function exportNote(options: ExportOptions): Promise<boolean> {
   }
 
   // 生成默认文件名
-  const fileName = `${note.title || '未命名笔记'}.${getFileExtension(format)}`
+  const fileName = `${note.title || t('export.untitledNote')}.${getFileExtension(format)}`
 
   // 打开保存文件对话框
   const filePath = await save({
     defaultPath: fileName,
     filters: getFileFilters(format),
-    title: '导出笔记',
+    title: t('export.exportNote'),
   })
 
   if (!filePath) {
@@ -343,11 +346,11 @@ export async function exportNote(options: ExportOptions): Promise<boolean> {
  */
 export function getExportFormats(): { value: ExportFormat; label: string; description: string }[] {
   return [
-    { value: 'word', label: 'Word 文档', description: '导出为 .doc 格式，可用 Word 打开' },
-    { value: 'markdown', label: 'Markdown', description: '导出为 .md 格式' },
-    { value: 'enex', label: '印象笔记', description: '导出为 .enex 格式，可导入印象笔记' },
-    { value: 'json', label: 'JSON', description: '导出为 JSON 数据格式' },
-    { value: 'xml', label: 'XML', description: '导出为 XML 数据格式' },
+    { value: 'word', label: t('export.wordDoc'), description: t('export.wordDocDesc') },
+    { value: 'markdown', label: 'Markdown', description: t('export.markdownDesc') },
+    { value: 'enex', label: t('export.evernote'), description: t('export.evernoteDesc') },
+    { value: 'json', label: 'JSON', description: t('export.jsonDesc') },
+    { value: 'xml', label: 'XML', description: t('export.xmlDesc') },
   ]
 }
 
@@ -362,7 +365,7 @@ export async function exportNotesToMarkdownZip(notes: ShowNote[]): Promise<boole
   // 为每个笔记创建 Markdown 文件
   for (const note of notes) {
     const content = exportToMarkdown(note)
-    const filename = `${sanitizeFilename(note.title || '未命名笔记')}.md`
+    const filename = `${sanitizeFilename(note.title || t('export.untitledNote'))}.md`
     zip.file(filename, content)
   }
 
@@ -372,8 +375,8 @@ export async function exportNotesToMarkdownZip(notes: ShowNote[]): Promise<boole
   // 打开保存文件对话框
   const filePath = await save({
     defaultPath: 'notes_export.zip',
-    filters: [{ name: 'ZIP 压缩包', extensions: ['zip'] }],
-    title: '批量导出笔记',
+    filters: [{ name: t('export.zipArchive'), extensions: ['zip'] }],
+    title: t('export.batchExport'),
   })
 
   if (!filePath) {
@@ -433,8 +436,8 @@ ${notesXml}
   // 打开保存文件对话框
   const filePath = await save({
     defaultPath: 'notes_export.enex',
-    filters: [{ name: '印象笔记', extensions: ['enex'] }],
-    title: '批量导出笔记',
+    filters: [{ name: t('export.evernote'), extensions: ['enex'] }],
+    title: t('export.batchExport'),
   })
 
   if (!filePath) {

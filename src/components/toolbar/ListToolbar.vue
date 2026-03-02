@@ -2,7 +2,7 @@
   <div class="toolbar-section">
     <div class="btn-group">
       <ToolbarButton
-        tooltip="无序列表"
+        :tooltip="t('editor.toolbarTooltip.bulletList')"
         :active="editor?.isActive('bulletList')"
         :disabled="!editMode"
         @click="editor?.chain().focus().toggleBulletList().run()"
@@ -11,7 +11,7 @@
       </ToolbarButton>
 
       <ToolbarButton
-        tooltip="有序列表"
+        :tooltip="t('editor.toolbarTooltip.orderedList')"
         :active="editor?.isActive('orderedList')"
         :disabled="!editMode"
         @click="editor?.chain().focus().toggleOrderedList().run()"
@@ -20,7 +20,7 @@
       </ToolbarButton>
 
       <ToolbarButton
-        tooltip="任务列表"
+        :tooltip="t('editor.toolbarTooltip.taskList')"
         :active="editor?.isActive('taskList')"
         :disabled="!editMode"
         @click="editor?.chain().focus().toggleTaskList().run()"
@@ -33,8 +33,11 @@
 
 <script setup lang="ts">
 import type { Editor } from '@tiptap/vue-3'
+import { useI18n } from 'vue-i18n'
 import { List, ListOrdered, CheckSquare } from 'lucide-vue-next'
 import ToolbarButton from './ToolbarButton.vue'
+
+const { t } = useI18n()
 
 interface Props {
   editor: Editor | null

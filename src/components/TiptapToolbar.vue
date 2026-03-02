@@ -1,5 +1,5 @@
 <template>
-  <div class="tiptap-toolbar-wrapper">
+  <div class="tiptap-toolbar-wrapper" role="toolbar" :aria-label="t('aria.toolbar')">
     <!-- 左侧固定区域：Content Type -->
     <div class="toolbar-fixed toolbar-fixed-left">
       <!-- 新建笔记时的模式选择 -->
@@ -40,6 +40,7 @@
       @click="scrollLeft"
       :disabled="!canScrollLeft"
       :class="{ hidden: !canScrollLeft }"
+      aria-label="Scroll left"
     >
       <ChevronLeft class="w-5 h-5" />
     </button>
@@ -81,16 +82,18 @@
                 <option value="Verdana, sans-serif">Verdana</option>
                 <option value="Tahoma, sans-serif">Tahoma</option>
                 <option value="Trebuchet MS, sans-serif">Trebuchet MS</option>
-                <option value="Microsoft YaHei, sans-serif">微软雅黑</option>
-                <option value="PingFang SC, sans-serif">苹方</option>
+                <option value="Microsoft YaHei, sans-serif">
+                  {{ t('fontName.microsoftYaHei') }}
+                </option>
+                <option value="PingFang SC, sans-serif">{{ t('fontName.pingFang') }}</option>
               </optgroup>
               <optgroup :label="t('editor.fontOptions.serif')">
                 <option value="Times New Roman, serif">Times New Roman</option>
                 <option value="Georgia, serif">Georgia</option>
                 <option value="Palatino, serif">Palatino</option>
-                <option value="SimSun, serif">宋体</option>
-                <option value="KaiTi, serif">楷体</option>
-                <option value="FangSong, serif">仿宋</option>
+                <option value="SimSun, serif">{{ t('fontName.simSun') }}</option>
+                <option value="KaiTi, serif">{{ t('fontName.kaiTi') }}</option>
+                <option value="FangSong, serif">{{ t('fontName.fangSong') }}</option>
               </optgroup>
               <optgroup :label="t('editor.fontOptions.monospace')">
                 <option value="Courier New, monospace">Courier New</option>
@@ -137,6 +140,8 @@
                 :class="['toolbar-btn', { active: editor.isActive('bold') }]"
                 @click="editor.chain().focus().toggleBold().run()"
                 :disabled="!editMode || !editor.can().chain().focus().toggleBold().run()"
+                :aria-label="t('editor.toolbarTooltip.bold')"
+                :aria-pressed="editor.isActive('bold')"
               >
                 <Bold class="w-4 h-4" />
               </button>
@@ -147,6 +152,8 @@
                 :class="['toolbar-btn', { active: editor.isActive('italic') }]"
                 @click="editor.chain().focus().toggleItalic().run()"
                 :disabled="!editMode || !editor.can().chain().focus().toggleItalic().run()"
+                :aria-label="t('editor.toolbarTooltip.italic')"
+                :aria-pressed="editor.isActive('italic')"
               >
                 <Italic class="w-4 h-4" />
               </button>
@@ -157,6 +164,8 @@
                 :class="['toolbar-btn', { active: editor.isActive('underline') }]"
                 @click="editor.chain().focus().toggleUnderline().run()"
                 :disabled="!editMode"
+                :aria-label="t('editor.toolbarTooltip.underline')"
+                :aria-pressed="editor.isActive('underline')"
               >
                 <UnderlineIcon class="w-4 h-4" />
               </button>
@@ -167,6 +176,8 @@
                 :class="['toolbar-btn', { active: editor.isActive('strike') }]"
                 @click="editor.chain().focus().toggleStrike().run()"
                 :disabled="!editMode || !editor.can().chain().focus().toggleStrike().run()"
+                :aria-label="t('editor.toolbarTooltip.strikethrough')"
+                :aria-pressed="editor.isActive('strike')"
               >
                 <Strikethrough class="w-4 h-4" />
               </button>
@@ -177,6 +188,8 @@
                 :class="['toolbar-btn', { active: editor.isActive('superscript') }]"
                 @click="editor.chain().focus().toggleSuperscript().run()"
                 :disabled="!editMode"
+                :aria-label="t('editor.toolbarTooltip.superscript')"
+                :aria-pressed="editor.isActive('superscript')"
               >
                 <Superscript class="w-4 h-4" />
               </button>
@@ -187,6 +200,8 @@
                 :class="['toolbar-btn', { active: editor.isActive('subscript') }]"
                 @click="editor.chain().focus().toggleSubscript().run()"
                 :disabled="!editMode"
+                :aria-label="t('editor.toolbarTooltip.subscript')"
+                :aria-pressed="editor.isActive('subscript')"
               >
                 <Subscript class="w-4 h-4" />
               </button>
@@ -202,6 +217,8 @@
                 :class="['toolbar-btn', { active: editor.isActive({ textAlign: 'left' }) }]"
                 @click="editor.chain().focus().setTextAlign('left').run()"
                 :disabled="!editMode"
+                :aria-label="t('editor.toolbarTooltip.alignLeft')"
+                :aria-pressed="editor.isActive({ textAlign: 'left' })"
               >
                 <AlignLeft class="w-4 h-4" />
               </button>
@@ -212,6 +229,8 @@
                 :class="['toolbar-btn', { active: editor.isActive({ textAlign: 'center' }) }]"
                 @click="editor.chain().focus().setTextAlign('center').run()"
                 :disabled="!editMode"
+                :aria-label="t('editor.toolbarTooltip.alignCenter')"
+                :aria-pressed="editor.isActive({ textAlign: 'center' })"
               >
                 <AlignCenter class="w-4 h-4" />
               </button>
@@ -222,6 +241,8 @@
                 :class="['toolbar-btn', { active: editor.isActive({ textAlign: 'right' }) }]"
                 @click="editor.chain().focus().setTextAlign('right').run()"
                 :disabled="!editMode"
+                :aria-label="t('editor.toolbarTooltip.alignRight')"
+                :aria-pressed="editor.isActive({ textAlign: 'right' })"
               >
                 <AlignRight class="w-4 h-4" />
               </button>
@@ -232,6 +253,8 @@
                 :class="['toolbar-btn', { active: editor.isActive({ textAlign: 'justify' }) }]"
                 @click="editor.chain().focus().setTextAlign('justify').run()"
                 :disabled="!editMode"
+                :aria-label="t('editor.toolbarTooltip.alignJustify')"
+                :aria-pressed="editor.isActive({ textAlign: 'justify' })"
               >
                 <AlignJustify class="w-4 h-4" />
               </button>
@@ -247,6 +270,8 @@
                 :class="['toolbar-btn', { active: editor.isActive('bulletList') }]"
                 @click="editor.chain().focus().toggleBulletList().run()"
                 :disabled="!editMode"
+                :aria-label="t('editor.toolbarTooltip.bulletList')"
+                :aria-pressed="editor.isActive('bulletList')"
               >
                 <List class="w-4 h-4" />
               </button>
@@ -257,6 +282,8 @@
                 :class="['toolbar-btn', { active: editor.isActive('orderedList') }]"
                 @click="editor.chain().focus().toggleOrderedList().run()"
                 :disabled="!editMode"
+                :aria-label="t('editor.toolbarTooltip.orderedList')"
+                :aria-pressed="editor.isActive('orderedList')"
               >
                 <ListOrdered class="w-4 h-4" />
               </button>
@@ -267,6 +294,8 @@
                 :class="['toolbar-btn', { active: editor.isActive('taskList') }]"
                 @click="editor.chain().focus().toggleTaskList().run()"
                 :disabled="!editMode"
+                :aria-label="t('editor.toolbarTooltip.taskList')"
+                :aria-pressed="editor.isActive('taskList')"
               >
                 <ListChecks class="w-4 h-4" />
               </button>
@@ -282,6 +311,7 @@
                 class="toolbar-btn"
                 @click="editor.chain().focus().outdent().run()"
                 :disabled="!editMode"
+                :aria-label="t('editor.toolbarTooltip.outdent')"
               >
                 <IndentDecrease class="w-4 h-4" />
               </button>
@@ -292,6 +322,7 @@
                 class="toolbar-btn"
                 @click="editor.chain().focus().indent().run()"
                 :disabled="!editMode"
+                :aria-label="t('editor.toolbarTooltip.indent')"
               >
                 <IndentIncrease class="w-4 h-4" />
               </button>
@@ -307,6 +338,8 @@
                 :class="['toolbar-btn', { active: editor.isActive('blockquote') }]"
                 @click="editor.chain().focus().toggleBlockquote().run()"
                 :disabled="!editMode"
+                :aria-label="t('editor.toolbarTooltip.quote')"
+                :aria-pressed="editor.isActive('blockquote')"
               >
                 <Quote class="w-4 h-4" />
               </button>
@@ -317,6 +350,8 @@
                 :class="['toolbar-btn', { active: editor.isActive('codeBlock') }]"
                 @click="editor.chain().focus().toggleCodeBlock().run()"
                 :disabled="!editMode"
+                :aria-label="t('editor.toolbarTooltip.codeBlock')"
+                :aria-pressed="editor.isActive('codeBlock')"
               >
                 <Code2 class="w-4 h-4" />
               </button>
@@ -327,6 +362,8 @@
                 :class="['toolbar-btn', { active: editor.isActive('code') }]"
                 @click="editor.chain().focus().toggleCode().run()"
                 :disabled="!editMode"
+                :aria-label="t('editor.toolbarTooltip.inlineCode')"
+                :aria-pressed="editor.isActive('code')"
               >
                 <Code class="w-4 h-4" />
               </button>
@@ -342,6 +379,8 @@
                 :class="['toolbar-btn', { active: editor.isActive('link') }]"
                 @click="openLinkDialog"
                 :disabled="!editMode"
+                :aria-label="t('editor.toolbarTooltip.link')"
+                :aria-pressed="editor.isActive('link')"
               >
                 <LinkIcon class="w-4 h-4" />
               </button>
@@ -352,13 +391,19 @@
                 class="toolbar-btn"
                 @click="editor.chain().focus().unsetLink().run()"
                 :disabled="!editMode || !editor.isActive('link')"
+                :aria-label="t('editor.toolbarTooltip.unlink')"
               >
                 <Unlink class="w-4 h-4" />
               </button>
             </Tooltip>
 
             <Tooltip :content="t('editor.toolbarTooltip.image')" placement="bottom">
-              <button class="toolbar-btn" @click="openImageDialog" :disabled="!editMode">
+              <button
+                class="toolbar-btn"
+                @click="openImageDialog"
+                :disabled="!editMode"
+                :aria-label="t('editor.toolbarTooltip.image')"
+              >
                 <ImageIcon class="w-4 h-4" />
               </button>
             </Tooltip>
@@ -369,7 +414,12 @@
         <div class="toolbar-section">
           <div class="btn-group">
             <Tooltip :content="t('editor.toolbarTooltip.insertTable')" placement="bottom">
-              <button class="toolbar-btn" @click="insertTable" :disabled="!editMode">
+              <button
+                class="toolbar-btn"
+                @click="insertTable"
+                :disabled="!editMode"
+                :aria-label="t('editor.toolbarTooltip.insertTable')"
+              >
                 <TableIcon class="w-4 h-4" />
               </button>
             </Tooltip>
@@ -379,6 +429,7 @@
                 class="toolbar-btn"
                 @click="editor.chain().focus().addColumnAfter().run()"
                 :disabled="!editMode || !editor.can().addColumnAfter()"
+                :aria-label="t('editor.toolbarTooltip.addColumn')"
               >
                 <Columns3 class="w-4 h-4" />
               </button>
@@ -389,6 +440,7 @@
                 class="toolbar-btn"
                 @click="editor.chain().focus().addRowAfter().run()"
                 :disabled="!editMode || !editor.can().addRowAfter()"
+                :aria-label="t('editor.toolbarTooltip.addRow')"
               >
                 <Rows3 class="w-4 h-4" />
               </button>
@@ -399,6 +451,7 @@
                 class="toolbar-btn"
                 @click="editor.chain().focus().deleteTable().run()"
                 :disabled="!editMode || !editor.can().deleteTable()"
+                :aria-label="t('editor.toolbarTooltip.deleteTable')"
               >
                 <TableOff class="w-4 h-4" />
               </button>
@@ -414,6 +467,8 @@
                 :class="['toolbar-btn', { active: editor.isActive('highlight') }]"
                 @click="editor.chain().focus().toggleHighlight().run()"
                 :disabled="!editMode"
+                :aria-label="t('editor.toolbarTooltip.highlight')"
+                :aria-pressed="editor.isActive('highlight')"
               >
                 <Highlighter class="w-4 h-4" />
               </button>
@@ -424,6 +479,7 @@
                 class="toolbar-btn"
                 @click="editor.chain().focus().setHorizontalRule().run()"
                 :disabled="!editMode"
+                :aria-label="t('editor.toolbarTooltip.divider')"
               >
                 <Minus class="w-4 h-4" />
               </button>
@@ -434,6 +490,7 @@
                 class="toolbar-btn"
                 @click="editor.chain().focus().clearNodes().unsetAllMarks().run()"
                 :disabled="!editMode"
+                :aria-label="t('editor.toolbarTooltip.clearFormat')"
               >
                 <RemoveFormatting class="w-4 h-4" />
               </button>
@@ -444,13 +501,20 @@
                 :class="['toolbar-btn', { active: searchDialogVisible }]"
                 @click="toggleSearchDialog"
                 :disabled="!editMode"
+                :aria-label="t('editor.toolbarTooltip.findReplace')"
+                :aria-pressed="searchDialogVisible"
               >
                 <Search class="w-4 h-4" />
               </button>
             </Tooltip>
 
             <Tooltip :content="t('editor.toolbarTooltip.toc')" placement="bottom">
-              <button :class="['toolbar-btn', { active: tocVisible }]" @click="emit('toggle-toc')">
+              <button
+                :class="['toolbar-btn', { active: tocVisible }]"
+                @click="emit('toggle-toc')"
+                :aria-label="t('editor.toolbarTooltip.toc')"
+                :aria-pressed="tocVisible"
+              >
                 <ListTree class="w-4 h-4" />
               </button>
             </Tooltip>
@@ -465,6 +529,7 @@
                 class="toolbar-btn"
                 @click="editor.chain().focus().undo().run()"
                 :disabled="!editMode || !editor.can().chain().focus().undo().run()"
+                :aria-label="t('editor.toolbarTooltip.undo')"
               >
                 <Undo2 class="w-4 h-4" />
               </button>
@@ -475,6 +540,7 @@
                 class="toolbar-btn"
                 @click="editor.chain().focus().redo().run()"
                 :disabled="!editMode || !editor.can().chain().focus().redo().run()"
+                :aria-label="t('editor.toolbarTooltip.redo')"
               >
                 <Redo2 class="w-4 h-4" />
               </button>
@@ -519,6 +585,12 @@
               :class="['toolbar-btn', { active: sourceMode }]"
               @click="emit('toggle-source-mode')"
               :disabled="!editMode"
+              :aria-label="
+                sourceMode
+                  ? t('editor.toolbarTooltip.sourceMode')
+                  : t('editor.toolbarTooltip.markdownSource')
+              "
+              :aria-pressed="sourceMode"
             >
               <FileCode v-if="!sourceMode" class="w-4 h-4" />
               <Eye v-else class="w-4 h-4" />
@@ -530,6 +602,8 @@
               :class="['toolbar-btn', { active: markdownLayout === MarkdownLayout.Vertical }]"
               @click="toggleLayout(MarkdownLayout.Vertical)"
               :disabled="!editMode"
+              :aria-label="t('editor.toolbarTooltip.verticalLayout')"
+              :aria-pressed="markdownLayout === MarkdownLayout.Vertical"
             >
               <PanelTop class="w-4 h-4" />
             </button>
@@ -540,6 +614,8 @@
               :class="['toolbar-btn', { active: markdownLayout === MarkdownLayout.Horizontal }]"
               @click="toggleLayout(MarkdownLayout.Horizontal)"
               :disabled="!editMode"
+              :aria-label="t('editor.toolbarTooltip.horizontalLayout')"
+              :aria-pressed="markdownLayout === MarkdownLayout.Horizontal"
             >
               <PanelLeft class="w-4 h-4" />
             </button>
@@ -554,6 +630,7 @@
       @click="scrollRight"
       :disabled="!canScrollRight"
       :class="{ hidden: !canScrollRight }"
+      aria-label="Scroll right"
     >
       <ChevronRight class="w-5 h-5" />
     </button>
@@ -563,21 +640,33 @@
       <div class="toolbar-actions">
         <!-- 编辑按钮（非编辑模式显示） -->
         <Tooltip v-if="!editMode" :content="t('editor.toolbarTooltip.edit')" placement="bottom">
-          <button class="action-btn action-btn-primary" @click="emit('edit')">
+          <button
+            class="action-btn action-btn-primary"
+            @click="emit('edit')"
+            :aria-label="t('editor.toolbarTooltip.edit')"
+          >
             <Pencil class="w-4 h-4" />
           </button>
         </Tooltip>
 
         <!-- 保存按钮（编辑模式显示） -->
         <Tooltip v-if="editMode" :content="t('editor.toolbarTooltip.save')" placement="bottom">
-          <button class="action-btn action-btn-success" @click="emit('save')">
+          <button
+            class="action-btn action-btn-success"
+            @click="emit('save')"
+            :aria-label="t('editor.toolbarTooltip.save')"
+          >
             <Check class="w-4 h-4" />
           </button>
         </Tooltip>
 
         <!-- 取消按钮（编辑模式显示） -->
         <Tooltip v-if="editMode" :content="t('editor.toolbarTooltip.cancel')" placement="bottom">
-          <button class="action-btn action-btn-secondary" @click="emit('cancel')">
+          <button
+            class="action-btn action-btn-secondary"
+            @click="emit('cancel')"
+            :aria-label="t('editor.toolbarTooltip.cancel')"
+          >
             <X class="w-4 h-4" />
           </button>
         </Tooltip>
@@ -587,28 +676,44 @@
 
         <!-- 设置按钮（编辑模式显示） -->
         <Tooltip v-if="editMode" :content="t('editor.toolbarTooltip.settings')" placement="bottom">
-          <button class="action-btn action-btn-ghost" @click="emit('settings')">
+          <button
+            class="action-btn action-btn-ghost"
+            @click="emit('settings')"
+            :aria-label="t('editor.toolbarTooltip.settings')"
+          >
             <Settings class="w-4 h-4" />
           </button>
         </Tooltip>
 
         <!-- 导出按钮 -->
         <Tooltip :content="t('editor.toolbarTooltip.export')" placement="bottom">
-          <button class="action-btn action-btn-ghost" @click="emit('export')">
+          <button
+            class="action-btn action-btn-ghost"
+            @click="emit('export')"
+            :aria-label="t('editor.toolbarTooltip.export')"
+          >
             <Download class="w-4 h-4" />
           </button>
         </Tooltip>
 
         <!-- 历史记录按钮 -->
         <Tooltip :content="t('editor.toolbarTooltip.history')" placement="bottom">
-          <button class="action-btn action-btn-ghost" @click="emit('history')">
+          <button
+            class="action-btn action-btn-ghost"
+            @click="emit('history')"
+            :aria-label="t('editor.toolbarTooltip.history')"
+          >
             <History class="w-4 h-4" />
           </button>
         </Tooltip>
 
         <!-- 删除按钮 -->
         <Tooltip :content="t('editor.toolbarTooltip.delete')" placement="bottom">
-          <button class="action-btn action-btn-danger" @click="emit('delete')">
+          <button
+            class="action-btn action-btn-danger"
+            @click="emit('delete')"
+            :aria-label="t('editor.toolbarTooltip.delete')"
+          >
             <Trash2 class="w-4 h-4" />
           </button>
         </Tooltip>

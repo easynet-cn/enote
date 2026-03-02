@@ -4,6 +4,7 @@ import { noteApi } from '../api/note'
 import { parseId, isTemporaryId, validateNoteTitle, validateNoteContent } from '../utils/validation'
 import { showError, withNotification } from '../utils/errorHandler'
 import { showTagsToTags } from '../utils/converters'
+import i18n from '../i18n'
 import { ContentType } from '../types'
 
 export function useNoteEditor() {
@@ -96,9 +97,9 @@ export function useNoteEditor() {
         setActiveNote(newNoteId)
       },
       {
-        loading: '正在保存笔记',
-        success: '笔记保存成功',
-        error: '保存笔记失败',
+        loading: i18n.global.t('composable.savingNote'),
+        success: i18n.global.t('composable.noteSaved'),
+        error: i18n.global.t('composable.saveNoteFailed'),
       },
     )
   }
@@ -135,9 +136,9 @@ export function useNoteEditor() {
           store.activeNote = null
         },
         {
-          loading: '正在删除笔记',
-          success: '笔记已删除',
-          error: '删除笔记失败',
+          loading: i18n.global.t('composable.deletingNote'),
+          success: i18n.global.t('composable.noteDeleted'),
+          error: i18n.global.t('composable.deleteNoteFailed'),
         },
       )
     }

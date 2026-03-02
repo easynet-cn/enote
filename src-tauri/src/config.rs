@@ -12,7 +12,7 @@ use std::time::Duration;
 
 use anyhow::{Context, Result};
 use config::Config;
-use sea_orm::{ConnectOptions, Database, DatabaseConnection};
+use sea_orm::{ConnectOptions, ConnectionTrait, Database, DatabaseConnection, Statement};
 use tauri::{AppHandle, Manager};
 use tracing::info;
 
@@ -109,10 +109,10 @@ datasource:
   url: "{}"
 
   # 连接池配置
-  # 最大连接数：适应并发操作
-  max-connections: 20
+  # 最大连接数：SQLite 推荐 5 以内
+  max-connections: 5
   # 最小连接数：保持常驻连接减少重连开销
-  min-connections: 2
+  min-connections: 1
   # 连接超时（秒）：建立新连接的超时时间
   connect_timeout: 10
   # 获取连接超时（秒）：从池中获取连接的超时时间
@@ -157,33 +157,41 @@ datasource:
             .get_string("datasource.url")
             .context(t_simple("config.missing_datasource_url"))?;
 
-        // 读取连接池配置，使用优化的默认值作为回退
-        let max_connections = self
+        let is_sqlite = url.starts_with("sqlite:");
+
+        // 读取连接池配置with clamp validation
+        let default_max = if is_sqlite { 5 } else { 20 };
+        let max_connections = (self
             .config
             .get_int("datasource.max-connections")
-            .unwrap_or(20) as u32;
-        let min_connections = self
+            .unwrap_or(default_max) as u32)
+            .clamp(1, 1000);
+        let min_connections = (self
             .config
             .get_int("datasource.min-connections")
-            .unwrap_or(2) as u32;
-        let connect_timeout = self
+            .unwrap_or(1) as u32)
+            .clamp(0, max_connections);
+        let connect_timeout = (self
             .config
             .get_int("datasource.connect_timeout")
-            .unwrap_or(10) as u64;
-        let acquire_timeout = self
+            .unwrap_or(10) as u64)
+            .clamp(1, 300);
+        let acquire_timeout = (self
             .config
             .get_int("datasource.acquire-timeout")
-            .unwrap_or(5) as u64;
-        let idle_timeout = self
+            .unwrap_or(5) as u64)
+            .clamp(1, 300);
+        let idle_timeout = (self
             .config
             .get_int("datasource.idle-time")
-            .unwrap_or(300) as u64;
-        let max_lifetime = self
+            .unwrap_or(300) as u64)
+            .clamp(1, 86400);
+        let max_lifetime = (self
             .config
             .get_int("datasource.max-lifetime")
-            .unwrap_or(1800) as u64;
+            .unwrap_or(1800) as u64)
+            .clamp(1, 86400);
 
-        // 配置数据库连接选项
         let mut opt = ConnectOptions::new(url);
 
         opt.max_connections(max_connections)
@@ -193,10 +201,21 @@ datasource:
             .idle_timeout(Duration::from_secs(idle_timeout))
             .max_lifetime(Duration::from_secs(max_lifetime));
 
-        // 建立数据库连接
-        Database::connect(opt)
+        let db = Database::connect(opt)
             .await
-            .context(t_simple("config.database.connect.failed"))
+            .context(t_simple("config.database.connect.failed"))?;
+
+        // Enable WAL mode for SQLite for better concurrent read performance
+        if is_sqlite {
+            db.execute(Statement::from_string(
+                db.get_database_backend(),
+                "PRAGMA journal_mode=WAL".to_string(),
+            ))
+            .await
+            .context("Failed to enable WAL mode")?;
+        }
+
+        Ok(db)
     }
 }
 

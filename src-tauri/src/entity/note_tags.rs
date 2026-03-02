@@ -12,7 +12,7 @@ pub struct Model {
     pub tag_id: i64,
     pub sort_order: i32,
     pub create_time: DateTime,
-    pub upate_time: DateTime,
+    pub update_time: DateTime,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

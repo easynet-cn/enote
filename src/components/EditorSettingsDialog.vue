@@ -1,18 +1,22 @@
 <template>
-  <Dialog v-model="visible" title="设置" :width="500">
-    <div class="space-y-4" role="form" aria-label="笔记设置">
+  <Dialog v-model="visible" :title="t('editorSettings.title')" :width="500">
+    <div class="space-y-4" role="form" :aria-label="t('editorSettings.ariaLabel')">
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">笔记本</label>
+        <label class="block text-sm font-medium text-slate-700 mb-2">{{
+          t('editorSettings.notebook')
+        }}</label>
         <Select
           v-model="form.notebookId"
           :options="notebookOptions"
-          placeholder="请选择笔记本"
+          :placeholder="t('editorSettings.selectNotebook')"
           clearable
           filterable
         />
       </div>
       <div>
-        <span class="block text-sm font-medium text-slate-700 mb-2" id="tags-label">标签</span>
+        <span class="block text-sm font-medium text-slate-700 mb-2" id="tags-label">{{
+          t('editorSettings.tags')
+        }}</span>
         <div class="flex flex-wrap gap-2" role="group" aria-labelledby="tags-label">
           <label
             v-for="tag in availableTags"
@@ -38,8 +42,8 @@
     </div>
     <template #footer>
       <div class="flex justify-end gap-3">
-        <Button type="secondary" @click="visible = false">取消</Button>
-        <Button type="primary" @click="handleSubmit">保存</Button>
+        <Button type="secondary" @click="visible = false">{{ t('common.cancel') }}</Button>
+        <Button type="primary" @click="handleSubmit">{{ t('common.save') }}</Button>
       </div>
     </template>
   </Dialog>
@@ -47,10 +51,13 @@
 
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Check } from 'lucide-vue-next'
 import { Button, Select, Dialog } from './ui'
 import type { SelectOption } from './ui'
 import type { ShowNotebook, ShowTag } from '../types'
+
+const { t } = useI18n()
 
 interface Props {
   notebooks: ShowNotebook[]

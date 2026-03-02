@@ -40,3 +40,11 @@ withDefaults(defineProps<Props>(), {
   count: 5,
 })
 </script>
+
+<style scoped>
+@media (prefers-reduced-motion: reduce) {
+  :deep(.animate-pulse) {
+    animation: none;
+  }
+}
+</style>

@@ -5,13 +5,13 @@
       collapsed ? 'w-12' : 'w-64',
     ]"
     role="navigation"
-    aria-label="侧边栏导航"
+    :aria-label="t('aria.sidebar')"
   >
     <!-- 折叠/展开按钮（右侧边界中间） -->
     <button
       @click="$emit('toggle-collapse')"
       class="absolute -right-3.5 top-1/2 -translate-y-1/2 z-10 w-7 h-7 bg-white border border-slate-200 rounded-full shadow-sm flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-all hover:scale-110 active:scale-95"
-      :aria-label="collapsed ? '展开侧边栏' : '收起侧边栏'"
+      :aria-label="collapsed ? t('sidebar.expand') : t('sidebar.collapse')"
       :title="collapsed ? t('sidebar.expand') : t('sidebar.collapse')"
     >
       <ChevronRight v-if="collapsed" class="w-4 h-4" aria-hidden="true" />
@@ -25,14 +25,20 @@
         type="primary"
         circle
         @click="$emit('createNewNote')"
-        aria-label="创建新笔记"
-        title="{{ t('sidebar.createNotebook') }}"
+        :aria-label="t('editor.newNote')"
+        :title="t('editor.newNote')"
       >
         <template #icon>
           <Plus class="w-5 h-5" aria-hidden="true" />
         </template>
       </Button>
-      <Button v-else type="primary" block @click="$emit('createNewNote')" aria-label="创建新笔记">
+      <Button
+        v-else
+        type="primary"
+        block
+        @click="$emit('createNewNote')"
+        :aria-label="t('editor.newNote')"
+      >
         <template #icon>
           <Plus class="w-4 h-4" aria-hidden="true" />
         </template>
@@ -73,7 +79,7 @@
           </Dropdown>
         </div>
 
-        <ul role="listbox" aria-label="笔记本列表">
+        <ul role="listbox" :aria-label="t('sidebar.notebooks')">
           <li
             v-for="notebook in notebooks"
             :key="notebook.id"
@@ -137,7 +143,7 @@
           </Dropdown>
         </div>
 
-        <ul class="space-y-1" role="listbox" aria-label="标签列表">
+        <ul class="space-y-1" role="listbox" :aria-label="t('sidebar.tags')">
           <li
             v-for="tag in tags"
             :key="tag.id"
@@ -185,7 +191,7 @@
 
   <!-- 笔记本编辑弹窗 -->
   <Dialog v-model="notebookDialog" :title="notebookDialogTitle" :width="500">
-    <form @submit.prevent="submitNotebookForm" aria-label="笔记本表单">
+    <form @submit.prevent="submitNotebookForm" :aria-label="t('sidebar.notebookForm.title')">
       <div class="space-y-4">
         <div>
           <label for="notebook-name" class="block text-sm font-medium text-slate-700 mb-1"
@@ -249,7 +255,7 @@
 
   <!-- 标签编辑弹窗 -->
   <Dialog v-model="tagDialog" :title="tagDialogTitle" :width="500">
-    <form @submit.prevent="submitTagForm" aria-label="标签表单">
+    <form @submit.prevent="submitTagForm" :aria-label="t('sidebar.tagForm.title')">
       <div class="space-y-4">
         <div>
           <label for="tag-name" class="block text-sm font-medium text-slate-700 mb-1"

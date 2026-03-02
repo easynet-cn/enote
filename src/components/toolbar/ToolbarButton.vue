@@ -3,6 +3,7 @@
     <button
       :class="['toolbar-btn', { active: active }]"
       :disabled="disabled"
+      :aria-label="tooltip"
       @click="$emit('click')"
     >
       <slot />

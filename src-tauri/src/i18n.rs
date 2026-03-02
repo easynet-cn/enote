@@ -98,6 +98,40 @@ fn zh_cn_messages() -> HashMap<String, String> {
         "error.common.title".to_string(),
         "错误".to_string()
     );
+    messages.insert(
+        "error.databaseError".to_string(),
+        "数据库操作失败，请稍后重试".to_string()
+    );
+    messages.insert(
+        "error.internalError".to_string(),
+        "系统内部错误，请稍后重试".to_string()
+    );
+    messages.insert(
+        "error.invalidNoteId".to_string(),
+        "笔记 ID 必须大于 0".to_string()
+    );
+    messages.insert(
+        "error.appStartFailed".to_string(),
+        "启动应用失败".to_string()
+    );
+
+    // 验证相关
+    messages.insert(
+        "validation.pageIndexMin".to_string(),
+        "页码必须大于等于 1".to_string()
+    );
+    messages.insert(
+        "validation.pageSizeMin".to_string(),
+        "每页数量必须大于等于 1".to_string()
+    );
+    messages.insert(
+        "validation.pageSizeMax".to_string(),
+        "每页数量不能超过 {}".to_string()
+    );
+    messages.insert(
+        "validation.keywordTooLong".to_string(),
+        "搜索关键词不能超过 {} 个字符".to_string()
+    );
 
     messages
 }
@@ -172,6 +206,40 @@ fn en_us_messages() -> HashMap<String, String> {
     messages.insert(
         "error.common.title".to_string(),
         "Error".to_string()
+    );
+    messages.insert(
+        "error.databaseError".to_string(),
+        "Database operation failed, please try again later".to_string()
+    );
+    messages.insert(
+        "error.internalError".to_string(),
+        "Internal system error, please try again later".to_string()
+    );
+    messages.insert(
+        "error.invalidNoteId".to_string(),
+        "Note ID must be greater than 0".to_string()
+    );
+    messages.insert(
+        "error.appStartFailed".to_string(),
+        "Failed to start application".to_string()
+    );
+
+    // Validation
+    messages.insert(
+        "validation.pageIndexMin".to_string(),
+        "Page index must be at least 1".to_string()
+    );
+    messages.insert(
+        "validation.pageSizeMin".to_string(),
+        "Page size must be at least 1".to_string()
+    );
+    messages.insert(
+        "validation.pageSizeMax".to_string(),
+        "Page size cannot exceed {}".to_string()
+    );
+    messages.insert(
+        "validation.keywordTooLong".to_string(),
+        "Search keyword cannot exceed {} characters".to_string()
     );
 
     messages

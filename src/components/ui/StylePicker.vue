@@ -25,7 +25,7 @@
         <div v-if="isOpen" ref="dropdownRef" class="style-picker-dropdown" :style="dropdownStyle">
           <!-- 预设颜色 -->
           <div class="style-picker-section">
-            <div class="style-picker-section-title">预设颜色</div>
+            <div class="style-picker-section-title">{{ t('stylePicker.presetColors') }}</div>
             <div class="style-picker-colors">
               <div
                 v-for="color in presetColors"
@@ -44,7 +44,9 @@
 
           <!-- 色阶选择 -->
           <div v-if="selectedColorFamily" class="style-picker-section">
-            <div class="style-picker-section-title">{{ selectedColorFamily.label }} 色阶</div>
+            <div class="style-picker-section-title">
+              {{ selectedColorFamily.label }} {{ t('stylePicker.shades') }}
+            </div>
             <div class="style-picker-shades">
               <div
                 v-for="shade in selectedColorFamily.shades"
@@ -64,12 +66,12 @@
 
           <!-- 自定义输入 -->
           <div class="style-picker-section">
-            <div class="style-picker-section-title">自定义样式</div>
+            <div class="style-picker-section-title">{{ t('stylePicker.customStyle') }}</div>
             <div class="style-picker-custom">
               <input
                 v-model="customInput"
                 type="text"
-                placeholder="输入 Tailwind 类名，如 text-red-500"
+                :placeholder="t('stylePicker.inputPlaceholder')"
                 class="style-picker-custom-input"
                 @keydown.enter="applyCustom"
               />
@@ -78,18 +80,20 @@
                 :disabled="!customInput.trim()"
                 @click="applyCustom"
               >
-                应用
+                {{ t('stylePicker.apply') }}
               </button>
             </div>
             <div v-if="customInput" class="style-picker-custom-preview">
-              <span>预览:</span>
+              <span>{{ t('stylePicker.preview') }}</span>
               <span :class="customInput.trim()">●</span>
             </div>
           </div>
 
           <!-- 已选信息 -->
           <div v-if="modelValue" class="style-picker-footer">
-            <span class="style-picker-footer-text">当前: {{ modelValue }}</span>
+            <span class="style-picker-footer-text"
+              >{{ t('stylePicker.current') }} {{ modelValue }}</span
+            >
           </div>
         </div>
       </Transition>
@@ -99,7 +103,10 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { X, ChevronDown } from 'lucide-vue-next'
+
+const { t } = useI18n()
 
 interface ColorOption {
   label: string
@@ -121,7 +128,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   modelValue: null,
-  placeholder: '选择样式',
+  placeholder: '',
   clearable: true,
 })
 
@@ -506,7 +513,7 @@ const dropdownStyle = ref<Record<string, string>>({})
 
 // 显示值
 const displayValue = computed(() => {
-  if (!props.modelValue) return props.placeholder
+  if (!props.modelValue) return props.placeholder || t('stylePicker.selectStyle')
   const preset = presetColors.find((c) => c.value === props.modelValue)
   if (preset) return preset.label
   return props.modelValue
