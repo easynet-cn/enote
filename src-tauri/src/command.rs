@@ -241,8 +241,9 @@ pub async fn delete_note_by_id(
 #[tauri::command]
 pub async fn search_page_notes(
     app_state: tauri::State<'_, Arc<AppState>>,
-    search_param: NoteSearchPageParam,
+    mut search_param: NoteSearchPageParam,
 ) -> Result<PageResult<Note>, AppError> {
+    search_param.normalize();
     let db = &app_state.database_connection;
     service::note::search_page(db, &search_param).await.map_err(AppError::from)
 }
@@ -250,8 +251,9 @@ pub async fn search_page_notes(
 #[tauri::command]
 pub async fn note_stats(
     app_state: tauri::State<'_, Arc<AppState>>,
-    search_param: NoteSearchPageParam,
+    mut search_param: NoteSearchPageParam,
 ) -> Result<NoteStatsResult, AppError> {
+    search_param.normalize();
     let db = &app_state.database_connection;
     service::note::stats(db, &search_param).await.map_err(AppError::from)
 }
@@ -274,8 +276,9 @@ pub async fn note_stats(
 #[tauri::command]
 pub async fn search_page_note_histories(
     app_state: tauri::State<'_, Arc<AppState>>,
-    search_param: NoteHistorySearchPageParam,
+    mut search_param: NoteHistorySearchPageParam,
 ) -> Result<PageResult<NoteHistory>, AppError> {
+    search_param.page_param.normalize();
     let db = &app_state.database_connection;
     service::note_history::search_page(db, &search_param).await.map_err(AppError::from)
 }

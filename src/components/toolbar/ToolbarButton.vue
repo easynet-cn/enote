@@ -31,22 +31,22 @@ defineEmits<{ click: [] }>()
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 6px;
-  color: #64748b;
-  transition: all 0.15s ease;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  transition: all var(--transition-fast) var(--ease-default);
   border: none;
   background: transparent;
   cursor: pointer;
 }
 
 .toolbar-btn:hover:not(:disabled) {
-  background: #f1f5f9;
-  color: #334155;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
 }
 
 .toolbar-btn.active {
-  background: #eef2ff;
-  color: #4f46e5;
+  background: var(--color-primary-lighter);
+  color: var(--color-primary);
 }
 
 .toolbar-btn:disabled {

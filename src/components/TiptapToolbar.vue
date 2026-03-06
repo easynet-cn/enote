@@ -1283,8 +1283,8 @@ watch(
 .tiptap-toolbar-wrapper {
   display: flex;
   align-items: center;
-  border-bottom: 1px solid #e2e8f0;
-  background-color: #f8fafc;
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-bg-secondary);
   position: relative;
 }
 
@@ -1293,21 +1293,21 @@ watch(
   display: flex;
   align-items: center;
   padding: 0.5rem;
-  background-color: #f8fafc;
+  background-color: var(--color-bg-secondary);
   flex-shrink: 0;
   z-index: 5;
 }
 
 .toolbar-fixed-left {
-  border-right: 1px solid #e2e8f0;
-  background: linear-gradient(to left, #f1f5f9, #f8fafc);
+  border-right: 1px solid var(--color-border);
+  background: linear-gradient(to left, var(--color-bg-tertiary), var(--color-bg-secondary));
   padding-left: 0.75rem;
   padding-right: 0.75rem;
 }
 
 .toolbar-fixed-right {
-  border-left: 1px solid #e2e8f0;
-  background: linear-gradient(to right, #f1f5f9, #f8fafc);
+  border-left: 1px solid var(--color-border);
+  background: linear-gradient(to right, var(--color-bg-tertiary), var(--color-bg-secondary));
 }
 
 /* 操作按钮区域 */
@@ -1336,72 +1336,72 @@ watch(
 
 /* 主要按钮 - 编辑 */
 .action-btn-primary {
-  background: #4f46e5;
+  background: var(--color-primary);
   color: white;
   padding: 0 10px;
-  box-shadow: 0 1px 2px rgba(79, 70, 229, 0.3);
+  box-shadow: var(--shadow-primary);
 }
 
 .action-btn-primary:hover {
-  background: #4338ca;
-  box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4);
+  background: var(--color-primary-hover);
+  box-shadow: var(--shadow-primary);
   transform: translateY(-1px);
 }
 
 /* 成功按钮 - 保存 */
 .action-btn-success {
-  background: #4f46e5;
+  background: var(--color-primary);
   color: white;
   padding: 0 10px;
-  box-shadow: 0 1px 2px rgba(79, 70, 229, 0.3);
+  box-shadow: var(--shadow-primary);
 }
 
 .action-btn-success:hover {
-  background: #4338ca;
-  box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4);
+  background: var(--color-primary-hover);
+  box-shadow: var(--shadow-primary);
   transform: translateY(-1px);
 }
 
 /* 次要按钮 - 取消 */
 .action-btn-secondary {
-  background: #e2e8f0;
-  color: #334155;
+  background: var(--color-border);
+  color: var(--color-text-primary);
   padding: 0 8px;
 }
 
 .action-btn-secondary:hover {
-  background: #cbd5e1;
+  background: var(--color-border-dark);
 }
 
 /* 幽灵按钮 - 设置/历史 */
 .action-btn-ghost {
   background: transparent;
-  color: #64748b;
+  color: var(--color-text-secondary);
   padding: 0 8px;
 }
 
 .action-btn-ghost:hover {
-  background: #e2e8f0;
-  color: #334155;
+  background: var(--color-border);
+  color: var(--color-text-primary);
 }
 
 /* 危险按钮 - 删除 */
 .action-btn-danger {
   background: transparent;
-  color: #94a3b8;
+  color: var(--color-text-tertiary);
   padding: 0 8px;
 }
 
 .action-btn-danger:hover {
-  background: #fee2e2;
-  color: #dc2626;
+  background: var(--color-danger-light);
+  color: var(--color-danger);
 }
 
 /* 操作分隔线 */
 .action-divider {
   width: 1px;
   height: 20px;
-  background: #cbd5e1;
+  background: var(--color-border-dark);
   margin: 0 4px;
 }
 
@@ -1413,18 +1413,18 @@ watch(
   width: 28px;
   height: 100%;
   min-height: 48px;
-  background-color: #f8fafc;
+  background-color: var(--color-bg-secondary);
   border: none;
   cursor: pointer;
-  color: #64748b;
-  transition: all 0.15s ease;
+  color: var(--color-text-secondary);
+  transition: all var(--transition-fast) ease;
   flex-shrink: 0;
   z-index: 10;
 }
 
 .scroll-btn:hover:not(:disabled) {
-  background-color: #e2e8f0;
-  color: #334155;
+  background-color: var(--color-border);
+  color: var(--color-text-primary);
 }
 
 .scroll-btn:disabled {
@@ -1438,11 +1438,11 @@ watch(
 }
 
 .scroll-btn-left {
-  border-right: 1px solid #e2e8f0;
+  border-right: 1px solid var(--color-border);
 }
 
 .scroll-btn-right {
-  border-left: 1px solid #e2e8f0;
+  border-left: 1px solid var(--color-border);
 }
 
 /* 工具栏内容区域 */
@@ -1470,14 +1470,14 @@ watch(
 
 .btn-group {
   display: flex;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
   border-radius: 0.5rem;
 }
 
 .btn-group .toolbar-btn {
   border-radius: 0;
   border: none;
-  border-right: 1px solid #e2e8f0;
+  border-right: 1px solid var(--color-border);
 }
 
 .btn-group .toolbar-btn:last-child {
@@ -1490,16 +1490,16 @@ watch(
   justify-content: center;
   width: 32px;
   height: 32px;
-  border: 1px solid #e2e8f0;
-  background-color: white;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-bg-primary);
   border-radius: 0.5rem;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all var(--transition-fast) ease;
   flex-shrink: 0;
 }
 
 .toolbar-btn:hover:not(:disabled) {
-  background-color: #f1f5f9;
+  background-color: var(--color-bg-tertiary);
 }
 
 .toolbar-btn:disabled {
@@ -1508,9 +1508,9 @@ watch(
 }
 
 .toolbar-btn.active {
-  background-color: #4f46e5;
+  background-color: var(--color-primary);
   color: white;
-  border-color: #4f46e5;
+  border-color: var(--color-primary);
 }
 
 /* 响应式设计 */

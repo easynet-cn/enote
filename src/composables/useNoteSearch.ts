@@ -26,6 +26,9 @@ const getSearchCacheKey = (param: NoteSearchPageParam): string => {
 export function useNoteSearch() {
   const store = useAppStore()
 
+  // 请求计数器：用于丢弃过期的搜索响应
+  let searchRequestId = 0
+
   // 搜索笔记（带 LRU 缓存）
   const searchNotes = async (skipCache = false): Promise<ShowNote[]> => {
     // 更新搜索参数
@@ -43,11 +46,18 @@ export function useNoteSearch() {
       }
     }
 
+    const currentRequestId = ++searchRequestId
+
     const result = await withNotification(
       async () => {
         const pageResult: PageResult<Note> = await noteApi.searchPageNotes(
           store.noteSearchPageParam,
         )
+
+        // 丢弃过期的搜索响应（已有更新的请求发出）
+        if (currentRequestId !== searchRequestId) {
+          return null
+        }
 
         store.noteTotal = pageResult.total
 

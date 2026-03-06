@@ -75,6 +75,7 @@
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getCurrentWindow } from '@tauri-apps/api/window'
+import { ask } from '@tauri-apps/plugin-dialog'
 import { useNotes } from './composables/useNotes'
 import { useKeyboardShortcuts } from './composables/useKeyboardShortcuts'
 import { useAppStore } from './stores/app'
@@ -201,9 +202,13 @@ onMounted(async () => {
   const currentWindow = getCurrentWindow()
   await currentWindow.onCloseRequested(async (event) => {
     if (appStore.isDirty) {
-      const confirmed = window.confirm(t('editor.unsavedChanges.message'))
-      if (!confirmed) {
-        event.preventDefault()
+      event.preventDefault()
+      const confirmed = await ask(t('editor.unsavedChanges.message'), {
+        title: t('editor.unsavedChanges.title'),
+        kind: 'warning',
+      })
+      if (confirmed) {
+        getCurrentWindow().destroy()
       }
     }
   })

@@ -19,6 +19,7 @@ mod m20251221_000003_create_tag_table;
 mod m20251221_000004_create_note_tags_table;
 mod m20251221_000005_create_note_history_table;
 mod m20251230_000001_create_note_fts_table;
+mod m20260306_000001_add_note_history_index;
 
 /// 数据库迁移器
 ///
@@ -35,6 +36,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20251221_000004_create_note_tags_table::Migration),
             Box::new(m20251221_000005_create_note_history_table::Migration),
             Box::new(m20251230_000001_create_note_fts_table::Migration),
+            Box::new(m20260306_000001_add_note_history_index::Migration),
         ]
     }
 }

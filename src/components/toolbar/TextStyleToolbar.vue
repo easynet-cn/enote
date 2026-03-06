@@ -75,8 +75,8 @@ defineProps<Props>()
 .btn-group {
   display: flex;
   align-items: center;
-  background: #f8fafc;
-  border-radius: 8px;
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-lg);
   padding: 2px;
 }
 </style>

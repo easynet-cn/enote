@@ -29,8 +29,6 @@ use sea_orm::{
     prelude::Expr,
     sea_query::{Asterisk, Query},
 };
-use tracing::warn;
-
 use crate::{
     entity::{self, notebook},
     model::{Note, NoteHistoryExtra, NoteSearchPageParam, NoteStatsResult, OperationType, PageResult, Tag},
@@ -49,7 +47,9 @@ fn apply_keyword_filter<E: EntityTrait>(
             .replace('(', "")
             .replace(')', "")
             .replace('{', "")
-            .replace('}', "");
+            .replace('}', "")
+            .replace('^', "")
+            .replace(':', "");
         let fts_query = format!("\"{}\"", fts_keyword);
         let fts_condition = Expr::cust_with_values(
             "id IN (SELECT rowid FROM note_fts WHERE note_fts MATCH ?)",
@@ -126,27 +126,6 @@ pub async fn find_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<Opti
     }
 }
 
-/// 获取笔记总数
-///
-/// # 参数
-/// - `db`: 数据库连接
-///
-/// # 返回
-/// - `Ok(i64)`: 笔记总数
-/// - `Err`: 查询失败
-#[allow(dead_code)]
-pub async fn total_count(db: &DatabaseConnection) -> anyhow::Result<i64> {
-    let total_count = entity::note::Entity::find()
-        .select_only()
-        .column_as(Expr::col(Asterisk).count(), "count")
-        .into_tuple::<i64>()
-        .one(db)
-        .await?
-        .unwrap_or_default();
-
-    Ok(total_count)
-}
-
 /// 创建笔记
 ///
 /// 在事务中执行以下操作：
@@ -218,10 +197,7 @@ pub async fn create(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
         tags: note.tags.clone(),
     };
 
-    let extra = serde_json::to_string(&note_history_extra).unwrap_or_else(|e| {
-        warn!("笔记历史记录 extra 序列化失败: {}", e);
-        String::default()
-    });
+    let extra = serde_json::to_string(&note_history_extra)?;
 
     entity::note_history::ActiveModel {
         id: NotSet,
@@ -294,10 +270,7 @@ pub async fn delete_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<()
             tags,
         };
 
-        let extra = serde_json::to_string(&note_history_extra).unwrap_or_else(|e| {
-        warn!("笔记历史记录 extra 序列化失败: {}", e);
-        String::default()
-    });
+        let extra = serde_json::to_string(&note_history_extra)?;
 
         entity::note_history::ActiveModel {
             id: NotSet,
@@ -454,10 +427,7 @@ pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
                 tags: old_tags,
             };
 
-            let extra = serde_json::to_string(&note_history_extra).unwrap_or_else(|e| {
-        warn!("笔记历史记录 extra 序列化失败: {}", e);
-        String::default()
-    });
+            let extra = serde_json::to_string(&note_history_extra)?;
 
             entity::note_history::ActiveModel {
                 id: NotSet,

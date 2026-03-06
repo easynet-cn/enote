@@ -15,9 +15,13 @@
 
   /* 语义色 */
   --color-success: #10b981;
+  --color-success-light: #d1fae5;
   --color-warning: #f59e0b;
+  --color-warning-light: #fef3c7;
   --color-danger: #ef4444;
+  --color-danger-light: #fee2e2;
   --color-info: #3b82f6;
+  --color-info-light: #dbeafe;
 
   /* 中性色 - Slate */
   --color-text-primary: #0f172a;
@@ -196,12 +200,12 @@ pre {
 }
 
 .note-item:hover {
-  background-color: #f8fafc;
+  background-color: var(--color-bg-secondary);
 }
 
 .note-item.active {
-  background-color: rgba(238, 242, 255, 0.5);
-  box-shadow: 0 0 0 1px rgba(79, 70, 229, 0.1);
+  background-color: var(--color-primary-lighter);
+  box-shadow: 0 0 0 1px var(--color-primary-light);
 }
 
 .note-item.active::before {
