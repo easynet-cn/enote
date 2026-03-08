@@ -224,6 +224,22 @@ pub struct Notebook {
     pub update_time: Option<NaiveDateTime>,
 }
 
+impl Notebook {
+    /// 最大名称长度
+    const MAX_NAME_LENGTH: usize = 255;
+
+    /// 验证笔记本数据
+    pub fn validate(&self) -> anyhow::Result<()> {
+        if self.name.trim().is_empty() {
+            anyhow::bail!("{}", t_simple("validation.nameRequired"))
+        }
+        if self.name.len() > Self::MAX_NAME_LENGTH {
+            anyhow::bail!("{}", t("validation.nameTooLong", &[&Self::MAX_NAME_LENGTH.to_string()]))
+        }
+        Ok(())
+    }
+}
+
 /// 从数据库实体引用转换为 DTO
 impl From<&entity::notebook::Model> for Notebook {
     fn from(value: &entity::notebook::Model) -> Self {
@@ -297,6 +313,19 @@ pub struct Note {
     /// 关联的标签列表
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub tags: Vec<Tag>,
+}
+
+impl Note {
+    /// 最大标题长度
+    const MAX_TITLE_LENGTH: usize = 500;
+
+    /// 验证笔记数据
+    pub fn validate(&self) -> anyhow::Result<()> {
+        if self.title.len() > Self::MAX_TITLE_LENGTH {
+            anyhow::bail!("{}", t("validation.titleTooLong", &[&Self::MAX_TITLE_LENGTH.to_string()]))
+        }
+        Ok(())
+    }
 }
 
 /// 从数据库实体转换为 DTO（消耗所有权）
@@ -405,6 +434,22 @@ pub struct Tag {
         deserialize_with = "deserialize_option_dt"
     )]
     pub update_time: Option<NaiveDateTime>,
+}
+
+impl Tag {
+    /// 最大名称长度
+    const MAX_NAME_LENGTH: usize = 255;
+
+    /// 验证标签数据
+    pub fn validate(&self) -> anyhow::Result<()> {
+        if self.name.trim().is_empty() {
+            anyhow::bail!("{}", t_simple("validation.nameRequired"))
+        }
+        if self.name.len() > Self::MAX_NAME_LENGTH {
+            anyhow::bail!("{}", t("validation.nameTooLong", &[&Self::MAX_NAME_LENGTH.to_string()]))
+        }
+        Ok(())
+    }
 }
 
 impl From<entity::tag::Model> for Tag {

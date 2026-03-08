@@ -637,259 +637,39 @@
 
     <!-- 右侧固定区域：操作按钮 -->
     <div class="toolbar-fixed toolbar-fixed-right">
-      <div class="toolbar-actions">
-        <!-- 编辑按钮（非编辑模式显示） -->
-        <Tooltip v-if="!editMode" :content="t('editor.toolbarTooltip.edit')" placement="bottom">
-          <button
-            class="action-btn action-btn-primary"
-            @click="emit('edit')"
-            :aria-label="t('editor.toolbarTooltip.edit')"
-          >
-            <Pencil class="w-4 h-4" />
-          </button>
-        </Tooltip>
-
-        <!-- 保存按钮（编辑模式显示） -->
-        <Tooltip v-if="editMode" :content="t('editor.toolbarTooltip.save')" placement="bottom">
-          <button
-            class="action-btn action-btn-success"
-            @click="emit('save')"
-            :aria-label="t('editor.toolbarTooltip.save')"
-          >
-            <Check class="w-4 h-4" />
-          </button>
-        </Tooltip>
-
-        <!-- 取消按钮（编辑模式显示） -->
-        <Tooltip v-if="editMode" :content="t('editor.toolbarTooltip.cancel')" placement="bottom">
-          <button
-            class="action-btn action-btn-secondary"
-            @click="emit('cancel')"
-            :aria-label="t('editor.toolbarTooltip.cancel')"
-          >
-            <X class="w-4 h-4" />
-          </button>
-        </Tooltip>
-
-        <!-- 分隔线 -->
-        <div class="action-divider"></div>
-
-        <!-- 设置按钮（编辑模式显示） -->
-        <Tooltip v-if="editMode" :content="t('editor.toolbarTooltip.settings')" placement="bottom">
-          <button
-            class="action-btn action-btn-ghost"
-            @click="emit('settings')"
-            :aria-label="t('editor.toolbarTooltip.settings')"
-          >
-            <Settings class="w-4 h-4" />
-          </button>
-        </Tooltip>
-
-        <!-- 导出按钮 -->
-        <Tooltip :content="t('editor.toolbarTooltip.export')" placement="bottom">
-          <button
-            class="action-btn action-btn-ghost"
-            @click="emit('export')"
-            :aria-label="t('editor.toolbarTooltip.export')"
-          >
-            <Download class="w-4 h-4" />
-          </button>
-        </Tooltip>
-
-        <!-- 历史记录按钮 -->
-        <Tooltip :content="t('editor.toolbarTooltip.history')" placement="bottom">
-          <button
-            class="action-btn action-btn-ghost"
-            @click="emit('history')"
-            :aria-label="t('editor.toolbarTooltip.history')"
-          >
-            <History class="w-4 h-4" />
-          </button>
-        </Tooltip>
-
-        <!-- 删除按钮 -->
-        <Tooltip :content="t('editor.toolbarTooltip.delete')" placement="bottom">
-          <button
-            class="action-btn action-btn-danger"
-            @click="emit('delete')"
-            :aria-label="t('editor.toolbarTooltip.delete')"
-          >
-            <Trash2 class="w-4 h-4" />
-          </button>
-        </Tooltip>
-      </div>
+      <ActionButtons
+        :edit-mode="editMode"
+        @edit="emit('edit')"
+        @save="emit('save')"
+        @cancel="emit('cancel')"
+        @delete="emit('delete')"
+        @settings="emit('settings')"
+        @history="emit('history')"
+        @export="emit('export')"
+      />
     </div>
   </div>
 
   <!-- 链接弹窗 -->
-  <Dialog v-model="linkDialogVisible" :title="t('editor.linkDialog.title')" :width="400">
-    <div class="space-y-4">
-      <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">{{
-          t('editor.linkDialog.urlLabel')
-        }}</label>
-        <input
-          v-model="linkUrl"
-          type="text"
-          :placeholder="t('editor.linkDialog.url')"
-          class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-        />
-      </div>
-    </div>
-    <template #footer>
-      <div class="flex justify-end gap-2">
-        <button
-          @click="linkDialogVisible = false"
-          class="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
-        >
-          {{ t('common.cancel') }}
-        </button>
-        <button
-          @click="setLink"
-          class="px-4 py-2 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
-        >
-          {{ t('common.confirm') }}
-        </button>
-      </div>
-    </template>
-  </Dialog>
+  <LinkDialog v-model="linkDialogVisible" :editor="editor" />
 
   <!-- 图片弹窗 -->
-  <Dialog v-model="imageDialogVisible" :title="t('editor.toolbar.image')" :width="400">
-    <div class="space-y-4">
-      <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">{{
-          t('editor.linkDialog.imageUrlLabel')
-        }}</label>
-        <input
-          v-model="imageUrl"
-          type="text"
-          :placeholder="t('editor.linkDialog.imageUrl')"
-          class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-        />
-      </div>
-      <div class="text-center text-slate-500 text-sm">{{ t('editor.linkDialog.or') }}</div>
-      <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">{{
-          t('editor.linkDialog.uploadImage')
-        }}</label>
-        <input
-          type="file"
-          accept="image/*"
-          @change="handleImageUpload"
-          class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-        />
-      </div>
-    </div>
-    <template #footer>
-      <div class="flex justify-end gap-2">
-        <button
-          @click="imageDialogVisible = false"
-          class="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
-        >
-          {{ t('common.cancel') }}
-        </button>
-        <button
-          @click="insertImage"
-          class="px-4 py-2 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
-        >
-          {{ t('common.confirm') }}
-        </button>
-      </div>
-    </template>
-  </Dialog>
+  <ImageDialog v-model="imageDialogVisible" :editor="editor" />
 
   <!-- 查找替换弹窗 -->
-  <Dialog v-model="searchDialogVisible" :title="t('editor.searchDialog.title')" :width="400">
-    <div class="space-y-4">
-      <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">{{
-          t('editor.searchDialog.findLabel')
-        }}</label>
-        <input
-          v-model="searchTerm"
-          type="text"
-          :placeholder="t('editor.linkDialog.findPlaceholder')"
-          @input="handleSearchInput"
-          @keydown.enter="findNext"
-          class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-        />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">{{
-          t('editor.searchDialog.replaceLabel')
-        }}</label>
-        <input
-          v-model="replaceTerm"
-          type="text"
-          :placeholder="t('editor.linkDialog.replacePlaceholder')"
-          @input="handleReplaceInput"
-          class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-        />
-      </div>
-      <div class="flex items-center gap-4">
-        <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
-          <input
-            type="checkbox"
-            v-model="caseSensitive"
-            @change="handleCaseSensitiveChange"
-            class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-          />
-          {{ t('editor.searchDialog.caseSensitive') }}
-        </label>
-        <span v-if="searchResultCount > 0" class="text-sm text-slate-500">
-          {{ currentSearchIndex + 1 }} / {{ searchResultCount }}
-        </span>
-        <span v-else-if="searchTerm" class="text-sm text-slate-400">
-          {{ t('editor.searchDialog.noResults') }}
-        </span>
-      </div>
-    </div>
-    <template #footer>
-      <div class="flex justify-between">
-        <div class="flex gap-2">
-          <button
-            @click="findPrevious"
-            :disabled="searchResultCount === 0"
-            class="px-3 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronUp class="w-4 h-4" />
-          </button>
-          <button
-            @click="findNext"
-            :disabled="searchResultCount === 0"
-            class="px-3 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronDown class="w-4 h-4" />
-          </button>
-        </div>
-        <div class="flex gap-2">
-          <button
-            @click="replaceOne"
-            :disabled="searchResultCount === 0"
-            class="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {{ t('editor.searchDialog.replace') }}
-          </button>
-          <button
-            @click="replaceAll"
-            :disabled="searchResultCount === 0"
-            class="px-4 py-2 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {{ t('editor.searchDialog.replaceAll') }}
-          </button>
-        </div>
-      </div>
-    </template>
-  </Dialog>
+  <SearchReplaceDialog v-model="searchDialogVisible" :editor="editor" />
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
+import { ref, watch, onMounted, onUnmounted, onBeforeUnmount, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Editor } from '@tiptap/vue-3'
 import { ContentType, MarkdownLayout } from '../types'
-import { Tooltip, ColorPicker, Dialog } from './ui'
+import { Tooltip, ColorPicker } from './ui'
+import ActionButtons from './toolbar/ActionButtons.vue'
+import LinkDialog from './toolbar/LinkDialog.vue'
+import ImageDialog from './toolbar/ImageDialog.vue'
+import SearchReplaceDialog from './toolbar/SearchReplaceDialog.vue'
 import {
   Bold,
   Italic,
@@ -919,17 +699,8 @@ import {
   TableProperties as TableOff,
   ChevronLeft,
   ChevronRight,
-  ChevronUp,
-  ChevronDown,
   FileCode,
   Eye,
-  Pencil,
-  Check,
-  X,
-  Trash2,
-  Settings,
-  History,
-  Download,
   PanelTop,
   PanelLeft,
   Subscript,
@@ -992,21 +763,10 @@ const fontSize = ref('')
 const textColor = ref('#000000')
 const highlightColor = ref('#FFFF00')
 
-// 链接弹窗
+// 弹窗状态
 const linkDialogVisible = ref(false)
-const linkUrl = ref('')
-
-// 图片弹窗
 const imageDialogVisible = ref(false)
-const imageUrl = ref('')
-
-// 查找替换
 const searchDialogVisible = ref(false)
-const searchTerm = ref('')
-const replaceTerm = ref('')
-const caseSensitive = ref(false)
-const searchResultCount = ref(0)
-const currentSearchIndex = ref(0)
 
 // 滚动相关
 const toolbarRef = ref<HTMLElement | null>(null)
@@ -1107,49 +867,12 @@ const setHighlightColor = (color: string) => {
 
 // 打开链接弹窗
 const openLinkDialog = () => {
-  if (!props.editor) return
-  const previousUrl = props.editor.getAttributes('link').href
-  linkUrl.value = previousUrl || ''
   linkDialogVisible.value = true
-}
-
-// 设置链接
-const setLink = () => {
-  if (!props.editor) return
-  if (linkUrl.value) {
-    props.editor.chain().focus().extendMarkRange('link').setLink({ href: linkUrl.value }).run()
-  }
-  linkDialogVisible.value = false
-  linkUrl.value = ''
 }
 
 // 打开图片弹窗
 const openImageDialog = () => {
-  imageUrl.value = ''
   imageDialogVisible.value = true
-}
-
-// 处理图片上传
-const handleImageUpload = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-  if (file) {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      imageUrl.value = e.target?.result as string
-    }
-    reader.readAsDataURL(file)
-  }
-}
-
-// 插入图片
-const insertImage = () => {
-  if (!props.editor) return
-  if (imageUrl.value) {
-    props.editor.chain().focus().setImage({ src: imageUrl.value }).run()
-  }
-  imageDialogVisible.value = false
-  imageUrl.value = ''
 }
 
 // 插入表格
@@ -1158,124 +881,55 @@ const insertTable = () => {
   props.editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
 }
 
-// 查找替换相关函数
+// 切换查找替换弹窗
 const toggleSearchDialog = () => {
   searchDialogVisible.value = !searchDialogVisible.value
-  if (!searchDialogVisible.value && props.editor) {
-    props.editor.commands.clearSearch()
-    searchTerm.value = ''
-    replaceTerm.value = ''
-    searchResultCount.value = 0
-    currentSearchIndex.value = 0
-  }
 }
 
-const handleSearchInput = () => {
-  if (!props.editor) return
-  props.editor.commands.setSearchTerm(searchTerm.value)
-  updateSearchState()
-}
+// 同步编辑器状态到工具栏控件（统一处理，避免多个 watch 各自触发）
+const syncEditorState = () => {
+  const editor = props.editor
+  if (!editor) return
 
-const handleReplaceInput = () => {
-  if (!props.editor) return
-  props.editor.commands.setReplaceTerm(replaceTerm.value)
-}
-
-const handleCaseSensitiveChange = () => {
-  if (!props.editor) return
-  props.editor.commands.setCaseSensitive(caseSensitive.value)
-  updateSearchState()
-}
-
-const updateSearchState = () => {
-  if (!props.editor) return
-  const storage = (props.editor.storage as unknown as Record<string, unknown>).searchAndReplace as
-    | { results: unknown[]; currentIndex: number }
-    | undefined
-  if (storage) {
-    searchResultCount.value = storage.results.length
-    currentSearchIndex.value = storage.currentIndex
-  }
-}
-
-const findNext = () => {
-  if (!props.editor) return
-  props.editor.commands.nextSearchResult()
-  updateSearchState()
-}
-
-const findPrevious = () => {
-  if (!props.editor) return
-  props.editor.commands.previousSearchResult()
-  updateSearchState()
-}
-
-const replaceOne = () => {
-  if (!props.editor) return
-  props.editor.commands.replaceCurrentResult()
-  setTimeout(updateSearchState, 10)
-}
-
-const replaceAll = () => {
-  if (!props.editor) return
-  props.editor.commands.replaceAllResults()
-  setTimeout(updateSearchState, 10)
-}
-
-// 监听编辑器活动状态更新选择框
-watch(
-  () => props.editor?.isActive('heading'),
-  (isActive) => {
-    if (!props.editor) return
-    if (!isActive) {
-      headingLevel.value = '0'
-    } else {
-      // 检查具体是哪个级别的标题
-      for (let i = 1; i <= 6; i++) {
-        if (props.editor.isActive('heading', { level: i })) {
-          headingLevel.value = i.toString()
-          break
-        }
+  // 标题级别
+  if (!editor.isActive('heading')) {
+    headingLevel.value = '0'
+  } else {
+    for (let i = 1; i <= 6; i++) {
+      if (editor.isActive('heading', { level: i })) {
+        headingLevel.value = i.toString()
+        break
       }
     }
-  },
-)
+  }
 
-// 监听字体变化
-watch(
-  () => props.editor?.getAttributes('textStyle')?.fontFamily,
-  (font) => {
-    fontFamily.value = font || ''
-  },
-)
+  // 字体、字号
+  const textStyle = editor.getAttributes('textStyle')
+  fontFamily.value = textStyle?.fontFamily || ''
+  fontSize.value = textStyle?.fontSize || ''
+  if (textStyle?.color) textColor.value = textStyle.color
 
-// 监听字号变化
-watch(
-  () => props.editor?.getAttributes('textStyle')?.fontSize,
-  (size) => {
-    fontSize.value = size || ''
-  },
-)
+  // 高亮色
+  const highlight = editor.getAttributes('highlight')
+  if (highlight?.color) highlightColor.value = highlight.color
+}
 
-// 监听文本颜色变化
+// 监听编辑器实例切换，绑定/解绑 selectionUpdate 事件
 watch(
-  () => props.editor?.getAttributes('textStyle')?.color,
-  (color) => {
-    if (color) {
-      textColor.value = color
+  () => props.editor,
+  (editor, oldEditor) => {
+    if (oldEditor) oldEditor.off('selectionUpdate', syncEditorState)
+    if (editor) {
+      editor.on('selectionUpdate', syncEditorState)
+      syncEditorState()
     }
   },
+  { immediate: true },
 )
 
-// 监听高亮颜色变化
-watch(
-  () => props.editor?.getAttributes('highlight')?.color,
-  (color) => {
-    if (color) {
-      highlightColor.value = color
-    }
-  },
-)
+onBeforeUnmount(() => {
+  if (props.editor) props.editor.off('selectionUpdate', syncEditorState)
+})
 </script>
 
 <style scoped>
@@ -1308,101 +962,6 @@ watch(
 .toolbar-fixed-right {
   border-left: 1px solid var(--color-border);
   background: linear-gradient(to right, var(--color-bg-tertiary), var(--color-bg-secondary));
-}
-
-/* 操作按钮区域 */
-.toolbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-/* 操作按钮基础样式 */
-.action-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 12px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
-  outline: none;
-}
-
-/* 主要按钮 - 编辑 */
-.action-btn-primary {
-  background: var(--color-primary);
-  color: white;
-  padding: 0 10px;
-  box-shadow: var(--shadow-primary);
-}
-
-.action-btn-primary:hover {
-  background: var(--color-primary-hover);
-  box-shadow: var(--shadow-primary);
-  transform: translateY(-1px);
-}
-
-/* 成功按钮 - 保存 */
-.action-btn-success {
-  background: var(--color-primary);
-  color: white;
-  padding: 0 10px;
-  box-shadow: var(--shadow-primary);
-}
-
-.action-btn-success:hover {
-  background: var(--color-primary-hover);
-  box-shadow: var(--shadow-primary);
-  transform: translateY(-1px);
-}
-
-/* 次要按钮 - 取消 */
-.action-btn-secondary {
-  background: var(--color-border);
-  color: var(--color-text-primary);
-  padding: 0 8px;
-}
-
-.action-btn-secondary:hover {
-  background: var(--color-border-dark);
-}
-
-/* 幽灵按钮 - 设置/历史 */
-.action-btn-ghost {
-  background: transparent;
-  color: var(--color-text-secondary);
-  padding: 0 8px;
-}
-
-.action-btn-ghost:hover {
-  background: var(--color-border);
-  color: var(--color-text-primary);
-}
-
-/* 危险按钮 - 删除 */
-.action-btn-danger {
-  background: transparent;
-  color: var(--color-text-tertiary);
-  padding: 0 8px;
-}
-
-.action-btn-danger:hover {
-  background: var(--color-danger-light);
-  color: var(--color-danger);
-}
-
-/* 操作分隔线 */
-.action-divider {
-  width: 1px;
-  height: 20px;
-  background: var(--color-border-dark);
-  margin: 0 4px;
 }
 
 /* 滚动按钮 */

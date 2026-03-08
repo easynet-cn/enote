@@ -44,9 +44,6 @@ export const SCROLL_SYNC_THROTTLE = 16
 /** 笔记列表默认每页条数 */
 export const DEFAULT_NOTE_PAGE_SIZE = 10
 
-/** 笔记搜索默认每页条数 */
-export const DEFAULT_SEARCH_PAGE_SIZE = 50
-
 /** 历史记录默认每页条数 */
 export const DEFAULT_HISTORY_PAGE_SIZE = 50
 

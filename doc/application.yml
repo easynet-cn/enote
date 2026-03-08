@@ -1,2 +1,5 @@
+# Database configuration
+# For production, use environment variables or local config overrides
+# Example: datasource.url can be set via APP_DATASOURCE_URL environment variable
 datasource:
-  url: mysql://root:devterry@127.0.0.1:3306/enote
+  url: sqlite://enote.db

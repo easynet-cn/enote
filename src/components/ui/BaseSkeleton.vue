@@ -40,7 +40,7 @@ const customStyle = computed(() => {
 
 <style scoped>
 .skeleton {
-  background-color: #e2e8f0;
+  background-color: var(--color-border);
   display: block;
 }
 

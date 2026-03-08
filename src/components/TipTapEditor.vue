@@ -82,7 +82,7 @@ onBeforeUnmount(() => {
 }
 
 :deep(.ProseMirror code) {
-  color: #dc2626;
+  color: var(--color-danger);
 }
 
 /* 只读模式下的样式 */

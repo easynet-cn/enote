@@ -1,7 +1,7 @@
 import { useAppStore } from '../stores/app'
 import { noteApi } from '../api/note'
 import { parseId } from '../utils/validation'
-import { showError } from '../utils/errorHandler'
+import { withNotification } from '../utils/errorHandler'
 import i18n from '../i18n'
 
 export function useNoteHistory() {
@@ -11,16 +11,21 @@ export function useNoteHistory() {
   const searchNoteHistories = async () => {
     store.historyLoading = true
     try {
-      const pageResult = await noteApi.searchPageNoteHistories({
-        pageIndex: store.historyPageIndex,
-        pageSize: store.historyPageSize,
-        noteId: parseId(store.activeNote ?? ''),
-      })
+      await withNotification(
+        async () => {
+          const pageResult = await noteApi.searchPageNoteHistories({
+            pageIndex: store.historyPageIndex,
+            pageSize: store.historyPageSize,
+            noteId: parseId(store.activeNote ?? ''),
+          })
 
-      store.histories = pageResult.data
-      store.historyTotal = pageResult.total
-    } catch (error) {
-      showError(error, i18n.global.t('composable.loadHistoryFailed'))
+          store.histories = pageResult.data
+          store.historyTotal = pageResult.total
+        },
+        {
+          error: i18n.global.t('composable.loadHistoryFailed'),
+        },
+      )
     } finally {
       store.historyLoading = false
     }

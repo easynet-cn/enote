@@ -31,10 +31,6 @@ export function useNoteSearch() {
 
   // 搜索笔记（带 LRU 缓存）
   const searchNotes = async (skipCache = false): Promise<ShowNote[]> => {
-    // 更新搜索参数
-    store.noteSearchPageParam.pageIndex = store.notePageIndex
-    store.noteSearchPageParam.pageSize = store.notePageSize
-
     // 检查缓存
     const cacheKey = getSearchCacheKey(store.noteSearchPageParam)
 

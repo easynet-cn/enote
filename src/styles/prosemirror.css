@@ -67,18 +67,18 @@
 
 /* 引用 */
 .ProseMirror blockquote {
-  border-left: 4px solid #e5e7eb;
+  border-left: 4px solid var(--color-border);
   padding-left: 1rem;
   margin-left: 0;
   margin-right: 0;
   font-style: italic;
   margin-bottom: 0.75rem;
-  color: #6b7280;
+  color: var(--color-text-secondary);
 }
 
 /* 行内代码 */
 .ProseMirror code {
-  background-color: #f3f4f6;
+  background-color: var(--color-bg-tertiary);
   padding: 0.125rem 0.25rem;
   border-radius: 0.25rem;
   font-family: 'Courier New', Courier, monospace;
@@ -96,17 +96,17 @@
 
 /* 链接 */
 .ProseMirror a {
-  color: #3b82f6;
+  color: var(--color-info);
   text-decoration: underline;
 }
 
 .ProseMirror a:hover {
-  color: #2563eb;
+  color: var(--color-primary);
 }
 
 /* 高亮 */
 .ProseMirror mark {
-  background-color: #fef08a;
+  background-color: var(--color-warning-light, #fef08a);
   padding: 0.125rem 0.25rem;
 }
 
@@ -119,13 +119,13 @@
 
 .ProseMirror th,
 .ProseMirror td {
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border);
   padding: 0.5rem;
   text-align: left;
 }
 
 .ProseMirror th {
-  background-color: #f9fafb;
+  background-color: var(--color-bg-secondary);
   font-weight: 600;
 }
 

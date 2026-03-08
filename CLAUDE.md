@@ -32,7 +32,7 @@ pnpm tauri:icon
 
 ### Frontend (src/)
 
-The app uses a **single composable pattern** where `src/composables/useNotes.ts` centralizes all state management and API calls. No external state management library (Pinia/Vuex) is used.
+The app uses **Pinia** for centralized state management (`src/stores/app.ts`) with a **facade composable pattern** where `src/composables/useNotes.ts` orchestrates multiple specialized composables (useNotebookManager, useTagManager, useNoteSearch, useNoteEditor, useNoteHistory).
 
 **Main components:**
 - `App.vue` - 3-column layout (Sidebar | NoteList | Editor)

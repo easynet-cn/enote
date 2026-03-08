@@ -1,4 +1,4 @@
-import { computed, watch, toRaw } from 'vue'
+import { computed } from 'vue'
 import { useAppStore } from '../stores/app'
 import { noteApi } from '../api/note'
 import { parseId, isTemporaryId, validateNoteTitle, validateNoteContent } from '../utils/validation'
@@ -12,23 +12,6 @@ export function useNoteEditor() {
 
   // 当前活动笔记数据
   const activeNoteData = computed(() => store.activeNoteData)
-
-  // 监听活动笔记变化，同步到编辑缓冲区
-  watch(
-    () => store.activeNote,
-    (noteId) => {
-      if (noteId) {
-        const note = store.getNoteById(noteId)
-        if (note) {
-          // 深拷贝到编辑缓冲区（使用 toRaw 获取原始对象，避免克隆响应式代理）
-          store.editingNote = structuredClone(toRaw(note))
-        }
-      } else {
-        store.editingNote = null
-      }
-    },
-    { immediate: true },
-  )
 
   // 设置活动笔记
   const setActiveNote = (noteId: string) => {
@@ -51,6 +34,9 @@ export function useNoteEditor() {
   // 保存笔记
   const saveNote = async (refreshNotes: () => Promise<void>) => {
     if (!store.activeNote || !activeNoteData.value) return
+
+    // 跳过未修改的已保存笔记
+    if (!isTemporaryId(store.activeNote) && !store.isDirty) return
 
     // 验证标题
     const titleValidation = validateNoteTitle(activeNoteData.value.title)

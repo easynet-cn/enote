@@ -205,14 +205,14 @@ const handleOverlayClick = () => {
   align-items: center;
   justify-content: space-between;
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
-  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  border-bottom: 1px solid var(--color-border);
+  background: linear-gradient(180deg, var(--color-bg-secondary) 0%, #ffffff 100%);
 }
 
 .dialog-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--color-text-primary);
   margin: 0;
 }
 
@@ -223,16 +223,16 @@ const handleOverlayClick = () => {
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  color: #94a3b8;
+  color: var(--color-text-tertiary);
   background: transparent;
   border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal) var(--ease-default);
 }
 
 .dialog-close:hover {
-  background: #f1f5f9;
-  color: #475569;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
 }
 
 .dialog-close:active {
@@ -254,8 +254,8 @@ const handleOverlayClick = () => {
 /* 底部 */
 .dialog-footer {
   padding: 1rem 1.5rem;
-  border-top: 1px solid #e2e8f0;
-  background: #f8fafc;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
 }
 
 /* 入场/离场动画 */

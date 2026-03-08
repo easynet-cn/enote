@@ -57,6 +57,23 @@ export default defineConfig(async () => ({
     minify: 'esbuild',
     // Increase warning limit since Tauri apps load locally
     chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('@tiptap') || id.includes('prosemirror') || id.includes('tiptap-markdown')) {
+              return 'vendor-editor'
+            }
+            if (id.includes('lowlight') || id.includes('highlight.js') || id.includes('katex')) {
+              return 'vendor-highlight'
+            }
+            if (id.includes('lucide-vue-next')) {
+              return 'vendor-icons'
+            }
+          }
+        },
+      },
+    },
   },
 
   // Vite options tailored for Tauri development

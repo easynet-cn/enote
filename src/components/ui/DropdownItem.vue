@@ -36,21 +36,21 @@ const handleClick = () => {
   gap: 10px;
   padding: 10px 12px;
   font-size: 14px;
-  color: #374151;
+  color: var(--color-text-primary);
   background: transparent;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   text-align: left;
-  transition: all 0.15s ease;
+  transition: all var(--transition-fast) var(--ease-default);
 }
 
 .dropdown-item:hover {
-  background: #f3f4f6;
+  background: var(--color-bg-tertiary);
 }
 
 .dropdown-item:active {
-  background: #e5e7eb;
+  background: var(--color-border);
   transform: scale(0.98);
 }
 
@@ -58,7 +58,7 @@ const handleClick = () => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #6b7280;
+  color: var(--color-text-secondary);
 }
 
 .dropdown-item-icon :deep(svg) {
@@ -68,7 +68,7 @@ const handleClick = () => {
 
 /* 危险操作样式 */
 .dropdown-item-danger {
-  color: #ef4444;
+  color: var(--color-danger);
 }
 
 .dropdown-item-danger:hover {
@@ -76,6 +76,6 @@ const handleClick = () => {
 }
 
 .dropdown-item-danger .dropdown-item-icon {
-  color: #ef4444;
+  color: var(--color-danger);
 }
 </style>

@@ -36,18 +36,18 @@ export const noteApi = {
     contentType: ContentType,
     tags: Tag[],
   ): Promise<Note> {
-    const note: Note = {
-      id: 0,
-      notebookId: notebookId,
-      title: title,
-      content: content,
-      contentType: contentType,
-      tags: tags,
-      createTime: null,
-      updateTime: null,
-    }
-
-    return await invoke('create_note', { note })
+    return await invoke('create_note', {
+      note: {
+        id: 0,
+        notebookId,
+        title,
+        content,
+        contentType,
+        tags,
+        createTime: null,
+        updateTime: null,
+      },
+    })
   },
 
   async updateNote(
@@ -58,18 +58,18 @@ export const noteApi = {
     contentType: ContentType,
     tags: Tag[],
   ): Promise<Note> {
-    const note: Note = {
-      id: id,
-      notebookId: notebookId,
-      title: title,
-      content: content,
-      contentType: contentType,
-      tags: tags,
-      createTime: null,
-      updateTime: null,
-    }
-
-    return await invoke('update_note', { note })
+    return await invoke('update_note', {
+      note: {
+        id,
+        notebookId,
+        title,
+        content,
+        contentType,
+        tags,
+        createTime: null,
+        updateTime: null,
+      },
+    })
   },
 
   async deleteNote(id: number): Promise<void> {

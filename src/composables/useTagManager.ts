@@ -1,6 +1,7 @@
 import { useAppStore } from '../stores/app'
 import { noteApi } from '../api/note'
 import { parseId, validateTagName } from '../utils/validation'
+import { tagToShowTag } from '../utils/converters'
 import { showError, withNotification } from '../utils/errorHandler'
 import i18n from '../i18n'
 import type { ShowTag } from '../types'
@@ -12,16 +13,7 @@ export function useTagManager() {
   const getTags = async () => {
     const result = await withNotification(
       async () => {
-        const data = (await noteApi.getTags()).map(
-          (tag): ShowTag => ({
-            id: String(tag.id),
-            name: tag.name,
-            icon: tag.icon,
-            cls: tag.cls,
-            createTime: tag.createTime ?? '',
-            updateTime: tag.updateTime ?? '',
-          }),
-        )
+        const data = (await noteApi.getTags()).map(tagToShowTag)
         return data
       },
       {
@@ -92,13 +84,9 @@ export function useTagManager() {
   const setActiveTag = async (tagId: string, searchNotes: () => Promise<void>) => {
     store.activeTag = tagId
     store.activeNote = null
+    store.notePageIndex = 1
     store.noteSearchPageParam.tagId = parseId(tagId)
     await searchNotes()
-  }
-
-  // 根据ID获取标签
-  const getTagById = (tagId: string) => {
-    return store.getTagById(tagId)
   }
 
   return {
@@ -106,6 +94,6 @@ export function useTagManager() {
     saveTag,
     deleteTag,
     setActiveTag,
-    getTagById,
+    getTagById: store.getTagById,
   }
 }

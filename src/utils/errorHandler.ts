@@ -246,7 +246,7 @@ export const withNotification = async <T>(
   if (options.loading) {
     loadingNotification = showNotification({
       message: options.loading,
-      type: 'success',
+      type: 'info',
       duration: 0,
     })
   }

@@ -1,0 +1,4 @@
+# MySQL configuration example
+# Copy this to application.yml and update credentials
+datasource:
+  url: mysql://user:password@127.0.0.1:3306/enote

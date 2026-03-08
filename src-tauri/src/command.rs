@@ -54,6 +54,7 @@ pub async fn create_notebook(
     app_state: tauri::State<'_, Arc<AppState>>,
     notebook: Notebook,
 ) -> Result<Option<Notebook>, AppError> {
+    notebook.validate().map_err(AppError::from)?;
     let db = &app_state.database_connection;
     service::notebook::create(db, &notebook).await.map_err(AppError::from)
 }
@@ -89,6 +90,7 @@ pub async fn update_notebook(
     app_state: tauri::State<'_, Arc<AppState>>,
     notebook: Notebook,
 ) -> Result<Option<Notebook>, AppError> {
+    notebook.validate().map_err(AppError::from)?;
     let db = &app_state.database_connection;
     service::notebook::update(db, &notebook).await.map_err(AppError::from)
 }
@@ -123,6 +125,7 @@ pub async fn create_tag(
     app_state: tauri::State<'_, Arc<AppState>>,
     tag: Tag,
 ) -> Result<Option<Tag>, AppError> {
+    tag.validate().map_err(AppError::from)?;
     let db = &app_state.database_connection;
     service::tag::create(db, &tag).await.map_err(AppError::from)
 }
@@ -158,6 +161,7 @@ pub async fn update_tag(
     app_state: tauri::State<'_, Arc<AppState>>,
     tag: Tag,
 ) -> Result<Option<Tag>, AppError> {
+    tag.validate().map_err(AppError::from)?;
     let db = &app_state.database_connection;
     service::tag::update(db, &tag).await.map_err(AppError::from)
 }
@@ -180,6 +184,7 @@ pub async fn create_note(
     app_state: tauri::State<'_, Arc<AppState>>,
     note: Note,
 ) -> Result<Option<Note>, AppError> {
+    note.validate().map_err(AppError::from)?;
     let db = &app_state.database_connection;
     service::note::create(db, &note).await.map_err(AppError::from)
 }
@@ -201,6 +206,7 @@ pub async fn update_note(
     app_state: tauri::State<'_, Arc<AppState>>,
     note: Note,
 ) -> Result<Option<Note>, AppError> {
+    note.validate().map_err(AppError::from)?;
     let db = &app_state.database_connection;
     service::note::update(db, &note).await.map_err(AppError::from)
 }

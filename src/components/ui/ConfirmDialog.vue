@@ -95,16 +95,16 @@ const handleCancel = () => {
 
 .confirm-icon-danger {
   background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-  color: #dc2626;
+  color: var(--color-danger);
 }
 
 .confirm-icon-warning {
-  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  background: linear-gradient(135deg, #fffbeb 0%, var(--color-warning-light) 100%);
   color: #d97706;
 }
 
 .confirm-icon-info {
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  background: linear-gradient(135deg, #eff6ff 0%, var(--color-info-light) 100%);
   color: #2563eb;
 }
 
@@ -116,13 +116,13 @@ const handleCancel = () => {
 .confirm-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--color-text-primary);
   margin: 0 0 0.5rem 0;
 }
 
 .confirm-message {
   font-size: 0.9375rem;
-  color: #64748b;
+  color: var(--color-text-secondary);
   line-height: 1.5;
   margin: 0;
 }

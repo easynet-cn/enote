@@ -3,11 +3,7 @@ import { ref, computed, toRaw } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ContentType } from '../types'
 import type { ShowNotebook, ShowTag, ShowNote, NoteHistory, NoteSearchPageParam } from '../types'
-import {
-  DEFAULT_NOTE_PAGE_SIZE,
-  DEFAULT_SEARCH_PAGE_SIZE,
-  DEFAULT_HISTORY_PAGE_SIZE,
-} from '../config/constants'
+import { DEFAULT_NOTE_PAGE_SIZE, DEFAULT_HISTORY_PAGE_SIZE } from '../config/constants'
 
 export const useAppStore = defineStore('app', () => {
   const { t } = useI18n()
@@ -57,15 +53,25 @@ export const useAppStore = defineStore('app', () => {
   const editMode = ref<boolean>(false)
   const loading = ref<boolean>(false)
 
-  // 笔记分页
-  const notePageIndex = ref<number>(1)
-  const notePageSize = ref<number>(DEFAULT_NOTE_PAGE_SIZE)
+  // 笔记分页（通过 computed 代理 noteSearchPageParam，避免双重状态）
+  const notePageIndex = computed({
+    get: () => noteSearchPageParam.value.pageIndex,
+    set: (v: number) => {
+      noteSearchPageParam.value.pageIndex = v
+    },
+  })
+  const notePageSize = computed({
+    get: () => noteSearchPageParam.value.pageSize,
+    set: (v: number) => {
+      noteSearchPageParam.value.pageSize = v
+    },
+  })
   const noteTotal = ref<number>(0)
 
   // 搜索参数
   const noteSearchPageParam = ref<NoteSearchPageParam>({
     pageIndex: 1,
-    pageSize: DEFAULT_SEARCH_PAGE_SIZE,
+    pageSize: DEFAULT_NOTE_PAGE_SIZE,
     notebookId: 0,
     tagId: 0,
     keyword: '',
@@ -261,7 +267,7 @@ export const useAppStore = defineStore('app', () => {
   const resetSearchParam = () => {
     noteSearchPageParam.value = {
       pageIndex: 1,
-      pageSize: DEFAULT_SEARCH_PAGE_SIZE,
+      pageSize: DEFAULT_NOTE_PAGE_SIZE,
       notebookId: 0,
       tagId: 0,
       keyword: '',

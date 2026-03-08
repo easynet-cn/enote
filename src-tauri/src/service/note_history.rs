@@ -50,16 +50,11 @@ pub async fn search_page(
         return Err(anyhow::anyhow!(t_simple("error.invalidNoteId")));
     }
 
-    let mut count_builder = entity::note_history::Entity::find();
-    let mut query_builder = entity::note_history::Entity::find();
-
-    count_builder =
-        count_builder.filter(entity::note_history::Column::NoteId.eq(search_param.note_id));
-    query_builder =
-        query_builder.filter(entity::note_history::Column::NoteId.eq(search_param.note_id));
+    let note_filter = entity::note_history::Column::NoteId.eq(search_param.note_id);
 
     // 查询总数
-    let total = count_builder
+    let total = entity::note_history::Entity::find()
+        .filter(note_filter.clone())
         .select_only()
         .column_as(Expr::col(Asterisk).count(), "count")
         .into_tuple::<i64>()
@@ -71,13 +66,14 @@ pub async fn search_page(
     if total > 0 {
         let start = search_param.page_param.start() as u64;
         let page_size = search_param.page_param.page_size as u64;
-        let histories: Vec<NoteHistory> = query_builder
+        let histories: Vec<NoteHistory> = entity::note_history::Entity::find()
+            .filter(note_filter)
             .offset(start)
             .limit(page_size)
             .order_by_desc(entity::note_history::Column::Id)
             .all(db)
             .await?
-            .iter()
+            .into_iter()
             .map(NoteHistory::from)
             .collect();
 

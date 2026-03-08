@@ -79,6 +79,7 @@
         >
           <li
             v-for="(note, index) in notes"
+            ref="noteItemRef"
             :key="note.id"
             v-memo="[note.id, note.title, note.updateTime, activeNote === note.id]"
             role="option"
@@ -127,7 +128,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onUnmounted } from 'vue'
+import { computed, ref, onUnmounted, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Search, X, FileText, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { Pagination } from './ui'
@@ -143,9 +144,10 @@ const { t } = useI18n()
 // 预览文本缓存（使用 LRUCache 自动淘汰最久未使用的项）
 const previewTextCache = new LRUCache<string, string>(PREVIEW_CACHE_MAX_SIZE, 0)
 
-// 生成缓存 key：使用 id + 内容长度 + 内容类型作为标识
+// 生成缓存 key：使用 id + 内容哈希 + 内容类型作为标识
+// 使用内容长度代替 updateTime，避免每次保存后缓存失效
 const getCacheKey = (note: ShowNote): string => {
-  return `${note.id}-${note.updateTime}-${note.contentType ?? 0}`
+  return `${note.id}-${note.content.length}-${note.contentType ?? 0}`
 }
 
 interface Props {
@@ -268,21 +270,20 @@ const handlerQueryChange = () => {
   emit('updateSearchQuery')
 }
 
+// 笔记列表项 refs
+const noteItemRefs = useTemplateRef<HTMLElement[]>('noteItemRef')
+
 // 键盘导航：聚焦上一个笔记
 const focusPreviousNote = (currentIndex: number) => {
   if (currentIndex > 0) {
-    const noteItems = document.querySelectorAll('.note-item')
-    const prevItem = noteItems[currentIndex - 1] as HTMLElement
-    prevItem?.focus()
+    noteItemRefs.value?.[currentIndex - 1]?.focus()
   }
 }
 
 // 键盘导航：聚焦下一个笔记
 const focusNextNote = (currentIndex: number) => {
   if (currentIndex < props.notes.length - 1) {
-    const noteItems = document.querySelectorAll('.note-item')
-    const nextItem = noteItems[currentIndex + 1] as HTMLElement
-    nextItem?.focus()
+    noteItemRefs.value?.[currentIndex + 1]?.focus()
   }
 }
 </script>
@@ -320,12 +321,12 @@ const focusNextNote = (currentIndex: number) => {
 
 /* 笔记项聚焦样式 */
 .note-item:focus {
-  outline: 2px solid #4f46e5;
+  outline: 2px solid var(--color-primary);
   outline-offset: -2px;
 }
 
 .note-item:focus-visible {
-  outline: 2px solid #4f46e5;
+  outline: 2px solid var(--color-primary);
   outline-offset: -2px;
 }
 </style>

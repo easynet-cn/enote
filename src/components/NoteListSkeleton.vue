@@ -29,7 +29,7 @@ withDefaults(defineProps<Props>(), {
   padding: 1rem;
   border-radius: 0.5rem;
   background: white;
-  border: 1px solid #f1f5f9;
+  border: 1px solid var(--color-bg-tertiary);
 }
 
 @media (prefers-reduced-motion: reduce) {

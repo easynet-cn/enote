@@ -32,7 +32,7 @@ pub async fn find_all(db: &DatabaseConnection) -> anyhow::Result<Vec<Tag>> {
         .order_by_desc(entity::tag::Column::UpdateTime)
         .all(db)
         .await?
-        .iter()
+        .into_iter()
         .map(Tag::from)
         .collect::<Vec<Tag>>();
 

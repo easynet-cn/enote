@@ -32,7 +32,7 @@ pub async fn find_all(db: &DatabaseConnection) -> anyhow::Result<Vec<Notebook>> 
         .order_by_desc(entity::notebook::Column::UpdateTime)
         .all(db)
         .await?
-        .iter()
+        .into_iter()
         .map(Notebook::from)
         .collect::<Vec<Notebook>>();
 
@@ -95,14 +95,20 @@ pub async fn delete_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<()
         .filter(entity::note::Column::NotebookId.eq(id))
         .all(&txn)
         .await?
-        .iter()
+        .into_iter()
         .map(|n| n.id)
         .collect();
 
-    // Delete note_tags for those notes
     if !note_ids.is_empty() {
+        // Delete note_tags for those notes
         entity::note_tags::Entity::delete_many()
-            .filter(entity::note_tags::Column::NoteId.is_in(note_ids))
+            .filter(entity::note_tags::Column::NoteId.is_in(note_ids.clone()))
+            .exec(&txn)
+            .await?;
+
+        // Delete note histories for those notes
+        entity::note_history::Entity::delete_many()
+            .filter(entity::note_history::Column::NoteId.is_in(note_ids))
             .exec(&txn)
             .await?;
     }

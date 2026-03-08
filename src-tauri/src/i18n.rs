@@ -92,6 +92,10 @@ fn zh_cn_messages() -> HashMap<String, String> {
         "config.database.connect.failed".to_string(),
         "无法连接数据库，请检查数据库配置和网络连接".to_string()
     );
+    messages.insert(
+        "config.database.pragma.failed".to_string(),
+        "SQLite PRAGMA 设置失败".to_string()
+    );
 
     // 通用错误
     messages.insert(
@@ -131,6 +135,18 @@ fn zh_cn_messages() -> HashMap<String, String> {
     messages.insert(
         "validation.keywordTooLong".to_string(),
         "搜索关键词不能超过 {} 个字符".to_string()
+    );
+    messages.insert(
+        "validation.nameRequired".to_string(),
+        "名称不能为空".to_string()
+    );
+    messages.insert(
+        "validation.nameTooLong".to_string(),
+        "名称不能超过 {} 个字符".to_string()
+    );
+    messages.insert(
+        "validation.titleTooLong".to_string(),
+        "标题不能超过 {} 个字符".to_string()
     );
 
     messages
@@ -201,6 +217,10 @@ fn en_us_messages() -> HashMap<String, String> {
         "config.database.connect.failed".to_string(),
         "Failed to connect to database".to_string()
     );
+    messages.insert(
+        "config.database.pragma.failed".to_string(),
+        "Failed to set SQLite PRAGMA".to_string()
+    );
 
     // Common errors
     messages.insert(
@@ -240,6 +260,18 @@ fn en_us_messages() -> HashMap<String, String> {
     messages.insert(
         "validation.keywordTooLong".to_string(),
         "Search keyword cannot exceed {} characters".to_string()
+    );
+    messages.insert(
+        "validation.nameRequired".to_string(),
+        "Name is required".to_string()
+    );
+    messages.insert(
+        "validation.nameTooLong".to_string(),
+        "Name cannot exceed {} characters".to_string()
+    );
+    messages.insert(
+        "validation.titleTooLong".to_string(),
+        "Title cannot exceed {} characters".to_string()
     );
 
     messages

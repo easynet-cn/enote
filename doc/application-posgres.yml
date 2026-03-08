@@ -1,2 +1,4 @@
+# PostgreSQL configuration example
+# Copy this to application.yml and update credentials
 datasource:
-  url: postgres://enote:devterry@127.0.0.1:5432/enote
+  url: postgres://user:password@127.0.0.1:5432/enote

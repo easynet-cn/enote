@@ -92,6 +92,19 @@ fn apply_search_filters<E: EntityTrait>(
     b
 }
 
+/// 获取笔记关联的标签列表
+async fn fetch_note_tags<C: ConnectionTrait>(db: &C, note_id: i64) -> anyhow::Result<Vec<Tag>> {
+    Ok(entity::note_tags::Entity::find()
+        .filter(entity::note_tags::Column::NoteId.eq(note_id))
+        .find_also_related(entity::tag::Entity)
+        .order_by_desc(entity::note_tags::Column::SortOrder)
+        .all(db)
+        .await?
+        .into_iter()
+        .filter_map(|(_, tag_opt)| tag_opt.map(|t| Tag::from(t)))
+        .collect())
+}
+
 /// 根据 ID 查询笔记（优化版本：2 次查询代替 4 次）
 pub async fn find_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<Option<Note>> {
     // 查询 1: 获取笔记和笔记本（使用 LEFT JOIN）
@@ -108,17 +121,7 @@ pub async fn find_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<Opti
         }
 
         // 查询 2: 使用 JOIN 一次性获取所有标签（代替原来的 2 次查询）
-        let tags: Vec<Tag> = entity::note_tags::Entity::find()
-            .filter(entity::note_tags::Column::NoteId.eq(id))
-            .find_also_related(entity::tag::Entity)
-            .order_by_desc(entity::note_tags::Column::SortOrder)
-            .all(db)
-            .await?
-            .into_iter()
-            .filter_map(|(_, tag_opt)| tag_opt.map(|t| Tag::from(t)))
-            .collect();
-
-        note.tags = tags;
+        note.tags = fetch_note_tags(db, id).await?;
 
         Ok(Some(note))
     } else {
@@ -245,15 +248,7 @@ pub async fn delete_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<()
         .await?;
 
     if let Some((entity, notebook_opt)) = result {
-        let tags: Vec<Tag> = entity::note_tags::Entity::find()
-            .filter(entity::note_tags::Column::NoteId.eq(id))
-            .find_also_related(entity::tag::Entity)
-            .order_by_desc(entity::note_tags::Column::SortOrder)
-            .all(&txn)
-            .await?
-            .into_iter()
-            .filter_map(|(_, tag_opt)| tag_opt.map(|t| Tag::from(t)))
-            .collect();
+        let tags = fetch_note_tags(&txn, id).await?;
 
         let (notebook_id, notebook_name) = match notebook_opt {
             Some(notebook) => (notebook.id, notebook.name.clone()),
@@ -285,14 +280,13 @@ pub async fn delete_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<()
         .insert(&txn)
         .await?;
 
-        entity::note::Entity::delete_by_id(id).exec(&txn).await?;
+        // 先删除关联数据，再删除主记录
         entity::note_tags::Entity::delete_many()
             .filter(entity::note_tags::Column::NoteId.eq(id))
             .exec(&txn)
             .await?;
+        entity::note::Entity::delete_by_id(id).exec(&txn).await?;
 
-        txn.commit().await?;
-    } else {
         txn.commit().await?;
     }
 
@@ -326,19 +320,18 @@ pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
 
         let txn = db.begin().await?;
 
-        // Single JOIN query to get both note_tags and tag info (inside transaction for consistency)
-        let old_tag_results = entity::note_tags::Entity::find()
+        // 获取旧标签关联 ID（用于差集计算）
+        let old_tag_ids: Vec<i64> = entity::note_tags::Entity::find()
             .filter(entity::note_tags::Column::NoteId.eq(note.id))
-            .find_also_related(entity::tag::Entity)
             .order_by_desc(entity::note_tags::Column::SortOrder)
             .all(&txn)
-            .await?;
-
-        let old_tag_ids: Vec<i64> = old_tag_results.iter().map(|(nt, _)| nt.tag_id).collect();
-        let old_tags: Vec<Tag> = old_tag_results
+            .await?
             .into_iter()
-            .filter_map(|(_, tag_opt)| tag_opt.map(|t| Tag::from(t)))
+            .map(|nt| nt.tag_id)
             .collect();
+
+        // 获取旧标签详情（用于历史记录）
+        let old_tags = fetch_note_tags(&txn, note.id).await?;
 
         let old_content_type = entity.content_type;
         let old_content = entity.content.clone();
@@ -503,7 +496,7 @@ pub async fn search_page(
             .order_by_desc(entity::note::Column::Id)
             .all(db)
             .await?
-            .iter()
+            .into_iter()
             .map(Note::from)
             .collect();
 
@@ -526,8 +519,8 @@ pub async fn search_page(
                     .filter(notebook::Column::Id.is_in(notebook_ids))
                     .all(db)
                     .await?
-                    .iter()
-                    .map(|e| (e.id, e.name.clone()))
+                    .into_iter()
+                    .map(|e| (e.id, e.name))
                     .collect::<HashMap<i64, String>>();
             }
 
@@ -559,21 +552,16 @@ pub async fn search_page(
                     .filter(entity::tag::Column::Id.is_in(tag_ids))
                     .all(db)
                     .await?
-                    .iter()
-                    .map(|e| (e.id, Tag::from(e)))
+                    .into_iter()
+                    .map(|e| { let id = e.id; (id, Tag::from(e)) })
                     .collect::<HashMap<i64, Tag>>();
 
                 for note in notes.iter_mut() {
                     if let Some(tag_ids) = note_tags_map.get(&note.id) {
-                        let mut tags = Vec::<Tag>::new();
-
-                        for tag_id in tag_ids.iter() {
-                            if let Some(tag) = tag_map.get(tag_id) {
-                                tags.push(tag.clone());
-                            }
-                        }
-
-                        note.tags = tags;
+                        note.tags = tag_ids
+                            .iter()
+                            .filter_map(|id| tag_map.get(id).cloned())
+                            .collect();
                     }
                 }
             }
@@ -616,7 +604,7 @@ pub async fn stats(
         .unwrap_or_default();
 
     if total > 0 {
-        let notbook_counts = count_map_builder
+        let notebook_counts = count_map_builder
             .group_by(entity::note::Column::NotebookId)
             .into_tuple::<(i64, i64)>()
             .all(db)
@@ -626,7 +614,7 @@ pub async fn stats(
 
         return Ok(NoteStatsResult {
             total,
-            notebook_counts: notbook_counts,
+            notebook_counts,
         });
     }
 

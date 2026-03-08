@@ -207,26 +207,16 @@ datasource:
 
         // Enable WAL mode and optimize SQLite for better performance
         if is_sqlite {
-            db.execute(Statement::from_string(
-                db.get_database_backend(),
-                "PRAGMA journal_mode=WAL".to_string(),
-            ))
-            .await
-            .context("Failed to enable WAL mode")?;
-
-            db.execute(Statement::from_string(
-                db.get_database_backend(),
-                "PRAGMA synchronous=NORMAL".to_string(),
-            ))
-            .await
-            .context("Failed to set synchronous mode")?;
-
-            db.execute(Statement::from_string(
-                db.get_database_backend(),
-                "PRAGMA journal_size_limit=67108864".to_string(),
-            ))
-            .await
-            .context("Failed to set journal size limit")?;
+            let backend = db.get_database_backend();
+            for pragma in [
+                "PRAGMA journal_mode=WAL",
+                "PRAGMA synchronous=NORMAL",
+                "PRAGMA journal_size_limit=67108864",
+            ] {
+                db.execute(Statement::from_string(backend, pragma.to_string()))
+                    .await
+                    .context(format!("{}: {}", t_simple("config.database.pragma.failed"), pragma))?;
+            }
         }
 
         Ok(db)

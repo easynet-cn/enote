@@ -138,7 +138,7 @@ input[type='color']::-webkit-color-swatch-wrapper {
 }
 
 input[type='color']::-webkit-color-swatch {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
   border-radius: 6px;
 }
 </style>

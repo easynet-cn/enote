@@ -95,11 +95,19 @@
             :placeholder="t('editor.editorDialog.markdownSource')"
             @input="handleSourceChange"
           />
-          <editor-content v-else :editor="editor" :class="editorCls" />
+          <editor-content
+            v-else
+            :editor="editor"
+            :class="editMode ? 'tiptap-editor-edit' : 'tiptap-editor'"
+          />
         </template>
 
         <!-- 富文本模式 -->
-        <editor-content v-else :editor="editor" :class="editorCls" />
+        <editor-content
+          v-else
+          :editor="editor"
+          :class="editMode ? 'tiptap-editor-edit' : 'tiptap-editor'"
+        />
 
         <!-- 目录面板 -->
         <TableOfContents
@@ -146,26 +154,8 @@
       @confirm="confirmDeleteNote"
     />
 
-    <!-- 底部状态栏：字符统计和光标位置 -->
-    <footer
-      v-if="activeNote && editor"
-      class="h-12 flex items-center justify-between px-4 text-xs text-slate-500 border-t border-slate-200 bg-slate-50"
-    >
-      <div class="flex items-center gap-4">
-        <span
-          >{{ t('editor.statusBar.line') }} {{ cursorPosition.line }},
-          {{ t('editor.statusBar.column') }} {{ cursorPosition.column }}</span
-        >
-        <span v-if="hasSelection" class="text-indigo-600"
-          >{{ t('editor.statusBar.selected') }} {{ selectedText }}
-          {{ t('editor.statusBar.characters') }}</span
-        >
-      </div>
-      <div class="flex items-center gap-4">
-        <span>{{ characterCount }} {{ t('editor.statusBar.characters') }}</span>
-        <span>{{ wordCount }} {{ t('editor.statusBar.words') }}</span>
-      </div>
-    </footer>
+    <!-- 底部状态栏 -->
+    <EditorStatusBar v-if="activeNote && editor" :editor="editor" />
   </div>
 </template>
 
@@ -183,9 +173,16 @@ import type { NoteHistory, ShowNote, ShowNotebook, ShowTag } from '../types'
 import { getMarkdownFromEditor } from '../types/tiptap-markdown'
 import { isTemporaryId } from '../utils/validation'
 import { throttle } from '../utils/debounce'
+import {
+  MARKDOWN_PREVIEW_THROTTLE,
+  SCROLL_SYNC_THROTTLE,
+  SPLIT_PANEL_MIN_RATIO,
+  SPLIT_PANEL_MAX_RATIO,
+} from '../config/constants'
 import { preprocessMarkdown } from '../utils/markdownWorker'
 import NoteHistoryDialog from './NoteHistoryDialog.vue'
 import TableOfContents from './TableOfContents.vue'
+import EditorStatusBar from './EditorStatusBar.vue'
 import type { TocItem } from '../extensions'
 
 interface Props {
@@ -252,6 +249,9 @@ const titleInput = ref<HTMLInputElement | null>(null)
 // Timer refs for cleanup
 let editModeFocusTimer: ReturnType<typeof setTimeout> | null = null
 
+// Resize cleanup refs
+let resizeCleanup: (() => void) | null = null
+
 // 是否为 Markdown 模式
 const isMarkdownMode = computed(() => props.activeNote?.contentType === ContentType.Markdown)
 
@@ -297,18 +297,10 @@ const createEditor = (contentType: ContentType, content: string) => {
       } else {
         emit('updateNoteContent', ed.getHTML())
       }
-      // 更新目录
       updateTocItems()
-      // 更新字符和词数统计
-      updateCharacterCount()
-    },
-    onSelectionUpdate: () => {
-      updateCursorPosition()
     },
     onCreate: () => {
-      // 编辑器创建后更新目录和统计
       updateTocItems()
-      updateCharacterCount()
     },
   })
 }
@@ -374,27 +366,6 @@ watch(
   },
 )
 
-const editorCls = computed(() => {
-  return props.editMode ? 'tiptap-editor-edit' : 'tiptap-editor'
-})
-
-// 字符统计
-const characterCount = ref(0)
-
-// 词数统计
-const wordCount = ref(0)
-
-// 更新字符和词数统计
-const updateCharacterCount = () => {
-  characterCount.value = editor.value?.storage.characterCount.characters() ?? 0
-  wordCount.value = editor.value?.storage.characterCount.words() ?? 0
-}
-
-// 光标位置
-const cursorPosition = ref({ line: 1, column: 1 })
-const selectedText = ref(0)
-const hasSelection = computed(() => selectedText.value > 0)
-
 // 目录
 const tocVisible = ref(false)
 const tocItems = ref<TocItem[]>([])
@@ -415,25 +386,6 @@ const updateTocItems = () => {
   }
 }
 
-// 计算光标所在行列
-const updateCursorPosition = () => {
-  if (!editor.value) return
-
-  const { state } = editor.value
-  const { from, to } = state.selection
-
-  // 计算选中文本长度
-  selectedText.value = to - from
-
-  // 获取光标前的文本来计算行列
-  const textBeforeCursor = state.doc.textBetween(0, from, '\n', '\n')
-  const lines = textBeforeCursor.split('\n')
-  const line = lines.length
-  const column = (lines[lines.length - 1]?.length ?? 0) + 1
-
-  cursorPosition.value = { line, column }
-}
-
 // 组件卸载时销毁编辑器和清理定时器
 onBeforeUnmount(() => {
   if (editor.value) {
@@ -446,6 +398,10 @@ onBeforeUnmount(() => {
   if (scrollResetTimer) {
     clearTimeout(scrollResetTimer)
     scrollResetTimer = null
+  }
+  if (resizeCleanup) {
+    resizeCleanup()
+    resizeCleanup = null
   }
 })
 
@@ -552,7 +508,7 @@ const startResize = (e: MouseEvent) => {
     let newRatio = startRatio + deltaRatio
 
     // 限制最小和最大比例
-    newRatio = Math.max(20, Math.min(80, newRatio))
+    newRatio = Math.max(SPLIT_PANEL_MIN_RATIO, Math.min(SPLIT_PANEL_MAX_RATIO, newRatio))
     splitRatio.value = newRatio
   }
 
@@ -562,6 +518,7 @@ const startResize = (e: MouseEvent) => {
     document.removeEventListener('mouseup', onMouseUp)
     document.body.style.cursor = ''
     document.body.style.userSelect = ''
+    resizeCleanup = null
   }
 
   document.addEventListener('mousemove', onMouseMove)
@@ -569,6 +526,14 @@ const startResize = (e: MouseEvent) => {
   document.body.style.cursor =
     markdownLayout.value === MarkdownLayout.Vertical ? 'row-resize' : 'col-resize'
   document.body.style.userSelect = 'none'
+
+  // Store cleanup function for onBeforeUnmount
+  resizeCleanup = () => {
+    document.removeEventListener('mousemove', onMouseMove)
+    document.removeEventListener('mouseup', onMouseUp)
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+  }
 }
 
 // 切换源码模式
@@ -592,7 +557,7 @@ const throttledUpdatePreview = throttle(async (content: string) => {
     const processedContent = await preprocessMarkdown(content)
     editor.value.commands.setContent(processedContent)
   }
-}, 100)
+}, MARKDOWN_PREVIEW_THROTTLE)
 
 // 处理源码内容变化
 const handleSourceChange = () => {
@@ -625,63 +590,31 @@ const resetScrollState = () => {
   }, 150) // 150ms 后重置为 idle 状态
 }
 
-// 滚动同步核心逻辑：源码面板滚动时同步预览面板
-const syncSourceToPreview = () => {
+// 滚动同步核心逻辑：from 面板滚动时同步 to 面板
+const syncScroll = (from: 'source' | 'preview') => {
   if (!sourcePanel.value || !previewPanel.value) return
 
-  // 如果预览面板正在主导滚动，忽略此次同步
-  if (scrollState.value === 'preview') return
+  const opposite = from === 'source' ? 'preview' : 'source'
+  if (scrollState.value === opposite) return
 
-  // 标记源码面板为主导
-  scrollState.value = 'source'
+  scrollState.value = from
 
-  const source = sourcePanel.value
-  const preview = previewPanel.value
+  const fromEl = from === 'source' ? sourcePanel.value : previewPanel.value
+  const toEl = from === 'source' ? previewPanel.value : sourcePanel.value
 
-  // 计算滚动比例
-  const maxSourceScroll = source.scrollHeight - source.clientHeight
-  if (maxSourceScroll <= 0) return
+  const maxFromScroll = fromEl.scrollHeight - fromEl.clientHeight
+  if (maxFromScroll <= 0) return
 
-  const scrollRatio = source.scrollTop / maxSourceScroll
+  const scrollRatio = fromEl.scrollTop / maxFromScroll
+  const maxToScroll = toEl.scrollHeight - toEl.clientHeight
+  toEl.scrollTop = scrollRatio * maxToScroll
 
-  // 应用到预览面板
-  const maxPreviewScroll = preview.scrollHeight - preview.clientHeight
-  preview.scrollTop = scrollRatio * maxPreviewScroll
-
-  // 延迟重置状态
-  resetScrollState()
-}
-
-// 滚动同步核心逻辑：预览面板滚动时同步源码面板
-const syncPreviewToSource = () => {
-  if (!sourcePanel.value || !previewPanel.value) return
-
-  // 如果源码面板正在主导滚动，忽略此次同步
-  if (scrollState.value === 'source') return
-
-  // 标记预览面板为主导
-  scrollState.value = 'preview'
-
-  const source = sourcePanel.value
-  const preview = previewPanel.value
-
-  // 计算滚动比例
-  const maxPreviewScroll = preview.scrollHeight - preview.clientHeight
-  if (maxPreviewScroll <= 0) return
-
-  const scrollRatio = preview.scrollTop / maxPreviewScroll
-
-  // 应用到源码面板
-  const maxSourceScroll = source.scrollHeight - source.clientHeight
-  source.scrollTop = scrollRatio * maxSourceScroll
-
-  // 延迟重置状态
   resetScrollState()
 }
 
 // 节流的滚动同步处理（16ms ≈ 60fps，确保流畅体验）
-const handleSourceScroll = throttle(syncSourceToPreview, 16)
-const handlePreviewScroll = throttle(syncPreviewToSource, 16)
+const handleSourceScroll = throttle(() => syncScroll('source'), SCROLL_SYNC_THROTTLE)
+const handlePreviewScroll = throttle(() => syncScroll('preview'), SCROLL_SYNC_THROTTLE)
 </script>
 
 <!-- 共享 ProseMirror 样式 -->
@@ -704,7 +637,7 @@ const handlePreviewScroll = throttle(syncPreviewToSource, 16)
 :deep(.ProseMirror p.is-editor-empty:first-child::before) {
   content: attr(data-placeholder);
   float: left;
-  color: #cbd5e1;
+  color: var(--color-text-disabled);
   pointer-events: none;
   height: 0;
 }
@@ -719,12 +652,12 @@ const handlePreviewScroll = throttle(syncPreviewToSource, 16)
 }
 
 :deep(.ProseMirror blockquote) {
-  border-left-color: #4f46e5;
-  color: #64748b;
+  border-left-color: var(--color-primary);
+  color: var(--color-text-secondary);
 }
 
 :deep(.ProseMirror code) {
-  background: #f1f5f9;
+  background: var(--color-bg-tertiary);
   padding: 0.2rem 0.4rem;
   font-family:
     ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
@@ -732,8 +665,8 @@ const handlePreviewScroll = throttle(syncPreviewToSource, 16)
 }
 
 :deep(.ProseMirror pre) {
-  background: #1e293b;
-  color: #f8fafc;
+  background: var(--color-code-block-bg);
+  color: var(--color-code-block-text);
   padding: 1rem;
   border-radius: 0.75rem;
   font-family:
@@ -758,7 +691,7 @@ const handlePreviewScroll = throttle(syncPreviewToSource, 16)
 :deep(.ProseMirror th),
 :deep(.ProseMirror td) {
   min-width: 1em;
-  border-color: #e2e8f0;
+  border-color: var(--color-border);
   padding: 6px 10px;
   vertical-align: top;
   box-sizing: border-box;
@@ -766,7 +699,7 @@ const handlePreviewScroll = throttle(syncPreviewToSource, 16)
 }
 
 :deep(.ProseMirror th) {
-  background-color: #f8fafc;
+  background-color: var(--color-bg-secondary);
   font-weight: bold;
 }
 
@@ -785,16 +718,16 @@ const handlePreviewScroll = throttle(syncPreviewToSource, 16)
 :deep(.ProseMirror ul[data-type='taskList'] li > label input[type='checkbox']) {
   width: 1.1rem;
   height: 1.1rem;
-  accent-color: #4f46e5;
+  accent-color: var(--color-primary);
 }
 
 /* 表格选中样式 */
 :deep(.ProseMirror .selectedCell) {
-  background-color: #dbeafe;
+  background-color: var(--color-info-light);
 }
 
 :deep(.ProseMirror .column-resize-handle) {
-  background-color: #3b82f6;
+  background-color: var(--color-info);
   width: 4px;
   cursor: col-resize;
 }
@@ -812,16 +745,16 @@ const handlePreviewScroll = throttle(syncPreviewToSource, 16)
   border: none;
   outline: none;
   resize: none;
-  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: 14px;
   line-height: 1.6;
-  background-color: #1e1e1e;
-  color: #d4d4d4;
+  background-color: var(--color-code-bg);
+  color: var(--color-code-text);
   overflow-y: auto;
 }
 
 .markdown-source::placeholder {
-  color: #6b7280;
+  color: var(--color-code-placeholder);
 }
 
 .markdown-source:focus {
@@ -834,7 +767,7 @@ const handlePreviewScroll = throttle(syncPreviewToSource, 16)
   height: 100%;
   width: 100%;
   overflow: hidden;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
   border-radius: 0.5rem;
 }
 
@@ -868,9 +801,9 @@ const handlePreviewScroll = throttle(syncPreviewToSource, 16)
   padding: 0.5rem 1rem;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #64748b;
-  background-color: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
+  color: var(--color-text-secondary);
+  background-color: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -882,25 +815,25 @@ const handlePreviewScroll = throttle(syncPreviewToSource, 16)
   border: none;
   outline: none;
   resize: none;
-  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: 14px;
   line-height: 1.6;
-  background-color: #1e1e1e;
-  color: #d4d4d4;
+  background-color: var(--color-code-bg);
+  color: var(--color-code-text);
   overflow-y: auto;
   height: 0; /* 关键：让 flex 子元素可以缩小，使 overflow-y: auto 生效 */
   min-height: 0;
 }
 
 .markdown-source-panel::placeholder {
-  color: #6b7280;
+  color: var(--color-code-placeholder);
 }
 
 .markdown-preview-panel {
   flex: 1;
   padding: 1rem;
   overflow-y: auto;
-  background-color: #fff;
+  background-color: var(--color-bg-primary);
   height: 0; /* 关键：让 flex 子元素可以缩小，使 overflow-y: auto 生效 */
   min-height: 0;
 }
@@ -908,12 +841,12 @@ const handlePreviewScroll = throttle(syncPreviewToSource, 16)
 /* 分割条样式 */
 .split-resizer {
   flex-shrink: 0;
-  background-color: #e2e8f0;
-  transition: background-color 0.15s ease;
+  background-color: var(--color-border);
+  transition: background-color var(--transition-fast) var(--ease-default);
 }
 
 .split-resizer:hover {
-  background-color: #4f46e5;
+  background-color: var(--color-primary);
 }
 
 .resizer-horizontal {
@@ -951,19 +884,24 @@ const handlePreviewScroll = throttle(syncPreviewToSource, 16)
 
 /* 搜索结果高亮样式 */
 :deep(.ProseMirror .search-result) {
-  background-color: #fef08a;
+  background-color: var(--color-warning-light);
   border-radius: 2px;
 }
 
 :deep(.ProseMirror .search-result-current) {
-  background-color: #fb923c;
-  color: #fff;
+  background-color: var(--color-warning);
+  color: white;
 }
 
 /* 图片懒加载占位符样式 */
 :deep(.ProseMirror img.lazy-image:not([src])),
 :deep(.ProseMirror img.lazy-image[src='']) {
-  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-tertiary) 25%,
+    var(--color-border) 50%,
+    var(--color-bg-tertiary) 75%
+  );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   min-height: 100px;

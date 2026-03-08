@@ -120,7 +120,7 @@ const handleSubmit = () => {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--color-border);
   border-radius: 20px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -129,19 +129,23 @@ const handleSubmit = () => {
 }
 
 .tag-select-item:hover {
-  border-color: #cbd5e1;
-  background: #f8fafc;
+  border-color: var(--color-text-disabled);
+  background: var(--color-bg-secondary);
 }
 
 .tag-select-item-active {
-  border-color: #4f46e5;
-  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
-  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+  border-color: var(--color-primary);
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-lighter) 0%,
+    var(--color-primary-light) 100%
+  );
+  box-shadow: var(--shadow-primary);
 }
 
 .tag-select-item-active:hover {
-  border-color: #4338ca;
-  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  border-color: var(--color-primary-hover);
+  background: linear-gradient(135deg, var(--color-primary-light) 0%, #c7d2fe 100%);
 }
 
 .tag-select-check {
@@ -151,7 +155,7 @@ const handleSubmit = () => {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  border: 2px solid #cbd5e1;
+  border: 2px solid var(--color-text-disabled);
   background: white;
   color: transparent;
   transition: all 0.2s ease;
@@ -159,8 +163,8 @@ const handleSubmit = () => {
 }
 
 .tag-select-item-active .tag-select-check {
-  border-color: #4f46e5;
-  background: #4f46e5;
+  border-color: var(--color-primary);
+  background: var(--color-primary);
   color: white;
 }
 </style>

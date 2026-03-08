@@ -104,9 +104,13 @@ const createRipple = (event: MouseEvent) => {
 
   container.appendChild(ripple)
 
-  ripple.addEventListener('animationend', () => {
-    ripple.remove()
-  })
+  ripple.addEventListener(
+    'animationend',
+    () => {
+      ripple.remove()
+    },
+    { once: true },
+  )
 }
 </script>
 
@@ -153,81 +157,85 @@ const createRipple = (event: MouseEvent) => {
 
 /* 类型样式 - Primary */
 .btn-primary {
-  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   color: white;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+  box-shadow: var(--shadow-primary);
 }
 
 .btn-primary:hover:not(.btn-disabled) {
-  background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
-  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-hover) 0%,
+    var(--color-primary-active) 100%
+  );
+  box-shadow: var(--shadow-primary);
 }
 
 .btn-primary:active:not(.btn-disabled) {
   transform: scale(0.95);
-  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+  box-shadow: var(--shadow-primary);
 }
 
 /* 类型样式 - Secondary */
 .btn-secondary {
-  background: white;
-  color: #334155;
-  border: 1px solid #cbd5e1;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-xs);
 }
 
 .btn-secondary:hover:not(.btn-disabled) {
-  background: #f8fafc;
-  border-color: #94a3b8;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: var(--color-bg-secondary);
+  border-color: var(--color-border-dark);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-secondary:active:not(.btn-disabled) {
-  background: #f1f5f9;
+  background: var(--color-bg-tertiary);
 }
 
 /* 类型样式 - Tertiary */
 .btn-tertiary {
-  background: #f1f5f9;
-  color: #334155;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
   border: none;
 }
 
 .btn-tertiary:hover:not(.btn-disabled) {
-  background: #e2e8f0;
+  background: var(--color-border);
 }
 
 .btn-tertiary:active:not(.btn-disabled) {
-  background: #cbd5e1;
+  background: var(--color-border-dark);
 }
 
 /* 类型样式 - Text */
 .btn-text {
   background: transparent;
-  color: #4f46e5;
+  color: var(--color-primary);
   border: none;
   padding-left: 8px;
   padding-right: 8px;
 }
 
 .btn-text:hover:not(.btn-disabled) {
-  background: rgba(79, 70, 229, 0.1);
+  background: var(--color-primary-lighter);
 }
 
 .btn-text:active:not(.btn-disabled) {
-  background: rgba(79, 70, 229, 0.2);
+  background: var(--color-primary-light);
 }
 
 /* 类型样式 - Danger */
 .btn-danger {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%);
   color: white;
-  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 2px 4px color-mix(in srgb, var(--color-danger) 30%, transparent);
 }
 
 .btn-danger:hover:not(.btn-disabled) {
-  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  background: linear-gradient(135deg, var(--color-danger-dark) 0%, #b91c1c 100%);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-danger) 40%, transparent);
   transform: translateY(-1px);
 }
 
@@ -237,26 +245,26 @@ const createRipple = (event: MouseEvent) => {
 
 /* 类型样式 - Success */
 .btn-success {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, var(--color-success) 0%, var(--color-success-dark) 100%);
   color: white;
-  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 2px 4px color-mix(in srgb, var(--color-success) 30%, transparent);
 }
 
 .btn-success:hover:not(.btn-disabled) {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  background: linear-gradient(135deg, var(--color-success-dark) 0%, #047857 100%);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-success) 40%, transparent);
   transform: translateY(-1px);
 }
 
 /* 类型样式 - Warning */
 .btn-warning {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  background: linear-gradient(135deg, var(--color-warning) 0%, var(--color-warning-dark) 100%);
   color: white;
-  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 2px 4px color-mix(in srgb, var(--color-warning) 30%, transparent);
 }
 
 .btn-warning:hover:not(.btn-disabled) {
-  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  background: linear-gradient(135deg, var(--color-warning-dark) 0%, #b45309 100%);
   box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
   transform: translateY(-1px);
 }
@@ -349,15 +357,15 @@ const createRipple = (event: MouseEvent) => {
 
 /* Focus 样式 */
 .btn:focus-visible {
-  outline: 2px solid #4f46e5;
+  outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 
 .btn-danger:focus-visible {
-  outline-color: #ef4444;
+  outline-color: var(--color-danger);
 }
 
 .btn-warning:focus-visible {
-  outline-color: #f59e0b;
+  outline-color: var(--color-warning);
 }
 </style>

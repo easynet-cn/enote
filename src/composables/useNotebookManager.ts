@@ -1,6 +1,7 @@
 import { useAppStore } from '../stores/app'
 import { noteApi } from '../api/note'
 import { parseId, validateNotebookName } from '../utils/validation'
+import { notebookToShowNotebook } from '../utils/converters'
 import { showError, withNotification } from '../utils/errorHandler'
 import i18n from '../i18n'
 import type { ShowNotebook } from '../types'
@@ -12,19 +13,7 @@ export function useNotebookManager() {
   const getNotebooks = async () => {
     const result = await withNotification(
       async () => {
-        const data = (await noteApi.getNotebooks()).map(
-          (notebook): ShowNotebook => ({
-            id: String(notebook.id),
-            parentId: notebook.parentId,
-            name: notebook.name,
-            description: notebook.description,
-            icon: notebook.icon,
-            cls: notebook.cls,
-            count: notebook.count,
-            createTime: notebook.createTime,
-            updateTime: notebook.updateTime,
-          }),
-        )
+        const data = (await noteApi.getNotebooks()).map(notebookToShowNotebook)
         return data
       },
       {
@@ -97,6 +86,7 @@ export function useNotebookManager() {
   const setActiveNotebook = async (notebookId: string, searchNotes: () => Promise<void>) => {
     store.activeNotebook = notebookId
     store.activeNote = null
+    store.notePageIndex = 1
     store.noteSearchPageParam.notebookId = parseId(notebookId)
     await searchNotes()
   }

@@ -107,7 +107,7 @@ export function useNotes() {
 
     const notification = showNotification({
       message: i18n.global.t('composable.loadingData'),
-      type: 'success',
+      type: 'info',
       duration: 0,
     })
 

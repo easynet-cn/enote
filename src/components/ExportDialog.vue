@@ -95,7 +95,7 @@ const handleExport = async () => {
 .export-format-item {
   display: block;
   padding: 12px 16px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--color-border);
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -103,13 +103,17 @@ const handleExport = async () => {
 }
 
 .export-format-item:hover {
-  border-color: #cbd5e1;
-  background: #f8fafc;
+  border-color: var(--color-text-disabled);
+  background: var(--color-bg-secondary);
 }
 
 .export-format-item.active {
-  border-color: #4f46e5;
-  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  border-color: var(--color-primary);
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-lighter) 0%,
+    var(--color-primary-light) 100%
+  );
 }
 
 .format-icon {
@@ -119,13 +123,13 @@ const handleExport = async () => {
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  background: #f1f5f9;
-  color: #64748b;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
   transition: all 0.2s ease;
 }
 
 .export-format-item.active .format-icon {
-  background: #4f46e5;
+  background: var(--color-primary);
   color: white;
 }
 
@@ -136,15 +140,15 @@ const handleExport = async () => {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  border: 2px solid #cbd5e1;
+  border: 2px solid var(--color-text-disabled);
   background: white;
   color: transparent;
   transition: all 0.2s ease;
 }
 
 .export-format-item.active .format-check {
-  border-color: #4f46e5;
-  background: #4f46e5;
+  border-color: var(--color-primary);
+  background: var(--color-primary);
   color: white;
 }
 </style>

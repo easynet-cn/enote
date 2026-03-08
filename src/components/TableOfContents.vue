@@ -105,7 +105,7 @@ watch(
   width: 240px;
   max-height: 100%;
   background: white;
-  border-left: 1px solid #e2e8f0;
+  border-left: 1px solid var(--color-border);
   box-shadow: -4px 0 12px rgba(0, 0, 0, 0.05);
   z-index: 20;
   display: flex;
@@ -118,14 +118,14 @@ watch(
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  border-bottom: 1px solid #e2e8f0;
-  background: #f8fafc;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
 }
 
 .toc-title {
   font-size: 14px;
   font-weight: 600;
-  color: #334155;
+  color: var(--color-text-primary);
   margin: 0;
 }
 
@@ -137,15 +137,15 @@ watch(
   height: 24px;
   border: none;
   background: transparent;
-  color: #64748b;
+  color: var(--color-text-secondary);
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .toc-close:hover {
-  background: #e2e8f0;
-  color: #334155;
+  background: var(--color-border);
+  color: var(--color-text-primary);
 }
 
 .toc-content {
@@ -168,7 +168,7 @@ watch(
   display: block;
   padding: 6px 16px;
   font-size: 13px;
-  color: #64748b;
+  color: var(--color-text-secondary);
   text-decoration: none;
   transition: all 0.15s ease;
   border-left: 2px solid transparent;
@@ -178,14 +178,14 @@ watch(
 }
 
 .toc-link:hover {
-  color: #334155;
-  background: #f1f5f9;
+  color: var(--color-text-primary);
+  background: var(--color-bg-tertiary);
 }
 
 .toc-link-active {
-  color: #4f46e5;
-  background: #eef2ff;
-  border-left-color: #4f46e5;
+  color: var(--color-primary);
+  background: var(--color-primary-lighter);
+  border-left-color: var(--color-primary);
 }
 
 /* 缩进层级 */
