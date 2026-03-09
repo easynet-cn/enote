@@ -16,6 +16,7 @@
       @delete-tag="deleteTag"
       @toggle-collapse="sidebarCollapsed = !sidebarCollapsed"
       @open-import="importDialogVisible = true"
+      @open-backup="backupDialogVisible = true"
     />
 
     <!-- 笔记列表组件 -->
@@ -68,6 +69,9 @@
       :tags="tags"
       @imported="refreshAllData"
     />
+
+    <!-- 数据备份对话框 -->
+    <BackupDialog v-model="backupDialogVisible" @imported="refreshAllData" />
   </div>
 </template>
 
@@ -83,6 +87,7 @@ import AppSidebar from './components/AppSidebar.vue'
 import NoteList from './components/NoteList.vue'
 import NoteEditor from './components/NoteEditor.vue'
 import ImportDialog from './components/ImportDialog.vue'
+import BackupDialog from './components/BackupDialog.vue'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -93,6 +98,8 @@ const noteListCollapsed = ref(false)
 
 // 导入对话框
 const importDialogVisible = ref(false)
+// 备份对话框
+const backupDialogVisible = ref(false)
 // NoteList宽度
 const noteListWidth = ref(320)
 const DEFAULT_NOTE_LIST_WIDTH = 320

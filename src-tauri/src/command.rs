@@ -23,6 +23,44 @@ use crate::{
 };
 
 // ============================================================================
+// 数据备份相关命令
+// ============================================================================
+
+/// 导出数据库备份
+#[tauri::command]
+pub async fn export_backup(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    format: String,
+    path: String,
+) -> Result<(), AppError> {
+    let db = &app_state.database_connection;
+    match format.as_str() {
+        "sql" => service::backup::export_sql(db, &path).await.map_err(AppError::from)?,
+        "excel" => service::backup::export_excel(db, &path).await.map_err(AppError::from)?,
+        "csv" => service::backup::export_csv(db, &path).await.map_err(AppError::from)?,
+        _ => return Err(AppError::Business("不支持的导出格式".to_string())),
+    }
+    Ok(())
+}
+
+/// 导入数据库备份
+#[tauri::command]
+pub async fn import_backup(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    format: String,
+    path: String,
+) -> Result<(), AppError> {
+    let db = &app_state.database_connection;
+    match format.as_str() {
+        "sql" => service::backup::import_sql(db, &path).await.map_err(AppError::from)?,
+        "excel" => service::backup::import_excel(db, &path).await.map_err(AppError::from)?,
+        "csv" => service::backup::import_csv(db, &path).await.map_err(AppError::from)?,
+        _ => return Err(AppError::Business("不支持的导入格式".to_string())),
+    }
+    Ok(())
+}
+
+// ============================================================================
 // 笔记本相关命令
 // ============================================================================
 

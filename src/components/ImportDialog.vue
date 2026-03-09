@@ -1,7 +1,7 @@
 <template>
   <Dialog v-model="visible" :title="dialogTitle" :width="520" @close="handleClose">
     <!-- 步骤 1: 选择来源 -->
-    <div v-if="step === 1" class="space-y-3">
+    <div v-if="step === 1" class="space-y-4">
       <p class="text-sm text-slate-500 mb-4">{{ t('import.selectFile') }}:</p>
       <div
         v-for="source in IMPORT_SOURCES"
@@ -114,49 +114,28 @@
 
     <template #footer>
       <div class="flex justify-between">
-        <button
-          v-if="step > 1 && step < 4"
-          class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-          @click="prevStep"
-        >
-          {{ t('import.prevStep') }}
-        </button>
-        <div v-else></div>
+        <div>
+          <Button v-if="step > 1 && step < 4" type="text" @click="prevStep">
+            {{ t('import.prevStep') }}
+          </Button>
+        </div>
 
-        <div class="flex gap-2">
-          <button
-            v-if="step < 4 || !importing"
-            class="px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
-            @click="handleClose"
-          >
+        <div class="flex gap-3">
+          <Button v-if="step < 4 || !importing" type="secondary" @click="handleClose">
             {{ step === 4 ? t('common.close') : t('common.cancel') }}
-          </button>
+          </Button>
 
-          <button
-            v-if="step === 1"
-            class="px-4 py-2 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="!selectedSource"
-            @click="nextStep"
-          >
+          <Button v-if="step === 1" type="primary" :disabled="!selectedSource" @click="nextStep">
             {{ t('import.nextStep') }}
-          </button>
+          </Button>
 
-          <button
-            v-if="step === 2"
-            class="px-4 py-2 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="!selectedFilePath"
-            @click="nextStep"
-          >
+          <Button v-if="step === 2" type="primary" :disabled="!selectedFilePath" @click="nextStep">
             {{ t('import.nextStep') }}
-          </button>
+          </Button>
 
-          <button
-            v-if="step === 3"
-            class="px-4 py-2 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
-            @click="startImport"
-          >
+          <Button v-if="step === 3" type="primary" @click="startImport">
             {{ t('import.startImport') }}
-          </button>
+          </Button>
         </div>
       </div>
     </template>
@@ -166,7 +145,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Dialog } from './ui'
+import { Dialog, Button } from './ui'
 import {
   FileText,
   FileArchive,

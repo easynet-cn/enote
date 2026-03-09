@@ -39,9 +39,11 @@
               :placeholder="t('iconPicker.searchPlaceholder')"
               class="icon-picker-search-input"
             />
-            <button v-if="searchQuery" class="icon-picker-search-clear" @click="searchQuery = ''">
-              <X :size="14" />
-            </button>
+            <Tooltip :content="t('iconPicker.clearSearch')">
+              <button v-if="searchQuery" class="icon-picker-search-clear" @click="searchQuery = ''">
+                <X :size="14" />
+              </button>
+            </Tooltip>
           </div>
 
           <!-- 分类标签 -->
@@ -96,6 +98,7 @@
 import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { X, ChevronDown, Search } from 'lucide-vue-next'
+import Tooltip from './BaseTooltip.vue'
 import { iconComponents, iconCategories, getIconsByCategory } from './icons'
 
 const { t } = useI18n()

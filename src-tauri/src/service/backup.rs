@@ -1,0 +1,725 @@
+//! 数据库备份与恢复服务
+//!
+//! 支持 SQL、Excel、CSV 三种格式的导出和导入
+
+use std::io::{Read, Write};
+
+use chrono::NaiveDateTime;
+use sea_orm::*;
+use tracing::info;
+
+use crate::entity::{note, note_history, note_tags, notebook, tag};
+
+const DT_FMT: &str = "%Y-%m-%d %H:%M:%S";
+
+// ============================================================================
+// 数据结构
+// ============================================================================
+
+struct BackupData {
+    notebooks: Vec<notebook::Model>,
+    tags: Vec<tag::Model>,
+    notes: Vec<note::Model>,
+    note_tags: Vec<note_tags::Model>,
+    note_histories: Vec<note_history::Model>,
+}
+
+// ============================================================================
+// 通用工具函数
+// ============================================================================
+
+fn format_dt(dt: &NaiveDateTime) -> String {
+    dt.format(DT_FMT).to_string()
+}
+
+fn parse_dt(s: &str) -> anyhow::Result<NaiveDateTime> {
+    NaiveDateTime::parse_from_str(s.trim(), DT_FMT)
+        .map_err(|e| anyhow::anyhow!("日期解析失败 '{}': {}", s, e))
+}
+
+fn escape_sql(s: &str) -> String {
+    format!("'{}'", s.replace('\'', "''"))
+}
+
+async fn fetch_all(db: &DatabaseConnection) -> anyhow::Result<BackupData> {
+    Ok(BackupData {
+        notebooks: notebook::Entity::find().all(db).await?,
+        tags: tag::Entity::find().all(db).await?,
+        notes: note::Entity::find().all(db).await?,
+        note_tags: note_tags::Entity::find().all(db).await?,
+        note_histories: note_history::Entity::find().all(db).await?,
+    })
+}
+
+async fn clear_tables(txn: &impl ConnectionTrait) -> anyhow::Result<()> {
+    note_tags::Entity::delete_many().exec(txn).await?;
+    note_history::Entity::delete_many().exec(txn).await?;
+    note::Entity::delete_many().exec(txn).await?;
+    tag::Entity::delete_many().exec(txn).await?;
+    notebook::Entity::delete_many().exec(txn).await?;
+    Ok(())
+}
+
+async fn restore_data(txn: &impl ConnectionTrait, data: &BackupData) -> anyhow::Result<()> {
+    for m in &data.notebooks {
+        notebook::Entity::insert(notebook::ActiveModel {
+            id: Set(m.id),
+            parent_id: Set(m.parent_id),
+            name: Set(m.name.clone()),
+            description: Set(m.description.clone()),
+            icon: Set(m.icon.clone()),
+            cls: Set(m.cls.clone()),
+            sort_order: Set(m.sort_order),
+            create_time: Set(m.create_time),
+            update_time: Set(m.update_time),
+        })
+        .exec(txn)
+        .await?;
+    }
+
+    for m in &data.tags {
+        tag::Entity::insert(tag::ActiveModel {
+            id: Set(m.id),
+            name: Set(m.name.clone()),
+            icon: Set(m.icon.clone()),
+            cls: Set(m.cls.clone()),
+            sort_order: Set(m.sort_order),
+            create_time: Set(m.create_time),
+            update_time: Set(m.update_time),
+        })
+        .exec(txn)
+        .await?;
+    }
+
+    for m in &data.notes {
+        note::Entity::insert(note::ActiveModel {
+            id: Set(m.id),
+            notebook_id: Set(m.notebook_id),
+            title: Set(m.title.clone()),
+            content: Set(m.content.clone()),
+            content_type: Set(m.content_type),
+            create_time: Set(m.create_time),
+            update_time: Set(m.update_time),
+        })
+        .exec(txn)
+        .await?;
+    }
+
+    for m in &data.note_tags {
+        note_tags::Entity::insert(note_tags::ActiveModel {
+            id: Set(m.id),
+            note_id: Set(m.note_id),
+            tag_id: Set(m.tag_id),
+            sort_order: Set(m.sort_order),
+            create_time: Set(m.create_time),
+            update_time: Set(m.update_time),
+        })
+        .exec(txn)
+        .await?;
+    }
+
+    for m in &data.note_histories {
+        note_history::Entity::insert(note_history::ActiveModel {
+            id: Set(m.id),
+            note_id: Set(m.note_id),
+            old_content: Set(m.old_content.clone()),
+            new_content: Set(m.new_content.clone()),
+            extra: Set(m.extra.clone()),
+            operate_type: Set(m.operate_type),
+            operate_time: Set(m.operate_time),
+            create_time: Set(m.create_time),
+        })
+        .exec(txn)
+        .await?;
+    }
+
+    Ok(())
+}
+
+// ============================================================================
+// SQL 导出/导入
+// ============================================================================
+
+pub async fn export_sql(db: &DatabaseConnection, path: &str) -> anyhow::Result<()> {
+    let data = fetch_all(db).await?;
+    let mut out = String::new();
+
+    out.push_str("-- ENote Database Backup\n");
+    out.push_str(&format!(
+        "-- Generated: {}\n\n",
+        chrono::Local::now().format(DT_FMT)
+    ));
+
+    out.push_str("-- Table: notebook\n");
+    for m in &data.notebooks {
+        out.push_str(&format!(
+            "INSERT INTO notebook (id, parent_id, name, description, icon, cls, sort_order, create_time, update_time) VALUES ({}, {}, {}, {}, {}, {}, {}, {}, {});\n",
+            m.id, m.parent_id, escape_sql(&m.name), escape_sql(&m.description),
+            escape_sql(&m.icon), escape_sql(&m.cls), m.sort_order,
+            escape_sql(&format_dt(&m.create_time)), escape_sql(&format_dt(&m.update_time)),
+        ));
+    }
+    out.push('\n');
+
+    out.push_str("-- Table: tag\n");
+    for m in &data.tags {
+        out.push_str(&format!(
+            "INSERT INTO tag (id, name, icon, cls, sort_order, create_time, update_time) VALUES ({}, {}, {}, {}, {}, {}, {});\n",
+            m.id, escape_sql(&m.name), escape_sql(&m.icon), escape_sql(&m.cls),
+            m.sort_order, escape_sql(&format_dt(&m.create_time)), escape_sql(&format_dt(&m.update_time)),
+        ));
+    }
+    out.push('\n');
+
+    out.push_str("-- Table: note\n");
+    for m in &data.notes {
+        out.push_str(&format!(
+            "INSERT INTO note (id, notebook_id, title, content, content_type, create_time, update_time) VALUES ({}, {}, {}, {}, {}, {}, {});\n",
+            m.id, m.notebook_id, escape_sql(&m.title), escape_sql(&m.content),
+            m.content_type, escape_sql(&format_dt(&m.create_time)), escape_sql(&format_dt(&m.update_time)),
+        ));
+    }
+    out.push('\n');
+
+    out.push_str("-- Table: note_tags\n");
+    for m in &data.note_tags {
+        out.push_str(&format!(
+            "INSERT INTO note_tags (id, note_id, tag_id, sort_order, create_time, update_time) VALUES ({}, {}, {}, {}, {}, {});\n",
+            m.id, m.note_id, m.tag_id, m.sort_order,
+            escape_sql(&format_dt(&m.create_time)), escape_sql(&format_dt(&m.update_time)),
+        ));
+    }
+    out.push('\n');
+
+    out.push_str("-- Table: note_history\n");
+    for m in &data.note_histories {
+        out.push_str(&format!(
+            "INSERT INTO note_history (id, note_id, old_content, new_content, extra, operate_type, operate_time, create_time) VALUES ({}, {}, {}, {}, {}, {}, {}, {});\n",
+            m.id, m.note_id, escape_sql(&m.old_content), escape_sql(&m.new_content),
+            escape_sql(&m.extra), m.operate_type,
+            escape_sql(&format_dt(&m.operate_time)), escape_sql(&format_dt(&m.create_time)),
+        ));
+    }
+
+    info!("SQL 备份导出完成: {}", path);
+    tokio::fs::write(path, out).await?;
+    Ok(())
+}
+
+pub async fn import_sql(db: &DatabaseConnection, path: &str) -> anyhow::Result<()> {
+    let content = tokio::fs::read_to_string(path).await?;
+    let statements = split_sql_statements(&content);
+
+    if statements.is_empty() {
+        anyhow::bail!("SQL 文件中没有找到有效的 INSERT 语句");
+    }
+
+    let backend = db.get_database_backend();
+    let txn = db.begin().await?;
+    clear_tables(&txn).await?;
+
+    for stmt in &statements {
+        txn.execute(Statement::from_string(backend, stmt.to_owned()))
+            .await
+            .map_err(|e| anyhow::anyhow!("执行 SQL 失败: {}", e))?;
+    }
+
+    txn.commit().await?;
+    info!("SQL 备份导入完成: {}", path);
+    Ok(())
+}
+
+fn split_sql_statements(sql: &str) -> Vec<String> {
+    let mut statements = Vec::new();
+    let mut current = String::new();
+    let mut in_string = false;
+    let mut chars = sql.chars().peekable();
+
+    while let Some(ch) = chars.next() {
+        if in_string {
+            current.push(ch);
+            if ch == '\'' {
+                if chars.peek() == Some(&'\'') {
+                    current.push(chars.next().unwrap());
+                } else {
+                    in_string = false;
+                }
+            }
+        } else {
+            match ch {
+                '\'' => {
+                    in_string = true;
+                    current.push(ch);
+                }
+                ';' => {
+                    let stmt = current.trim().to_string();
+                    if !stmt.is_empty()
+                        && stmt.len() > 6
+                        && stmt[..6].eq_ignore_ascii_case("INSERT")
+                    {
+                        statements.push(stmt);
+                    }
+                    current.clear();
+                }
+                '-' if chars.peek() == Some(&'-') => {
+                    chars.next();
+                    for ch in chars.by_ref() {
+                        if ch == '\n' {
+                            break;
+                        }
+                    }
+                }
+                _ => {
+                    current.push(ch);
+                }
+            }
+        }
+    }
+
+    let stmt = current.trim().to_string();
+    if !stmt.is_empty() && stmt.len() > 6 && stmt[..6].eq_ignore_ascii_case("INSERT") {
+        statements.push(stmt);
+    }
+
+    statements
+}
+
+// ============================================================================
+// Excel 导出/导入
+// ============================================================================
+
+pub async fn export_excel(db: &DatabaseConnection, path: &str) -> anyhow::Result<()> {
+    let data = fetch_all(db).await?;
+    let mut workbook = rust_xlsxwriter::Workbook::new();
+
+    // notebook
+    {
+        let sheet = workbook.add_worksheet();
+        sheet.set_name("notebook")?;
+        for (i, h) in ["id", "parent_id", "name", "description", "icon", "cls", "sort_order", "create_time", "update_time"].iter().enumerate() {
+            sheet.write_string(0, i as u16, *h)?;
+        }
+        for (r, m) in data.notebooks.iter().enumerate() {
+            let row = (r + 1) as u32;
+            sheet.write_number(row, 0, m.id as f64)?;
+            sheet.write_number(row, 1, m.parent_id as f64)?;
+            sheet.write_string(row, 2, &m.name)?;
+            sheet.write_string(row, 3, &m.description)?;
+            sheet.write_string(row, 4, &m.icon)?;
+            sheet.write_string(row, 5, &m.cls)?;
+            sheet.write_number(row, 6, m.sort_order as f64)?;
+            sheet.write_string(row, 7, format_dt(&m.create_time))?;
+            sheet.write_string(row, 8, format_dt(&m.update_time))?;
+        }
+    }
+
+    // tag
+    {
+        let sheet = workbook.add_worksheet();
+        sheet.set_name("tag")?;
+        for (i, h) in ["id", "name", "icon", "cls", "sort_order", "create_time", "update_time"].iter().enumerate() {
+            sheet.write_string(0, i as u16, *h)?;
+        }
+        for (r, m) in data.tags.iter().enumerate() {
+            let row = (r + 1) as u32;
+            sheet.write_number(row, 0, m.id as f64)?;
+            sheet.write_string(row, 1, &m.name)?;
+            sheet.write_string(row, 2, &m.icon)?;
+            sheet.write_string(row, 3, &m.cls)?;
+            sheet.write_number(row, 4, m.sort_order as f64)?;
+            sheet.write_string(row, 5, format_dt(&m.create_time))?;
+            sheet.write_string(row, 6, format_dt(&m.update_time))?;
+        }
+    }
+
+    // note
+    {
+        let sheet = workbook.add_worksheet();
+        sheet.set_name("note")?;
+        for (i, h) in ["id", "notebook_id", "title", "content", "content_type", "create_time", "update_time"].iter().enumerate() {
+            sheet.write_string(0, i as u16, *h)?;
+        }
+        for (r, m) in data.notes.iter().enumerate() {
+            let row = (r + 1) as u32;
+            sheet.write_number(row, 0, m.id as f64)?;
+            sheet.write_number(row, 1, m.notebook_id as f64)?;
+            sheet.write_string(row, 2, &m.title)?;
+            sheet.write_string(row, 3, &m.content)?;
+            sheet.write_number(row, 4, m.content_type as f64)?;
+            sheet.write_string(row, 5, format_dt(&m.create_time))?;
+            sheet.write_string(row, 6, format_dt(&m.update_time))?;
+        }
+    }
+
+    // note_tags
+    {
+        let sheet = workbook.add_worksheet();
+        sheet.set_name("note_tags")?;
+        for (i, h) in ["id", "note_id", "tag_id", "sort_order", "create_time", "update_time"].iter().enumerate() {
+            sheet.write_string(0, i as u16, *h)?;
+        }
+        for (r, m) in data.note_tags.iter().enumerate() {
+            let row = (r + 1) as u32;
+            sheet.write_number(row, 0, m.id as f64)?;
+            sheet.write_number(row, 1, m.note_id as f64)?;
+            sheet.write_number(row, 2, m.tag_id as f64)?;
+            sheet.write_number(row, 3, m.sort_order as f64)?;
+            sheet.write_string(row, 4, format_dt(&m.create_time))?;
+            sheet.write_string(row, 5, format_dt(&m.update_time))?;
+        }
+    }
+
+    // note_history
+    {
+        let sheet = workbook.add_worksheet();
+        sheet.set_name("note_history")?;
+        for (i, h) in ["id", "note_id", "old_content", "new_content", "extra", "operate_type", "operate_time", "create_time"].iter().enumerate() {
+            sheet.write_string(0, i as u16, *h)?;
+        }
+        for (r, m) in data.note_histories.iter().enumerate() {
+            let row = (r + 1) as u32;
+            sheet.write_number(row, 0, m.id as f64)?;
+            sheet.write_number(row, 1, m.note_id as f64)?;
+            sheet.write_string(row, 2, &m.old_content)?;
+            sheet.write_string(row, 3, &m.new_content)?;
+            sheet.write_string(row, 4, &m.extra)?;
+            sheet.write_number(row, 5, m.operate_type as f64)?;
+            sheet.write_string(row, 6, format_dt(&m.operate_time))?;
+            sheet.write_string(row, 7, format_dt(&m.create_time))?;
+        }
+    }
+
+    workbook.save(path)?;
+    info!("Excel 备份导出完成: {}", path);
+    Ok(())
+}
+
+pub async fn import_excel(db: &DatabaseConnection, path: &str) -> anyhow::Result<()> {
+    use calamine::{open_workbook, Reader, Xlsx};
+
+    let mut wb: Xlsx<_> = open_workbook(path)?;
+    let mut data = BackupData {
+        notebooks: Vec::new(),
+        tags: Vec::new(),
+        notes: Vec::new(),
+        note_tags: Vec::new(),
+        note_histories: Vec::new(),
+    };
+
+    if let Ok(range) = wb.worksheet_range("notebook") {
+        for row in range.rows().skip(1) {
+            if row.len() < 9 { continue; }
+            data.notebooks.push(notebook::Model {
+                id: cell_i64(&row[0]),
+                parent_id: cell_i64(&row[1]),
+                name: cell_str(&row[2]),
+                description: cell_str(&row[3]),
+                icon: cell_str(&row[4]),
+                cls: cell_str(&row[5]),
+                sort_order: cell_i64(&row[6]) as i32,
+                create_time: cell_dt(&row[7])?,
+                update_time: cell_dt(&row[8])?,
+            });
+        }
+    }
+
+    if let Ok(range) = wb.worksheet_range("tag") {
+        for row in range.rows().skip(1) {
+            if row.len() < 7 { continue; }
+            data.tags.push(tag::Model {
+                id: cell_i64(&row[0]),
+                name: cell_str(&row[1]),
+                icon: cell_str(&row[2]),
+                cls: cell_str(&row[3]),
+                sort_order: cell_i64(&row[4]) as i32,
+                create_time: cell_dt(&row[5])?,
+                update_time: cell_dt(&row[6])?,
+            });
+        }
+    }
+
+    if let Ok(range) = wb.worksheet_range("note") {
+        for row in range.rows().skip(1) {
+            if row.len() < 7 { continue; }
+            data.notes.push(note::Model {
+                id: cell_i64(&row[0]),
+                notebook_id: cell_i64(&row[1]),
+                title: cell_str(&row[2]),
+                content: cell_str(&row[3]),
+                content_type: cell_i64(&row[4]) as i32,
+                create_time: cell_dt(&row[5])?,
+                update_time: cell_dt(&row[6])?,
+            });
+        }
+    }
+
+    if let Ok(range) = wb.worksheet_range("note_tags") {
+        for row in range.rows().skip(1) {
+            if row.len() < 6 { continue; }
+            data.note_tags.push(note_tags::Model {
+                id: cell_i64(&row[0]),
+                note_id: cell_i64(&row[1]),
+                tag_id: cell_i64(&row[2]),
+                sort_order: cell_i64(&row[3]) as i32,
+                create_time: cell_dt(&row[4])?,
+                update_time: cell_dt(&row[5])?,
+            });
+        }
+    }
+
+    if let Ok(range) = wb.worksheet_range("note_history") {
+        for row in range.rows().skip(1) {
+            if row.len() < 8 { continue; }
+            data.note_histories.push(note_history::Model {
+                id: cell_i64(&row[0]),
+                note_id: cell_i64(&row[1]),
+                old_content: cell_str(&row[2]),
+                new_content: cell_str(&row[3]),
+                extra: cell_str(&row[4]),
+                operate_type: cell_i64(&row[5]) as i32,
+                operate_time: cell_dt(&row[6])?,
+                create_time: cell_dt(&row[7])?,
+            });
+        }
+    }
+
+    let txn = db.begin().await?;
+    clear_tables(&txn).await?;
+    restore_data(&txn, &data).await?;
+    txn.commit().await?;
+    info!("Excel 备份导入完成: {}", path);
+    Ok(())
+}
+
+fn cell_str(cell: &calamine::Data) -> String {
+    match cell {
+        calamine::Data::String(s) => s.clone(),
+        calamine::Data::Empty => String::new(),
+        other => other.to_string(),
+    }
+}
+
+fn cell_i64(cell: &calamine::Data) -> i64 {
+    match cell {
+        calamine::Data::Float(f) => *f as i64,
+        calamine::Data::Int(i) => *i,
+        calamine::Data::String(s) => s.parse().unwrap_or(0),
+        _ => 0,
+    }
+}
+
+fn cell_dt(cell: &calamine::Data) -> anyhow::Result<NaiveDateTime> {
+    parse_dt(&cell_str(cell))
+}
+
+// ============================================================================
+// CSV 导出/导入（ZIP 打包）
+// ============================================================================
+
+pub async fn export_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<()> {
+    let data = fetch_all(db).await?;
+
+    let file = std::fs::File::create(path)?;
+    let mut zip = zip::ZipWriter::new(file);
+    let opts = zip::write::SimpleFileOptions::default()
+        .compression_method(zip::CompressionMethod::Deflated);
+
+    // notebook.csv
+    {
+        let mut wtr = csv::Writer::from_writer(Vec::new());
+        wtr.write_record(["id", "parent_id", "name", "description", "icon", "cls", "sort_order", "create_time", "update_time"])?;
+        for m in &data.notebooks {
+            wtr.write_record(&[
+                m.id.to_string(), m.parent_id.to_string(), m.name.clone(),
+                m.description.clone(), m.icon.clone(), m.cls.clone(),
+                m.sort_order.to_string(), format_dt(&m.create_time), format_dt(&m.update_time),
+            ])?;
+        }
+        zip.start_file("notebook.csv", opts)?;
+        zip.write_all(&wtr.into_inner()?)?;
+    }
+
+    // tag.csv
+    {
+        let mut wtr = csv::Writer::from_writer(Vec::new());
+        wtr.write_record(["id", "name", "icon", "cls", "sort_order", "create_time", "update_time"])?;
+        for m in &data.tags {
+            wtr.write_record(&[
+                m.id.to_string(), m.name.clone(), m.icon.clone(), m.cls.clone(),
+                m.sort_order.to_string(), format_dt(&m.create_time), format_dt(&m.update_time),
+            ])?;
+        }
+        zip.start_file("tag.csv", opts)?;
+        zip.write_all(&wtr.into_inner()?)?;
+    }
+
+    // note.csv
+    {
+        let mut wtr = csv::Writer::from_writer(Vec::new());
+        wtr.write_record(["id", "notebook_id", "title", "content", "content_type", "create_time", "update_time"])?;
+        for m in &data.notes {
+            wtr.write_record(&[
+                m.id.to_string(), m.notebook_id.to_string(), m.title.clone(),
+                m.content.clone(), m.content_type.to_string(),
+                format_dt(&m.create_time), format_dt(&m.update_time),
+            ])?;
+        }
+        zip.start_file("note.csv", opts)?;
+        zip.write_all(&wtr.into_inner()?)?;
+    }
+
+    // note_tags.csv
+    {
+        let mut wtr = csv::Writer::from_writer(Vec::new());
+        wtr.write_record(["id", "note_id", "tag_id", "sort_order", "create_time", "update_time"])?;
+        for m in &data.note_tags {
+            wtr.write_record(&[
+                m.id.to_string(), m.note_id.to_string(), m.tag_id.to_string(),
+                m.sort_order.to_string(), format_dt(&m.create_time), format_dt(&m.update_time),
+            ])?;
+        }
+        zip.start_file("note_tags.csv", opts)?;
+        zip.write_all(&wtr.into_inner()?)?;
+    }
+
+    // note_history.csv
+    {
+        let mut wtr = csv::Writer::from_writer(Vec::new());
+        wtr.write_record(["id", "note_id", "old_content", "new_content", "extra", "operate_type", "operate_time", "create_time"])?;
+        for m in &data.note_histories {
+            wtr.write_record(&[
+                m.id.to_string(), m.note_id.to_string(), m.old_content.clone(),
+                m.new_content.clone(), m.extra.clone(), m.operate_type.to_string(),
+                format_dt(&m.operate_time), format_dt(&m.create_time),
+            ])?;
+        }
+        zip.start_file("note_history.csv", opts)?;
+        zip.write_all(&wtr.into_inner()?)?;
+    }
+
+    zip.finish()?;
+    info!("CSV 备份导出完成: {}", path);
+    Ok(())
+}
+
+pub async fn import_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<()> {
+    let file = std::fs::File::open(path)?;
+    let mut archive = zip::ZipArchive::new(file)?;
+
+    let mut data = BackupData {
+        notebooks: Vec::new(),
+        tags: Vec::new(),
+        notes: Vec::new(),
+        note_tags: Vec::new(),
+        note_histories: Vec::new(),
+    };
+
+    // notebook
+    if let Ok(mut f) = archive.by_name("notebook.csv") {
+        let mut content = String::new();
+        f.read_to_string(&mut content)?;
+        let mut rdr = csv::Reader::from_reader(content.as_bytes());
+        for result in rdr.records() {
+            let r = result?;
+            if r.len() < 9 { continue; }
+            data.notebooks.push(notebook::Model {
+                id: r[0].parse()?,
+                parent_id: r[1].parse()?,
+                name: r[2].to_string(),
+                description: r[3].to_string(),
+                icon: r[4].to_string(),
+                cls: r[5].to_string(),
+                sort_order: r[6].parse()?,
+                create_time: parse_dt(&r[7])?,
+                update_time: parse_dt(&r[8])?,
+            });
+        }
+    }
+
+    // tag
+    if let Ok(mut f) = archive.by_name("tag.csv") {
+        let mut content = String::new();
+        f.read_to_string(&mut content)?;
+        let mut rdr = csv::Reader::from_reader(content.as_bytes());
+        for result in rdr.records() {
+            let r = result?;
+            if r.len() < 7 { continue; }
+            data.tags.push(tag::Model {
+                id: r[0].parse()?,
+                name: r[1].to_string(),
+                icon: r[2].to_string(),
+                cls: r[3].to_string(),
+                sort_order: r[4].parse()?,
+                create_time: parse_dt(&r[5])?,
+                update_time: parse_dt(&r[6])?,
+            });
+        }
+    }
+
+    // note
+    if let Ok(mut f) = archive.by_name("note.csv") {
+        let mut content = String::new();
+        f.read_to_string(&mut content)?;
+        let mut rdr = csv::Reader::from_reader(content.as_bytes());
+        for result in rdr.records() {
+            let r = result?;
+            if r.len() < 7 { continue; }
+            data.notes.push(note::Model {
+                id: r[0].parse()?,
+                notebook_id: r[1].parse()?,
+                title: r[2].to_string(),
+                content: r[3].to_string(),
+                content_type: r[4].parse()?,
+                create_time: parse_dt(&r[5])?,
+                update_time: parse_dt(&r[6])?,
+            });
+        }
+    }
+
+    // note_tags
+    if let Ok(mut f) = archive.by_name("note_tags.csv") {
+        let mut content = String::new();
+        f.read_to_string(&mut content)?;
+        let mut rdr = csv::Reader::from_reader(content.as_bytes());
+        for result in rdr.records() {
+            let r = result?;
+            if r.len() < 6 { continue; }
+            data.note_tags.push(note_tags::Model {
+                id: r[0].parse()?,
+                note_id: r[1].parse()?,
+                tag_id: r[2].parse()?,
+                sort_order: r[3].parse()?,
+                create_time: parse_dt(&r[4])?,
+                update_time: parse_dt(&r[5])?,
+            });
+        }
+    }
+
+    // note_history
+    if let Ok(mut f) = archive.by_name("note_history.csv") {
+        let mut content = String::new();
+        f.read_to_string(&mut content)?;
+        let mut rdr = csv::Reader::from_reader(content.as_bytes());
+        for result in rdr.records() {
+            let r = result?;
+            if r.len() < 8 { continue; }
+            data.note_histories.push(note_history::Model {
+                id: r[0].parse()?,
+                note_id: r[1].parse()?,
+                old_content: r[2].to_string(),
+                new_content: r[3].to_string(),
+                extra: r[4].to_string(),
+                operate_type: r[5].parse()?,
+                operate_time: parse_dt(&r[6])?,
+                create_time: parse_dt(&r[7])?,
+            });
+        }
+    }
+
+    let txn = db.begin().await?;
+    clear_tables(&txn).await?;
+    restore_data(&txn, &data).await?;
+    txn.commit().await?;
+    info!("CSV 备份导入完成: {}", path);
+    Ok(())
+}

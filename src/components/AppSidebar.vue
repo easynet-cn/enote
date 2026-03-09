@@ -171,20 +171,30 @@
 
       <!-- 底部工具区域 -->
       <div class="h-12 px-4 border-t border-slate-200 flex items-center gap-2">
-        <button
-          class="flex items-center justify-center gap-2 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors flex-1"
-          @click="$emit('openImport')"
-        >
-          <Import class="w-4 h-4" />
-          <span>{{ t('sidebar.importNotes') }}</span>
-        </button>
-        <button
-          class="flex items-center justify-center p-1.5 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-          :title="t('common.settings')"
-          @click="handleLocaleChange"
-        >
-          <Languages class="w-4 h-4" />
-        </button>
+        <Tooltip :content="t('sidebar.importNotes')" placement="top">
+          <button
+            class="flex items-center justify-center p-1.5 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            @click="$emit('openImport')"
+          >
+            <Import class="w-4 h-4" />
+          </button>
+        </Tooltip>
+        <Tooltip :content="t('sidebar.dataBackup')" placement="top">
+          <button
+            class="flex items-center justify-center p-1.5 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            @click="$emit('openBackup')"
+          >
+            <Database class="w-4 h-4" />
+          </button>
+        </Tooltip>
+        <Tooltip :content="t('common.settings')" placement="top">
+          <button
+            class="flex items-center justify-center p-1.5 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            @click="handleLocaleChange"
+          >
+            <Languages class="w-4 h-4" />
+          </button>
+        </Tooltip>
       </div>
     </template>
   </aside>
@@ -346,6 +356,7 @@ import {
   ChevronRight,
   Import,
   Languages,
+  Database,
 } from 'lucide-vue-next'
 import {
   Button,
@@ -355,6 +366,7 @@ import {
   Dropdown,
   DropdownItem,
   ConfirmDialog,
+  Tooltip,
 } from './ui'
 import { iconComponents } from './ui/icons'
 import type { ShowNotebook, ShowTag } from '../types'
@@ -439,6 +451,7 @@ const emit = defineEmits<{
   deleteTag: [id: string]
   'toggle-collapse': []
   openImport: []
+  openBackup: []
 }>()
 
 const showNotebookEditAndDelete = computed(() => {

@@ -26,19 +26,9 @@
       </div>
     </div>
     <template #footer>
-      <div class="flex justify-end gap-2">
-        <button
-          @click="visible = false"
-          class="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
-        >
-          {{ t('common.cancel') }}
-        </button>
-        <button
-          @click="insertImage"
-          class="px-4 py-2 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
-        >
-          {{ t('common.confirm') }}
-        </button>
+      <div class="flex justify-end gap-3">
+        <Button type="secondary" @click="visible = false">{{ t('common.cancel') }}</Button>
+        <Button type="primary" @click="insertImage">{{ t('common.confirm') }}</Button>
       </div>
     </template>
   </Dialog>
@@ -48,7 +38,7 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Editor } from '@tiptap/vue-3'
-import { Dialog } from '../ui'
+import { Dialog, Button } from '../ui'
 
 const { t } = useI18n()
 

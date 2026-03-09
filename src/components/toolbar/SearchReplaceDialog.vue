@@ -46,37 +46,25 @@
     </div>
     <template #footer>
       <div class="flex justify-between">
-        <div class="flex gap-2">
-          <button
-            @click="findPrevious"
-            :disabled="searchResultCount === 0"
-            class="px-3 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronUp class="w-4 h-4" />
-          </button>
-          <button
-            @click="findNext"
-            :disabled="searchResultCount === 0"
-            class="px-3 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronDown class="w-4 h-4" />
-          </button>
+        <div class="flex gap-3">
+          <Tooltip :content="t('editor.searchDialog.findPrevious')">
+            <Button type="secondary" :disabled="searchResultCount === 0" @click="findPrevious">
+              <template #icon><ChevronUp class="w-4 h-4" /></template>
+            </Button>
+          </Tooltip>
+          <Tooltip :content="t('editor.searchDialog.findNext')">
+            <Button type="secondary" :disabled="searchResultCount === 0" @click="findNext">
+              <template #icon><ChevronDown class="w-4 h-4" /></template>
+            </Button>
+          </Tooltip>
         </div>
-        <div class="flex gap-2">
-          <button
-            @click="replaceOne"
-            :disabled="searchResultCount === 0"
-            class="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+        <div class="flex gap-3">
+          <Button type="secondary" :disabled="searchResultCount === 0" @click="replaceOne">
             {{ t('editor.searchDialog.replace') }}
-          </button>
-          <button
-            @click="replaceAll"
-            :disabled="searchResultCount === 0"
-            class="px-4 py-2 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+          </Button>
+          <Button type="primary" :disabled="searchResultCount === 0" @click="replaceAll">
             {{ t('editor.searchDialog.replaceAll') }}
-          </button>
+          </Button>
         </div>
       </div>
     </template>
@@ -87,7 +75,7 @@
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Editor } from '@tiptap/vue-3'
-import { Dialog } from '../ui'
+import { Dialog, Tooltip, Button } from '../ui'
 import { ChevronUp, ChevronDown } from 'lucide-vue-next'
 
 const { t } = useI18n()

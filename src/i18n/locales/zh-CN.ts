@@ -30,6 +30,29 @@ export default {
     confirmAction: '确认操作',
   },
 
+  // 数据备份
+  backup: {
+    title: '数据备份',
+    tabExport: '导出备份',
+    tabImport: '导入恢复',
+    selectFormat: '选择备份格式',
+    sqlDesc: '导出为标准 SQL 语句，适合跨数据库迁移',
+    excelDesc: '导出为 Excel 表格，每张表一个 Sheet',
+    csvDesc: '导出为 CSV 文件，打包为 ZIP 压缩包',
+    exportButton: '导出',
+    importButton: '导入',
+    exportSuccess: '数据备份导出成功',
+    exportError: '数据备份导出失败',
+    importSuccess: '数据恢复导入成功，请刷新页面',
+    importError: '数据恢复导入失败',
+    importWarning: '导入操作将覆盖当前所有数据，请确保已备份当前数据。此操作不可撤销。',
+    importConfirm: {
+      title: '确认导入',
+      message: '导入将清除当前所有数据并替换为备份数据，此操作不可恢复。确定要继续吗？',
+      confirmText: '确认导入',
+    },
+  },
+
   // 侧边栏
   sidebar: {
     collapse: '收起侧边栏',
@@ -37,6 +60,7 @@ export default {
     notebooks: '笔记本',
     tags: '标签',
     createNotebook: '添加笔记本',
+    dataBackup: '数据备份',
     editNotebook: '编辑笔记本',
     deleteNotebook: '删除笔记本',
     createTag: '添加标签',
@@ -251,6 +275,8 @@ export default {
       replace: '替换',
       replaceAll: '全部替换',
       noResults: '无结果',
+      findPrevious: '上一个',
+      findNext: '下一个',
     },
     fontOptions: {
       default: '默认字体',
@@ -546,6 +572,11 @@ export default {
     unknownError: '未知错误',
   },
 
+  // 颜色选择器
+  colorPicker: {
+    selectColor: '选择颜色',
+  },
+
   // 样式选择器
   stylePicker: {
     presetColors: '预设颜色',
@@ -564,6 +595,7 @@ export default {
     noMatch: '未找到匹配的图标',
     selected: '已选:',
     selectIcon: '选择图标',
+    clearSearch: '清除搜索',
   },
 
   // 导入来源

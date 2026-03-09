@@ -151,6 +151,9 @@ pub fn run() {
             command::note_stats,
             // 历史记录相关命令
             command::search_page_note_histories,
+            // 数据备份相关命令
+            command::export_backup,
+            command::import_backup,
         ])
         .run(tauri::generate_context!())
         .expect(&t_simple("error.appStartFailed"));

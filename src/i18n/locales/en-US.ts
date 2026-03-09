@@ -30,6 +30,31 @@ export default {
     confirmAction: 'Confirm Action',
   },
 
+  // Database Backup
+  backup: {
+    title: 'Data Backup',
+    tabExport: 'Export Backup',
+    tabImport: 'Import Restore',
+    selectFormat: 'Select backup format',
+    sqlDesc: 'Export as standard SQL statements for cross-database migration',
+    excelDesc: 'Export as Excel spreadsheet, one sheet per table',
+    csvDesc: 'Export as CSV files, packed into a ZIP archive',
+    exportButton: 'Export',
+    importButton: 'Import',
+    exportSuccess: 'Data backup exported successfully',
+    exportError: 'Data backup export failed',
+    importSuccess: 'Data restored successfully, please refresh',
+    importError: 'Data restore import failed',
+    importWarning:
+      'Import will overwrite all current data. Make sure you have backed up your current data. This action cannot be undone.',
+    importConfirm: {
+      title: 'Confirm Import',
+      message:
+        'Import will clear all current data and replace with backup data. This action cannot be undone. Are you sure you want to continue?',
+      confirmText: 'Confirm Import',
+    },
+  },
+
   // Sidebar
   sidebar: {
     collapse: 'Collapse Sidebar',
@@ -37,6 +62,7 @@ export default {
     notebooks: 'Notebooks',
     tags: 'Tags',
     createNotebook: 'Add Notebook',
+    dataBackup: 'Data Backup',
     editNotebook: 'Edit Notebook',
     deleteNotebook: 'Delete Notebook',
     createTag: 'Add Tag',
@@ -252,6 +278,8 @@ export default {
       replace: 'Replace',
       replaceAll: 'Replace All',
       noResults: 'No results',
+      findPrevious: 'Previous',
+      findNext: 'Next',
     },
     fontOptions: {
       default: 'Default font',
@@ -548,6 +576,11 @@ export default {
     unknownError: 'Unknown error',
   },
 
+  // Color picker
+  colorPicker: {
+    selectColor: 'Select color',
+  },
+
   // Style picker
   stylePicker: {
     presetColors: 'Preset Colors',
@@ -566,6 +599,7 @@ export default {
     noMatch: 'No matching icons found',
     selected: 'Selected:',
     selectIcon: 'Select icon',
+    clearSearch: 'Clear search',
   },
 
   // Import sources

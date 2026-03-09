@@ -12,6 +12,16 @@ import {
   Tag,
 } from '../types'
 
+export const backupApi = {
+  async exportBackup(format: string, path: string): Promise<void> {
+    return await invoke('export_backup', { format, path })
+  },
+
+  async importBackup(format: string, path: string): Promise<void> {
+    return await invoke('import_backup', { format, path })
+  },
+}
+
 export const noteApi = {
   async getNotebooks(): Promise<Notebook[]> {
     return await invoke('find_all_notebooks')

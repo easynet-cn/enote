@@ -1,12 +1,16 @@
 <template>
   <div class="relative inline-block" ref="pickerRef">
-    <button
-      @click="toggle"
-      :disabled="disabled"
-      class="w-7 h-7 rounded-lg border border-slate-300 transition-colors"
-      :class="disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-slate-400'"
-      :style="{ backgroundColor: modelValue || '#ffffff' }"
-    ></button>
+    <Tooltip :content="t('colorPicker.selectColor')">
+      <button
+        @click="toggle"
+        :disabled="disabled"
+        class="w-7 h-7 rounded-lg border border-slate-300 transition-colors"
+        :class="
+          disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-slate-400'
+        "
+        :style="{ backgroundColor: modelValue || '#ffffff' }"
+      ></button>
+    </Tooltip>
 
     <Transition name="picker">
       <div
@@ -45,6 +49,10 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import Tooltip from './BaseTooltip.vue'
+
+const { t } = useI18n()
 
 interface Props {
   modelValue: string

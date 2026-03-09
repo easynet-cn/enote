@@ -1,23 +1,27 @@
 <template>
   <!-- 简易模式 -->
   <div v-if="simple" class="flex items-center justify-center gap-3">
-    <button
-      :disabled="currentPage <= 1"
-      @click="handlePrev"
-      class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-300 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-    >
-      <ChevronLeft class="w-4 h-4" />
-    </button>
+    <Tooltip :content="t('pagination.prevPage')">
+      <button
+        :disabled="currentPage <= 1"
+        @click="handlePrev"
+        class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-300 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+      >
+        <ChevronLeft class="w-4 h-4" />
+      </button>
+    </Tooltip>
 
     <span class="text-sm text-slate-600">{{ currentPage }} / {{ totalPages }}</span>
 
-    <button
-      :disabled="currentPage >= totalPages"
-      @click="handleNext"
-      class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-300 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-    >
-      <ChevronRight class="w-4 h-4" />
-    </button>
+    <Tooltip :content="t('pagination.nextPage')">
+      <button
+        :disabled="currentPage >= totalPages"
+        @click="handleNext"
+        class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-300 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+      >
+        <ChevronRight class="w-4 h-4" />
+      </button>
+    </Tooltip>
   </div>
 
   <!-- 完整模式 -->
@@ -83,6 +87,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import Tooltip from './BaseTooltip.vue'
 
 const { t } = useI18n()
 

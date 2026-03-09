@@ -44,3 +44,8 @@ pub(crate) mod notebook;
 /// - 获取所有标签（按排序和更新时间排序）
 /// - 创建、更新、删除标签
 pub(crate) mod tag;
+
+/// 数据库备份与恢复服务模块
+///
+/// 支持 SQL、Excel、CSV 三种格式的导出和导入
+pub(crate) mod backup;
