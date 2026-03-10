@@ -217,6 +217,7 @@ const emit = defineEmits<{
   sizeChange: [pageSize: number]
   currentChange: [currentPage: number]
   open: []
+  navigateToNote: [id: number]
 }>()
 
 // 判断是否为新建笔记
