@@ -72,6 +72,7 @@ describe('converters utils', () => {
       title: 'Test Note',
       content: '<p>Hello World</p>',
       contentType: ContentType.Html,
+      isPinned: 0,
       tags: [
         {
           id: 1,
@@ -82,6 +83,7 @@ describe('converters utils', () => {
       ],
       createTime: '2024-01-01 00:00:00',
       updateTime: '2024-01-01 00:00:00',
+      deletedAt: null,
     }
 
     it('should convert Note to ShowNote', () => {

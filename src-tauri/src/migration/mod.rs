@@ -20,6 +20,12 @@ mod m20251221_000004_create_note_tags_table;
 mod m20251221_000005_create_note_history_table;
 mod m20251230_000001_create_note_fts_table;
 mod m20260306_000001_add_note_history_index;
+mod m20260310_000001_create_settings_table;
+mod m20260310_000002_add_note_is_pinned;
+mod m20260310_000003_add_note_deleted_at;
+mod m20260311_000001_upgrade_note_fts;
+mod m20260311_000002_create_note_template_table;
+mod m20260311_000003_create_note_link_table;
 
 /// 数据库迁移器
 ///
@@ -37,6 +43,12 @@ impl MigratorTrait for Migrator {
             Box::new(m20251221_000005_create_note_history_table::Migration),
             Box::new(m20251230_000001_create_note_fts_table::Migration),
             Box::new(m20260306_000001_add_note_history_index::Migration),
+            Box::new(m20260310_000001_create_settings_table::Migration),
+            Box::new(m20260310_000002_add_note_is_pinned::Migration),
+            Box::new(m20260310_000003_add_note_deleted_at::Migration),
+            Box::new(m20260311_000001_upgrade_note_fts::Migration),
+            Box::new(m20260311_000002_create_note_template_table::Migration),
+            Box::new(m20260311_000003_create_note_link_table::Migration),
         ]
     }
 }

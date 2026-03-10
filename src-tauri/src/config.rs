@@ -53,7 +53,8 @@ impl Configuration {
 
         // 确保目录存在
         if !app_data_dir.exists() {
-            fs::create_dir_all(&app_data_dir).context(t_simple("config.create_app_data_dir.failed"))?;
+            fs::create_dir_all(&app_data_dir)
+                .context(t_simple("config.create_app_data_dir.failed"))?;
         }
 
         // 配置文件路径
@@ -95,7 +96,9 @@ impl Configuration {
         let db_path = app_data_dir.join("enote.db");
         let db_url = format!(
             "sqlite:{}?mode=rwc",
-            db_path.to_str().context(t_simple("config.invalid_db_path"))?
+            db_path
+                .to_str()
+                .context(t_simple("config.invalid_db_path"))?
         );
 
         // 默认配置内容（优化的连接池参数）
@@ -126,7 +129,8 @@ datasource:
         );
 
         // 写入配置文件
-        fs::write(config_file_path, default_config).context(t_simple("config.write_file.failed"))?;
+        fs::write(config_file_path, default_config)
+            .context(t_simple("config.write_file.failed"))?;
 
         info!("已创建默认配置文件: {:?}", config_file_path);
         info!("数据库文件: {:?}", db_path);
@@ -181,11 +185,8 @@ datasource:
             .get_int("datasource.acquire-timeout")
             .unwrap_or(5) as u64)
             .clamp(1, 300);
-        let idle_timeout = (self
-            .config
-            .get_int("datasource.idle-time")
-            .unwrap_or(300) as u64)
-            .clamp(1, 86400);
+        let idle_timeout =
+            (self.config.get_int("datasource.idle-time").unwrap_or(300) as u64).clamp(1, 86400);
         let max_lifetime = (self
             .config
             .get_int("datasource.max-lifetime")
@@ -215,7 +216,11 @@ datasource:
             ] {
                 db.execute(Statement::from_string(backend, pragma.to_string()))
                     .await
-                    .context(format!("{}: {}", t_simple("config.database.pragma.failed"), pragma))?;
+                    .context(format!(
+                        "{}: {}",
+                        t_simple("config.database.pragma.failed"),
+                        pragma
+                    ))?;
             }
         }
 
@@ -232,4 +237,6 @@ pub struct AppState {
     pub configuration: Configuration,
     /// 数据库连接（连接池）
     pub database_connection: DatabaseConnection,
+    /// 应用数据目录（用于图片等文件存储）
+    pub app_data_dir: PathBuf,
 }

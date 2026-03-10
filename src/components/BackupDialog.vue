@@ -1,13 +1,13 @@
 <template>
   <Dialog v-model="visible" :title="t('backup.title')" :width="480">
     <!-- Tab 切换 -->
-    <div class="flex border-b border-slate-200 mb-4">
+    <div class="flex border-b border-edge mb-4">
       <button
         v-for="tab in tabs"
         :key="tab.value"
         :class="[
           'flex-1 py-2.5 text-sm font-medium transition-colors relative',
-          activeTab === tab.value ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-700',
+          activeTab === tab.value ? 'text-indigo-600' : 'text-content-secondary hover:text-content',
         ]"
         @click="activeTab = tab.value"
       >
@@ -21,7 +21,7 @@
 
     <!-- 导出 Tab -->
     <div v-if="activeTab === 'export'">
-      <div class="text-sm text-slate-600 mb-3">{{ t('backup.selectFormat') }}</div>
+      <div class="text-sm text-content-secondary mb-3">{{ t('backup.selectFormat') }}</div>
       <div class="space-y-2">
         <label
           v-for="fmt in formats"
@@ -37,8 +37,8 @@
               <FileSpreadsheet v-else class="w-5 h-5" />
             </div>
             <div class="flex-1">
-              <div class="font-medium text-slate-900">{{ fmt.label }}</div>
-              <div class="text-xs text-slate-500">{{ fmt.desc }}</div>
+              <div class="font-medium text-content">{{ fmt.label }}</div>
+              <div class="text-xs text-content-secondary">{{ fmt.desc }}</div>
             </div>
             <div class="format-check">
               <Check class="w-4 h-4" />
@@ -50,7 +50,7 @@
 
     <!-- 导入 Tab -->
     <div v-if="activeTab === 'import'">
-      <div class="text-sm text-slate-600 mb-3">{{ t('backup.selectFormat') }}</div>
+      <div class="text-sm text-content-secondary mb-3">{{ t('backup.selectFormat') }}</div>
       <div class="space-y-2">
         <label
           v-for="fmt in formats"
@@ -66,8 +66,8 @@
               <FileSpreadsheet v-else class="w-5 h-5" />
             </div>
             <div class="flex-1">
-              <div class="font-medium text-slate-900">{{ fmt.label }}</div>
-              <div class="text-xs text-slate-500">{{ fmt.desc }}</div>
+              <div class="font-medium text-content">{{ fmt.label }}</div>
+              <div class="text-xs text-content-secondary">{{ fmt.desc }}</div>
             </div>
             <div class="format-check">
               <Check class="w-4 h-4" />
@@ -225,7 +225,7 @@ const doImport = async () => {
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: white;
+  background: var(--color-bg-primary);
 }
 
 .backup-format-item:hover {
@@ -267,7 +267,7 @@ const doImport = async () => {
   height: 24px;
   border-radius: 50%;
   border: 2px solid var(--color-text-disabled);
-  background: white;
+  background: var(--color-bg-primary);
   color: transparent;
   transition: all 0.2s ease;
 }

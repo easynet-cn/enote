@@ -20,6 +20,13 @@
 
 use std::collections::{HashMap, HashSet};
 
+use crate::{
+    entity::{self, notebook},
+    model::{
+        Note, NoteHistoryExtra, NoteSearchPageParam, NoteStatsResult, OperationType, PageResult,
+        Tag,
+    },
+};
 use chrono::Local;
 use sea_orm::{
     ActiveModelTrait,
@@ -28,10 +35,6 @@ use sea_orm::{
     IntoActiveModel, QueryFilter, QueryOrder, QuerySelect, Select, TransactionTrait,
     prelude::Expr,
     sea_query::{Asterisk, Query},
-};
-use crate::{
-    entity::{self, notebook},
-    model::{Note, NoteHistoryExtra, NoteSearchPageParam, NoteStatsResult, OperationType, PageResult, Tag},
 };
 
 /// Build keyword filter condition based on database backend
@@ -51,8 +54,9 @@ fn apply_keyword_filter<E: EntityTrait>(
             .replace('^', "")
             .replace(':', "");
         let fts_query = format!("\"{}\"", fts_keyword);
+        // 使用 BM25 排序：标题权重 10，内容权重 1
         let fts_condition = Expr::cust_with_values(
-            "id IN (SELECT rowid FROM note_fts WHERE note_fts MATCH ?)",
+            "id IN (SELECT rowid FROM note_fts WHERE note_fts MATCH ? ORDER BY bm25(note_fts, 10.0, 1.0))",
             [fts_query],
         );
         builder.filter(fts_condition)
@@ -68,12 +72,15 @@ fn apply_keyword_filter<E: EntityTrait>(
 }
 
 /// Apply common search filters (notebook, tag, keyword) to a query builder
+/// 默认排除已软删除的笔记
 fn apply_search_filters<E: EntityTrait>(
     builder: Select<E>,
     search_param: &NoteSearchPageParam,
     is_sqlite: bool,
 ) -> Select<E> {
     let mut b = builder;
+    // 排除已软删除的笔记
+    b = b.filter(entity::note::Column::DeletedAt.is_null());
     if search_param.notebook_id > 0 {
         b = b.filter(entity::note::Column::NotebookId.eq(search_param.notebook_id));
     }
@@ -155,8 +162,10 @@ pub async fn create(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
     let mut active_model: entity::note::ActiveModel = note.into();
 
     active_model.id = NotSet;
+    active_model.is_pinned = Set(0);
     active_model.create_time = Set(now);
     active_model.update_time = Set(now);
+    active_model.deleted_at = Set(None);
 
     let entity = active_model.insert(&txn).await?;
 
@@ -220,26 +229,34 @@ pub async fn create(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
     find_by_id(db, entity.id).await
 }
 
-/// 根据 ID 删除笔记
+/// 软删除笔记（移入回收站）
 ///
-/// 在事务中执行以下操作：
-/// 1. 查询笔记及其关联的标签信息（用于历史记录）
-/// 2. 记录删除历史（操作类型 3）
-/// 3. 删除笔记记录
-/// 4. 删除笔记与标签的关联记录
-///
-/// # 参数
-/// - `db`: 数据库连接
-/// - `id`: 笔记 ID
-///
-/// # 返回
-/// - `Ok(())`: 删除成功
-/// - `Err`: 删除失败
-///
-/// # 说明
-/// - 如果笔记不存在，不会报错，直接返回成功
-/// - 删除前会保存完整的笔记信息到历史记录
+/// 设置 deleted_at 时间戳，不会真正删除数据
 pub async fn delete_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<()> {
+    if let Some(entity) = entity::note::Entity::find_by_id(id).one(db).await? {
+        let now = Local::now().naive_local();
+        let mut active_model: entity::note::ActiveModel = entity.into_active_model();
+        active_model.deleted_at = Set(Some(now));
+        active_model.update_time = Set(now);
+        active_model.update(db).await?;
+    }
+    Ok(())
+}
+
+/// 从回收站恢复笔记
+pub async fn restore_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<()> {
+    if let Some(entity) = entity::note::Entity::find_by_id(id).one(db).await? {
+        let now = Local::now().naive_local();
+        let mut active_model: entity::note::ActiveModel = entity.into_active_model();
+        active_model.deleted_at = Set(None);
+        active_model.update_time = Set(now);
+        active_model.update(db).await?;
+    }
+    Ok(())
+}
+
+/// 永久删除笔记（从回收站中彻底删除）
+pub async fn permanent_delete_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<()> {
     let txn = db.begin().await?;
 
     let result = entity::note::Entity::find_by_id(id)
@@ -280,7 +297,6 @@ pub async fn delete_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<()
         .insert(&txn)
         .await?;
 
-        // 先删除关联数据，再删除主记录
         entity::note_tags::Entity::delete_many()
             .filter(entity::note_tags::Column::NoteId.eq(id))
             .exec(&txn)
@@ -291,6 +307,47 @@ pub async fn delete_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<()
     }
 
     Ok(())
+}
+
+/// 清空回收站（永久删除所有软删除的笔记）
+pub async fn empty_trash(db: &DatabaseConnection) -> anyhow::Result<()> {
+    let deleted_notes = entity::note::Entity::find()
+        .filter(entity::note::Column::DeletedAt.is_not_null())
+        .all(db)
+        .await?;
+
+    for note in deleted_notes {
+        permanent_delete_by_id(db, note.id).await?;
+    }
+
+    Ok(())
+}
+
+/// 获取回收站中的笔记列表
+pub async fn find_deleted(db: &DatabaseConnection) -> anyhow::Result<Vec<Note>> {
+    let notes: Vec<Note> = entity::note::Entity::find()
+        .filter(entity::note::Column::DeletedAt.is_not_null())
+        .order_by_desc(entity::note::Column::UpdateTime)
+        .all(db)
+        .await?
+        .into_iter()
+        .map(Note::from)
+        .collect();
+
+    Ok(notes)
+}
+
+/// 切换笔记置顶状态
+pub async fn toggle_pin(db: &DatabaseConnection, id: i64) -> anyhow::Result<Option<Note>> {
+    if let Some(entity) = entity::note::Entity::find_by_id(id).one(db).await? {
+        let now = Local::now().naive_local();
+        let new_pinned = if entity.is_pinned == 1 { 0 } else { 1 };
+        let mut active_model: entity::note::ActiveModel = entity.into_active_model();
+        active_model.is_pinned = Set(new_pinned);
+        active_model.update_time = Set(now);
+        active_model.update(db).await?;
+    }
+    find_by_id(db, id).await
 }
 
 /// 更新笔记
@@ -341,7 +398,9 @@ pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
         active_model.notebook_id.set_if_not_equals(note.notebook_id);
         active_model.title.set_if_not_equals(note.title.clone());
         active_model.content.set_if_not_equals(note.content.clone());
-        active_model.content_type.set_if_not_equals(note.content_type);
+        active_model
+            .content_type
+            .set_if_not_equals(note.content_type);
 
         let now = Local::now().naive_local();
 
@@ -492,6 +551,7 @@ pub async fn search_page(
         let mut notes: Vec<Note> = query_builder
             .offset(start)
             .limit(page_size)
+            .order_by_desc(entity::note::Column::IsPinned)
             .order_by_desc(entity::note::Column::UpdateTime)
             .order_by_desc(entity::note::Column::Id)
             .all(db)
@@ -553,7 +613,10 @@ pub async fn search_page(
                     .all(db)
                     .await?
                     .into_iter()
-                    .map(|e| { let id = e.id; (id, Tag::from(e)) })
+                    .map(|e| {
+                        let id = e.id;
+                        (id, Tag::from(e))
+                    })
                     .collect::<HashMap<i64, Tag>>();
 
                 for note in notes.iter_mut() {

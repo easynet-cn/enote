@@ -404,6 +404,29 @@ export default {
     editNote: 'Edit Note',
     cancelEdit: 'Cancel Edit',
     toggleSidebar: 'Toggle Sidebar',
+    commandPalette: 'Command Palette',
+  },
+
+  // Command Palette
+  commandPalette: {
+    placeholder: 'Type a command...',
+    noResults: 'No matching commands',
+    categories: {
+      notes: 'Notes',
+      view: 'View',
+      app: 'Application',
+    },
+    commands: {
+      newNote: 'New Note',
+      saveNote: 'Save Note',
+      editNote: 'Edit Note',
+      deleteNote: 'Delete Note',
+      toggleSidebar: 'Toggle Sidebar',
+      toggleDarkMode: 'Toggle Dark Mode',
+      openSettings: 'Open Settings',
+      openTrash: 'Open Trash',
+      openBackup: 'Data Backup',
+    },
   },
 
   // Validation
@@ -627,6 +650,116 @@ export default {
     noNotesFound: 'No Notion note files (.md) found in ZIP',
     parseFailed: 'Failed to parse {filepath}: {error}',
     unknownError: 'Unknown error',
+  },
+
+  // Settings
+  settings: {
+    title: 'Settings',
+    general: 'General',
+    appearance: 'Appearance',
+    language: 'Language',
+    languageZh: '中文',
+    languageEn: 'English',
+    theme: 'Theme',
+    themeLight: 'Light',
+    themeDark: 'Dark',
+    themeSystem: 'System',
+    autoSave: 'Auto Save',
+    autoSaveEnabled: 'Enable auto save',
+    saved: 'Settings saved',
+    saveFailed: 'Failed to save settings',
+    autoBackup: 'Auto Backup',
+    autoBackupEnabled: 'Enable auto backup',
+    autoBackupInterval: 'Backup interval',
+    autoBackupRetention: 'Retention count',
+    autoBackupIntervalHours: '{n} hours',
+    autoBackupRetentionCount: 'Latest {n}',
+    backupNow: 'Backup Now',
+    backupSuccess: 'Backup success: {name}',
+    backupFailed: 'Backup failed',
+    lastBackup: 'Last backup',
+    never: 'Never',
+  },
+
+  // Trash
+  trash: {
+    title: 'Trash',
+    empty: 'Trash is empty',
+    emptyTrash: 'Empty Trash',
+    restore: 'Restore',
+    permanentDelete: 'Delete Permanently',
+    emptyConfirm: {
+      title: 'Empty Trash',
+      message:
+        'Are you sure you want to empty the trash? All deleted notes will be permanently removed. This action cannot be undone.',
+      confirmText: 'Empty',
+    },
+    deleteConfirm: {
+      title: 'Delete Permanently',
+      message:
+        'Are you sure you want to permanently delete this note? This action cannot be undone.',
+      confirmText: 'Delete Permanently',
+    },
+    restored: 'Note restored',
+    restoreFailed: 'Failed to restore note',
+    deleted: 'Note permanently deleted',
+    deleteFailed: 'Failed to delete permanently',
+    emptied: 'Trash emptied',
+    emptyFailed: 'Failed to empty trash',
+  },
+
+  // Note pinning
+  pin: {
+    pin: 'Pin',
+    unpin: 'Unpin',
+    pinned: 'Pinned',
+  },
+
+  // Template
+  template: {
+    title: 'Template Manager',
+    name: 'Template Name',
+    create: 'New Template',
+    edit: 'Edit Template',
+    delete: 'Delete Template',
+    deleteConfirm: 'Are you sure you want to delete template "{name}"?',
+    useTemplate: 'Use Template',
+    noTemplates: 'No templates',
+    saveAsTemplate: 'Save as Template',
+    saveAsTemplateSuccess: 'Saved as template',
+    namePlaceholder: 'Enter template name',
+  },
+
+  // Multi-window
+  multiWindow: {
+    openInNewWindow: 'Open in New Window',
+  },
+
+  // Encryption
+  encryption: {
+    encrypt: 'Encrypt Note',
+    decrypt: 'Decrypt Note',
+    enterPassword: 'Enter password',
+    confirmPassword: 'Confirm password',
+    passwordMismatch: 'Passwords do not match',
+    passwordRequired: 'Password is required',
+    encryptSuccess: 'Note encrypted',
+    decryptSuccess: 'Note decrypted',
+    encryptFailed: 'Encryption failed',
+    decryptFailed: 'Decryption failed, please check your password',
+    isEncrypted: 'This note is encrypted',
+    encryptedPlaceholder:
+      'This note is encrypted. Click the decrypt button and enter your password to view.',
+  },
+
+  // Note links
+  noteLink: {
+    title: 'Linked Notes',
+    addLink: 'Add Link',
+    searchPlaceholder: 'Search notes...',
+    noLinks: 'No linked notes',
+    noResults: 'No matching notes found',
+    removeLink: 'Remove Link',
   },
 
   // Youdao import

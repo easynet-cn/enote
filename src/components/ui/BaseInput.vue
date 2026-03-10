@@ -179,8 +179,8 @@ defineExpose({
   display: inline-flex;
   align-items: center;
   width: 100%;
-  background: white;
-  border: 1px solid #cbd5e1;
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-dark);
   border-radius: 8px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
@@ -213,12 +213,12 @@ defineExpose({
   border: none;
   outline: none;
   background: transparent;
-  color: #0f172a;
+  color: var(--color-text-primary);
   font-size: inherit;
 }
 
 .input-inner::placeholder {
-  color: #94a3b8;
+  color: var(--color-text-tertiary);
   transition: color 0.2s;
 }
 
@@ -227,7 +227,7 @@ defineExpose({
 .input-suffix {
   display: inline-flex;
   align-items: center;
-  color: #94a3b8;
+  color: var(--color-text-tertiary);
   flex-shrink: 0;
 }
 
@@ -252,7 +252,7 @@ defineExpose({
   width: 16px;
   height: 16px;
   margin-left: 4px;
-  color: #94a3b8;
+  color: var(--color-text-tertiary);
   cursor: pointer;
   opacity: 0;
   transition: all 0.2s;
@@ -269,7 +269,7 @@ defineExpose({
 }
 
 .input-clear:hover {
-  color: #64748b;
+  color: var(--color-text-secondary);
 }
 
 /* 密码切换 */
@@ -280,7 +280,7 @@ defineExpose({
   width: 20px;
   height: 20px;
   margin-left: 4px;
-  color: #94a3b8;
+  color: var(--color-text-tertiary);
   cursor: pointer;
   transition: color 0.2s;
 }
@@ -291,13 +291,13 @@ defineExpose({
 }
 
 .input-password-toggle:hover {
-  color: #64748b;
+  color: var(--color-text-secondary);
 }
 
 /* 字数统计 */
 .input-count {
   margin-left: 8px;
-  color: #94a3b8;
+  color: var(--color-text-tertiary);
   font-size: 12px;
   flex-shrink: 0;
 }
@@ -317,7 +317,7 @@ defineExpose({
 
 /* Hover 状态 */
 .input-wrapper:hover:not(.input-disabled):not(.input-readonly) {
-  border-color: #94a3b8;
+  border-color: var(--color-text-tertiary);
 }
 
 /* Focus 状态 */
@@ -331,12 +331,12 @@ defineExpose({
 }
 
 .input-focused .input-inner::placeholder {
-  color: #64748b;
+  color: var(--color-text-secondary);
 }
 
 /* 禁用状态 */
 .input-disabled {
-  background: #f8fafc;
+  background: var(--color-bg-secondary);
   cursor: not-allowed;
   opacity: 0.6;
 }
@@ -347,7 +347,7 @@ defineExpose({
 
 /* 只读状态 */
 .input-readonly {
-  background: #f8fafc;
+  background: var(--color-bg-secondary);
 }
 
 /* 状态样式 - Error */

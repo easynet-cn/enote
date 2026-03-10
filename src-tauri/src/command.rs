@@ -12,12 +12,14 @@
 
 use std::sync::Arc;
 
+use std::collections::HashMap;
+
 use crate::{
     config::AppState,
     error::AppError,
     model::{
         Note, NoteHistory, NoteHistorySearchPageParam, NoteSearchPageParam, NoteStatsResult,
-        Notebook, PageResult, Tag,
+        NoteLink, NoteTemplate, Notebook, PageResult, Tag,
     },
     service,
 };
@@ -35,9 +37,15 @@ pub async fn export_backup(
 ) -> Result<(), AppError> {
     let db = &app_state.database_connection;
     match format.as_str() {
-        "sql" => service::backup::export_sql(db, &path).await.map_err(AppError::from)?,
-        "excel" => service::backup::export_excel(db, &path).await.map_err(AppError::from)?,
-        "csv" => service::backup::export_csv(db, &path).await.map_err(AppError::from)?,
+        "sql" => service::backup::export_sql(db, &path)
+            .await
+            .map_err(AppError::from)?,
+        "excel" => service::backup::export_excel(db, &path)
+            .await
+            .map_err(AppError::from)?,
+        "csv" => service::backup::export_csv(db, &path)
+            .await
+            .map_err(AppError::from)?,
         _ => return Err(AppError::Business("不支持的导出格式".to_string())),
     }
     Ok(())
@@ -52,9 +60,15 @@ pub async fn import_backup(
 ) -> Result<(), AppError> {
     let db = &app_state.database_connection;
     match format.as_str() {
-        "sql" => service::backup::import_sql(db, &path).await.map_err(AppError::from)?,
-        "excel" => service::backup::import_excel(db, &path).await.map_err(AppError::from)?,
-        "csv" => service::backup::import_csv(db, &path).await.map_err(AppError::from)?,
+        "sql" => service::backup::import_sql(db, &path)
+            .await
+            .map_err(AppError::from)?,
+        "excel" => service::backup::import_excel(db, &path)
+            .await
+            .map_err(AppError::from)?,
+        "csv" => service::backup::import_csv(db, &path)
+            .await
+            .map_err(AppError::from)?,
         _ => return Err(AppError::Business("不支持的导入格式".to_string())),
     }
     Ok(())
@@ -74,7 +88,9 @@ pub async fn find_all_notebooks(
     app_state: tauri::State<'_, Arc<AppState>>,
 ) -> Result<Vec<Notebook>, AppError> {
     let db = &app_state.database_connection;
-    let notebooks = service::notebook::find_all(db).await.map_err(AppError::from)?;
+    let notebooks = service::notebook::find_all(db)
+        .await
+        .map_err(AppError::from)?;
     Ok(notebooks)
 }
 
@@ -94,7 +110,9 @@ pub async fn create_notebook(
 ) -> Result<Option<Notebook>, AppError> {
     notebook.validate().map_err(AppError::from)?;
     let db = &app_state.database_connection;
-    service::notebook::create(db, &notebook).await.map_err(AppError::from)
+    service::notebook::create(db, &notebook)
+        .await
+        .map_err(AppError::from)
 }
 
 /// 根据 ID 删除笔记本
@@ -111,7 +129,9 @@ pub async fn delete_notebook_by_id(
     id: i64,
 ) -> Result<(), AppError> {
     let db = &app_state.database_connection;
-    service::notebook::delete_by_id(db, id).await.map_err(AppError::from)
+    service::notebook::delete_by_id(db, id)
+        .await
+        .map_err(AppError::from)
 }
 
 /// 更新笔记本
@@ -130,7 +150,9 @@ pub async fn update_notebook(
 ) -> Result<Option<Notebook>, AppError> {
     notebook.validate().map_err(AppError::from)?;
     let db = &app_state.database_connection;
-    service::notebook::update(db, &notebook).await.map_err(AppError::from)
+    service::notebook::update(db, &notebook)
+        .await
+        .map_err(AppError::from)
 }
 
 // ============================================================================
@@ -143,7 +165,9 @@ pub async fn update_notebook(
 /// - `Ok(Vec<Tag>)`: 标签列表
 /// - `Err(AppError)`: 错误信息
 #[tauri::command]
-pub async fn find_all_tags(app_state: tauri::State<'_, Arc<AppState>>) -> Result<Vec<Tag>, AppError> {
+pub async fn find_all_tags(
+    app_state: tauri::State<'_, Arc<AppState>>,
+) -> Result<Vec<Tag>, AppError> {
     let db = &app_state.database_connection;
     let tags = service::tag::find_all(db).await.map_err(AppError::from)?;
     Ok(tags)
@@ -182,7 +206,9 @@ pub async fn delete_tag_by_id(
     id: i64,
 ) -> Result<(), AppError> {
     let db = &app_state.database_connection;
-    service::tag::delete_by_id(db, id).await.map_err(AppError::from)
+    service::tag::delete_by_id(db, id)
+        .await
+        .map_err(AppError::from)
 }
 
 /// 更新标签
@@ -224,7 +250,9 @@ pub async fn create_note(
 ) -> Result<Option<Note>, AppError> {
     note.validate().map_err(AppError::from)?;
     let db = &app_state.database_connection;
-    service::note::create(db, &note).await.map_err(AppError::from)
+    service::note::create(db, &note)
+        .await
+        .map_err(AppError::from)
 }
 
 /// 更新笔记
@@ -246,7 +274,9 @@ pub async fn update_note(
 ) -> Result<Option<Note>, AppError> {
     note.validate().map_err(AppError::from)?;
     let db = &app_state.database_connection;
-    service::note::update(db, &note).await.map_err(AppError::from)
+    service::note::update(db, &note)
+        .await
+        .map_err(AppError::from)
 }
 
 /// 根据 ID 删除笔记
@@ -266,7 +296,9 @@ pub async fn delete_note_by_id(
     id: i64,
 ) -> Result<(), AppError> {
     let db = &app_state.database_connection;
-    service::note::delete_by_id(db, id).await.map_err(AppError::from)
+    service::note::delete_by_id(db, id)
+        .await
+        .map_err(AppError::from)
 }
 
 /// 分页搜索笔记
@@ -289,7 +321,9 @@ pub async fn search_page_notes(
 ) -> Result<PageResult<Note>, AppError> {
     search_param.normalize();
     let db = &app_state.database_connection;
-    service::note::search_page(db, &search_param).await.map_err(AppError::from)
+    service::note::search_page(db, &search_param)
+        .await
+        .map_err(AppError::from)
 }
 
 #[tauri::command]
@@ -299,7 +333,9 @@ pub async fn note_stats(
 ) -> Result<NoteStatsResult, AppError> {
     search_param.normalize();
     let db = &app_state.database_connection;
-    service::note::stats(db, &search_param).await.map_err(AppError::from)
+    service::note::stats(db, &search_param)
+        .await
+        .map_err(AppError::from)
 }
 
 // ============================================================================
@@ -324,5 +360,304 @@ pub async fn search_page_note_histories(
 ) -> Result<PageResult<NoteHistory>, AppError> {
     search_param.page_param.normalize();
     let db = &app_state.database_connection;
-    service::note_history::search_page(db, &search_param).await.map_err(AppError::from)
+    service::note_history::search_page(db, &search_param)
+        .await
+        .map_err(AppError::from)
+}
+
+// ============================================================================
+// 设置相关命令
+// ============================================================================
+
+/// 获取所有设置
+#[tauri::command]
+pub async fn get_all_settings(
+    app_state: tauri::State<'_, Arc<AppState>>,
+) -> Result<HashMap<String, String>, AppError> {
+    let db = &app_state.database_connection;
+    service::settings::get_all(db).await.map_err(AppError::from)
+}
+
+/// 保存设置
+#[tauri::command]
+pub async fn save_settings(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    settings: HashMap<String, String>,
+) -> Result<(), AppError> {
+    let db = &app_state.database_connection;
+    service::settings::save(db, settings)
+        .await
+        .map_err(AppError::from)
+}
+
+// ============================================================================
+// 笔记置顶命令
+// ============================================================================
+
+/// 切换笔记置顶状态
+#[tauri::command]
+pub async fn toggle_note_pin(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    id: i64,
+) -> Result<Option<Note>, AppError> {
+    let db = &app_state.database_connection;
+    service::note::toggle_pin(db, id)
+        .await
+        .map_err(AppError::from)
+}
+
+// ============================================================================
+// 回收站相关命令
+// ============================================================================
+
+/// 从回收站恢复笔记
+#[tauri::command]
+pub async fn restore_note(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    id: i64,
+) -> Result<(), AppError> {
+    let db = &app_state.database_connection;
+    service::note::restore_by_id(db, id)
+        .await
+        .map_err(AppError::from)
+}
+
+/// 永久删除笔记
+#[tauri::command]
+pub async fn permanent_delete_note(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    id: i64,
+) -> Result<(), AppError> {
+    let db = &app_state.database_connection;
+    service::note::permanent_delete_by_id(db, id)
+        .await
+        .map_err(AppError::from)
+}
+
+/// 清空回收站
+#[tauri::command]
+pub async fn empty_trash(app_state: tauri::State<'_, Arc<AppState>>) -> Result<(), AppError> {
+    let db = &app_state.database_connection;
+    service::note::empty_trash(db).await.map_err(AppError::from)
+}
+
+/// 获取回收站笔记列表
+#[tauri::command]
+pub async fn find_deleted_notes(
+    app_state: tauri::State<'_, Arc<AppState>>,
+) -> Result<Vec<Note>, AppError> {
+    let db = &app_state.database_connection;
+    service::note::find_deleted(db)
+        .await
+        .map_err(AppError::from)
+}
+
+// ============================================================================
+// 排序相关命令
+// ============================================================================
+
+/// 批量更新笔记本排序
+#[tauri::command]
+pub async fn reorder_notebooks(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    orders: Vec<(i64, i32)>,
+) -> Result<(), AppError> {
+    let db = &app_state.database_connection;
+    service::notebook::reorder(db, orders)
+        .await
+        .map_err(AppError::from)
+}
+
+/// 批量更新标签排序
+#[tauri::command]
+pub async fn reorder_tags(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    orders: Vec<(i64, i32)>,
+) -> Result<(), AppError> {
+    let db = &app_state.database_connection;
+    service::tag::reorder(db, orders)
+        .await
+        .map_err(AppError::from)
+}
+
+// ============================================================================
+// 图片相关命令
+// ============================================================================
+
+/// 保存图片到本地文件
+///
+/// 将 Base64 编码的图片数据保存为本地文件，返回 asset protocol URL
+#[tauri::command]
+pub async fn save_image(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    base64_data: String,
+) -> Result<String, AppError> {
+    let path = service::image::save_image(&app_state.app_data_dir, &base64_data)
+        .map_err(AppError::from)?;
+    Ok(path)
+}
+
+/// 删除本地图片文件
+#[tauri::command]
+pub async fn delete_image(path: String) -> Result<(), AppError> {
+    service::image::delete_image(&path).map_err(AppError::from)
+}
+
+// ============================================================================
+// 自动备份相关命令
+// ============================================================================
+
+/// 执行一次自动备份
+#[tauri::command]
+pub async fn auto_backup(
+    app_state: tauri::State<'_, Arc<AppState>>,
+) -> Result<String, AppError> {
+    let db = &app_state.database_connection;
+    let filename = service::backup::auto_backup(db, &app_state.app_data_dir)
+        .await
+        .map_err(AppError::from)?;
+    Ok(filename)
+}
+
+/// 清理旧备份文件
+#[tauri::command]
+pub async fn cleanup_old_backups(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    max_count: usize,
+) -> Result<u32, AppError> {
+    service::backup::cleanup_old_backups(&app_state.app_data_dir, max_count)
+        .map_err(AppError::from)
+}
+
+/// 列出所有自动备份
+#[tauri::command]
+pub async fn list_auto_backups(
+    app_state: tauri::State<'_, Arc<AppState>>,
+) -> Result<Vec<(String, u64)>, AppError> {
+    service::backup::list_backups(&app_state.app_data_dir).map_err(AppError::from)
+}
+
+// ============================================================================
+// 模板相关命令
+// ============================================================================
+
+#[tauri::command]
+pub async fn find_all_templates(
+    app_state: tauri::State<'_, Arc<AppState>>,
+) -> Result<Vec<NoteTemplate>, AppError> {
+    let db = &app_state.database_connection;
+    service::note_template::find_all(db)
+        .await
+        .map_err(AppError::from)
+}
+
+#[tauri::command]
+pub async fn create_template(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    template: NoteTemplate,
+) -> Result<Option<NoteTemplate>, AppError> {
+    template.validate().map_err(AppError::from)?;
+    let db = &app_state.database_connection;
+    service::note_template::create(db, &template)
+        .await
+        .map_err(AppError::from)
+}
+
+#[tauri::command]
+pub async fn update_template(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    template: NoteTemplate,
+) -> Result<Option<NoteTemplate>, AppError> {
+    template.validate().map_err(AppError::from)?;
+    let db = &app_state.database_connection;
+    service::note_template::update(db, &template)
+        .await
+        .map_err(AppError::from)
+}
+
+#[tauri::command]
+pub async fn delete_template_by_id(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    id: i64,
+) -> Result<(), AppError> {
+    let db = &app_state.database_connection;
+    service::note_template::delete_by_id(db, id)
+        .await
+        .map_err(AppError::from)
+}
+
+// ============================================================================
+// 笔记链接相关命令
+// ============================================================================
+
+/// 获取笔记的所有链接
+#[tauri::command]
+pub async fn find_note_links(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    note_id: i64,
+) -> Result<Vec<NoteLink>, AppError> {
+    let db = &app_state.database_connection;
+    service::note_link::find_links(db, note_id)
+        .await
+        .map_err(AppError::from)
+}
+
+/// 创建笔记链接
+#[tauri::command]
+pub async fn create_note_link(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    source_note_id: i64,
+    target_note_id: i64,
+) -> Result<(), AppError> {
+    let db = &app_state.database_connection;
+    service::note_link::create_link(db, source_note_id, target_note_id)
+        .await
+        .map_err(AppError::from)
+}
+
+/// 删除笔记链接
+#[tauri::command]
+pub async fn delete_note_link(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    link_id: i64,
+) -> Result<(), AppError> {
+    let db = &app_state.database_connection;
+    service::note_link::delete_link(db, link_id)
+        .await
+        .map_err(AppError::from)
+}
+
+/// 搜索可链接的笔记
+#[tauri::command]
+pub async fn search_linkable_notes(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    note_id: i64,
+    keyword: String,
+) -> Result<Vec<NoteLink>, AppError> {
+    let db = &app_state.database_connection;
+    service::note_link::search_linkable_notes(db, note_id, &keyword)
+        .await
+        .map_err(AppError::from)
+}
+
+// ============================================================================
+// 加密相关命令
+// ============================================================================
+
+/// 加密笔记内容
+#[tauri::command]
+pub async fn encrypt_content(content: String, password: String) -> Result<String, AppError> {
+    service::crypto::encrypt(&content, &password).map_err(AppError::from)
+}
+
+/// 解密笔记内容
+#[tauri::command]
+pub async fn decrypt_content(content: String, password: String) -> Result<String, AppError> {
+    service::crypto::decrypt(&content, &password).map_err(AppError::from)
+}
+
+/// 检查内容是否已加密
+#[tauri::command]
+pub async fn is_content_encrypted(content: String) -> Result<bool, AppError> {
+    Ok(service::crypto::is_encrypted(&content))
 }

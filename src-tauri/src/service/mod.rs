@@ -49,3 +49,28 @@ pub(crate) mod tag;
 ///
 /// 支持 SQL、Excel、CSV 三种格式的导出和导入
 pub(crate) mod backup;
+
+/// 应用设置服务模块
+///
+/// 提供键值对形式的设置存取功能
+pub(crate) mod settings;
+
+/// 图片存储服务模块
+///
+/// 将图片保存为本地文件，替代 Base64 内联存储
+pub(crate) mod image;
+
+/// 加密/解密服务模块
+///
+/// 提供笔记内容的 AES-256-GCM 加密和解密
+pub(crate) mod crypto;
+
+/// 笔记链接服务模块
+///
+/// 实现笔记间的双向链接功能
+pub(crate) mod note_link;
+
+/// 笔记模板服务模块
+///
+/// 提供笔记模板的 CRUD 功能
+pub(crate) mod note_template;

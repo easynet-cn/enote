@@ -58,7 +58,7 @@ defineExpose({ close })
   right: 0;
   margin-top: 8px;
   min-width: 180px;
-  background: white;
+  background: var(--color-bg-primary);
   border-radius: 10px;
   box-shadow:
     0 10px 40px rgba(0, 0, 0, 0.12),

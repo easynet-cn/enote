@@ -1,6 +1,6 @@
 <template>
   <footer
-    class="h-12 flex items-center justify-between px-4 text-xs text-slate-500 border-t border-slate-200 bg-slate-50"
+    class="h-12 flex items-center justify-between px-4 text-xs text-content-secondary border-t border-edge bg-surface-alt"
     role="contentinfo"
   >
     <div class="flex items-center gap-4">

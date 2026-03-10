@@ -1,7 +1,7 @@
 <template>
   <Dialog v-model="visible" :title="t('export.title')" :width="400">
     <div class="space-y-4">
-      <div class="text-sm text-slate-600 mb-4">{{ t('export.format') }}</div>
+      <div class="text-sm text-content-secondary mb-4">{{ t('export.format') }}</div>
 
       <div class="space-y-2">
         <label
@@ -18,8 +18,8 @@
               <FileCode v-else class="w-5 h-5" />
             </div>
             <div class="flex-1">
-              <div class="font-medium text-slate-900">{{ format.label }}</div>
-              <div class="text-xs text-slate-500">{{ format.description }}</div>
+              <div class="font-medium text-content">{{ format.label }}</div>
+              <div class="text-xs text-content-secondary">{{ format.description }}</div>
             </div>
             <div class="format-check">
               <Check class="w-4 h-4" />
@@ -99,7 +99,7 @@ const handleExport = async () => {
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: white;
+  background: var(--color-bg-primary);
 }
 
 .export-format-item:hover {
@@ -141,7 +141,7 @@ const handleExport = async () => {
   height: 24px;
   border-radius: 50%;
   border: 2px solid var(--color-text-disabled);
-  background: white;
+  background: var(--color-bg-primary);
   color: transparent;
   transition: all 0.2s ease;
 }

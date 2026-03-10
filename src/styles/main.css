@@ -1,6 +1,23 @@
 @import 'tailwindcss';
 
 /* ============================================
+   Tailwind CSS v4 语义化主题色
+   自动跟随 CSS 变量切换明暗主题
+   ============================================ */
+@theme {
+  --color-surface: var(--color-bg-primary);
+  --color-surface-alt: var(--color-bg-secondary);
+  --color-surface-dim: var(--color-bg-tertiary);
+  --color-content: var(--color-text-primary);
+  --color-content-secondary: var(--color-text-secondary);
+  --color-content-tertiary: var(--color-text-tertiary);
+  --color-content-disabled: var(--color-text-disabled);
+  --color-edge: var(--color-border);
+  --color-edge-light: var(--color-border-light);
+  --color-edge-dark: var(--color-border-dark);
+}
+
+/* ============================================
    Material Design 风格的设计系统
    ============================================ */
 
@@ -86,6 +103,79 @@
   --spacing-md: 12px;
   --spacing-lg: 16px;
   --spacing-xl: 24px;
+}
+
+/* 暗色主题变量 */
+[data-theme='dark'] {
+  /* 主题色 - Indigo (暗色调整) */
+  --color-primary: #818cf8;
+  --color-primary-hover: #6366f1;
+  --color-primary-active: #4f46e5;
+  --color-primary-light: rgba(99, 102, 241, 0.2);
+  --color-primary-lighter: rgba(99, 102, 241, 0.1);
+
+  /* 语义色 (暗色调整) */
+  --color-success: #34d399;
+  --color-success-dark: #10b981;
+  --color-success-light: rgba(16, 185, 129, 0.2);
+  --color-warning: #fbbf24;
+  --color-warning-dark: #f59e0b;
+  --color-warning-light: rgba(245, 158, 11, 0.2);
+  --color-danger: #f87171;
+  --color-danger-dark: #ef4444;
+  --color-danger-light: rgba(239, 68, 68, 0.2);
+  --color-info: #60a5fa;
+  --color-info-light: rgba(59, 130, 246, 0.2);
+
+  /* 中性色 - 暗色 */
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-text-tertiary: #64748b;
+  --color-text-disabled: #475569;
+
+  --color-bg-primary: #0f172a;
+  --color-bg-secondary: #1e293b;
+  --color-bg-tertiary: #334155;
+
+  --color-border: #334155;
+  --color-border-light: #1e293b;
+  --color-border-dark: #475569;
+
+  /* 代码编辑器 */
+  --color-code-bg: #0f172a;
+  --color-code-text: #e2e8f0;
+  --color-code-block-bg: #1e293b;
+  --color-code-block-text: #f1f5f9;
+
+  /* 暗色阴影 */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+  --shadow-primary: 0 4px 14px rgba(129, 140, 248, 0.3);
+  --shadow-danger: 0 4px 14px rgba(248, 113, 113, 0.3);
+
+  color-scheme: dark;
+}
+
+[data-theme='dark'] body {
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+}
+
+[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+[data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+[data-theme='dark'] ::selection {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
 }
 
 /* 基础样式重置 */

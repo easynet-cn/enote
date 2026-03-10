@@ -3,34 +3,52 @@
     :model-value="visible ?? false"
     @update:model-value="visible = $event"
     :title="t('history.title')"
-    :fullscreen="true"
+    :width="1100"
     @open="$emit('open')"
   >
-    <div class="h-[88vh] overflow-hidden flex flex-col">
+    <div class="overflow-hidden flex flex-col max-h-[65vh]">
       <div class="flex-1 overflow-auto">
         <table class="w-full border-collapse" role="table" :aria-label="t('history.title')">
-          <thead class="bg-slate-50 sticky top-0">
+          <thead class="bg-surface-alt sticky top-0 z-10">
             <tr>
-              <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">ID</th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">
+              <th
+                class="px-4 py-3 text-left text-sm font-medium text-content-secondary border-b border-edge"
+              >
+                ID
+              </th>
+              <th
+                class="px-4 py-3 text-left text-sm font-medium text-content-secondary border-b border-edge"
+              >
                 {{ t('history.notebookName') }}
               </th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">
+              <th
+                class="px-4 py-3 text-left text-sm font-medium text-content-secondary border-b border-edge"
+              >
                 {{ t('history.noteTitle') }}
               </th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">
+              <th
+                class="px-4 py-3 text-left text-sm font-medium text-content-secondary border-b border-edge"
+              >
                 {{ t('history.contentType') }}
               </th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">
+              <th
+                class="px-4 py-3 text-left text-sm font-medium text-content-secondary border-b border-edge"
+              >
                 {{ t('history.tags') }}
               </th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">
+              <th
+                class="px-4 py-3 text-left text-sm font-medium text-content-secondary border-b border-edge"
+              >
                 {{ t('history.operateType') }}
               </th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">
+              <th
+                class="px-4 py-3 text-left text-sm font-medium text-content-secondary border-b border-edge"
+              >
                 {{ t('history.operateTime') }}
               </th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-slate-700 border-b">
+              <th
+                class="px-4 py-3 text-left text-sm font-medium text-content-secondary border-b border-edge"
+              >
                 {{ t('history.action') }}
               </th>
             </tr>
@@ -41,22 +59,34 @@
           <!-- 数据内容 -->
           <tbody v-else>
             <tr v-if="!showData?.length">
-              <td colspan="8" class="px-4 py-12 text-center text-slate-500">
+              <td colspan="8" class="px-4 py-12 text-center text-content-secondary">
                 <div class="flex flex-col items-center">
                   <Clock class="w-10 h-10 mb-2 opacity-40" />
                   <span>{{ t('history.empty') }}</span>
                 </div>
               </td>
             </tr>
-            <tr v-for="row in showData" :key="row.id" class="hover:bg-slate-50 transition-colors">
-              <td class="px-4 py-3 text-sm text-slate-900 border-b">{{ row.id }}</td>
-              <td class="px-4 py-3 text-sm text-slate-900 border-b">{{ row.notebookName }}</td>
-              <td class="px-4 py-3 text-sm text-slate-900 border-b">{{ row.title }}</td>
-              <td class="px-4 py-3 text-sm text-slate-900 border-b">{{ row.contentType }}</td>
-              <td class="px-4 py-3 text-sm text-slate-900 border-b">{{ row.tags }}</td>
-              <td class="px-4 py-3 text-sm text-slate-900 border-b">{{ row.operateType }}</td>
-              <td class="px-4 py-3 text-sm text-slate-900 border-b">{{ row.operateTime }}</td>
-              <td class="px-4 py-3 text-sm border-b">
+            <tr
+              v-for="row in showData"
+              :key="row.id"
+              class="hover:bg-surface-alt transition-colors"
+            >
+              <td class="px-4 py-3 text-sm text-content border-b border-edge">{{ row.id }}</td>
+              <td class="px-4 py-3 text-sm text-content border-b border-edge">
+                {{ row.notebookName }}
+              </td>
+              <td class="px-4 py-3 text-sm text-content border-b border-edge">{{ row.title }}</td>
+              <td class="px-4 py-3 text-sm text-content border-b border-edge">
+                {{ row.contentType }}
+              </td>
+              <td class="px-4 py-3 text-sm text-content border-b border-edge">{{ row.tags }}</td>
+              <td class="px-4 py-3 text-sm text-content border-b border-edge">
+                {{ row.operateType }}
+              </td>
+              <td class="px-4 py-3 text-sm text-content border-b border-edge">
+                {{ row.operateTime }}
+              </td>
+              <td class="px-4 py-3 text-sm border-b border-edge">
                 <button
                   @click="handleView(row)"
                   class="px-3 py-1 text-sm text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
@@ -88,30 +118,27 @@
 
   <!-- 内容查看对话框 -->
   <Dialog v-model="viewVisible" :title="t('history.contentView')" :width="1200">
-    <div class="h-[70vh] overflow-hidden flex">
+    <div class="flex gap-4">
       <!-- 旧内容区域 -->
-      <div class="flex-1 border-r border-slate-200 pr-4">
-        <div class="text-lg font-semibold mb-4 text-slate-700">{{ t('history.oldContent') }}</div>
-        <div class="h-full overflow-auto bg-slate-50 p-4 rounded-lg border border-slate-200">
-          <TipTapEditor
-            :model-value="viewOldContent"
-            :editable="false"
-            :show-toolbar="false"
-            class="h-full"
-          />
+      <div class="flex-1 min-w-0">
+        <div class="text-sm font-semibold mb-3 text-content-secondary">
+          {{ t('history.oldContent') }}
+        </div>
+        <div class="h-[60vh] overflow-auto bg-surface-alt p-4 rounded-lg border border-edge">
+          <TipTapEditor :model-value="viewOldContent" :editable="false" :show-toolbar="false" />
         </div>
       </div>
 
       <!-- 新内容区域 -->
-      <div class="flex-1 pl-4">
-        <div class="text-lg font-semibold mb-4 text-slate-700">{{ t('history.newContent') }}</div>
-        <div class="h-full overflow-auto bg-indigo-50 p-4 rounded-lg border border-indigo-200">
-          <TipTapEditor
-            :model-value="viewNewContent"
-            :editable="false"
-            :show-toolbar="false"
-            class="h-full"
-          />
+      <div class="flex-1 min-w-0">
+        <div class="text-sm font-semibold mb-3 text-content-secondary">
+          {{ t('history.newContent') }}
+        </div>
+        <div
+          class="h-[60vh] overflow-auto p-4 rounded-lg border border-edge"
+          style="background: var(--color-primary-lighter)"
+        >
+          <TipTapEditor :model-value="viewNewContent" :editable="false" :show-toolbar="false" />
         </div>
       </div>
     </div>

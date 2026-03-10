@@ -268,7 +268,7 @@ defineExpose({
   width: 100%;
   height: 36px;
   padding: 0 12px;
-  background: white;
+  background: var(--color-bg-primary);
   border: 1px solid #d1d5db;
   border-radius: 6px;
   cursor: pointer;
@@ -330,7 +330,7 @@ defineExpose({
 
 /* 下拉面板 */
 .style-picker-dropdown {
-  background: white;
+  background: var(--color-bg-primary);
   border-radius: 12px;
   box-shadow:
     0 10px 40px rgba(0, 0, 0, 0.15),

@@ -67,7 +67,7 @@ function createNotificationElement(
   const el = document.createElement('div')
   el.className = `
     flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg
-    bg-white border border-gray-200
+    bg-surface border border-edge
     transform transition-all duration-300 ease-out
     translate-x-0 opacity-100
     min-w-[280px] max-w-[400px]
@@ -83,13 +83,13 @@ function createNotificationElement(
 
   if (options.title) {
     const titleEl = document.createElement('div')
-    titleEl.className = 'font-medium text-gray-900'
+    titleEl.className = 'font-medium text-content'
     titleEl.textContent = options.title
     contentContainer.appendChild(titleEl)
   }
 
   const messageEl = document.createElement('div')
-  messageEl.className = 'text-sm text-gray-600'
+  messageEl.className = 'text-sm text-content-secondary'
   messageEl.textContent = options.message
   contentContainer.appendChild(messageEl)
   el.appendChild(contentContainer)

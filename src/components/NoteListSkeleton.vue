@@ -28,7 +28,7 @@ withDefaults(defineProps<Props>(), {
 .note-skeleton {
   padding: 1rem;
   border-radius: 0.5rem;
-  background: white;
+  background: var(--color-bg-primary);
   border: 1px solid var(--color-bg-tertiary);
 }
 

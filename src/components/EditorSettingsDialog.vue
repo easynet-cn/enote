@@ -2,7 +2,7 @@
   <Dialog v-model="visible" :title="t('editorSettings.title')" :width="500">
     <div class="space-y-4" role="form" :aria-label="t('editorSettings.ariaLabel')">
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-2">{{
+        <label class="block text-sm font-medium text-content-secondary mb-2">{{
           t('editorSettings.notebook')
         }}</label>
         <Select
@@ -14,7 +14,7 @@
         />
       </div>
       <div>
-        <span class="block text-sm font-medium text-slate-700 mb-2" id="tags-label">{{
+        <span class="block text-sm font-medium text-content-secondary mb-2" id="tags-label">{{
           t('editorSettings.tags')
         }}</span>
         <div class="flex flex-wrap gap-2" role="group" aria-labelledby="tags-label">
@@ -124,7 +124,7 @@ const handleSubmit = () => {
   border-radius: 20px;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: white;
+  background: var(--color-bg-primary);
   user-select: none;
 }
 
@@ -156,7 +156,7 @@ const handleSubmit = () => {
   height: 18px;
   border-radius: 50%;
   border: 2px solid var(--color-text-disabled);
-  background: white;
+  background: var(--color-bg-primary);
   color: transparent;
   transition: all 0.2s ease;
   flex-shrink: 0;

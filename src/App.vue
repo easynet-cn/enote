@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-screen bg-slate-50 relative">
+  <div class="flex h-screen bg-surface-alt relative">
     <!-- 侧边栏组件 -->
     <AppSidebar
       :notebooks="notebooks"
@@ -17,6 +17,10 @@
       @toggle-collapse="sidebarCollapsed = !sidebarCollapsed"
       @open-import="importDialogVisible = true"
       @open-backup="backupDialogVisible = true"
+      @open-settings="settingsDialogVisible = true"
+      @open-trash="trashDialogVisible = true"
+      @reorder-notebooks="handleReorderNotebooks"
+      @reorder-tags="handleReorderTags"
     />
 
     <!-- 笔记列表组件 -->
@@ -36,6 +40,7 @@
       @size-change="handleNoteSizeChange"
       @current-change="handleNoteCurrentChange"
       @toggle-collapse="handleNoteListToggle"
+      @toggle-pin="handleTogglePin"
     />
 
     <!-- 编辑器组件 -->
@@ -72,14 +77,25 @@
 
     <!-- 数据备份对话框 -->
     <BackupDialog v-model="backupDialogVisible" @imported="refreshAllData" />
+
+    <!-- 设置对话框 -->
+    <SettingsDialog v-model="settingsDialogVisible" />
+
+    <!-- 回收站对话框 -->
+    <TrashDialog v-model="trashDialogVisible" @restored="refreshAllData" />
+
+    <!-- 快捷命令面板 -->
+    <CommandPalette v-model="commandPaletteVisible" :commands="paletteCommands" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { ask } from '@tauri-apps/plugin-dialog'
+import { noteApi, settingsApi, backupApi } from './api/note'
+import { noteToShowNote } from './utils/converters'
 import { useNotes } from './composables/useNotes'
 import { useKeyboardShortcuts } from './composables/useKeyboardShortcuts'
 import { useAppStore } from './stores/app'
@@ -88,6 +104,21 @@ import NoteList from './components/NoteList.vue'
 import NoteEditor from './components/NoteEditor.vue'
 import ImportDialog from './components/ImportDialog.vue'
 import BackupDialog from './components/BackupDialog.vue'
+import SettingsDialog from './components/SettingsDialog.vue'
+import TrashDialog from './components/TrashDialog.vue'
+import CommandPalette from './components/CommandPalette.vue'
+import type { PaletteCommand } from './components/CommandPalette.vue'
+import {
+  Plus,
+  Save,
+  Pencil,
+  Trash2,
+  Moon,
+  Sun,
+  PanelLeft,
+  Settings,
+  Database,
+} from 'lucide-vue-next'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -100,6 +131,12 @@ const noteListCollapsed = ref(false)
 const importDialogVisible = ref(false)
 // 备份对话框
 const backupDialogVisible = ref(false)
+// 设置对话框
+const settingsDialogVisible = ref(false)
+// 回收站对话框
+const trashDialogVisible = ref(false)
+// 命令面板
+const commandPaletteVisible = ref(false)
 // NoteList宽度
 const noteListWidth = ref(320)
 const DEFAULT_NOTE_LIST_WIDTH = 320
@@ -155,6 +192,128 @@ const {
   refreshAllData,
 } = useNotes()
 
+// 拖拽排序
+const handleReorderNotebooks = async (orders: [string, number][]) => {
+  try {
+    await noteApi.reorderNotebooks(orders.map(([id, order]) => [Number(id), order]))
+    await refreshAllData()
+  } catch {
+    // 静默失败
+  }
+}
+
+const handleReorderTags = async (orders: [string, number][]) => {
+  try {
+    await noteApi.reorderTags(orders.map(([id, order]) => [Number(id), order]))
+    await refreshAllData()
+  } catch {
+    // 静默失败
+  }
+}
+
+// 切换笔记置顶
+const handleTogglePin = async (noteId: string) => {
+  try {
+    const updatedNote = await noteApi.toggleNotePin(Number(noteId))
+    if (updatedNote) {
+      appStore.updateNote(noteToShowNote(updatedNote))
+      // 刷新列表以更新排序
+      await refreshAllData()
+    }
+  } catch {
+    // 静默失败
+  }
+}
+
+// 命令面板命令列表
+const paletteCommands = computed<PaletteCommand[]>(() => [
+  {
+    id: 'new-note',
+    name: t('commandPalette.commands.newNote'),
+    icon: Plus,
+    category: t('commandPalette.categories.notes'),
+    shortcut: 'Ctrl+N',
+    handler: () => createNewNote(),
+  },
+  {
+    id: 'save-note',
+    name: t('commandPalette.commands.saveNote'),
+    icon: Save,
+    category: t('commandPalette.categories.notes'),
+    shortcut: 'Ctrl+S',
+    handler: () => {
+      if (editMode.value && activeNote.value) saveNote()
+    },
+  },
+  {
+    id: 'edit-note',
+    name: t('commandPalette.commands.editNote'),
+    icon: Pencil,
+    category: t('commandPalette.categories.notes'),
+    shortcut: 'Ctrl+E',
+    handler: () => {
+      if (activeNote.value && !editMode.value) editMode.value = true
+    },
+  },
+  {
+    id: 'delete-note',
+    name: t('commandPalette.commands.deleteNote'),
+    icon: Trash2,
+    category: t('commandPalette.categories.notes'),
+    handler: () => {
+      if (activeNote.value) deleteNote()
+    },
+  },
+  {
+    id: 'toggle-sidebar',
+    name: t('commandPalette.commands.toggleSidebar'),
+    icon: PanelLeft,
+    category: t('commandPalette.categories.view'),
+    shortcut: 'Ctrl+B',
+    handler: () => {
+      sidebarCollapsed.value = !sidebarCollapsed.value
+    },
+  },
+  {
+    id: 'toggle-dark-mode',
+    name: t('commandPalette.commands.toggleDarkMode'),
+    icon: document.documentElement.getAttribute('data-theme') === 'dark' ? Sun : Moon,
+    category: t('commandPalette.categories.view'),
+    handler: () => {
+      const current = document.documentElement.getAttribute('data-theme')
+      const next = current === 'dark' ? 'light' : 'dark'
+      document.documentElement.setAttribute('data-theme', next)
+    },
+  },
+  {
+    id: 'open-settings',
+    name: t('commandPalette.commands.openSettings'),
+    icon: Settings,
+    category: t('commandPalette.categories.app'),
+    handler: () => {
+      settingsDialogVisible.value = true
+    },
+  },
+  {
+    id: 'open-trash',
+    name: t('commandPalette.commands.openTrash'),
+    icon: Trash2,
+    category: t('commandPalette.categories.app'),
+    handler: () => {
+      trashDialogVisible.value = true
+    },
+  },
+  {
+    id: 'open-backup',
+    name: t('commandPalette.commands.openBackup'),
+    icon: Database,
+    category: t('commandPalette.categories.app'),
+    handler: () => {
+      backupDialogVisible.value = true
+    },
+  },
+])
+
 // 键盘快捷键
 useKeyboardShortcuts([
   {
@@ -202,22 +361,94 @@ useKeyboardShortcuts([
     },
     description: t('shortcuts.toggleSidebar'),
   },
+  {
+    key: 'p',
+    ctrl: true,
+    handler: () => {
+      commandPaletteVisible.value = !commandPaletteVisible.value
+    },
+    description: t('shortcuts.commandPalette'),
+  },
 ])
 
 // 关闭窗口拦截：未保存时提示确认
+// 自动备份定时器
+let autoBackupTimer: ReturnType<typeof setInterval> | null = null
+
+const startAutoBackup = async () => {
+  try {
+    const settings = await settingsApi.getAll()
+    if (settings.autoBackupEnabled !== '1') return
+
+    const intervalHours = parseInt(settings.autoBackupInterval || '24')
+    const retention = parseInt(settings.autoBackupRetention || '10')
+
+    // 检查是否需要立即备份（距上次备份超过间隔）
+    const backups = await backupApi.listAutoBackups()
+    if (backups.length > 0) {
+      // 从文件名解析时间：enote_backup_20260310_143000.sql
+      const match = backups[0][0].match(/enote_backup_(\d{8})_(\d{6})/)
+      if (match) {
+        const dateStr = `${match[1].slice(0, 4)}-${match[1].slice(4, 6)}-${match[1].slice(6, 8)}T${match[2].slice(0, 2)}:${match[2].slice(2, 4)}:${match[2].slice(4, 6)}`
+        const lastTime = new Date(dateStr).getTime()
+        const elapsed = Date.now() - lastTime
+        if (elapsed < intervalHours * 3600 * 1000) {
+          // 距上次备份未超过间隔，设置剩余时间后的定时器
+          const remaining = intervalHours * 3600 * 1000 - elapsed
+          autoBackupTimer = setTimeout(async () => {
+            await doAutoBackup(retention)
+            // 之后按间隔定时
+            autoBackupTimer = setInterval(
+              () => doAutoBackup(retention),
+              intervalHours * 3600 * 1000,
+            )
+          }, remaining) as unknown as ReturnType<typeof setInterval>
+          return
+        }
+      }
+    }
+
+    // 需要立即备份
+    await doAutoBackup(retention)
+    // 设置定时
+    autoBackupTimer = setInterval(() => doAutoBackup(retention), intervalHours * 3600 * 1000)
+  } catch {
+    // 自动备份初始化失败，静默忽略
+  }
+}
+
+const doAutoBackup = async (retention: number) => {
+  try {
+    await backupApi.autoBackup()
+    await backupApi.cleanupOldBackups(retention)
+  } catch {
+    // 静默忽略
+  }
+}
+
 onMounted(async () => {
   const currentWindow = getCurrentWindow()
   await currentWindow.onCloseRequested(async (event) => {
+    event.preventDefault()
     if (appStore.isDirty) {
-      event.preventDefault()
       const confirmed = await ask(t('editor.unsavedChanges.message'), {
         title: t('editor.unsavedChanges.title'),
         kind: 'warning',
       })
-      if (confirmed) {
-        getCurrentWindow().destroy()
-      }
+      if (!confirmed) return
     }
+    // 最小化到托盘而非退出
+    await currentWindow.hide()
   })
+
+  // 启动自动备份
+  startAutoBackup()
+})
+
+onUnmounted(() => {
+  if (autoBackupTimer) {
+    clearInterval(autoBackupTimer)
+    autoBackupTimer = null
+  }
 })
 </script>

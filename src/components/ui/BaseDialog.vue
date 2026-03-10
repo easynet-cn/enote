@@ -181,7 +181,7 @@ const handleOverlayClick = () => {
 /* Dialog 主体 */
 .dialog-content {
   position: relative;
-  background: white;
+  background: var(--color-bg-primary);
   border-radius: 12px;
   box-shadow:
     0 25px 50px -12px rgba(0, 0, 0, 0.25),
@@ -206,7 +206,7 @@ const handleOverlayClick = () => {
   justify-content: space-between;
   padding: 1.25rem 1.5rem;
   border-bottom: 1px solid var(--color-border);
-  background: linear-gradient(180deg, var(--color-bg-secondary) 0%, #ffffff 100%);
+  background: linear-gradient(180deg, var(--color-bg-secondary) 0%, var(--color-bg-primary) 100%);
 }
 
 .dialog-title {

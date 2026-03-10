@@ -1,6 +1,6 @@
 <template>
   <aside
-    class="bg-white border-r border-slate-200 flex flex-col relative shadow-sm"
+    class="bg-surface border-r border-edge flex flex-col relative shadow-sm"
     :class="{ 'transition-all duration-300': !isResizing }"
     :style="{ width: collapsed ? '48px' : `${width}px` }"
   >
@@ -18,7 +18,7 @@
     <!-- 折叠/展开按钮（右侧边界中间） -->
     <button
       @click="$emit('toggle-collapse')"
-      class="absolute -right-3.5 top-1/2 -translate-y-1/2 z-30 w-7 h-7 bg-white border border-slate-200 rounded-full shadow-sm flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-all hover:scale-110 active:scale-95"
+      class="absolute -right-3.5 top-1/2 -translate-y-1/2 z-30 w-7 h-7 bg-surface border border-edge rounded-full shadow-sm flex items-center justify-center text-content-tertiary hover:text-indigo-600 transition-all hover:scale-110 active:scale-95"
       :aria-label="collapsed ? t('noteList.expandList') : t('noteList.collapseList')"
       :title="collapsed ? t('noteList.expandList') : t('noteList.collapseList')"
     >
@@ -27,28 +27,28 @@
     </button>
 
     <template v-if="!collapsed">
-      <div class="p-4 border-b border-slate-200">
+      <div class="p-4 border-b border-edge">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-lg font-semibold text-slate-900">
+          <h2 class="text-lg font-semibold text-content">
             {{ activeNotebookName }}
           </h2>
         </div>
 
         <div class="relative">
-          <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-content-tertiary" />
           <input
             v-model="query"
             type="text"
             :placeholder="t('noteList.searchPlaceholder')"
             :aria-label="t('noteList.searchPlaceholder')"
-            class="w-full pl-9 pr-8 py-2.5 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all"
+            class="w-full pl-9 pr-8 py-2.5 bg-surface-alt border border-edge-light rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all"
             @keyup.enter="$emit('updateSearchQuery')"
           />
           <button
             v-if="query"
             @click="handlerQueryChange"
             :aria-label="t('noteList.clearSearch')"
-            class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-content-tertiary hover:text-content-secondary"
           >
             <X class="w-4 h-4" />
           </button>
@@ -62,7 +62,7 @@
         <!-- 空态 -->
         <div
           v-else-if="notes.length === 0"
-          class="flex flex-col items-center justify-center h-full text-slate-400 py-12"
+          class="flex flex-col items-center justify-center h-full text-content-tertiary py-12"
         >
           <FileText class="w-12 h-12 mb-3 opacity-50" />
           <p class="text-sm">{{ emptyMessage }}</p>
@@ -81,11 +81,11 @@
             v-for="(note, index) in notes"
             ref="noteItemRef"
             :key="note.id"
-            v-memo="[note.id, note.title, note.updateTime, activeNote === note.id]"
+            v-memo="[note.id, note.title, note.updateTime, note.isPinned, activeNote === note.id]"
             role="option"
             :aria-selected="activeNote === note.id"
             tabindex="0"
-            class="note-item"
+            class="note-item group"
             :class="{ active: activeNote === note.id }"
             @click="$emit('setActiveNote', note.id)"
             @keydown.enter="$emit('setActiveNote', note.id)"
@@ -93,19 +93,38 @@
             @keydown.up.prevent="focusPreviousNote(index)"
             @keydown.down.prevent="focusNextNote(index)"
           >
-            <div class="font-semibold text-slate-900 mb-1 truncate">
-              {{ note.title || t('noteList.noTitle') }}
+            <div class="flex items-center gap-1 mb-1">
+              <Pin
+                v-if="note.isPinned"
+                class="w-3.5 h-3.5 text-indigo-500 shrink-0"
+                :aria-label="t('pin.pinned')"
+              />
+              <div class="font-semibold text-content truncate">
+                {{ note.title || t('noteList.noTitle') }}
+              </div>
             </div>
-            <div class="text-sm text-slate-500 mb-2 line-clamp-2">
+            <div class="text-sm text-content-secondary mb-2 line-clamp-2">
               {{ getPreviewText(note) }}
             </div>
-            <div class="flex justify-between items-center text-xs text-slate-400">
+            <div class="flex justify-between items-center text-xs text-content-tertiary">
               <span class="truncate mr-2">{{ note.notebookName }}</span>
-              <span
-                class="shrink-0"
-                :aria-label="`${t('noteList.updateTime')}: ${note.updateTime}`"
-                >{{ note.updateTime }}</span
-              >
+              <div class="flex items-center gap-2 shrink-0">
+                <Tooltip :content="note.isPinned ? t('pin.unpin') : t('pin.pin')" placement="top">
+                  <button
+                    class="pin-btn opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-surface-dim"
+                    :class="{ '!opacity-100': note.isPinned }"
+                    @click.stop="$emit('togglePin', note.id)"
+                  >
+                    <Pin
+                      class="w-3 h-3"
+                      :class="note.isPinned ? 'text-indigo-500' : 'text-content-tertiary'"
+                    />
+                  </button>
+                </Tooltip>
+                <span :aria-label="`${t('noteList.updateTime')}: ${note.updateTime}`">{{
+                  note.updateTime
+                }}</span>
+              </div>
             </div>
           </li>
         </TransitionGroup>
@@ -113,7 +132,7 @@
 
       <div
         v-if="notes.length > 0"
-        class="sticky bottom-0 bg-white border-t border-slate-200 h-12 px-4 flex items-center justify-center"
+        class="sticky bottom-0 bg-surface border-t border-edge h-12 px-4 flex items-center justify-center"
       >
         <Pagination
           :current-page="currentPage!"
@@ -130,8 +149,8 @@
 <script setup lang="ts">
 import { computed, ref, onUnmounted, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Search, X, FileText, ChevronLeft, ChevronRight } from 'lucide-vue-next'
-import { Pagination } from './ui'
+import { Search, X, FileText, ChevronLeft, ChevronRight, Pin } from 'lucide-vue-next'
+import { Pagination, Tooltip } from './ui'
 import NoteListSkeleton from './NoteListSkeleton.vue'
 import { stripHtml, truncateText, markdownToHtml } from '../utils'
 import { LRUCache } from '../utils/lruCache'
@@ -182,6 +201,7 @@ const emit = defineEmits<{
   updateSearchQuery: []
   'toggle-collapse': []
   'update:width': [width: number]
+  togglePin: [id: string]
 }>()
 
 // 拖拽状态

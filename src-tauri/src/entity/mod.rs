@@ -4,6 +4,9 @@ pub mod prelude;
 
 pub mod note;
 pub mod note_history;
+pub mod note_link;
 pub mod note_tags;
+pub mod note_template;
 pub mod notebook;
+pub mod settings;
 pub mod tag;

@@ -2,22 +2,22 @@
   <Dialog v-model="visible" :title="dialogTitle" :width="520" @close="handleClose">
     <!-- 步骤 1: 选择来源 -->
     <div v-if="step === 1" class="space-y-4">
-      <p class="text-sm text-slate-500 mb-4">{{ t('import.selectFile') }}:</p>
+      <p class="text-sm text-content-secondary mb-4">{{ t('import.selectFile') }}:</p>
       <div
         v-for="source in IMPORT_SOURCES"
         :key="source.id"
-        class="flex items-center gap-3 p-4 border border-slate-200 rounded-lg cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-colors"
+        class="flex items-center gap-3 p-4 border border-edge rounded-lg cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-colors"
         :class="{ 'border-indigo-500 bg-indigo-50': selectedSource === source.id }"
         @click="selectSource(source.id)"
       >
         <div
-          class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600"
+          class="w-10 h-10 rounded-lg bg-surface-dim flex items-center justify-center text-content-secondary"
         >
           <component :is="getIcon(source.icon)" class="w-5 h-5" />
         </div>
         <div class="flex-1">
-          <div class="font-medium text-slate-800">{{ source.name() }}</div>
-          <div class="text-sm text-slate-500">{{ source.description() }}</div>
+          <div class="font-medium text-content">{{ source.name() }}</div>
+          <div class="text-sm text-content-secondary">{{ source.description() }}</div>
         </div>
         <div v-if="selectedSource === source.id" class="text-indigo-500">
           <Check class="w-5 h-5" />
@@ -27,16 +27,16 @@
 
     <!-- 步骤 2: 选择文件 -->
     <div v-else-if="step === 2" class="space-y-4">
-      <p class="text-sm text-slate-500">{{ t('import.format') }}:</p>
+      <p class="text-sm text-content-secondary">{{ t('import.format') }}:</p>
 
       <div
-        class="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center cursor-pointer hover:border-indigo-400 hover:bg-slate-50 transition-colors"
+        class="border-2 border-dashed border-edge rounded-lg p-8 text-center cursor-pointer hover:border-indigo-400 hover:bg-surface-alt transition-colors"
         @click="handleSelectFile"
       >
-        <Upload class="w-12 h-12 mx-auto mb-3 text-slate-400" />
-        <p v-if="!selectedFilePath" class="text-slate-600">{{ t('import.selectFile') }}</p>
+        <Upload class="w-12 h-12 mx-auto mb-3 text-content-tertiary" />
+        <p v-if="!selectedFilePath" class="text-content-secondary">{{ t('import.selectFile') }}</p>
         <p v-else class="text-indigo-600 font-medium break-all">{{ selectedFileName }}</p>
-        <p class="text-xs text-slate-400 mt-2">
+        <p class="text-xs text-content-tertiary mt-2">
           {{ t('import.supportedFormats') }}:
           {{ currentSourceConfig?.fileTypes.map((t) => '.' + t).join(', ') }}
         </p>
@@ -45,18 +45,18 @@
 
     <!-- 步骤 3: 选择目标笔记本 -->
     <div v-else-if="step === 3" class="space-y-4">
-      <p class="text-sm text-slate-500">{{ t('import.selectNotebook') }}:</p>
+      <p class="text-sm text-content-secondary">{{ t('import.selectNotebook') }}:</p>
 
       <select
         v-model="targetNotebookId"
-        class="w-full h-10 px-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        class="w-full h-10 px-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
       >
         <option v-for="nb in availableNotebooks" :key="nb.id" :value="nb.id">
           {{ nb.name }}
         </option>
       </select>
 
-      <div class="flex items-center gap-2 text-sm text-slate-600">
+      <div class="flex items-center gap-2 text-sm text-content-secondary">
         <input id="createTags" v-model="createTags" type="checkbox" class="rounded" />
         <label for="createTags">{{ t('import.autoCreateTags') }}</label>
       </div>
@@ -66,17 +66,19 @@
     <div v-else-if="step === 4" class="space-y-4">
       <div v-if="importing" class="text-center py-4">
         <Loader2 class="w-10 h-10 mx-auto mb-3 text-indigo-500 animate-spin" />
-        <p class="text-slate-600 mb-2">
+        <p class="text-content-secondary mb-2">
           {{ progress.phase === 'parsing' ? t('import.parsing') : t('import.importing') }}:
           {{ progress.currentTitle }}
         </p>
-        <div class="w-full bg-slate-200 rounded-full h-2">
+        <div class="w-full bg-surface-dim rounded-full h-2">
           <div
             class="bg-indigo-500 h-2 rounded-full transition-all duration-300"
             :style="{ width: progressPercent + '%' }"
           />
         </div>
-        <p class="text-sm text-slate-500 mt-2">{{ progress.current }} / {{ progress.total }}</p>
+        <p class="text-sm text-content-secondary mt-2">
+          {{ progress.current }} / {{ progress.total }}
+        </p>
       </div>
 
       <div v-else class="text-center py-4">
@@ -86,7 +88,7 @@
         />
         <AlertCircle v-else class="w-12 h-12 mx-auto mb-3 text-amber-500" />
 
-        <p class="text-lg font-medium text-slate-800 mb-2">
+        <p class="text-lg font-medium text-content mb-2">
           {{ importResult?.failed === 0 ? t('import.success') : t('import.partialSuccess') }}
         </p>
 

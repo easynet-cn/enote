@@ -52,11 +52,7 @@ impl From<AppError> for ErrorResponse {
                     detail,
                 )
             }
-            AppError::Business(msg) => (
-                "BUSINESS_ERROR".to_string(),
-                msg.clone(),
-                None,
-            ),
+            AppError::Business(msg) => ("BUSINESS_ERROR".to_string(), msg.clone(), None),
             AppError::Internal(_e) => {
                 // 内部错误不暴露堆栈或实现细节
                 #[cfg(debug_assertions)]
@@ -105,5 +101,4 @@ impl AppError {
             AppError::Internal(e) => AppError::Business(e.to_string()),
         }
     }
-
 }

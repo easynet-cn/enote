@@ -28,7 +28,10 @@ impl MigrationTrait for Migration {
             .await?;
 
         // 创建索引加速按笔记查询历史（如果不存在）
-        if !manager.has_index("note_history", "idx_note_history_note_id").await? {
+        if !manager
+            .has_index("note_history", "idx_note_history_note_id")
+            .await?
+        {
             manager
                 .create_index(
                     Index::create()

@@ -1,6 +1,6 @@
 [package]
 name = "enote"
-version = "0.4.1"
+version = "0.6.0"
 description = "个人笔记"
 authors = ["124244236@qq.com"]
 edition = "2024"
@@ -18,7 +18,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2.10.2", features = [] }
+tauri = { version = "2.10.2", features = ["tray-icon"] }
 tauri-plugin-fs = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-shell = "2"
@@ -40,6 +40,11 @@ rust_xlsxwriter = "0.82"
 calamine = "0.26"
 csv = "1.3"
 zip = "2.2"
+uuid = { version = "1.22.0", features = ["v4"] }
+base64 = "0.22.1"
+aes-gcm = "0.10"
+sha2 = "0.10"
+rand = "0.8"
 
 [profile.dev]
 incremental = true # Compile your binary in smaller steps.

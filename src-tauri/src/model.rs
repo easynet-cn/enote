@@ -94,7 +94,13 @@ impl PageParam {
             anyhow::bail!("{}", t_simple("validation.pageSizeMin"))
         }
         if self.page_size > Self::MAX_PAGE_SIZE {
-            anyhow::bail!("{}", t("validation.pageSizeMax", &[&Self::MAX_PAGE_SIZE.to_string()]))
+            anyhow::bail!(
+                "{}",
+                t(
+                    "validation.pageSizeMax",
+                    &[&Self::MAX_PAGE_SIZE.to_string()]
+                )
+            )
         }
         Ok(())
     }
@@ -234,7 +240,13 @@ impl Notebook {
             anyhow::bail!("{}", t_simple("validation.nameRequired"))
         }
         if self.name.len() > Self::MAX_NAME_LENGTH {
-            anyhow::bail!("{}", t("validation.nameTooLong", &[&Self::MAX_NAME_LENGTH.to_string()]))
+            anyhow::bail!(
+                "{}",
+                t(
+                    "validation.nameTooLong",
+                    &[&Self::MAX_NAME_LENGTH.to_string()]
+                )
+            )
         }
         Ok(())
     }
@@ -298,6 +310,9 @@ pub struct Note {
     /// 内容类型：0 = HTML（默认），1 = Markdown
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub content_type: i32,
+    /// 是否置顶：0 = 否，1 = 是
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub is_pinned: i32,
     /// 创建时间
     #[serde(
         serialize_with = "serialize_option_dt",
@@ -310,6 +325,12 @@ pub struct Note {
         deserialize_with = "deserialize_option_dt"
     )]
     pub update_time: Option<NaiveDateTime>,
+    /// 软删除时间
+    #[serde(
+        serialize_with = "serialize_option_dt",
+        deserialize_with = "deserialize_option_dt"
+    )]
+    pub deleted_at: Option<NaiveDateTime>,
     /// 关联的标签列表
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub tags: Vec<Tag>,
@@ -322,7 +343,13 @@ impl Note {
     /// 验证笔记数据
     pub fn validate(&self) -> anyhow::Result<()> {
         if self.title.len() > Self::MAX_TITLE_LENGTH {
-            anyhow::bail!("{}", t("validation.titleTooLong", &[&Self::MAX_TITLE_LENGTH.to_string()]))
+            anyhow::bail!(
+                "{}",
+                t(
+                    "validation.titleTooLong",
+                    &[&Self::MAX_TITLE_LENGTH.to_string()]
+                )
+            )
         }
         Ok(())
     }
@@ -337,8 +364,10 @@ impl From<entity::note::Model> for Note {
             title: value.title,
             content: value.content,
             content_type: value.content_type,
+            is_pinned: value.is_pinned,
             create_time: Some(value.create_time),
             update_time: Some(value.update_time),
+            deleted_at: value.deleted_at,
             ..Default::default()
         }
     }
@@ -353,8 +382,10 @@ impl From<&entity::note::Model> for Note {
             title: value.title.clone(),
             content: value.content.clone(),
             content_type: value.content_type,
+            is_pinned: value.is_pinned,
             create_time: Some(value.create_time),
             update_time: Some(value.update_time),
+            deleted_at: value.deleted_at,
             ..Default::default()
         }
     }
@@ -369,8 +400,10 @@ impl From<Note> for entity::note::ActiveModel {
             title: Set(note.title),
             content: Set(note.content),
             content_type: Set(note.content_type),
+            is_pinned: Set(note.is_pinned),
             create_time: Set(note.create_time.unwrap_or_default()),
             update_time: Set(note.update_time.unwrap_or_default()),
+            deleted_at: Set(note.deleted_at),
         }
     }
 }
@@ -384,8 +417,10 @@ impl From<&Note> for entity::note::ActiveModel {
             title: Set(note.title.clone()),
             content: Set(note.content.clone()),
             content_type: Set(note.content_type),
+            is_pinned: Set(note.is_pinned),
             create_time: Set(note.create_time.unwrap_or_default()),
             update_time: Set(note.update_time.unwrap_or_default()),
+            deleted_at: Set(note.deleted_at),
         }
     }
 }
@@ -446,7 +481,13 @@ impl Tag {
             anyhow::bail!("{}", t_simple("validation.nameRequired"))
         }
         if self.name.len() > Self::MAX_NAME_LENGTH {
-            anyhow::bail!("{}", t("validation.nameTooLong", &[&Self::MAX_NAME_LENGTH.to_string()]))
+            anyhow::bail!(
+                "{}",
+                t(
+                    "validation.nameTooLong",
+                    &[&Self::MAX_NAME_LENGTH.to_string()]
+                )
+            )
         }
         Ok(())
     }
@@ -512,7 +553,13 @@ impl NoteSearchPageParam {
         self.page_param.validate()?;
 
         if self.keyword.len() > Self::MAX_KEYWORD_LENGTH {
-            anyhow::bail!("{}", t("validation.keywordTooLong", &[&Self::MAX_KEYWORD_LENGTH.to_string()]))
+            anyhow::bail!(
+                "{}",
+                t(
+                    "validation.keywordTooLong",
+                    &[&Self::MAX_KEYWORD_LENGTH.to_string()]
+                )
+            )
         }
 
         Ok(())
@@ -524,7 +571,11 @@ impl NoteSearchPageParam {
 
         // 截断过长的关键词
         if self.keyword.len() > Self::MAX_KEYWORD_LENGTH {
-            self.keyword = self.keyword.chars().take(Self::MAX_KEYWORD_LENGTH).collect();
+            self.keyword = self
+                .keyword
+                .chars()
+                .take(Self::MAX_KEYWORD_LENGTH)
+                .collect();
         }
 
         // 去除关键词首尾空格
@@ -636,6 +687,73 @@ pub struct NoteHistorySearchPageParam {
     /// 笔记 ID（必需）
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub note_id: i64,
+}
+
+/// 笔记链接数据传输对象
+#[serde_as]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct NoteLink {
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub id: i64,
+    /// 链接的笔记 ID
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub note_id: i64,
+    /// 链接的笔记标题
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub note_title: String,
+    #[serde(
+        serialize_with = "serialize_option_dt",
+        deserialize_with = "deserialize_option_dt"
+    )]
+    pub create_time: Option<NaiveDateTime>,
+}
+
+/// 笔记模板数据传输对象
+#[serde_as]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct NoteTemplate {
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub id: i64,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub name: String,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub content: String,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub sort_order: i32,
+    #[serde(
+        serialize_with = "serialize_option_dt",
+        deserialize_with = "deserialize_option_dt"
+    )]
+    pub create_time: Option<NaiveDateTime>,
+    #[serde(
+        serialize_with = "serialize_option_dt",
+        deserialize_with = "deserialize_option_dt"
+    )]
+    pub update_time: Option<NaiveDateTime>,
+}
+
+impl NoteTemplate {
+    pub fn validate(&self) -> anyhow::Result<()> {
+        if self.name.trim().is_empty() {
+            anyhow::bail!("{}", t_simple("validation.nameRequired"))
+        }
+        Ok(())
+    }
+}
+
+impl From<entity::note_template::Model> for NoteTemplate {
+    fn from(value: entity::note_template::Model) -> Self {
+        Self {
+            id: value.id,
+            name: value.name,
+            content: value.content,
+            sort_order: value.sort_order,
+            create_time: Some(value.create_time),
+            update_time: Some(value.update_time),
+        }
+    }
 }
 
 // ============================================================================

@@ -2,7 +2,7 @@
   <Dialog v-model="visible" :title="t('editor.searchDialog.title')" :width="400">
     <div class="space-y-4">
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">{{
+        <label class="block text-sm font-medium text-content-secondary mb-1">{{
           t('editor.searchDialog.findLabel')
         }}</label>
         <input
@@ -11,11 +11,11 @@
           :placeholder="t('editor.linkDialog.findPlaceholder')"
           @input="handleSearchInput"
           @keydown.enter="findNext"
-          class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          class="w-full px-3 py-2 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
         />
       </div>
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">{{
+        <label class="block text-sm font-medium text-content-secondary mb-1">{{
           t('editor.searchDialog.replaceLabel')
         }}</label>
         <input
@@ -23,23 +23,23 @@
           type="text"
           :placeholder="t('editor.linkDialog.replacePlaceholder')"
           @input="handleReplaceInput"
-          class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          class="w-full px-3 py-2 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
         />
       </div>
       <div class="flex items-center gap-4">
-        <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+        <label class="flex items-center gap-2 text-sm text-content-secondary cursor-pointer">
           <input
             type="checkbox"
             v-model="caseSensitive"
             @change="handleCaseSensitiveChange"
-            class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+            class="w-4 h-4 rounded border-edge text-indigo-600 focus:ring-indigo-500"
           />
           {{ t('editor.searchDialog.caseSensitive') }}
         </label>
-        <span v-if="searchResultCount > 0" class="text-sm text-slate-500">
+        <span v-if="searchResultCount > 0" class="text-sm text-content-secondary">
           {{ currentSearchIndex + 1 }} / {{ searchResultCount }}
         </span>
-        <span v-else-if="searchTerm" class="text-sm text-slate-400">
+        <span v-else-if="searchTerm" class="text-sm text-content-tertiary">
           {{ t('editor.searchDialog.noResults') }}
         </span>
       </div>

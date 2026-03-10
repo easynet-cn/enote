@@ -10,10 +10,10 @@
             @change="
               emit('update:content-type', Number(($event.target as HTMLSelectElement).value))
             "
-            class="h-8 px-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-medium"
+            class="h-8 px-2 text-sm border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-medium"
             :class="
               isMarkdownMode
-                ? 'bg-slate-800 text-white border-slate-700'
+                ? 'bg-slate-800 text-white border-edge-dark'
                 : 'bg-indigo-50 text-indigo-700 border-indigo-300'
             "
           >
@@ -56,7 +56,7 @@
               v-model="headingLevel"
               @change="setHeading"
               :disabled="!editMode"
-              class="h-8 px-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+              class="h-8 px-2 text-sm border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="0">{{ t('editor.headingOptions.normal') }}</option>
               <option value="1">{{ t('editor.headingOptions.h1') }}</option>
@@ -73,7 +73,7 @@
               v-model="fontFamily"
               @change="setFontFamily"
               :disabled="!editMode"
-              class="h-8 px-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ml-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="h-8 px-2 text-sm border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ml-1 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="">{{ t('editor.fontOptions.default') }}</option>
               <optgroup :label="t('editor.fontOptions.sansSerif')">
@@ -114,7 +114,7 @@
               v-model="fontSize"
               @change="setFontSize"
               :disabled="!editMode"
-              class="h-8 px-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ml-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="h-8 px-2 text-sm border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ml-1 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="">{{ t('editor.fontOptions.defaultSize') }}</option>
               <option value="12px">12px</option>

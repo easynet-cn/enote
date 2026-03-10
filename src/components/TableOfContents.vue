@@ -104,7 +104,7 @@ watch(
   right: 0;
   width: 240px;
   max-height: 100%;
-  background: white;
+  background: var(--color-bg-primary);
   border-left: 1px solid var(--color-border);
   box-shadow: -4px 0 12px rgba(0, 0, 0, 0.05);
   z-index: 20;

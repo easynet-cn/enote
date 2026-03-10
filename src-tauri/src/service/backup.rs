@@ -3,6 +3,7 @@
 //! 支持 SQL、Excel、CSV 三种格式的导出和导入
 
 use std::io::{Read, Write};
+use std::path::Path;
 
 use chrono::NaiveDateTime;
 use sea_orm::*;
@@ -98,8 +99,10 @@ async fn restore_data(txn: &impl ConnectionTrait, data: &BackupData) -> anyhow::
             title: Set(m.title.clone()),
             content: Set(m.content.clone()),
             content_type: Set(m.content_type),
+            is_pinned: Set(m.is_pinned),
             create_time: Set(m.create_time),
             update_time: Set(m.update_time),
+            deleted_at: Set(m.deleted_at),
         })
         .exec(txn)
         .await?;
@@ -296,7 +299,20 @@ pub async fn export_excel(db: &DatabaseConnection, path: &str) -> anyhow::Result
     {
         let sheet = workbook.add_worksheet();
         sheet.set_name("notebook")?;
-        for (i, h) in ["id", "parent_id", "name", "description", "icon", "cls", "sort_order", "create_time", "update_time"].iter().enumerate() {
+        for (i, h) in [
+            "id",
+            "parent_id",
+            "name",
+            "description",
+            "icon",
+            "cls",
+            "sort_order",
+            "create_time",
+            "update_time",
+        ]
+        .iter()
+        .enumerate()
+        {
             sheet.write_string(0, i as u16, *h)?;
         }
         for (r, m) in data.notebooks.iter().enumerate() {
@@ -317,7 +333,18 @@ pub async fn export_excel(db: &DatabaseConnection, path: &str) -> anyhow::Result
     {
         let sheet = workbook.add_worksheet();
         sheet.set_name("tag")?;
-        for (i, h) in ["id", "name", "icon", "cls", "sort_order", "create_time", "update_time"].iter().enumerate() {
+        for (i, h) in [
+            "id",
+            "name",
+            "icon",
+            "cls",
+            "sort_order",
+            "create_time",
+            "update_time",
+        ]
+        .iter()
+        .enumerate()
+        {
             sheet.write_string(0, i as u16, *h)?;
         }
         for (r, m) in data.tags.iter().enumerate() {
@@ -336,7 +363,18 @@ pub async fn export_excel(db: &DatabaseConnection, path: &str) -> anyhow::Result
     {
         let sheet = workbook.add_worksheet();
         sheet.set_name("note")?;
-        for (i, h) in ["id", "notebook_id", "title", "content", "content_type", "create_time", "update_time"].iter().enumerate() {
+        for (i, h) in [
+            "id",
+            "notebook_id",
+            "title",
+            "content",
+            "content_type",
+            "create_time",
+            "update_time",
+        ]
+        .iter()
+        .enumerate()
+        {
             sheet.write_string(0, i as u16, *h)?;
         }
         for (r, m) in data.notes.iter().enumerate() {
@@ -355,7 +393,17 @@ pub async fn export_excel(db: &DatabaseConnection, path: &str) -> anyhow::Result
     {
         let sheet = workbook.add_worksheet();
         sheet.set_name("note_tags")?;
-        for (i, h) in ["id", "note_id", "tag_id", "sort_order", "create_time", "update_time"].iter().enumerate() {
+        for (i, h) in [
+            "id",
+            "note_id",
+            "tag_id",
+            "sort_order",
+            "create_time",
+            "update_time",
+        ]
+        .iter()
+        .enumerate()
+        {
             sheet.write_string(0, i as u16, *h)?;
         }
         for (r, m) in data.note_tags.iter().enumerate() {
@@ -373,7 +421,19 @@ pub async fn export_excel(db: &DatabaseConnection, path: &str) -> anyhow::Result
     {
         let sheet = workbook.add_worksheet();
         sheet.set_name("note_history")?;
-        for (i, h) in ["id", "note_id", "old_content", "new_content", "extra", "operate_type", "operate_time", "create_time"].iter().enumerate() {
+        for (i, h) in [
+            "id",
+            "note_id",
+            "old_content",
+            "new_content",
+            "extra",
+            "operate_type",
+            "operate_time",
+            "create_time",
+        ]
+        .iter()
+        .enumerate()
+        {
             sheet.write_string(0, i as u16, *h)?;
         }
         for (r, m) in data.note_histories.iter().enumerate() {
@@ -395,7 +455,7 @@ pub async fn export_excel(db: &DatabaseConnection, path: &str) -> anyhow::Result
 }
 
 pub async fn import_excel(db: &DatabaseConnection, path: &str) -> anyhow::Result<()> {
-    use calamine::{open_workbook, Reader, Xlsx};
+    use calamine::{Reader, Xlsx, open_workbook};
 
     let mut wb: Xlsx<_> = open_workbook(path)?;
     let mut data = BackupData {
@@ -408,7 +468,9 @@ pub async fn import_excel(db: &DatabaseConnection, path: &str) -> anyhow::Result
 
     if let Ok(range) = wb.worksheet_range("notebook") {
         for row in range.rows().skip(1) {
-            if row.len() < 9 { continue; }
+            if row.len() < 9 {
+                continue;
+            }
             data.notebooks.push(notebook::Model {
                 id: cell_i64(&row[0]),
                 parent_id: cell_i64(&row[1]),
@@ -425,7 +487,9 @@ pub async fn import_excel(db: &DatabaseConnection, path: &str) -> anyhow::Result
 
     if let Ok(range) = wb.worksheet_range("tag") {
         for row in range.rows().skip(1) {
-            if row.len() < 7 { continue; }
+            if row.len() < 7 {
+                continue;
+            }
             data.tags.push(tag::Model {
                 id: cell_i64(&row[0]),
                 name: cell_str(&row[1]),
@@ -440,22 +504,32 @@ pub async fn import_excel(db: &DatabaseConnection, path: &str) -> anyhow::Result
 
     if let Ok(range) = wb.worksheet_range("note") {
         for row in range.rows().skip(1) {
-            if row.len() < 7 { continue; }
+            if row.len() < 7 {
+                continue;
+            }
             data.notes.push(note::Model {
                 id: cell_i64(&row[0]),
                 notebook_id: cell_i64(&row[1]),
                 title: cell_str(&row[2]),
                 content: cell_str(&row[3]),
                 content_type: cell_i64(&row[4]) as i32,
+                is_pinned: if row.len() > 7 {
+                    cell_i64(&row[7]) as i32
+                } else {
+                    0
+                },
                 create_time: cell_dt(&row[5])?,
                 update_time: cell_dt(&row[6])?,
+                deleted_at: None,
             });
         }
     }
 
     if let Ok(range) = wb.worksheet_range("note_tags") {
         for row in range.rows().skip(1) {
-            if row.len() < 6 { continue; }
+            if row.len() < 6 {
+                continue;
+            }
             data.note_tags.push(note_tags::Model {
                 id: cell_i64(&row[0]),
                 note_id: cell_i64(&row[1]),
@@ -469,7 +543,9 @@ pub async fn import_excel(db: &DatabaseConnection, path: &str) -> anyhow::Result
 
     if let Ok(range) = wb.worksheet_range("note_history") {
         for row in range.rows().skip(1) {
-            if row.len() < 8 { continue; }
+            if row.len() < 8 {
+                continue;
+            }
             data.note_histories.push(note_history::Model {
                 id: cell_i64(&row[0]),
                 note_id: cell_i64(&row[1]),
@@ -527,12 +603,28 @@ pub async fn export_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
     // notebook.csv
     {
         let mut wtr = csv::Writer::from_writer(Vec::new());
-        wtr.write_record(["id", "parent_id", "name", "description", "icon", "cls", "sort_order", "create_time", "update_time"])?;
+        wtr.write_record([
+            "id",
+            "parent_id",
+            "name",
+            "description",
+            "icon",
+            "cls",
+            "sort_order",
+            "create_time",
+            "update_time",
+        ])?;
         for m in &data.notebooks {
             wtr.write_record(&[
-                m.id.to_string(), m.parent_id.to_string(), m.name.clone(),
-                m.description.clone(), m.icon.clone(), m.cls.clone(),
-                m.sort_order.to_string(), format_dt(&m.create_time), format_dt(&m.update_time),
+                m.id.to_string(),
+                m.parent_id.to_string(),
+                m.name.clone(),
+                m.description.clone(),
+                m.icon.clone(),
+                m.cls.clone(),
+                m.sort_order.to_string(),
+                format_dt(&m.create_time),
+                format_dt(&m.update_time),
             ])?;
         }
         zip.start_file("notebook.csv", opts)?;
@@ -542,11 +634,24 @@ pub async fn export_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
     // tag.csv
     {
         let mut wtr = csv::Writer::from_writer(Vec::new());
-        wtr.write_record(["id", "name", "icon", "cls", "sort_order", "create_time", "update_time"])?;
+        wtr.write_record([
+            "id",
+            "name",
+            "icon",
+            "cls",
+            "sort_order",
+            "create_time",
+            "update_time",
+        ])?;
         for m in &data.tags {
             wtr.write_record(&[
-                m.id.to_string(), m.name.clone(), m.icon.clone(), m.cls.clone(),
-                m.sort_order.to_string(), format_dt(&m.create_time), format_dt(&m.update_time),
+                m.id.to_string(),
+                m.name.clone(),
+                m.icon.clone(),
+                m.cls.clone(),
+                m.sort_order.to_string(),
+                format_dt(&m.create_time),
+                format_dt(&m.update_time),
             ])?;
         }
         zip.start_file("tag.csv", opts)?;
@@ -556,12 +661,24 @@ pub async fn export_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
     // note.csv
     {
         let mut wtr = csv::Writer::from_writer(Vec::new());
-        wtr.write_record(["id", "notebook_id", "title", "content", "content_type", "create_time", "update_time"])?;
+        wtr.write_record([
+            "id",
+            "notebook_id",
+            "title",
+            "content",
+            "content_type",
+            "create_time",
+            "update_time",
+        ])?;
         for m in &data.notes {
             wtr.write_record(&[
-                m.id.to_string(), m.notebook_id.to_string(), m.title.clone(),
-                m.content.clone(), m.content_type.to_string(),
-                format_dt(&m.create_time), format_dt(&m.update_time),
+                m.id.to_string(),
+                m.notebook_id.to_string(),
+                m.title.clone(),
+                m.content.clone(),
+                m.content_type.to_string(),
+                format_dt(&m.create_time),
+                format_dt(&m.update_time),
             ])?;
         }
         zip.start_file("note.csv", opts)?;
@@ -571,11 +688,22 @@ pub async fn export_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
     // note_tags.csv
     {
         let mut wtr = csv::Writer::from_writer(Vec::new());
-        wtr.write_record(["id", "note_id", "tag_id", "sort_order", "create_time", "update_time"])?;
+        wtr.write_record([
+            "id",
+            "note_id",
+            "tag_id",
+            "sort_order",
+            "create_time",
+            "update_time",
+        ])?;
         for m in &data.note_tags {
             wtr.write_record(&[
-                m.id.to_string(), m.note_id.to_string(), m.tag_id.to_string(),
-                m.sort_order.to_string(), format_dt(&m.create_time), format_dt(&m.update_time),
+                m.id.to_string(),
+                m.note_id.to_string(),
+                m.tag_id.to_string(),
+                m.sort_order.to_string(),
+                format_dt(&m.create_time),
+                format_dt(&m.update_time),
             ])?;
         }
         zip.start_file("note_tags.csv", opts)?;
@@ -585,12 +713,26 @@ pub async fn export_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
     // note_history.csv
     {
         let mut wtr = csv::Writer::from_writer(Vec::new());
-        wtr.write_record(["id", "note_id", "old_content", "new_content", "extra", "operate_type", "operate_time", "create_time"])?;
+        wtr.write_record([
+            "id",
+            "note_id",
+            "old_content",
+            "new_content",
+            "extra",
+            "operate_type",
+            "operate_time",
+            "create_time",
+        ])?;
         for m in &data.note_histories {
             wtr.write_record(&[
-                m.id.to_string(), m.note_id.to_string(), m.old_content.clone(),
-                m.new_content.clone(), m.extra.clone(), m.operate_type.to_string(),
-                format_dt(&m.operate_time), format_dt(&m.create_time),
+                m.id.to_string(),
+                m.note_id.to_string(),
+                m.old_content.clone(),
+                m.new_content.clone(),
+                m.extra.clone(),
+                m.operate_type.to_string(),
+                format_dt(&m.operate_time),
+                format_dt(&m.create_time),
             ])?;
         }
         zip.start_file("note_history.csv", opts)?;
@@ -621,7 +763,9 @@ pub async fn import_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
         let mut rdr = csv::Reader::from_reader(content.as_bytes());
         for result in rdr.records() {
             let r = result?;
-            if r.len() < 9 { continue; }
+            if r.len() < 9 {
+                continue;
+            }
             data.notebooks.push(notebook::Model {
                 id: r[0].parse()?,
                 parent_id: r[1].parse()?,
@@ -643,7 +787,9 @@ pub async fn import_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
         let mut rdr = csv::Reader::from_reader(content.as_bytes());
         for result in rdr.records() {
             let r = result?;
-            if r.len() < 7 { continue; }
+            if r.len() < 7 {
+                continue;
+            }
             data.tags.push(tag::Model {
                 id: r[0].parse()?,
                 name: r[1].to_string(),
@@ -663,15 +809,23 @@ pub async fn import_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
         let mut rdr = csv::Reader::from_reader(content.as_bytes());
         for result in rdr.records() {
             let r = result?;
-            if r.len() < 7 { continue; }
+            if r.len() < 7 {
+                continue;
+            }
             data.notes.push(note::Model {
                 id: r[0].parse()?,
                 notebook_id: r[1].parse()?,
                 title: r[2].to_string(),
                 content: r[3].to_string(),
                 content_type: r[4].parse()?,
+                is_pinned: if r.len() > 7 {
+                    r[7].parse().unwrap_or(0)
+                } else {
+                    0
+                },
                 create_time: parse_dt(&r[5])?,
                 update_time: parse_dt(&r[6])?,
+                deleted_at: None,
             });
         }
     }
@@ -683,7 +837,9 @@ pub async fn import_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
         let mut rdr = csv::Reader::from_reader(content.as_bytes());
         for result in rdr.records() {
             let r = result?;
-            if r.len() < 6 { continue; }
+            if r.len() < 6 {
+                continue;
+            }
             data.note_tags.push(note_tags::Model {
                 id: r[0].parse()?,
                 note_id: r[1].parse()?,
@@ -702,7 +858,9 @@ pub async fn import_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
         let mut rdr = csv::Reader::from_reader(content.as_bytes());
         for result in rdr.records() {
             let r = result?;
-            if r.len() < 8 { continue; }
+            if r.len() < 8 {
+                continue;
+            }
             data.note_histories.push(note_history::Model {
                 id: r[0].parse()?,
                 note_id: r[1].parse()?,
@@ -722,4 +880,93 @@ pub async fn import_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
     txn.commit().await?;
     info!("CSV 备份导入完成: {}", path);
     Ok(())
+}
+
+// ============================================================================
+// 自动备份
+// ============================================================================
+
+/// 执行自动备份，将 SQL 备份保存到 `{app_data_dir}/backups/` 目录
+pub async fn auto_backup(db: &DatabaseConnection, app_data_dir: &Path) -> anyhow::Result<String> {
+    let backup_dir = app_data_dir.join("backups");
+    if !backup_dir.exists() {
+        std::fs::create_dir_all(&backup_dir)?;
+    }
+
+    let filename = format!(
+        "enote_backup_{}.sql",
+        chrono::Local::now().format("%Y%m%d_%H%M%S")
+    );
+    let path = backup_dir.join(&filename);
+    let path_str = path.to_string_lossy().to_string();
+
+    export_sql(db, &path_str).await?;
+    info!("自动备份完成: {}", path_str);
+
+    Ok(filename)
+}
+
+/// 清理旧备份，保留最近 max_count 个文件
+pub fn cleanup_old_backups(app_data_dir: &Path, max_count: usize) -> anyhow::Result<u32> {
+    let backup_dir = app_data_dir.join("backups");
+    if !backup_dir.exists() {
+        return Ok(0);
+    }
+
+    let mut files: Vec<_> = std::fs::read_dir(&backup_dir)?
+        .filter_map(|e| e.ok())
+        .filter(|e| {
+            e.path()
+                .file_name()
+                .and_then(|n| n.to_str())
+                .map(|n| n.starts_with("enote_backup_") && n.ends_with(".sql"))
+                .unwrap_or(false)
+        })
+        .collect();
+
+    // 按修改时间排序（最新在前）
+    files.sort_by(|a, b| {
+        let ta = a.metadata().and_then(|m| m.modified()).ok();
+        let tb = b.metadata().and_then(|m| m.modified()).ok();
+        tb.cmp(&ta)
+    });
+
+    let mut deleted = 0u32;
+    if files.len() > max_count {
+        for entry in &files[max_count..] {
+            if std::fs::remove_file(entry.path()).is_ok() {
+                deleted += 1;
+            }
+        }
+    }
+
+    if deleted > 0 {
+        info!("已清理 {} 个旧备份文件", deleted);
+    }
+    Ok(deleted)
+}
+
+/// 列出所有自动备份文件
+pub fn list_backups(app_data_dir: &Path) -> anyhow::Result<Vec<(String, u64)>> {
+    let backup_dir = app_data_dir.join("backups");
+    if !backup_dir.exists() {
+        return Ok(Vec::new());
+    }
+
+    let mut files: Vec<(String, u64)> = std::fs::read_dir(&backup_dir)?
+        .filter_map(|e| e.ok())
+        .filter_map(|e| {
+            let name = e.file_name().to_string_lossy().to_string();
+            if name.starts_with("enote_backup_") && name.ends_with(".sql") {
+                let size = e.metadata().ok().map(|m| m.len()).unwrap_or(0);
+                Some((name, size))
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    // 按文件名倒序（最新在前）
+    files.sort_by(|a, b| b.0.cmp(&a.0));
+    Ok(files)
 }

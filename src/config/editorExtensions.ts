@@ -22,7 +22,14 @@ import CharacterCount from '@tiptap/extension-character-count'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import Mathematics from '@tiptap/extension-mathematics'
 import { common, createLowlight } from 'lowlight'
-import { FontSize, Indent, SearchAndReplace, DragHandle, TableOfContents } from '../extensions'
+import {
+  FontSize,
+  Indent,
+  SearchAndReplace,
+  DragHandle,
+  TableOfContents,
+  PasteHandler,
+} from '../extensions'
 import 'katex/dist/katex.min.css'
 
 // 创建带有常用语言的 lowlight 实例
@@ -57,6 +64,8 @@ export const coreExtensions: AnyExtension[] = [
   DragHandle,
   // 目录生成
   TableOfContents,
+  // 粘贴优化（清理网页格式、截图粘贴）
+  PasteHandler,
 ]
 
 /**

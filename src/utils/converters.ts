@@ -93,9 +93,11 @@ export const noteToShowNote = (note: Note): ShowNote => ({
   title: note.title,
   content: note.content,
   contentType: note.contentType,
+  isPinned: note.isPinned ?? 0,
   tags: tagsToShowTags(note.tags),
   createTime: note.createTime,
   updateTime: note.updateTime,
+  deletedAt: note.deletedAt,
 })
 
 /**

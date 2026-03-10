@@ -4,9 +4,9 @@
       <button
         @click="toggle"
         :disabled="disabled"
-        class="w-7 h-7 rounded-lg border border-slate-300 transition-colors"
+        class="w-7 h-7 rounded-lg border border-edge transition-colors"
         :class="
-          disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-slate-400'
+          disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-edge-dark'
         "
         :style="{ backgroundColor: modelValue || '#ffffff' }"
       ></button>
@@ -15,19 +15,19 @@
     <Transition name="picker">
       <div
         v-if="visible"
-        class="absolute top-full left-0 mt-1 p-3 bg-white rounded-xl shadow-lg border border-slate-200 z-50"
+        class="absolute top-full left-0 mt-1 p-3 bg-surface rounded-xl shadow-lg border border-edge z-50"
       >
         <div class="grid grid-cols-5 gap-1 mb-2">
           <button
             v-for="color in predefineColors"
             :key="color"
             @click="selectColor(color)"
-            class="w-6 h-6 rounded-lg border border-slate-200 cursor-pointer hover:scale-110 transition-transform"
+            class="w-6 h-6 rounded-lg border border-edge cursor-pointer hover:scale-110 transition-transform"
             :style="{ backgroundColor: color }"
             :class="{ 'ring-2 ring-indigo-500 ring-offset-1': modelValue === color }"
           ></button>
         </div>
-        <div class="flex items-center gap-2 pt-2 border-t border-slate-200">
+        <div class="flex items-center gap-2 pt-2 border-t border-edge">
           <input
             type="color"
             :value="modelValue || '#000000'"
@@ -38,7 +38,7 @@
             type="text"
             :value="modelValue"
             @input="handleTextInput"
-            class="flex-1 h-8 px-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            class="flex-1 h-8 px-2 text-sm border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             placeholder="#000000"
           />
         </div>

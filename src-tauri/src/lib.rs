@@ -11,9 +11,11 @@ use std::sync::Arc;
 
 use sea_orm_migration::MigratorTrait;
 use tauri::Manager;
+use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem};
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder};
 use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 use tracing::{error, info};
-use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
+use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::config::AppState;
 use crate::i18n::{t, t_simple};
@@ -68,10 +70,7 @@ pub fn run() {
                         let error_msg = format!("{}", e);
                         handle
                             .dialog()
-                            .message(t(
-                                "config.load.failed.message",
-                                &[&error_msg]
-                            ))
+                            .message(t("config.load.failed.message", &[&error_msg]))
                             .kind(MessageDialogKind::Error)
                             .title(t_simple("config.load.failed.title"))
                             .blocking_show();
@@ -89,10 +88,7 @@ pub fn run() {
                         let error_msg = format!("{}", e);
                         handle
                             .dialog()
-                            .message(t(
-                                "database.connection.failed.message",
-                                &[&error_msg]
-                            ))
+                            .message(t("database.connection.failed.message", &[&error_msg]))
                             .kind(MessageDialogKind::Error)
                             .title(t_simple("database.connection.failed.title"))
                             .blocking_show();
@@ -108,10 +104,7 @@ pub fn run() {
                     let error_msg = format!("{}", e);
                     handle
                         .dialog()
-                        .message(t(
-                            "database.migration.failed.message",
-                            &[&error_msg]
-                        ))
+                        .message(t("database.migration.failed.message", &[&error_msg]))
                         .kind(MessageDialogKind::Error)
                         .title(t_simple("database.migration.failed.title"))
                         .blocking_show();
@@ -120,13 +113,68 @@ pub fn run() {
                 }
                 info!("数据库迁移完成");
 
+                // 获取应用数据目录
+                let app_data_dir = handle
+                    .path()
+                    .app_data_dir()
+                    .expect("无法获取应用数据目录");
+
                 // 创建应用状态并注入到 Tauri 管理器
                 let app_state = Arc::new(AppState {
                     configuration,
                     database_connection,
+                    app_data_dir,
                 });
 
                 app.manage(app_state);
+
+                // 设置系统托盘
+                let show_item = MenuItemBuilder::with_id("show", "显示窗口").build(app)?;
+                let quit_item = MenuItemBuilder::with_id("quit", "退出").build(app)?;
+                let separator = PredefinedMenuItem::separator(app)?;
+                let tray_menu = MenuBuilder::new(app)
+                    .item(&show_item)
+                    .item(&separator)
+                    .item(&quit_item)
+                    .build()?;
+
+                TrayIconBuilder::new()
+                    .icon(app.default_window_icon().cloned().unwrap())
+                    .tooltip("ENote")
+                    .menu(&tray_menu)
+                    .on_menu_event(|app_handle, event| {
+                        match event.id().as_ref() {
+                            "show" => {
+                                if let Some(window) = app_handle.get_webview_window("main") {
+                                    let _ = window.show();
+                                    let _ = window.set_focus();
+                                }
+                            }
+                            "quit" => {
+                                std::process::exit(0);
+                            }
+                            _ => {}
+                        }
+                    })
+                    .on_tray_icon_event(|tray, event| {
+                        if let tauri::tray::TrayIconEvent::Click {
+                            button: MouseButton::Left,
+                            button_state: MouseButtonState::Up,
+                            ..
+                        } = event
+                        {
+                            let app_handle = tray.app_handle();
+                            if let Some(window) = app_handle.get_webview_window("main") {
+                                if window.is_visible().unwrap_or(false) {
+                                    let _ = window.hide();
+                                } else {
+                                    let _ = window.show();
+                                    let _ = window.set_focus();
+                                }
+                            }
+                        }
+                    })
+                    .build(app)?;
 
                 Ok(())
             })
@@ -154,6 +202,40 @@ pub fn run() {
             // 数据备份相关命令
             command::export_backup,
             command::import_backup,
+            // 设置相关命令
+            command::get_all_settings,
+            command::save_settings,
+            // 笔记置顶
+            command::toggle_note_pin,
+            // 回收站相关命令
+            command::restore_note,
+            command::permanent_delete_note,
+            command::empty_trash,
+            command::find_deleted_notes,
+            // 排序相关命令
+            command::reorder_notebooks,
+            command::reorder_tags,
+            // 图片相关命令
+            command::save_image,
+            command::delete_image,
+            // 自动备份相关命令
+            command::auto_backup,
+            command::cleanup_old_backups,
+            command::list_auto_backups,
+            // 模板相关命令
+            command::find_all_templates,
+            command::create_template,
+            command::update_template,
+            command::delete_template_by_id,
+            // 笔记链接相关命令
+            command::find_note_links,
+            command::create_note_link,
+            command::delete_note_link,
+            command::search_linkable_notes,
+            // 加密相关命令
+            command::encrypt_content,
+            command::decrypt_content,
+            command::is_content_encrypted,
         ])
         .run(tauri::generate_context!())
         .expect(&t_simple("error.appStartFailed"));

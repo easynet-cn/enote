@@ -181,3 +181,19 @@ pub async fn update(
         Ok(None)
     }
 }
+
+/// 批量更新笔记本排序
+pub async fn reorder(db: &DatabaseConnection, orders: Vec<(i64, i32)>) -> anyhow::Result<()> {
+    let now = Local::now().naive_local();
+    for (id, sort_order) in orders {
+        if let Some(entity) = entity::notebook::Entity::find_by_id(id).one(db).await? {
+            let mut active_model: entity::notebook::ActiveModel = entity.into_active_model();
+            active_model.sort_order.set_if_not_equals(sort_order);
+            if active_model.is_changed() {
+                active_model.update_time = Set(now);
+                active_model.update(db).await?;
+            }
+        }
+    }
+    Ok(())
+}

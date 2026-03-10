@@ -240,6 +240,7 @@ export const useAppStore = defineStore('app', () => {
       title: '',
       content: '',
       contentType: ContentType.Html,
+      isPinned: 0,
       tags: [],
       createTime: timeStr,
       updateTime: timeStr,

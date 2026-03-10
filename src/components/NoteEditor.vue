@@ -1,5 +1,5 @@
 <template>
-  <div class="flex-1 h-full flex flex-col overflow-hidden bg-white shadow-sm">
+  <div class="flex-1 h-full flex flex-col overflow-hidden bg-surface shadow-sm">
     <main
       class="flex-1 flex flex-col min-h-0 overflow-hidden px-4 pt-4 pb-2"
       role="main"
@@ -154,6 +154,13 @@
       @confirm="confirmDeleteNote"
     />
 
+    <!-- 关联笔记面板 -->
+    <NoteLinkPanel
+      v-if="activeNote && !isNewNote"
+      :note-id="Number(activeNote.id)"
+      @navigate-to-note="(id: number) => $emit('navigateToNote', id)"
+    />
+
     <!-- 底部状态栏 -->
     <EditorStatusBar v-if="activeNote && editor" :editor="editor" />
   </div>
@@ -183,6 +190,7 @@ import { preprocessMarkdown } from '../utils/markdownWorker'
 import NoteHistoryDialog from './NoteHistoryDialog.vue'
 import TableOfContents from './TableOfContents.vue'
 import EditorStatusBar from './EditorStatusBar.vue'
+import NoteLinkPanel from './NoteLinkPanel.vue'
 import type { TocItem } from '../extensions'
 
 interface Props {

@@ -3,18 +3,27 @@
   "identifier": "default",
   "description": "Capability for the main window",
   "windows": [
-    "main"
+    "main",
+    "note-*"
   ],
   "permissions": [
     "core:default",
     "core:window:allow-close",
     "core:window:allow-destroy",
+    "core:window:allow-hide",
+    "core:window:allow-show",
+    "core:window:allow-set-focus",
+    "core:window:allow-is-visible",
+    "core:window:allow-create",
+    "core:webview:allow-create-webview-window",
     "opener:default",
     "fs:default",
     "fs:allow-write-text-file",
     "shell:default",
     "dialog:default",
     "dialog:allow-save",
-    "dialog:allow-open"
+    "dialog:allow-open",
+    "core:tray:default",
+    "core:tray:allow-set-icon"
   ]
 }

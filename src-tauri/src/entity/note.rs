@@ -40,8 +40,12 @@ pub struct Model {
     pub content: String,
     /// 内容类型：0 = HTML，1 = Markdown
     pub content_type: i32,
+    /// 是否置顶：0 = 否，1 = 是
+    pub is_pinned: i32,
     pub create_time: DateTime,
     pub update_time: DateTime,
+    /// 软删除时间，NULL 表示未删除
+    pub deleted_at: Option<DateTime>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

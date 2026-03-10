@@ -5,19 +5,19 @@
       <button
         :disabled="currentPage <= 1"
         @click="handlePrev"
-        class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-300 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        class="w-8 h-8 flex items-center justify-center rounded-lg border border-edge hover:bg-surface-alt disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
         <ChevronLeft class="w-4 h-4" />
       </button>
     </Tooltip>
 
-    <span class="text-sm text-slate-600">{{ currentPage }} / {{ totalPages }}</span>
+    <span class="text-sm text-content-secondary">{{ currentPage }} / {{ totalPages }}</span>
 
     <Tooltip :content="t('pagination.nextPage')">
       <button
         :disabled="currentPage >= totalPages"
         @click="handleNext"
-        class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-300 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        class="w-8 h-8 flex items-center justify-center rounded-lg border border-edge hover:bg-surface-alt disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
         <ChevronRight class="w-4 h-4" />
       </button>
@@ -27,7 +27,7 @@
   <!-- 完整模式 -->
   <div v-else class="flex items-center gap-2">
     <!-- Total -->
-    <span v-if="showTotal" class="text-sm text-slate-600">{{
+    <span v-if="showTotal" class="text-sm text-content-secondary">{{
       t('pagination.total', { total })
     }}</span>
 
@@ -36,7 +36,7 @@
       v-if="showSizes"
       :value="pageSize"
       @change="handleSizeChange"
-      class="h-8 px-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+      class="h-8 px-2 text-sm border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
     >
       <option v-for="size in pageSizes" :key="size" :value="size">
         {{ t('pagination.itemsPerPage', { size }) }}
@@ -47,7 +47,7 @@
     <button
       :disabled="currentPage <= 1"
       @click="handlePrev"
-      class="h-8 px-3 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      class="h-8 px-3 text-sm border border-edge rounded-lg hover:bg-surface-alt disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
     >
       {{ t('pagination.prevPage') }}
     </button>
@@ -64,7 +64,7 @@
             ? 'bg-indigo-600 text-white border border-indigo-600'
             : page === '...'
               ? 'cursor-default'
-              : 'border border-slate-300 hover:bg-slate-50',
+              : 'border border-edge hover:bg-surface-alt',
         ]"
         :disabled="page === '...'"
       >
@@ -76,7 +76,7 @@
     <button
       :disabled="currentPage >= totalPages"
       @click="handleNext"
-      class="h-8 px-3 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      class="h-8 px-3 text-sm border border-edge rounded-lg hover:bg-surface-alt disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
     >
       {{ t('pagination.nextPage') }}
     </button>

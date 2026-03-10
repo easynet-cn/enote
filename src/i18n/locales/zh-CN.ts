@@ -400,6 +400,29 @@ export default {
     editNote: '编辑笔记',
     cancelEdit: '取消编辑',
     toggleSidebar: '切换侧边栏',
+    commandPalette: '命令面板',
+  },
+
+  // 命令面板
+  commandPalette: {
+    placeholder: '输入命令...',
+    noResults: '没有匹配的命令',
+    categories: {
+      notes: '笔记',
+      view: '视图',
+      app: '应用',
+    },
+    commands: {
+      newNote: '新建笔记',
+      saveNote: '保存笔记',
+      editNote: '编辑笔记',
+      deleteNote: '删除笔记',
+      toggleSidebar: '切换侧边栏',
+      toggleDarkMode: '切换深色模式',
+      openSettings: '打开设置',
+      openTrash: '打开回收站',
+      openBackup: '数据备份',
+    },
   },
 
   // 验证
@@ -623,6 +646,113 @@ export default {
     noNotesFound: 'ZIP 文件中没有找到 Notion 笔记文件 (.md)',
     parseFailed: '解析 {filepath} 失败: {error}',
     unknownError: '未知错误',
+  },
+
+  // 设置
+  settings: {
+    title: '设置',
+    general: '通用',
+    appearance: '外观',
+    language: '语言',
+    languageZh: '中文',
+    languageEn: 'English',
+    theme: '主题',
+    themeLight: '浅色',
+    themeDark: '深色',
+    themeSystem: '跟随系统',
+    autoSave: '自动保存',
+    autoSaveEnabled: '启用自动保存',
+    saved: '设置已保存',
+    saveFailed: '保存设置失败',
+    autoBackup: '自动备份',
+    autoBackupEnabled: '启用自动备份',
+    autoBackupInterval: '备份间隔',
+    autoBackupRetention: '保留份数',
+    autoBackupIntervalHours: '{n} 小时',
+    autoBackupRetentionCount: '最近 {n} 份',
+    backupNow: '立即备份',
+    backupSuccess: '备份成功：{name}',
+    backupFailed: '备份失败',
+    lastBackup: '上次备份',
+    never: '从未备份',
+  },
+
+  // 回收站
+  trash: {
+    title: '回收站',
+    empty: '回收站为空',
+    emptyTrash: '清空回收站',
+    restore: '恢复',
+    permanentDelete: '永久删除',
+    emptyConfirm: {
+      title: '清空回收站',
+      message: '确定要清空回收站吗？所有已删除的笔记将被永久删除，此操作不可恢复。',
+      confirmText: '清空',
+    },
+    deleteConfirm: {
+      title: '永久删除',
+      message: '确定要永久删除这条笔记吗？此操作不可恢复。',
+      confirmText: '永久删除',
+    },
+    restored: '笔记已恢复',
+    restoreFailed: '恢复笔记失败',
+    deleted: '笔记已永久删除',
+    deleteFailed: '永久删除失败',
+    emptied: '回收站已清空',
+    emptyFailed: '清空回收站失败',
+  },
+
+  // 笔记置顶
+  pin: {
+    pin: '置顶',
+    unpin: '取消置顶',
+    pinned: '已置顶',
+  },
+
+  // 模板
+  template: {
+    title: '模板管理',
+    name: '模板名称',
+    create: '新建模板',
+    edit: '编辑模板',
+    delete: '删除模板',
+    deleteConfirm: '确定要删除模板「{name}」吗？',
+    useTemplate: '使用模板',
+    noTemplates: '暂无模板',
+    saveAsTemplate: '存为模板',
+    saveAsTemplateSuccess: '已保存为模板',
+    namePlaceholder: '请输入模板名称',
+  },
+
+  // 多窗口
+  multiWindow: {
+    openInNewWindow: '在新窗口中打开',
+  },
+
+  // 加密
+  encryption: {
+    encrypt: '加密笔记',
+    decrypt: '解密笔记',
+    enterPassword: '请输入密码',
+    confirmPassword: '确认密码',
+    passwordMismatch: '两次输入的密码不一致',
+    passwordRequired: '请输入密码',
+    encryptSuccess: '笔记已加密',
+    decryptSuccess: '笔记已解密',
+    encryptFailed: '加密失败',
+    decryptFailed: '解密失败，请检查密码是否正确',
+    isEncrypted: '此笔记已加密',
+    encryptedPlaceholder: '此笔记内容已加密，请点击解密按钮输入密码查看。',
+  },
+
+  // 笔记链接
+  noteLink: {
+    title: '关联笔记',
+    addLink: '添加链接',
+    searchPlaceholder: '搜索笔记...',
+    noLinks: '暂无关联笔记',
+    noResults: '未找到匹配的笔记',
+    removeLink: '移除链接',
   },
 
   // 有道笔记导入
