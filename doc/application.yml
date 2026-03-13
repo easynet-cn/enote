@@ -2,4 +2,4 @@
 # For production, use environment variables or local config overrides
 # Example: datasource.url can be set via APP_DATASOURCE_URL environment variable
 datasource:
-  url: sqlite://enote.db
+  url: sqlite://enote.db?mode=rwc

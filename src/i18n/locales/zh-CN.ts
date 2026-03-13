@@ -239,6 +239,7 @@ export default {
       export: '导出',
       history: '历史记录',
       delete: '删除',
+      saveAsTemplate: '存为模板',
     },
     editorDialog: {
       title: '笔记标题',
@@ -401,6 +402,7 @@ export default {
     cancelEdit: '取消编辑',
     toggleSidebar: '切换侧边栏',
     commandPalette: '命令面板',
+    lockApp: '锁定应用',
   },
 
   // 命令面板
@@ -422,6 +424,9 @@ export default {
       openSettings: '打开设置',
       openTrash: '打开回收站',
       openBackup: '数据备份',
+      openTemplates: '模板管理',
+      newFromTemplate: '从模板新建',
+      saveAsTemplate: '存为模板',
     },
   },
 
@@ -675,6 +680,39 @@ export default {
     backupFailed: '备份失败',
     lastBackup: '上次备份',
     never: '从未备份',
+    // 安全设置
+    security: '安全',
+    lockMode: '锁屏方式',
+    lockModeNone: '关闭',
+    lockModePassword: '密码',
+    lockModeBiometric: '生物识别',
+    lockTimeout: '自动锁定',
+    lockTimeoutNone: '仅启动时',
+    lockTimeoutMinutes: '{n} 分钟无操作',
+    lockOnMinimize: '最小化时锁定',
+    setPassword: '设置密码',
+    changePassword: '修改密码',
+    removePassword: '移除密码',
+    passwordSet: '密码已设置',
+    passwordRemoved: '密码已移除',
+    passwordChanged: '密码已修改',
+    currentPassword: '当前密码',
+    newPassword: '新密码',
+    confirmPassword: '确认密码',
+    passwordMismatch: '两次输入的密码不一致',
+    passwordTooShort: '密码至少 4 位',
+    passwordIncorrect: '密码错误',
+    biometricNotSupported: '当前设备不支持生物识别',
+  },
+
+  // 锁屏
+  lockScreen: {
+    title: '应用已锁定',
+    subtitle: '请输入密码解锁',
+    placeholder: '输入密码...',
+    unlock: '解锁',
+    incorrectPassword: '密码错误，请重试',
+    useBiometric: '使用生物识别',
   },
 
   // 回收站

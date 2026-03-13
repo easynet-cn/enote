@@ -646,6 +646,7 @@
         @settings="emit('settings')"
         @history="emit('history')"
         @export="emit('export')"
+        @save-as-template="emit('saveAsTemplate')"
       />
     </div>
   </div>
@@ -744,6 +745,7 @@ const emit = defineEmits<{
   settings: []
   history: []
   export: []
+  saveAsTemplate: []
 }>()
 
 const toggleLayout = (layout: MarkdownLayout) => {

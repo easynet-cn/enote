@@ -69,6 +69,17 @@
       </button>
     </Tooltip>
 
+    <!-- 存为模板按钮 -->
+    <Tooltip :content="t('editor.toolbarTooltip.saveAsTemplate')" placement="bottom">
+      <button
+        class="action-btn action-btn-ghost"
+        @click="emit('saveAsTemplate')"
+        :aria-label="t('editor.toolbarTooltip.saveAsTemplate')"
+      >
+        <LayoutTemplate class="w-4 h-4" />
+      </button>
+    </Tooltip>
+
     <!-- 删除按钮 -->
     <Tooltip :content="t('editor.toolbarTooltip.delete')" placement="bottom">
       <button
@@ -85,7 +96,16 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { Tooltip } from '../ui'
-import { Pencil, Check, X, Settings, Download, History, Trash2 } from 'lucide-vue-next'
+import {
+  Pencil,
+  Check,
+  X,
+  Settings,
+  Download,
+  History,
+  Trash2,
+  LayoutTemplate,
+} from 'lucide-vue-next'
 
 const { t } = useI18n()
 
@@ -101,6 +121,7 @@ const emit = defineEmits<{
   settings: []
   history: []
   export: []
+  saveAsTemplate: []
 }>()
 </script>
 

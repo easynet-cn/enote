@@ -74,3 +74,8 @@ pub(crate) mod note_link;
 ///
 /// 提供笔记模板的 CRUD 功能
 pub(crate) mod note_template;
+
+/// 锁屏认证服务模块
+///
+/// 提供锁屏密码的设置、验证和清除功能
+pub(crate) mod auth;

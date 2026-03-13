@@ -26,6 +26,7 @@
           @settings="handleSettings"
           @export="handleExport"
           @history="handleHistory"
+          @save-as-template="emit('saveAsTemplate')"
         />
       </div>
 
@@ -218,6 +219,7 @@ const emit = defineEmits<{
   currentChange: [currentPage: number]
   open: []
   navigateToNote: [id: number]
+  saveAsTemplate: []
 }>()
 
 // 判断是否为新建笔记

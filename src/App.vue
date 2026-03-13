@@ -21,6 +21,7 @@
       @open-trash="trashDialogVisible = true"
       @reorder-notebooks="handleReorderNotebooks"
       @reorder-tags="handleReorderTags"
+      @open-templates="templateDialogVisible = true"
     />
 
     <!-- 笔记列表组件 -->
@@ -65,6 +66,7 @@
       @open="openHistoryDialog"
       @size-change="handleNoteHistorySizeChange"
       @current-change="handleNoteHistoryCurrentChange"
+      @save-as-template="handleSaveAsTemplate"
     />
 
     <!-- 导入对话框 -->
@@ -84,8 +86,14 @@
     <!-- 回收站对话框 -->
     <TrashDialog v-model="trashDialogVisible" @restored="refreshAllData" />
 
+    <!-- 模板对话框 -->
+    <TemplateDialog v-model="templateDialogVisible" @use-template="handleUseTemplate" />
+
     <!-- 快捷命令面板 -->
     <CommandPalette v-model="commandPaletteVisible" :commands="paletteCommands" />
+
+    <!-- 锁屏 -->
+    <LockScreen :visible="isLocked" @unlocked="unlock" />
   </div>
 </template>
 
@@ -94,10 +102,11 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { ask } from '@tauri-apps/plugin-dialog'
-import { noteApi, settingsApi, backupApi } from './api/note'
+import { noteApi, settingsApi, backupApi, templateApi } from './api/note'
 import { noteToShowNote } from './utils/converters'
 import { useNotes } from './composables/useNotes'
 import { useKeyboardShortcuts } from './composables/useKeyboardShortcuts'
+import { useLockScreen } from './composables/useLockScreen'
 import { useAppStore } from './stores/app'
 import AppSidebar from './components/AppSidebar.vue'
 import NoteList from './components/NoteList.vue'
@@ -107,6 +116,8 @@ import BackupDialog from './components/BackupDialog.vue'
 import SettingsDialog from './components/SettingsDialog.vue'
 import TrashDialog from './components/TrashDialog.vue'
 import CommandPalette from './components/CommandPalette.vue'
+import TemplateDialog from './components/TemplateDialog.vue'
+import LockScreen from './components/LockScreen.vue'
 import type { PaletteCommand } from './components/CommandPalette.vue'
 import {
   Plus,
@@ -118,10 +129,16 @@ import {
   PanelLeft,
   Settings,
   Database,
+  LayoutTemplate,
+  FileDown,
+  Lock,
 } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const appStore = useAppStore()
+
+// 锁屏
+const { isLocked, lock, unlock, checkStartupLock, setupMinimizeListener } = useLockScreen()
 
 // 折叠状态
 const sidebarCollapsed = ref(false)
@@ -135,6 +152,8 @@ const backupDialogVisible = ref(false)
 const settingsDialogVisible = ref(false)
 // 回收站对话框
 const trashDialogVisible = ref(false)
+// 模板对话框
+const templateDialogVisible = ref(false)
 // 命令面板
 const commandPaletteVisible = ref(false)
 // NoteList宽度
@@ -225,6 +244,40 @@ const handleTogglePin = async (noteId: string) => {
   }
 }
 
+// 使用模板创建新笔记
+const handleUseTemplate = (template: import('./types').NoteTemplate) => {
+  templateDialogVisible.value = false
+  createNewNote()
+  // 将模板内容填入新笔记
+  if (template.content) {
+    updateNoteContent(template.content)
+  }
+  if (template.name) {
+    updateNoteTitle(template.name)
+  }
+}
+
+// 将当前笔记存为模板
+const handleSaveAsTemplate = async () => {
+  if (!activeNoteData.value) return
+  try {
+    await templateApi.create({
+      id: 0,
+      name: activeNoteData.value.title || t('template.name'),
+      content: activeNoteData.value.content || '',
+      sortOrder: 0,
+      createTime: null,
+      updateTime: null,
+    })
+    const { showNotification } = await import('./components/ui/notification')
+    showNotification({ type: 'success', message: t('template.saveAsTemplateSuccess') })
+  } catch (e: unknown) {
+    const { showNotification } = await import('./components/ui/notification')
+    const msg = e instanceof Error ? e.message : String(e)
+    showNotification({ type: 'error', message: msg })
+  }
+}
+
 // 命令面板命令列表
 const paletteCommands = computed<PaletteCommand[]>(() => [
   {
@@ -312,6 +365,41 @@ const paletteCommands = computed<PaletteCommand[]>(() => [
       backupDialogVisible.value = true
     },
   },
+  {
+    id: 'open-templates',
+    name: t('commandPalette.commands.openTemplates'),
+    icon: LayoutTemplate,
+    category: t('commandPalette.categories.app'),
+    handler: () => {
+      templateDialogVisible.value = true
+    },
+  },
+  {
+    id: 'new-from-template',
+    name: t('commandPalette.commands.newFromTemplate'),
+    icon: LayoutTemplate,
+    category: t('commandPalette.categories.notes'),
+    handler: () => {
+      templateDialogVisible.value = true
+    },
+  },
+  {
+    id: 'lock-app',
+    name: t('shortcuts.lockApp'),
+    icon: Lock,
+    category: t('commandPalette.categories.app'),
+    shortcut: 'Ctrl+L',
+    handler: () => lock(),
+  },
+  {
+    id: 'save-as-template',
+    name: t('commandPalette.commands.saveAsTemplate'),
+    icon: FileDown,
+    category: t('commandPalette.categories.notes'),
+    handler: () => {
+      if (activeNoteData.value) handleSaveAsTemplate()
+    },
+  },
 ])
 
 // 键盘快捷键
@@ -360,6 +448,12 @@ useKeyboardShortcuts([
       sidebarCollapsed.value = !sidebarCollapsed.value
     },
     description: t('shortcuts.toggleSidebar'),
+  },
+  {
+    key: 'l',
+    ctrl: true,
+    handler: () => lock(),
+    description: t('shortcuts.lockApp'),
   },
   {
     key: 'p',
@@ -443,6 +537,10 @@ onMounted(async () => {
 
   // 启动自动备份
   startAutoBackup()
+
+  // 检查启动锁屏
+  await checkStartupLock()
+  setupMinimizeListener()
 })
 
 onUnmounted(() => {

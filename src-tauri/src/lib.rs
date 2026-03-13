@@ -41,8 +41,11 @@ mod service; // 业务逻辑服务层
 /// 6. 将应用状态注入到 Tauri 管理器
 /// 7. 注册所有前端可调用的命令
 /// 8. 启动应用程序主循环
+///
+/// # 参数
+/// - `config_path`: 可选的配置文件路径，如果为 None 则使用默认路径
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub fn run() {
+pub fn run(config_path: Option<String>) {
     // 初始化 tracing 日志系统
     // 默认日志级别为 info，可通过 RUST_LOG 环境变量覆盖
     tracing_subscriber::registry()
@@ -62,7 +65,7 @@ pub fn run() {
                 let handle = app.handle();
 
                 // 加载应用配置
-                let configuration = match config::Configuration::new(handle) {
+                let configuration = match config::Configuration::new(handle, config_path.as_deref()) {
                     Ok(config) => config,
                     Err(e) => {
                         error!("配置加载失败: {:#}", e);
@@ -236,6 +239,10 @@ pub fn run() {
             command::encrypt_content,
             command::decrypt_content,
             command::is_content_encrypted,
+            // 锁屏认证相关命令
+            command::set_lock_password,
+            command::verify_lock_password,
+            command::clear_lock_password,
         ])
         .run(tauri::generate_context!())
         .expect(&t_simple("error.appStartFailed"));

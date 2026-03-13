@@ -242,6 +242,7 @@ export default {
       export: 'Export',
       history: 'History',
       delete: 'Delete',
+      saveAsTemplate: 'Save as Template',
     },
     editorDialog: {
       title: 'Note title',
@@ -405,6 +406,7 @@ export default {
     cancelEdit: 'Cancel Edit',
     toggleSidebar: 'Toggle Sidebar',
     commandPalette: 'Command Palette',
+    lockApp: 'Lock App',
   },
 
   // Command Palette
@@ -426,6 +428,9 @@ export default {
       openSettings: 'Open Settings',
       openTrash: 'Open Trash',
       openBackup: 'Data Backup',
+      openTemplates: 'Template Manager',
+      newFromTemplate: 'New from Template',
+      saveAsTemplate: 'Save as Template',
     },
   },
 
@@ -679,6 +684,39 @@ export default {
     backupFailed: 'Backup failed',
     lastBackup: 'Last backup',
     never: 'Never',
+    // Security
+    security: 'Security',
+    lockMode: 'Lock Mode',
+    lockModeNone: 'Off',
+    lockModePassword: 'Password',
+    lockModeBiometric: 'Biometric',
+    lockTimeout: 'Auto Lock',
+    lockTimeoutNone: 'On startup only',
+    lockTimeoutMinutes: 'After {n} minutes',
+    lockOnMinimize: 'Lock on minimize',
+    setPassword: 'Set Password',
+    changePassword: 'Change Password',
+    removePassword: 'Remove Password',
+    passwordSet: 'Password has been set',
+    passwordRemoved: 'Password has been removed',
+    passwordChanged: 'Password has been changed',
+    currentPassword: 'Current Password',
+    newPassword: 'New Password',
+    confirmPassword: 'Confirm Password',
+    passwordMismatch: 'Passwords do not match',
+    passwordTooShort: 'Password must be at least 4 characters',
+    passwordIncorrect: 'Incorrect password',
+    biometricNotSupported: 'Biometric authentication is not supported on this device',
+  },
+
+  // Lock Screen
+  lockScreen: {
+    title: 'App Locked',
+    subtitle: 'Enter password to unlock',
+    placeholder: 'Enter password...',
+    unlock: 'Unlock',
+    incorrectPassword: 'Incorrect password, please try again',
+    useBiometric: 'Use biometric',
   },
 
   // Trash

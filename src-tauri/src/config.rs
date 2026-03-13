@@ -44,7 +44,7 @@ impl Configuration {
     ///
     /// # 自动创建
     /// 如果配置文件不存在，会自动创建包含 SQLite 数据库配置的默认文件
-    pub fn new(app_handle: &AppHandle) -> Result<Self> {
+    pub fn new(app_handle: &AppHandle, custom_config_path: Option<&str>) -> Result<Self> {
         // 获取应用数据目录
         let app_data_dir = app_handle
             .path()
@@ -57,13 +57,27 @@ impl Configuration {
                 .context(t_simple("config.create_app_data_dir.failed"))?;
         }
 
-        // 配置文件路径
-        let config_file_path = app_data_dir.join("application.yml");
+        // 确定配置文件路径：优先使用命令行指定的路径
+        let config_file_path = if let Some(custom_path) = custom_config_path {
+            let path = PathBuf::from(custom_path);
+            // 支持相对路径：相对于当前工作目录解析
+            if path.is_relative() {
+                std::env::current_dir()
+                    .context("无法获取当前工作目录")?
+                    .join(path)
+            } else {
+                path
+            }
+        } else {
+            let default_path = app_data_dir.join("application.yml");
+            // 如果默认配置文件不存在，创建默认配置
+            if !default_path.exists() {
+                Self::create_default_config(&app_data_dir, &default_path)?;
+            }
+            default_path
+        };
 
-        // 如果配置文件不存在，创建默认配置
-        if !config_file_path.exists() {
-            Self::create_default_config(&app_data_dir, &config_file_path)?;
-        }
+        info!("使用配置文件: {:?}", config_file_path);
 
         let config_path = config_file_path
             .to_str()

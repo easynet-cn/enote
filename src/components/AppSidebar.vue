@@ -189,6 +189,14 @@
             <Database class="w-4 h-4" />
           </button>
         </Tooltip>
+        <Tooltip :content="t('template.title')" placement="top">
+          <button
+            class="flex items-center justify-center p-1.5 text-content-secondary hover:bg-surface-dim rounded-lg transition-colors cursor-pointer"
+            @click="$emit('openTemplates')"
+          >
+            <LayoutTemplate class="w-4 h-4" />
+          </button>
+        </Tooltip>
         <Tooltip :content="t('trash.title')" placement="top">
           <button
             class="flex items-center justify-center p-1.5 text-content-secondary hover:bg-surface-dim rounded-lg transition-colors cursor-pointer"
@@ -371,6 +379,7 @@ import {
   Import,
   Database,
   Settings,
+  LayoutTemplate,
 } from 'lucide-vue-next'
 import {
   Button,
@@ -464,6 +473,7 @@ const emit = defineEmits<{
   openTrash: []
   reorderNotebooks: [orders: [string, number][]]
   reorderTags: [orders: [string, number][]]
+  openTemplates: []
 }>()
 
 const showNotebookEditAndDelete = computed(() => {

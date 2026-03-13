@@ -103,6 +103,18 @@ export const cryptoApi = {
   },
 }
 
+export const authApi = {
+  async setLockPassword(password: string): Promise<void> {
+    return await invoke('set_lock_password', { password })
+  },
+  async verifyLockPassword(password: string): Promise<boolean> {
+    return await invoke('verify_lock_password', { password })
+  },
+  async clearLockPassword(): Promise<void> {
+    return await invoke('clear_lock_password')
+  },
+}
+
 export const noteLinkApi = {
   async findLinks(noteId: number): Promise<NoteLink[]> {
     return await invoke('find_note_links', { noteId })

@@ -661,3 +661,39 @@ pub async fn decrypt_content(content: String, password: String) -> Result<String
 pub async fn is_content_encrypted(content: String) -> Result<bool, AppError> {
     Ok(service::crypto::is_encrypted(&content))
 }
+
+// ============================================================================
+// 锁屏认证相关命令
+// ============================================================================
+
+/// 设置锁屏密码
+#[tauri::command]
+pub async fn set_lock_password(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    password: String,
+) -> Result<(), AppError> {
+    service::auth::set_password(&app_state.database_connection, &password)
+        .await
+        .map_err(AppError::from)
+}
+
+/// 验证锁屏密码
+#[tauri::command]
+pub async fn verify_lock_password(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    password: String,
+) -> Result<bool, AppError> {
+    service::auth::verify_password(&app_state.database_connection, &password)
+        .await
+        .map_err(AppError::from)
+}
+
+/// 清除锁屏密码
+#[tauri::command]
+pub async fn clear_lock_password(
+    app_state: tauri::State<'_, Arc<AppState>>,
+) -> Result<(), AppError> {
+    service::auth::clear_password(&app_state.database_connection)
+        .await
+        .map_err(AppError::from)
+}
