@@ -18,7 +18,7 @@ use sea_orm::DatabaseConnection;
 use serde::Serialize;
 
 use enote_lib::{
-    model::{Note, NoteSearchPageParam, Notebook, OperateSource, PageParam, PageResult, Tag},
+    model::{McpPermission, Note, NoteSearchPageParam, Notebook, OperateSource, PageParam, Tag},
     service,
 };
 
@@ -200,16 +200,6 @@ struct SearchResult {
     notes: Vec<NoteSummary>,
 }
 
-impl From<PageResult<Note>> for SearchResult {
-    fn from(page: PageResult<Note>) -> Self {
-        Self {
-            total: page.total,
-            total_pages: page.total_pages,
-            notes: page.data.into_iter().map(NoteSummary::from).collect(),
-        }
-    }
-}
-
 /// 笔记详情
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -260,7 +250,7 @@ impl ENoteMcpServer {
 
     // ---- 笔记操作 ----
 
-    #[tool(description = "搜索笔记。支持关键词搜索、按笔记本或标签过滤，返回分页结果（标题+摘要）")]
+    #[tool(description = "搜索笔记。支持关键词搜索、按笔记本或标签过滤，返回分页结果（标题+摘要）。注意：设置了 AI 访问禁止的笔记不会出现在结果中")]
     async fn search_notes(
         &self,
         rmcp::handler::server::wrapper::Parameters(params): rmcp::handler::server::wrapper::Parameters<SearchNotesParams>,
@@ -281,7 +271,27 @@ impl ENoteMcpServer {
             .await
             .map_err(|e| McpError::internal_error(format!("搜索失败: {}", e), None))?;
 
-        let search_result = SearchResult::from(result);
+        // 后置过滤：根据 MCP 访问控制过滤掉 Deny 的笔记
+        let access_map = service::mcp_access::resolve_notes_access(&self.db, &result.data)
+            .await
+            .map_err(|e| McpError::internal_error(format!("权限解析失败: {}", e), None))?;
+
+        let filtered_notes: Vec<NoteSummary> = result.data
+            .into_iter()
+            .filter(|note| {
+                access_map.get(&note.id)
+                    .map(|p| *p != McpPermission::Deny)
+                    .unwrap_or(true)
+            })
+            .map(NoteSummary::from)
+            .collect();
+
+        let search_result = SearchResult {
+            total: result.total,
+            total_pages: result.total_pages,
+            notes: filtered_notes,
+        };
+
         let content = Content::json(search_result)
             .map_err(|e| McpError::internal_error(format!("JSON 序列化失败: {}", e), None))?;
         Ok(CallToolResult::success(vec![content]))
@@ -293,6 +303,12 @@ impl ENoteMcpServer {
         rmcp::handler::server::wrapper::Parameters(params): rmcp::handler::server::wrapper::Parameters<GetNoteParams>,
     ) -> Result<CallToolResult, McpError> {
         check_tool_enabled(&self.db, "get_note").await?;
+
+        // 检查读取权限
+        service::mcp_access::check_read(&self.db, params.note_id)
+            .await
+            .map_err(|e| McpError::invalid_request(format!("{}", e), None))?;
+
         let note = service::note::find_by_id(&self.db, params.note_id)
             .await
             .map_err(|e| McpError::internal_error(format!("查询失败: {}", e), None))?;
@@ -316,6 +332,13 @@ impl ENoteMcpServer {
         rmcp::handler::server::wrapper::Parameters(params): rmcp::handler::server::wrapper::Parameters<CreateNoteParams>,
     ) -> Result<CallToolResult, McpError> {
         check_tool_enabled(&self.db, "create_note").await?;
+
+        // 检查目标笔记本写入权限
+        let notebook_id = params.notebook_id.unwrap_or(0);
+        service::mcp_access::check_notebook_write(&self.db, notebook_id)
+            .await
+            .map_err(|e| McpError::invalid_request(format!("{}", e), None))?;
+
         let tags: Vec<Tag> = params
             .tag_ids
             .unwrap_or_default()
@@ -329,7 +352,7 @@ impl ENoteMcpServer {
         let note = Note {
             title: params.title,
             content: params.content.unwrap_or_default(),
-            notebook_id: params.notebook_id.unwrap_or(0),
+            notebook_id,
             tags,
             ..Default::default()
         };
@@ -353,6 +376,12 @@ impl ENoteMcpServer {
         rmcp::handler::server::wrapper::Parameters(params): rmcp::handler::server::wrapper::Parameters<UpdateNoteParams>,
     ) -> Result<CallToolResult, McpError> {
         check_tool_enabled(&self.db, "update_note").await?;
+
+        // 检查写入权限
+        service::mcp_access::check_write(&self.db, params.note_id)
+            .await
+            .map_err(|e| McpError::invalid_request(format!("{}", e), None))?;
+
         // 先获取现有笔记
         let existing = service::note::find_by_id(&self.db, params.note_id)
             .await
@@ -403,6 +432,12 @@ impl ENoteMcpServer {
         rmcp::handler::server::wrapper::Parameters(params): rmcp::handler::server::wrapper::Parameters<DeleteNoteParams>,
     ) -> Result<CallToolResult, McpError> {
         check_tool_enabled(&self.db, "delete_note").await?;
+
+        // 检查写入权限
+        service::mcp_access::check_write(&self.db, params.note_id)
+            .await
+            .map_err(|e| McpError::invalid_request(format!("{}", e), None))?;
+
         service::note::delete_by_id(&self.db, params.note_id)
             .await
             .map_err(|e| McpError::internal_error(format!("删除失败: {}", e), None))?;
@@ -414,7 +449,7 @@ impl ENoteMcpServer {
 
     // ---- 笔记本操作 ----
 
-    #[tool(description = "列出所有笔记本")]
+    #[tool(description = "列出所有笔记本（包含 AI 访问权限设置）")]
     async fn list_notebooks(&self) -> Result<CallToolResult, McpError> {
         check_tool_enabled(&self.db, "list_notebooks").await?;
         let notebooks = service::notebook::find_all(&self.db)
@@ -422,11 +457,12 @@ impl ENoteMcpServer {
             .map_err(|e| McpError::internal_error(format!("查询失败: {}", e), None))?;
 
         #[derive(Serialize)]
-        struct NotebookInfo { id: i64, name: String, description: String }
+        #[serde(rename_all = "camelCase")]
+        struct NotebookInfo { id: i64, name: String, description: String, mcp_access: i32 }
 
         let list: Vec<NotebookInfo> = notebooks
             .into_iter()
-            .map(|n| NotebookInfo { id: n.id, name: n.name, description: n.description })
+            .map(|n| NotebookInfo { id: n.id, name: n.name, description: n.description, mcp_access: n.mcp_access })
             .collect();
 
         let content = Content::json(list)
@@ -461,7 +497,7 @@ impl ENoteMcpServer {
 
     // ---- 标签操作 ----
 
-    #[tool(description = "列出所有标签")]
+    #[tool(description = "列出所有标签（包含 AI 访问权限设置）")]
     async fn list_tags(&self) -> Result<CallToolResult, McpError> {
         check_tool_enabled(&self.db, "list_tags").await?;
         let tags = service::tag::find_all(&self.db)
@@ -469,11 +505,12 @@ impl ENoteMcpServer {
             .map_err(|e| McpError::internal_error(format!("查询失败: {}", e), None))?;
 
         #[derive(Serialize)]
-        struct TagInfo { id: i64, name: String }
+        #[serde(rename_all = "camelCase")]
+        struct TagInfo { id: i64, name: String, mcp_access: i32 }
 
         let list: Vec<TagInfo> = tags
             .into_iter()
-            .map(|t| TagInfo { id: t.id, name: t.name })
+            .map(|t| TagInfo { id: t.id, name: t.name, mcp_access: t.mcp_access })
             .collect();
 
         let content = Content::json(list)
@@ -550,7 +587,12 @@ impl ServerHandler for ENoteMcpServer {
                  - create_notebook: 创建笔记本\n\
                  - list_tags: 列出标签\n\
                  - create_tag: 创建标签\n\
-                 - note_stats: 笔记统计"
+                 - note_stats: 笔记统计\n\
+                 \n\
+                 访问控制说明：\n\
+                 笔记本、标签和笔记都有 mcp_access 权限设置：\n\
+                 0=继承上层, 1=读写, 2=只读, 3=禁止。\n\
+                 加密笔记始终禁止 AI 访问。"
                     .to_string(),
             ),
         }

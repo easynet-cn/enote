@@ -89,6 +89,7 @@
               notebook.name,
               notebook.icon,
               notebook.count,
+              notebook.mcpAccess,
               activeNotebook === notebook.id,
             ]"
             role="option"
@@ -110,6 +111,11 @@
                 >●</span
               >
               <span class="flex-1">{{ notebook.name }}</span>
+              <Shield
+                v-if="notebook.mcpAccess && notebook.mcpAccess > 0"
+                class="w-3 h-3 mr-1 text-content-tertiary"
+                :title="t('settings.mcpAccess')"
+              />
               <span
                 class="text-xs text-content-tertiary"
                 :aria-label="`${t('sidebar.notesCount')}: ${notebook.count}`"
@@ -149,7 +155,7 @@
             v-for="tag in tags"
             :key="tag.id"
             :data-id="tag.id"
-            v-memo="[tag.id, tag.name, tag.icon, tag.cls, activeTag === tag.id]"
+            v-memo="[tag.id, tag.name, tag.icon, tag.cls, tag.mcpAccess, activeTag === tag.id]"
             role="option"
             :aria-selected="activeTag === tag.id"
             :class="['sidebar-item', { active: activeTag === tag.id }]"
@@ -165,7 +171,12 @@
                 aria-hidden="true"
               />
               <span v-else-if="tag.cls" :class="['mr-3', tag.cls]" aria-hidden="true">●</span>
-              <span>{{ tag.name }}</span>
+              <span class="flex-1">{{ tag.name }}</span>
+              <Shield
+                v-if="tag.mcpAccess && tag.mcpAccess > 0"
+                class="w-3 h-3 text-content-tertiary"
+                :title="t('settings.mcpAccess')"
+              />
             </div>
           </li>
         </ul>
@@ -275,6 +286,23 @@
             class="w-full px-3 py-2 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
+        <div>
+          <label
+            for="notebook-mcp-access"
+            class="block text-sm font-medium text-content-secondary mb-1"
+            >{{ t('settings.mcpAccess') }}</label
+          >
+          <select
+            id="notebook-mcp-access"
+            v-model.number="notebookForm.mcpAccess"
+            class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          >
+            <option :value="0">{{ t('settings.mcpAccessInherit') }}</option>
+            <option :value="1">{{ t('settings.mcpAccessReadWrite') }}</option>
+            <option :value="2">{{ t('settings.mcpAccessReadOnly') }}</option>
+            <option :value="3">{{ t('settings.mcpAccessDeny') }}</option>
+          </select>
+        </div>
       </div>
     </form>
     <template #footer>
@@ -337,6 +365,23 @@
             class="w-full px-3 py-2 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
+        <div>
+          <label
+            for="tag-mcp-access"
+            class="block text-sm font-medium text-content-secondary mb-1"
+            >{{ t('settings.mcpAccess') }}</label
+          >
+          <select
+            id="tag-mcp-access"
+            v-model.number="tagForm.mcpAccess"
+            class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          >
+            <option :value="0">{{ t('settings.mcpAccessInherit') }}</option>
+            <option :value="1">{{ t('settings.mcpAccessReadWrite') }}</option>
+            <option :value="2">{{ t('settings.mcpAccessReadOnly') }}</option>
+            <option :value="3">{{ t('settings.mcpAccessDeny') }}</option>
+          </select>
+        </div>
       </div>
     </form>
     <template #footer>
@@ -380,6 +425,7 @@ import {
   Database,
   Settings,
   LayoutTemplate,
+  Shield,
 } from 'lucide-vue-next'
 import {
   Button,
@@ -393,6 +439,7 @@ import {
 } from './ui'
 import { iconComponents } from './ui/icons'
 import type { ShowNotebook, ShowTag } from '../types'
+import { McpAccess } from '../types'
 import { computed, reactive, ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Sortable from 'sortablejs'
@@ -411,6 +458,7 @@ interface NotebookForm {
   icon: string
   cls: string
   sortOrder: number
+  mcpAccess: McpAccess
 }
 
 interface TagForm {
@@ -419,6 +467,7 @@ interface TagForm {
   icon: string
   cls: string
   sortOrder: number
+  mcpAccess: McpAccess
 }
 
 const notebookForm = reactive<NotebookForm>({
@@ -428,6 +477,7 @@ const notebookForm = reactive<NotebookForm>({
   icon: '',
   cls: '',
   sortOrder: 0,
+  mcpAccess: McpAccess.Inherit,
 })
 
 const tagForm = reactive<TagForm>({
@@ -436,6 +486,7 @@ const tagForm = reactive<TagForm>({
   icon: '',
   cls: '',
   sortOrder: 0,
+  mcpAccess: McpAccess.Inherit,
 })
 
 const notebookDialog = ref(false)
@@ -495,6 +546,7 @@ const submitNotebookForm = () => {
     icon: notebookForm.icon,
     cls: notebookForm.cls,
     sortOrder: notebookForm.sortOrder,
+    mcpAccess: notebookForm.mcpAccess,
   })
 
   notebookDialog.value = false
@@ -511,6 +563,7 @@ const submitTagForm = () => {
     icon: tagForm.icon,
     cls: tagForm.cls,
     sortOrder: tagForm.sortOrder,
+    mcpAccess: tagForm.mcpAccess,
   })
 
   tagDialog.value = false
@@ -533,6 +586,7 @@ const resetNotebookForm = () => {
   notebookForm.icon = ''
   notebookForm.cls = ''
   notebookForm.sortOrder = 0
+  notebookForm.mcpAccess = McpAccess.Inherit
 }
 
 const handleNotebookCommand = (command: string) => {
@@ -552,6 +606,7 @@ const handleNotebookCommand = (command: string) => {
       notebookForm.icon = notebook.icon ?? ''
       notebookForm.cls = notebook.cls ?? ''
       notebookForm.sortOrder = notebook.sortOrder ?? 0
+      notebookForm.mcpAccess = notebook.mcpAccess ?? McpAccess.Inherit
     }
 
     notebookDialogTitle.value = t('sidebar.notebookForm.editTitle')
@@ -571,6 +626,7 @@ const resetTagForm = () => {
   tagForm.icon = ''
   tagForm.cls = ''
   tagForm.sortOrder = 0
+  tagForm.mcpAccess = McpAccess.Inherit
 }
 
 const handleTagCommand = (command: string) => {
@@ -589,6 +645,7 @@ const handleTagCommand = (command: string) => {
       tagForm.icon = tag.icon ?? ''
       tagForm.cls = tag.cls ?? ''
       tagForm.sortOrder = tag.sortOrder ?? 0
+      tagForm.mcpAccess = tag.mcpAccess ?? McpAccess.Inherit
     }
 
     tagDialogTitle.value = t('sidebar.tagForm.editTitle')

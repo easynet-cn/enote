@@ -127,6 +127,7 @@
       :tags="tags"
       :notebook-id="activeNote?.notebookId ?? ''"
       :selected-tag-ids="activeNote?.tags?.map((t) => t.id) ?? []"
+      :mcp-access="activeNote?.mcpAccess"
       @save="handleSettingFormSubmit"
     />
 
@@ -176,7 +177,7 @@ import TiptapToolbar from './TiptapToolbar.vue'
 import EditorSettingsDialog from './EditorSettingsDialog.vue'
 import ExportDialog from './ExportDialog.vue'
 import { ConfirmDialog } from './ui'
-import { ContentType, MarkdownLayout } from '../types'
+import { ContentType, McpAccess, MarkdownLayout } from '../types'
 import type { NoteHistory, ShowNote, ShowNotebook, ShowTag } from '../types'
 import { getMarkdownFromEditor } from '../types/tiptap-markdown'
 import { isTemporaryId } from '../utils/validation'
@@ -214,7 +215,7 @@ const emit = defineEmits<{
   updateNoteTitle: [title: string]
   updateNoteContent: [content: string]
   updateNoteContentType: [contentType: ContentType]
-  updateNoteSetting: [notebookId: string, tagIds: string[]]
+  updateNoteSetting: [notebookId: string, tagIds: string[], mcpAccess: McpAccess]
   sizeChange: [pageSize: number]
   currentChange: [currentPage: number]
   open: []
@@ -453,9 +454,9 @@ const handleCurrentChange = (val: number) => {
   emit('currentChange', val)
 }
 
-const handleSettingFormSubmit = (notebookId: string, tagIds: string[]) => {
+const handleSettingFormSubmit = (notebookId: string, tagIds: string[], mcpAccess: McpAccess) => {
   if (props.activeNote) {
-    emit('updateNoteSetting', notebookId, tagIds)
+    emit('updateNoteSetting', notebookId, tagIds, mcpAccess)
   }
 }
 

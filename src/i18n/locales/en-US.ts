@@ -724,6 +724,13 @@ export default {
     mcpToolListTags: 'List Tags',
     mcpToolCreateTag: 'Create Tag',
     mcpToolNoteStats: 'Note Statistics',
+    // MCP Access Control
+    mcpAccess: 'AI Access',
+    mcpAccessInherit: 'Inherit',
+    mcpAccessReadWrite: 'Read & Write',
+    mcpAccessReadOnly: 'Read Only',
+    mcpAccessDeny: 'Deny',
+    mcpAccessDesc: 'Control AI access to this data via MCP',
   },
 
   // Lock Screen

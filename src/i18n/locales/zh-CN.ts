@@ -720,6 +720,13 @@ export default {
     mcpToolListTags: '列出标签',
     mcpToolCreateTag: '创建标签',
     mcpToolNoteStats: '笔记统计',
+    // MCP 访问控制
+    mcpAccess: 'AI 访问权限',
+    mcpAccessInherit: '继承',
+    mcpAccessReadWrite: '读写',
+    mcpAccessReadOnly: '只读',
+    mcpAccessDeny: '禁止',
+    mcpAccessDesc: '控制 AI 通过 MCP 对此数据的访问权限',
   },
 
   // 锁屏

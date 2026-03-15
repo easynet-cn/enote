@@ -12,6 +12,8 @@ export interface Notebook {
   icon?: string
   cls?: string
   sortOrder?: number
+  /** MCP 访问控制：0=继承, 1=读写, 2=只读, 3=禁止 */
+  mcpAccess?: McpAccess
   count?: number
   createTime?: string | null
   updateTime?: string | null
@@ -25,6 +27,7 @@ export interface ShowNotebook {
   icon?: string
   cls?: string
   sortOrder?: number
+  mcpAccess?: McpAccess
   count?: number
   createTime?: string | null
   updateTime?: string | null
@@ -36,6 +39,8 @@ export interface Tag {
   icon?: string
   cls?: string
   sortOrder?: number
+  /** MCP 访问控制：0=继承, 1=读写, 2=只读, 3=禁止 */
+  mcpAccess?: McpAccess
   createTime?: string | null
   updateTime?: string | null
 }
@@ -46,8 +51,21 @@ export interface ShowTag {
   icon?: string
   cls?: string
   sortOrder?: number
+  mcpAccess?: McpAccess
   createTime?: string
   updateTime?: string
+}
+
+/** MCP 访问控制枚举 */
+export enum McpAccess {
+  /** 从上层继承（默认） */
+  Inherit = 0,
+  /** AI 可读可写 */
+  ReadWrite = 1,
+  /** AI 只能读取 */
+  ReadOnly = 2,
+  /** AI 完全不可访问 */
+  Deny = 3,
 }
 
 /** 内容类型枚举 */
@@ -78,6 +96,8 @@ export interface Note {
   contentType: ContentType
   /** 是否置顶：0 = 否，1 = 是 */
   isPinned: number
+  /** MCP 访问控制：0=继承, 1=读写, 2=只读, 3=禁止 */
+  mcpAccess?: McpAccess
   tags: Tag[]
   createTime: string | null
   updateTime: string | null
@@ -95,6 +115,8 @@ export interface ShowNote {
   contentType: ContentType
   /** 是否置顶 */
   isPinned: number
+  /** MCP 访问控制 */
+  mcpAccess?: McpAccess
   tags: ShowTag[]
   createTime: string | null
   updateTime: string | null
@@ -110,6 +132,7 @@ export interface PartialShowNote {
   content: string
   contentType?: ContentType
   isPinned?: number
+  mcpAccess?: McpAccess
   tags?: ShowTag[]
   createTime?: string | null
   updateTime?: string | null

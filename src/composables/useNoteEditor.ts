@@ -67,6 +67,7 @@ export function useNoteEditor() {
             activeNoteData.value?.content ?? '',
             activeNoteData.value?.contentType ?? ContentType.Html,
             tagList,
+            activeNoteData.value?.mcpAccess,
           )
         } else {
           const newNote = await noteApi.createNote(
@@ -75,6 +76,7 @@ export function useNoteEditor() {
             activeNoteData.value?.content ?? '',
             activeNoteData.value?.contentType ?? ContentType.Html,
             tagList,
+            activeNoteData.value?.mcpAccess,
           )
           newNoteId = String(newNote.id)
         }
@@ -153,16 +155,20 @@ export function useNoteEditor() {
     store.editingNote.contentType = contentType
   }
 
-  // 更新笔记设置（笔记本和标签）
+  // 更新笔记设置（笔记本、标签和 MCP 访问权限）
   const updateNoteSetting = (
     notebookId: string,
     tagIds: string[],
     allTags: { id: string; name: string }[],
+    mcpAccess?: number,
   ) => {
     if (!store.activeNote || !store.editingNote) return
 
     store.editingNote.notebookId = notebookId
     store.editingNote.tags = allTags.filter((t) => tagIds.includes(t.id))
+    if (mcpAccess !== undefined) {
+      store.editingNote.mcpAccess = mcpAccess
+    }
   }
 
   return {

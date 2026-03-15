@@ -61,6 +61,7 @@ pub async fn create(db: &DatabaseConnection, tag: &Tag) -> anyhow::Result<Option
         icon: Set(tag.icon.clone()),
         cls: Set(tag.cls.clone()),
         sort_order: Set(tag.sort_order),
+        mcp_access: Set(tag.mcp_access),
         create_time: Set(now),
         update_time: Set(now),
     };
@@ -123,6 +124,7 @@ pub async fn update(db: &DatabaseConnection, tag: &Tag) -> anyhow::Result<Option
         active_model.icon.set_if_not_equals(tag.icon.clone());
         active_model.cls.set_if_not_equals(tag.cls.clone());
         active_model.sort_order.set_if_not_equals(tag.sort_order);
+        active_model.mcp_access.set_if_not_equals(tag.mcp_access);
 
         // 只有实际发生变更时才执行更新
         if active_model.is_changed() {

@@ -77,6 +77,74 @@ impl From<OperateSource> for i32 {
 }
 
 // ============================================================================
+// MCP 访问控制枚举
+// ============================================================================
+
+/// MCP 访问控制级别
+///
+/// 控制 AI 工具通过 MCP 协议对笔记数据的访问权限
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[repr(i32)]
+pub enum McpAccess {
+    /// 从上层继承（默认值）
+    #[default]
+    Inherit = 0,
+    /// AI 可读可写
+    ReadWrite = 1,
+    /// AI 只能读取
+    ReadOnly = 2,
+    /// AI 完全不可访问
+    Deny = 3,
+}
+
+impl From<i32> for McpAccess {
+    fn from(value: i32) -> Self {
+        match value {
+            1 => McpAccess::ReadWrite,
+            2 => McpAccess::ReadOnly,
+            3 => McpAccess::Deny,
+            _ => McpAccess::Inherit,
+        }
+    }
+}
+
+impl From<McpAccess> for i32 {
+    fn from(value: McpAccess) -> Self {
+        value as i32
+    }
+}
+
+/// 解析后的有效 MCP 权限（不含 Inherit）
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum McpPermission {
+    ReadWrite,
+    ReadOnly,
+    Deny,
+}
+
+impl McpPermission {
+    /// 检查是否允许读取
+    pub fn can_read(&self) -> bool {
+        matches!(self, McpPermission::ReadWrite | McpPermission::ReadOnly)
+    }
+
+    /// 检查是否允许写入
+    pub fn can_write(&self) -> bool {
+        matches!(self, McpPermission::ReadWrite)
+    }
+
+    /// 取两个权限中更严格的一个
+    pub fn stricter(self, other: McpPermission) -> McpPermission {
+        use McpPermission::*;
+        match (self, other) {
+            (Deny, _) | (_, Deny) => Deny,
+            (ReadOnly, _) | (_, ReadOnly) => ReadOnly,
+            _ => ReadWrite,
+        }
+    }
+}
+
+// ============================================================================
 // 分页相关结构体
 // ============================================================================
 
@@ -241,6 +309,9 @@ pub struct Notebook {
     /// 排序顺序
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub sort_order: i32,
+    /// MCP 访问控制：0=继承, 1=读写, 2=只读, 3=禁止
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub mcp_access: i32,
     /// 创建时间
     #[serde(
         serialize_with = "serialize_option_dt",
@@ -288,6 +359,7 @@ impl From<&entity::notebook::Model> for Notebook {
             icon: value.icon.clone(),
             cls: value.cls.clone(),
             sort_order: value.sort_order,
+            mcp_access: value.mcp_access,
             create_time: Some(value.create_time),
             update_time: Some(value.update_time),
         }
@@ -305,6 +377,7 @@ impl From<entity::notebook::Model> for Notebook {
             icon: value.icon,
             cls: value.cls,
             sort_order: value.sort_order,
+            mcp_access: value.mcp_access,
             create_time: Some(value.create_time),
             update_time: Some(value.update_time),
         }
@@ -338,6 +411,9 @@ pub struct Note {
     /// 是否置顶：0 = 否，1 = 是
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub is_pinned: i32,
+    /// MCP 访问控制：0=继承, 1=读写, 2=只读, 3=禁止
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub mcp_access: i32,
     /// 创建时间
     #[serde(
         serialize_with = "serialize_option_dt",
@@ -390,6 +466,7 @@ impl From<entity::note::Model> for Note {
             content: value.content,
             content_type: value.content_type,
             is_pinned: value.is_pinned,
+            mcp_access: value.mcp_access,
             create_time: Some(value.create_time),
             update_time: Some(value.update_time),
             deleted_at: value.deleted_at,
@@ -408,6 +485,7 @@ impl From<&entity::note::Model> for Note {
             content: value.content.clone(),
             content_type: value.content_type,
             is_pinned: value.is_pinned,
+            mcp_access: value.mcp_access,
             create_time: Some(value.create_time),
             update_time: Some(value.update_time),
             deleted_at: value.deleted_at,
@@ -426,6 +504,7 @@ impl From<Note> for entity::note::ActiveModel {
             content: Set(note.content),
             content_type: Set(note.content_type),
             is_pinned: Set(note.is_pinned),
+            mcp_access: Set(note.mcp_access),
             create_time: Set(note.create_time.unwrap_or_default()),
             update_time: Set(note.update_time.unwrap_or_default()),
             deleted_at: Set(note.deleted_at),
@@ -443,6 +522,7 @@ impl From<&Note> for entity::note::ActiveModel {
             content: Set(note.content.clone()),
             content_type: Set(note.content_type),
             is_pinned: Set(note.is_pinned),
+            mcp_access: Set(note.mcp_access),
             create_time: Set(note.create_time.unwrap_or_default()),
             update_time: Set(note.update_time.unwrap_or_default()),
             deleted_at: Set(note.deleted_at),
@@ -482,6 +562,9 @@ pub struct Tag {
     /// 排序顺序
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub sort_order: i32,
+    /// MCP 访问控制：0=继承, 1=读写, 2=只读, 3=禁止
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub mcp_access: i32,
     /// 创建时间
     #[serde(
         serialize_with = "serialize_option_dt",
@@ -526,6 +609,7 @@ impl From<entity::tag::Model> for Tag {
             icon: value.icon,
             cls: value.cls,
             sort_order: value.sort_order,
+            mcp_access: value.mcp_access,
             create_time: Some(value.create_time),
             update_time: Some(value.update_time),
         }
@@ -540,6 +624,7 @@ impl From<&entity::tag::Model> for Tag {
             icon: value.icon.clone(),
             cls: value.cls.clone(),
             sort_order: value.sort_order,
+            mcp_access: value.mcp_access,
             create_time: Some(value.create_time),
             update_time: Some(value.update_time),
         }

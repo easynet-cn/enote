@@ -71,6 +71,7 @@ async fn restore_data(txn: &impl ConnectionTrait, data: &BackupData) -> anyhow::
             icon: Set(m.icon.clone()),
             cls: Set(m.cls.clone()),
             sort_order: Set(m.sort_order),
+            mcp_access: Set(m.mcp_access),
             create_time: Set(m.create_time),
             update_time: Set(m.update_time),
         })
@@ -85,6 +86,7 @@ async fn restore_data(txn: &impl ConnectionTrait, data: &BackupData) -> anyhow::
             icon: Set(m.icon.clone()),
             cls: Set(m.cls.clone()),
             sort_order: Set(m.sort_order),
+            mcp_access: Set(m.mcp_access),
             create_time: Set(m.create_time),
             update_time: Set(m.update_time),
         })
@@ -100,6 +102,7 @@ async fn restore_data(txn: &impl ConnectionTrait, data: &BackupData) -> anyhow::
             content: Set(m.content.clone()),
             content_type: Set(m.content_type),
             is_pinned: Set(m.is_pinned),
+            mcp_access: Set(m.mcp_access),
             create_time: Set(m.create_time),
             update_time: Set(m.update_time),
             deleted_at: Set(m.deleted_at),
@@ -480,6 +483,7 @@ pub async fn import_excel(db: &DatabaseConnection, path: &str) -> anyhow::Result
                 icon: cell_str(&row[4]),
                 cls: cell_str(&row[5]),
                 sort_order: cell_i64(&row[6]) as i32,
+                mcp_access: 0,
                 create_time: cell_dt(&row[7])?,
                 update_time: cell_dt(&row[8])?,
             });
@@ -497,6 +501,7 @@ pub async fn import_excel(db: &DatabaseConnection, path: &str) -> anyhow::Result
                 icon: cell_str(&row[2]),
                 cls: cell_str(&row[3]),
                 sort_order: cell_i64(&row[4]) as i32,
+                mcp_access: 0,
                 create_time: cell_dt(&row[5])?,
                 update_time: cell_dt(&row[6])?,
             });
@@ -519,6 +524,7 @@ pub async fn import_excel(db: &DatabaseConnection, path: &str) -> anyhow::Result
                 } else {
                     0
                 },
+                mcp_access: 0,
                 create_time: cell_dt(&row[5])?,
                 update_time: cell_dt(&row[6])?,
                 deleted_at: None,
@@ -776,6 +782,7 @@ pub async fn import_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
                 icon: r[4].to_string(),
                 cls: r[5].to_string(),
                 sort_order: r[6].parse()?,
+                mcp_access: 0,
                 create_time: parse_dt(&r[7])?,
                 update_time: parse_dt(&r[8])?,
             });
@@ -798,6 +805,7 @@ pub async fn import_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
                 icon: r[2].to_string(),
                 cls: r[3].to_string(),
                 sort_order: r[4].parse()?,
+                mcp_access: 0,
                 create_time: parse_dt(&r[5])?,
                 update_time: parse_dt(&r[6])?,
             });
@@ -825,6 +833,7 @@ pub async fn import_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
                 } else {
                     0
                 },
+                mcp_access: 0,
                 create_time: parse_dt(&r[5])?,
                 update_time: parse_dt(&r[6])?,
                 deleted_at: None,

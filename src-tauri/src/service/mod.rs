@@ -79,3 +79,8 @@ pub mod note_template;
 ///
 /// 提供锁屏密码的设置、验证和清除功能
 pub mod auth;
+
+/// MCP 访问控制服务模块
+///
+/// 实现笔记的三层访问控制权限解析
+pub mod mcp_access;

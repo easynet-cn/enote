@@ -62,7 +62,9 @@
       @update-note-title="updateNoteTitle"
       @update-note-content="updateNoteContent"
       @update-note-content-type="updateNoteContentType"
-      @update-note-setting="(notebookId, tagIds) => updateNoteSetting(notebookId, tagIds, tags)"
+      @update-note-setting="
+        (notebookId, tagIds, mcpAccess) => updateNoteSetting(notebookId, tagIds, tags, mcpAccess)
+      "
       @open="openHistoryDialog"
       @size-change="handleNoteHistorySizeChange"
       @current-change="handleNoteHistoryCurrentChange"

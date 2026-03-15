@@ -39,6 +39,20 @@
           </label>
         </div>
       </div>
+      <div>
+        <label class="block text-sm font-medium text-content-secondary mb-2">{{
+          t('settings.mcpAccess')
+        }}</label>
+        <select
+          v-model.number="form.mcpAccess"
+          class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+        >
+          <option :value="0">{{ t('settings.mcpAccessInherit') }}</option>
+          <option :value="1">{{ t('settings.mcpAccessReadWrite') }}</option>
+          <option :value="2">{{ t('settings.mcpAccessReadOnly') }}</option>
+          <option :value="3">{{ t('settings.mcpAccessDeny') }}</option>
+        </select>
+      </div>
     </div>
     <template #footer>
       <div class="flex justify-end gap-3">
@@ -56,6 +70,7 @@ import { Check } from 'lucide-vue-next'
 import { Button, Select, Dialog } from './ui'
 import type { SelectOption } from './ui'
 import type { ShowNotebook, ShowTag } from '../types'
+import { McpAccess } from '../types'
 
 const { t } = useI18n()
 
@@ -64,6 +79,7 @@ interface Props {
   tags: ShowTag[]
   notebookId: string
   selectedTagIds: string[]
+  mcpAccess?: McpAccess
 }
 
 const props = defineProps<Props>()
@@ -71,17 +87,19 @@ const props = defineProps<Props>()
 const visible = defineModel<boolean>({ default: false })
 
 const emit = defineEmits<{
-  save: [notebookId: string, tagIds: string[]]
+  save: [notebookId: string, tagIds: string[], mcpAccess: McpAccess]
 }>()
 
 interface SettingForm {
   notebookId: string
   tagIds: string[]
+  mcpAccess: McpAccess
 }
 
 const form = reactive<SettingForm>({
   notebookId: '',
   tagIds: [],
+  mcpAccess: McpAccess.Inherit,
 })
 
 // 笔记本选项（过滤掉"全部"）
@@ -104,11 +122,12 @@ watch(visible, (newVal) => {
   if (newVal) {
     form.notebookId = props.notebookId
     form.tagIds = [...props.selectedTagIds]
+    form.mcpAccess = props.mcpAccess ?? McpAccess.Inherit
   }
 })
 
 const handleSubmit = () => {
-  emit('save', form.notebookId, form.tagIds)
+  emit('save', form.notebookId, form.tagIds, form.mcpAccess)
   visible.value = false
 }
 </script>

@@ -66,6 +66,7 @@ pub async fn create(
         icon: Set(notebook.icon.clone()),
         cls: Set(notebook.cls.clone()),
         sort_order: Set(notebook.sort_order),
+        mcp_access: Set(notebook.mcp_access),
         create_time: Set(now),
         update_time: Set(now),
     };
@@ -164,6 +165,9 @@ pub async fn update(
         active_model
             .sort_order
             .set_if_not_equals(notebook.sort_order);
+        active_model
+            .mcp_access
+            .set_if_not_equals(notebook.mcp_access);
 
         // 只有实际发生变更时才执行更新
         if active_model.is_changed() {

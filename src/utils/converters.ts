@@ -18,6 +18,7 @@ export const showTagToTag = (showTag: ShowTag): Tag => ({
   icon: showTag.icon,
   cls: showTag.cls,
   sortOrder: showTag.sortOrder,
+  mcpAccess: showTag.mcpAccess,
 })
 
 /**
@@ -29,6 +30,7 @@ export const tagToShowTag = (tag: Tag): ShowTag => ({
   icon: tag.icon,
   cls: tag.cls,
   sortOrder: tag.sortOrder,
+  mcpAccess: tag.mcpAccess,
   createTime: tag.createTime ?? undefined,
   updateTime: tag.updateTime ?? undefined,
 })
@@ -56,6 +58,7 @@ export const showNotebookToNotebook = (showNotebook: ShowNotebook): Notebook => 
   icon: showNotebook.icon,
   cls: showNotebook.cls,
   sortOrder: showNotebook.sortOrder,
+  mcpAccess: showNotebook.mcpAccess,
   count: showNotebook.count,
 })
 
@@ -70,6 +73,7 @@ export const notebookToShowNotebook = (notebook: Notebook): ShowNotebook => ({
   icon: notebook.icon,
   cls: notebook.cls,
   sortOrder: notebook.sortOrder,
+  mcpAccess: notebook.mcpAccess,
   count: notebook.count,
   createTime: notebook.createTime,
   updateTime: notebook.updateTime,
@@ -94,6 +98,7 @@ export const noteToShowNote = (note: Note): ShowNote => ({
   content: note.content,
   contentType: note.contentType,
   isPinned: note.isPinned ?? 0,
+  mcpAccess: note.mcpAccess,
   tags: tagsToShowTags(note.tags),
   createTime: note.createTime,
   updateTime: note.updateTime,

@@ -156,6 +156,7 @@ export const noteApi = {
     content: string,
     contentType: ContentType,
     tags: Tag[],
+    mcpAccess?: number,
   ): Promise<Note> {
     return await invoke('create_note', {
       note: {
@@ -165,6 +166,7 @@ export const noteApi = {
         content,
         contentType,
         isPinned: 0,
+        mcpAccess: mcpAccess ?? 0,
         tags,
         createTime: null,
         updateTime: null,
@@ -180,6 +182,7 @@ export const noteApi = {
     content: string,
     contentType: ContentType,
     tags: Tag[],
+    mcpAccess?: number,
   ): Promise<Note> {
     return await invoke('update_note', {
       note: {
@@ -189,6 +192,7 @@ export const noteApi = {
         content,
         contentType,
         isPinned: 0,
+        mcpAccess: mcpAccess ?? 0,
         tags,
         createTime: null,
         updateTime: null,
