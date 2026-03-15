@@ -22,13 +22,13 @@ use crate::i18n::{t, t_simple};
 
 // 模块声明
 mod command; // Tauri 命令处理器
-mod config; // 配置管理
-mod entity; // SeaORM 数据库实体
+pub mod config; // 配置管理
+pub mod entity; // SeaORM 数据库实体
 mod error; // 错误处理
-mod i18n; // 国际化支持（必须在 config 之前声明）
-mod migration; // 数据库迁移
-mod model; // 数据传输对象（DTO）
-mod service; // 业务逻辑服务层
+pub mod i18n; // 国际化支持（必须在 config 之前声明）
+pub mod migration; // 数据库迁移
+pub mod model; // 数据传输对象（DTO）
+pub mod service; // 业务逻辑服务层
 
 /// 应用程序入口函数
 ///

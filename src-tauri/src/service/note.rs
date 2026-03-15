@@ -23,8 +23,8 @@ use std::collections::{HashMap, HashSet};
 use crate::{
     entity::{self, notebook},
     model::{
-        Note, NoteHistoryExtra, NoteSearchPageParam, NoteStatsResult, OperationType, PageResult,
-        Tag,
+        Note, NoteHistoryExtra, NoteSearchPageParam, NoteStatsResult, OperateSource,
+        OperationType, PageResult, Tag,
     },
 };
 use chrono::Local;
@@ -154,7 +154,11 @@ pub async fn find_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<Opti
 ///
 /// # 事务安全
 /// 所有操作在同一事务中执行，失败时自动回滚
-pub async fn create(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Option<Note>> {
+pub async fn create(
+    db: &DatabaseConnection,
+    note: &Note,
+    source: OperateSource,
+) -> anyhow::Result<Option<Note>> {
     let txn = db.begin().await?;
 
     let now = Local::now().naive_local();
@@ -218,6 +222,7 @@ pub async fn create(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
         new_content: Set(note.content.clone()),
         extra: Set(extra),
         operate_type: Set(OperationType::Create.as_i32()),
+        operate_source: Set(source.as_i32()),
         operate_time: Set(now),
         create_time: Set(now),
     }
@@ -256,7 +261,11 @@ pub async fn restore_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<(
 }
 
 /// 永久删除笔记（从回收站中彻底删除）
-pub async fn permanent_delete_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<()> {
+pub async fn permanent_delete_by_id(
+    db: &DatabaseConnection,
+    id: i64,
+    source: OperateSource,
+) -> anyhow::Result<()> {
     let txn = db.begin().await?;
 
     let result = entity::note::Entity::find_by_id(id)
@@ -291,6 +300,7 @@ pub async fn permanent_delete_by_id(db: &DatabaseConnection, id: i64) -> anyhow:
             new_content: Set(String::default()),
             extra: Set(extra),
             operate_type: Set(OperationType::Delete.as_i32()),
+            operate_source: Set(source.as_i32()),
             operate_time: Set(now),
             create_time: Set(now),
         }
@@ -317,7 +327,7 @@ pub async fn empty_trash(db: &DatabaseConnection) -> anyhow::Result<()> {
         .await?;
 
     for note in deleted_notes {
-        permanent_delete_by_id(db, note.id).await?;
+        permanent_delete_by_id(db, note.id, OperateSource::User).await?;
     }
 
     Ok(())
@@ -371,7 +381,11 @@ pub async fn toggle_pin(db: &DatabaseConnection, id: i64) -> anyhow::Result<Opti
 /// - 使用 `set_if_not_equals` 仅更新有变化的字段
 /// - 标签变更时先清空再重建关联
 /// - 只有实际发生变更时才记录历史
-pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Option<Note>> {
+pub async fn update(
+    db: &DatabaseConnection,
+    note: &Note,
+    source: OperateSource,
+) -> anyhow::Result<Option<Note>> {
     if let Some(entity) = entity::note::Entity::find_by_id(note.id).one(db).await? {
         let old_title = entity.title.clone();
 
@@ -488,6 +502,7 @@ pub async fn update(db: &DatabaseConnection, note: &Note) -> anyhow::Result<Opti
                 new_content: Set(note.content.clone()),
                 extra: Set(extra),
                 operate_type: Set(OperationType::Update.as_i32()),
+                operate_source: Set(source.as_i32()),
                 operate_time: Set(now),
                 create_time: Set(now),
             }

@@ -578,6 +578,9 @@ export default {
     operateCreate: '添加',
     operateUpdate: '修改',
     operateDelete: '删除',
+    operateSource: '操作来源',
+    sourceUser: '用户操作',
+    sourceMcp: 'AI 工具',
   },
 
   // 编辑器设置对话框
@@ -703,6 +706,20 @@ export default {
     passwordTooShort: '密码至少 4 位',
     passwordIncorrect: '密码错误',
     biometricNotSupported: '当前设备不支持生物识别',
+    // MCP 设置
+    mcp: 'MCP (AI 工具集成)',
+    mcpEnabled: '启用 MCP',
+    mcpEnabledDesc: '允许 AI 工具通过 MCP 协议操作笔记',
+    mcpToolSearch: '搜索笔记',
+    mcpToolGetNote: '获取笔记详情',
+    mcpToolCreateNote: '创建笔记',
+    mcpToolUpdateNote: '更新笔记',
+    mcpToolDeleteNote: '删除笔记',
+    mcpToolListNotebooks: '列出笔记本',
+    mcpToolCreateNotebook: '创建笔记本',
+    mcpToolListTags: '列出标签',
+    mcpToolCreateTag: '创建标签',
+    mcpToolNoteStats: '笔记统计',
   },
 
   // 锁屏
@@ -760,6 +777,9 @@ export default {
     saveAsTemplate: '存为模板',
     saveAsTemplateSuccess: '已保存为模板',
     namePlaceholder: '请输入模板名称',
+    back: '返回',
+    editorPlaceholder: '在此编辑模板内容...',
+    saveSuccess: '模板保存成功',
   },
 
   // 多窗口

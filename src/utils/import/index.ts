@@ -7,7 +7,12 @@ import { readFile, readTextFile } from '@tauri-apps/plugin-fs'
 import { parseEvernoteEnex } from './evernote'
 import { parseYoudaoZip } from './youdao'
 import { parseNotionZip } from './notion'
-import type { ImportSource, ImportResult, ImportProgressCallback } from './types'
+import {
+  IMPORT_SOURCES,
+  type ImportSource,
+  type ImportResult,
+  type ImportProgressCallback,
+} from './types'
 import i18n from '../../i18n'
 
 export * from './types'
@@ -18,7 +23,7 @@ export * from './types'
  * @returns 选中的文件路径，取消返回 null
  */
 export async function selectImportFile(source: ImportSource): Promise<string | null> {
-  const sourceConfig = (await import('./types')).IMPORT_SOURCES.find((s) => s.id === source)
+  const sourceConfig = IMPORT_SOURCES.find((s) => s.id === source)
   if (!sourceConfig) return null
 
   const sourceName = sourceConfig.name()

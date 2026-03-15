@@ -231,7 +231,11 @@ export const useAppStore = defineStore('app', () => {
   }
 
   // 创建默认笔记
-  const createDefaultNote = (notebookId: string, timestamp: number): ShowNote => {
+  const createDefaultNote = (
+    notebookId: string,
+    timestamp: number,
+    contentType: ContentType = ContentType.Html,
+  ): ShowNote => {
     const timeStr = new Date(timestamp).toISOString().replace('T', ' ').slice(0, 19)
     return {
       id: '0-' + timestamp,
@@ -239,7 +243,7 @@ export const useAppStore = defineStore('app', () => {
       notebookName: undefined,
       title: '',
       content: '',
-      contentType: ContentType.Html,
+      contentType,
       isPinned: 0,
       tags: [],
       createTime: timeStr,

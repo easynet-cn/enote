@@ -19,9 +19,9 @@ export function useNoteEditor() {
   }
 
   // 创建新笔记
-  const createNewNote = () => {
+  const createNewNote = (contentType?: import('../types').ContentType) => {
     const timestamp = Date.now()
-    const newNote = store.createDefaultNote(store.activeNotebook, timestamp)
+    const newNote = store.createDefaultNote(store.activeNotebook, timestamp, contentType)
 
     // 添加到笔记列表开头
     store.prependNote(newNote)

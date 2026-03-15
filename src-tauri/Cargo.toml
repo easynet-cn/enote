@@ -1,6 +1,6 @@
 [package]
 name = "enote"
-version = "0.6.0"
+version = "0.7.0"
 description = "个人笔记"
 authors = ["124244236@qq.com"]
 edition = "2024"
@@ -47,6 +47,7 @@ sha2 = "0.10"
 rand = "0.8"
 clap = { version = "4", features = ["derive"] }
 argon2 = "0.5"
+dirs = "6"
 
 [profile.dev]
 incremental = true # Compile your binary in smaller steps.

@@ -19,7 +19,7 @@ use crate::{
     error::AppError,
     model::{
         Note, NoteHistory, NoteHistorySearchPageParam, NoteSearchPageParam, NoteStatsResult,
-        NoteLink, NoteTemplate, Notebook, PageResult, Tag,
+        NoteLink, NoteTemplate, Notebook, OperateSource, PageResult, Tag,
     },
     service,
 };
@@ -250,7 +250,7 @@ pub async fn create_note(
 ) -> Result<Option<Note>, AppError> {
     note.validate().map_err(AppError::from)?;
     let db = &app_state.database_connection;
-    service::note::create(db, &note)
+    service::note::create(db, &note, OperateSource::User)
         .await
         .map_err(AppError::from)
 }
@@ -274,7 +274,7 @@ pub async fn update_note(
 ) -> Result<Option<Note>, AppError> {
     note.validate().map_err(AppError::from)?;
     let db = &app_state.database_connection;
-    service::note::update(db, &note)
+    service::note::update(db, &note, OperateSource::User)
         .await
         .map_err(AppError::from)
 }
@@ -429,7 +429,7 @@ pub async fn permanent_delete_note(
     id: i64,
 ) -> Result<(), AppError> {
     let db = &app_state.database_connection;
-    service::note::permanent_delete_by_id(db, id)
+    service::note::permanent_delete_by_id(db, id, OperateSource::User)
         .await
         .map_err(AppError::from)
 }

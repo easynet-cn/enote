@@ -129,6 +129,7 @@ async fn restore_data(txn: &impl ConnectionTrait, data: &BackupData) -> anyhow::
             new_content: Set(m.new_content.clone()),
             extra: Set(m.extra.clone()),
             operate_type: Set(m.operate_type),
+            operate_source: Set(m.operate_source),
             operate_time: Set(m.operate_time),
             create_time: Set(m.create_time),
         })
@@ -553,6 +554,7 @@ pub async fn import_excel(db: &DatabaseConnection, path: &str) -> anyhow::Result
                 new_content: cell_str(&row[3]),
                 extra: cell_str(&row[4]),
                 operate_type: cell_i64(&row[5]) as i32,
+                operate_source: 0,
                 operate_time: cell_dt(&row[6])?,
                 create_time: cell_dt(&row[7])?,
             });
@@ -868,6 +870,7 @@ pub async fn import_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
                 new_content: r[3].to_string(),
                 extra: r[4].to_string(),
                 operate_type: r[5].parse()?,
+                operate_source: 0,
                 operate_time: parse_dt(&r[6])?,
                 create_time: parse_dt(&r[7])?,
             });

@@ -137,6 +137,8 @@ export interface NoteHistory {
   newContent: string
   extra: NoteHistoryExtra
   operateType: number
+  /** 操作来源：0=用户操作, 1=MCP操作 */
+  operateSource: number
   operateTime: string
   createTime: string
 }
@@ -166,6 +168,8 @@ export interface NoteTemplate {
   id: number
   name: string
   content: string
+  /** 内容类型：0 = HTML，1 = Markdown */
+  contentType: ContentType
   sortOrder: number
   createTime: string | null
   updateTime: string | null

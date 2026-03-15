@@ -16,6 +16,9 @@ pub struct Model {
     #[sea_orm(column_type = "custom(\"LONGTEXT\")")]
     pub extra: String,
     pub operate_type: i32,
+    /// 操作来源：0 = 用户操作（Tauri UI），1 = MCP 操作（AI 工具）
+    #[sea_orm(default_value = "0")]
+    pub operate_source: i32,
     pub operate_time: DateTime,
     pub create_time: DateTime,
 }

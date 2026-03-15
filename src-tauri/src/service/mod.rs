@@ -22,60 +22,60 @@
 /// - 更新笔记（自动记录变更历史）
 /// - 删除笔记（级联删除标签关联）
 /// - 分页搜索（支持笔记本、标签、关键词过滤）
-pub(crate) mod note;
+pub mod note;
 
 /// 笔记历史服务模块
 ///
 /// 提供笔记变更历史的查询功能：
 /// - 分页查询指定笔记的历史记录
 /// - 支持查看创建、更新、删除操作的历史
-pub(crate) mod note_history;
+pub mod note_history;
 
 /// 笔记本服务模块
 ///
 /// 提供笔记本的 CRUD 功能：
 /// - 获取所有笔记本（按排序和更新时间排序）
 /// - 创建、更新、删除笔记本
-pub(crate) mod notebook;
+pub mod notebook;
 
 /// 标签服务模块
 ///
 /// 提供标签的 CRUD 功能：
 /// - 获取所有标签（按排序和更新时间排序）
 /// - 创建、更新、删除标签
-pub(crate) mod tag;
+pub mod tag;
 
 /// 数据库备份与恢复服务模块
 ///
 /// 支持 SQL、Excel、CSV 三种格式的导出和导入
-pub(crate) mod backup;
+pub mod backup;
 
 /// 应用设置服务模块
 ///
 /// 提供键值对形式的设置存取功能
-pub(crate) mod settings;
+pub mod settings;
 
 /// 图片存储服务模块
 ///
 /// 将图片保存为本地文件，替代 Base64 内联存储
-pub(crate) mod image;
+pub mod image;
 
 /// 加密/解密服务模块
 ///
 /// 提供笔记内容的 AES-256-GCM 加密和解密
-pub(crate) mod crypto;
+pub mod crypto;
 
 /// 笔记链接服务模块
 ///
 /// 实现笔记间的双向链接功能
-pub(crate) mod note_link;
+pub mod note_link;
 
 /// 笔记模板服务模块
 ///
 /// 提供笔记模板的 CRUD 功能
-pub(crate) mod note_template;
+pub mod note_template;
 
 /// 锁屏认证服务模块
 ///
 /// 提供锁屏密码的设置、验证和清除功能
-pub(crate) mod auth;
+pub mod auth;

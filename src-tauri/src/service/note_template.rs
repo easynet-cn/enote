@@ -57,6 +57,7 @@ pub async fn create(
         id: NotSet,
         name: Set(template.name.clone()),
         content: Set(template.content.clone()),
+        content_type: Set(template.content_type),
         sort_order: Set(template.sort_order),
         create_time: Set(now),
         update_time: Set(now),
@@ -109,6 +110,9 @@ pub async fn update(
         active_model
             .content
             .set_if_not_equals(template.content.clone());
+        active_model
+            .content_type
+            .set_if_not_equals(template.content_type);
         active_model
             .sort_order
             .set_if_not_equals(template.sort_order);

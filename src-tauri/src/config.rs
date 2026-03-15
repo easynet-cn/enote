@@ -92,6 +92,36 @@ impl Configuration {
         Ok(Self { config })
     }
 
+    /// 从指定配置文件路径创建配置实例（无需 Tauri AppHandle）
+    ///
+    /// 用于 MCP Server 等独立进程
+    pub fn from_file(config_path: &str) -> Result<Self> {
+        let path = std::path::Path::new(config_path);
+        let path = if path.is_relative() {
+            std::env::current_dir()
+                .context("无法获取当前工作目录")?
+                .join(path)
+        } else {
+            path.to_path_buf()
+        };
+
+        let config_str = path
+            .to_str()
+            .context("配置文件路径包含无效字符")?;
+
+        let config = Config::builder()
+            .add_source(config::File::with_name(config_str))
+            .build()
+            .context("无法加载配置文件")?;
+
+        Ok(Self { config })
+    }
+
+    /// 检查 MCP Server 是否启用
+    pub fn is_mcp_enabled(&self) -> bool {
+        self.config.get_bool("mcp.enabled").unwrap_or(false)
+    }
+
     /// 创建默认配置文件
     ///
     /// # 参数
@@ -138,6 +168,11 @@ datasource:
   idle-time: 300
   # 最大生命周期（秒）：连接最长存活时间
   max-lifetime: 1800
+
+# MCP Server 配置
+# 启用后可通过 AI 工具（如 Claude Desktop）操作笔记
+mcp:
+  enabled: false
 "#,
             db_url
         );
@@ -170,10 +205,18 @@ datasource:
     /// - `Err`: 连接失败（配置错误、网络问题等）
     pub async fn database_connection(&self) -> Result<DatabaseConnection> {
         // 获取数据库连接 URL（必需配置项）
-        let url = self
+        let mut url = self
             .config
             .get_string("datasource.url")
             .context(t_simple("config.missing_datasource_url"))?;
+
+        // 展开 ~ 为用户主目录
+        if url.contains("~/") {
+            if let Some(home) = dirs::home_dir() {
+                let home_str = home.to_string_lossy();
+                url = url.replace("~", &home_str);
+            }
+        }
 
         let is_sqlite = url.starts_with("sqlite:");
 

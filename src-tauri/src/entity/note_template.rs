@@ -10,6 +10,9 @@ pub struct Model {
     pub id: i64,
     pub name: String,
     pub content: String,
+    /// 内容类型：0 = HTML（富文本），1 = Markdown
+    #[sea_orm(default_value = "0")]
+    pub content_type: i32,
     pub sort_order: i32,
     pub create_time: DateTime,
     pub update_time: DateTime,

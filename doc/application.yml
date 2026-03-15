@@ -3,3 +3,8 @@
 # Example: datasource.url can be set via APP_DATASOURCE_URL environment variable
 datasource:
   url: sqlite://enote.db?mode=rwc
+
+# MCP Server configuration
+# Enable/disable the built-in MCP server for AI tool integration
+mcp:
+  enabled: false

@@ -582,6 +582,9 @@ export default {
     operateCreate: 'Create',
     operateUpdate: 'Update',
     operateDelete: 'Delete',
+    operateSource: 'Source',
+    sourceUser: 'User',
+    sourceMcp: 'AI Tool',
   },
 
   // Editor settings dialog
@@ -707,6 +710,20 @@ export default {
     passwordTooShort: 'Password must be at least 4 characters',
     passwordIncorrect: 'Incorrect password',
     biometricNotSupported: 'Biometric authentication is not supported on this device',
+    // MCP settings
+    mcp: 'MCP (AI Tool Integration)',
+    mcpEnabled: 'Enable MCP',
+    mcpEnabledDesc: 'Allow AI tools to operate notes via MCP protocol',
+    mcpToolSearch: 'Search Notes',
+    mcpToolGetNote: 'Get Note Details',
+    mcpToolCreateNote: 'Create Note',
+    mcpToolUpdateNote: 'Update Note',
+    mcpToolDeleteNote: 'Delete Note',
+    mcpToolListNotebooks: 'List Notebooks',
+    mcpToolCreateNotebook: 'Create Notebook',
+    mcpToolListTags: 'List Tags',
+    mcpToolCreateTag: 'Create Tag',
+    mcpToolNoteStats: 'Note Statistics',
   },
 
   // Lock Screen
@@ -766,6 +783,9 @@ export default {
     saveAsTemplate: 'Save as Template',
     saveAsTemplateSuccess: 'Saved as template',
     namePlaceholder: 'Enter template name',
+    back: 'Back',
+    editorPlaceholder: 'Edit template content here...',
+    saveSuccess: 'Template saved',
   },
 
   // Multi-window

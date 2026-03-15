@@ -51,6 +51,31 @@ impl From<OperationType> for i32 {
     }
 }
 
+/// 笔记历史操作来源
+///
+/// 用于记录操作是通过何种方式触发的
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[repr(i32)]
+pub enum OperateSource {
+    /// 用户通过 Tauri UI 操作
+    User = 0,
+    /// AI 工具通过 MCP 操作
+    Mcp = 1,
+}
+
+impl OperateSource {
+    /// 转换为 i32 值（用于数据库存储）
+    pub fn as_i32(self) -> i32 {
+        self as i32
+    }
+}
+
+impl From<OperateSource> for i32 {
+    fn from(source: OperateSource) -> Self {
+        source as i32
+    }
+}
+
 // ============================================================================
 // 分页相关结构体
 // ============================================================================
@@ -632,6 +657,9 @@ pub struct NoteHistory {
     /// 操作类型：1=创建, 2=更新, 3=删除
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub operate_type: i32,
+    /// 操作来源：0=用户操作, 1=MCP操作
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub operate_source: i32,
     /// 操作时间
     #[serde(serialize_with = "serialize_dt", deserialize_with = "deserialize_dt")]
     pub operate_time: NaiveDateTime,
@@ -652,6 +680,7 @@ impl From<entity::note_history::Model> for NoteHistory {
                 NoteHistoryExtra::default()
             }),
             operate_type: value.operate_type,
+            operate_source: value.operate_source,
             operate_time: value.operate_time,
             create_time: value.create_time,
         }
@@ -670,6 +699,7 @@ impl From<&entity::note_history::Model> for NoteHistory {
                 NoteHistoryExtra::default()
             }),
             operate_type: value.operate_type,
+            operate_source: value.operate_source,
             operate_time: value.operate_time,
             create_time: value.create_time,
         }
@@ -720,6 +750,9 @@ pub struct NoteTemplate {
     pub name: String,
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub content: String,
+    /// 内容类型：0 = HTML（富文本），1 = Markdown
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub content_type: i32,
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub sort_order: i32,
     #[serde(
@@ -749,6 +782,7 @@ impl From<entity::note_template::Model> for NoteTemplate {
             id: value.id,
             name: value.name,
             content: value.content,
+            content_type: value.content_type,
             sort_order: value.sort_order,
             create_time: Some(value.create_time),
             update_time: Some(value.update_time),

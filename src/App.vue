@@ -117,6 +117,7 @@ import SettingsDialog from './components/SettingsDialog.vue'
 import TrashDialog from './components/TrashDialog.vue'
 import CommandPalette from './components/CommandPalette.vue'
 import TemplateDialog from './components/TemplateDialog.vue'
+import { showNotification } from './components/ui/notification'
 import LockScreen from './components/LockScreen.vue'
 import type { PaletteCommand } from './components/CommandPalette.vue'
 import {
@@ -247,7 +248,7 @@ const handleTogglePin = async (noteId: string) => {
 // 使用模板创建新笔记
 const handleUseTemplate = (template: import('./types').NoteTemplate) => {
   templateDialogVisible.value = false
-  createNewNote()
+  createNewNote(template.contentType)
   // 将模板内容填入新笔记
   if (template.content) {
     updateNoteContent(template.content)
@@ -265,14 +266,13 @@ const handleSaveAsTemplate = async () => {
       id: 0,
       name: activeNoteData.value.title || t('template.name'),
       content: activeNoteData.value.content || '',
+      contentType: activeNoteData.value.contentType ?? 0,
       sortOrder: 0,
       createTime: null,
       updateTime: null,
     })
-    const { showNotification } = await import('./components/ui/notification')
     showNotification({ type: 'success', message: t('template.saveAsTemplateSuccess') })
   } catch (e: unknown) {
-    const { showNotification } = await import('./components/ui/notification')
     const msg = e instanceof Error ? e.message : String(e)
     showNotification({ type: 'error', message: msg })
   }
