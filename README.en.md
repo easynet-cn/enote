@@ -5,11 +5,27 @@ A cross-platform desktop note-taking application built with Tauri, supporting ri
 ## Features
 
 - **Rich Text Editing** - WYSIWYG editor powered by TipTap with various formatting options
-- **Markdown Mode** - Switch to Markdown plain text editing mode
-- **Notebook Management** - Organize notes by notebooks
+- **Markdown Mode** - Switch to Markdown editing with split-screen preview
+- **Notebook Management** - Organize notes by notebooks with drag-and-drop sorting
 - **Tag System** - Flexible tag management with multi-tag filtering
 - **Version History** - Automatic note history saving with rollback capability
-- **Full-text Search** - Quick search through note content
+- **Full-text Search** - FTS5 full-text search with Chinese substring matching
+- **Setup Wizard** - First-launch guided database configuration for SQLite/MySQL/PostgreSQL
+- **Multi-Profile Management** - Multiple database profiles with startup selection or auto-connect
+- **Content Encryption** - AES-256-GCM transparent note content encryption, keys stored in OS keychain
+- **SSL/TLS Authentication** - MySQL/PostgreSQL support certificate-based login
+- **Note Encryption** - Per-note password protection
+- **Lock Screen** - Password protection (Argon2id), timeout lock, minimize lock
+- **Note Templates** - Template management for quick note creation
+- **Bidirectional Links** - Cross-reference notes with linked notes panel
+- **Command Palette** - Ctrl+P for quick operations
+- **System Tray** - Minimize to tray
+- **Multi-Window** - Open notes in separate windows
+- **MCP Integration** - AI tools operate notes via MCP protocol with three-layer access control
+- **Data Backup** - SQL/Excel/CSV export/import with scheduled auto-backup
+- **Import/Export** - Import from Evernote, Youdao Notes, Notion; Export to Word/Markdown/JSON/XML
+- **Dark Mode** - Light/Dark/System theme switching
+- **Multilingual** - Simplified Chinese and English
 - **Cross-platform** - Supports Windows, macOS, and Linux
 
 ## Tech Stack
@@ -116,39 +132,23 @@ pnpm format
 
 ## Database Configuration
 
-Supports SQLite (default), MySQL, and PostgreSQL. Configuration file is located at `doc/application.yml`.
+Supports SQLite (default), MySQL, and PostgreSQL.
 
-### SQLite (Default)
+On **first launch**, the Setup Wizard guides you through database connection configuration:
 
-```yaml
-database:
-  type: sqlite
-  path: ./data/enote.db
+- **SQLite** - Local file database, ready to use out of the box
+- **MySQL** - Supports password login and SSL certificate authentication
+- **PostgreSQL** - Supports password login and SSL certificate authentication
+
+Configurations are managed as Profiles, supporting multiple database setups that can be switched at any time. Database passwords and encryption keys are securely stored in the OS keychain (macOS Keychain / Windows Credential Store / Linux Secret Service), never in configuration files.
+
+You can also use a traditional configuration file via command-line:
+
+```bash
+enote --config /path/to/application.yml
 ```
 
-### MySQL
-
-```yaml
-database:
-  type: mysql
-  host: localhost
-  port: 3306
-  database: enote
-  username: root
-  password: your_password
-```
-
-### PostgreSQL
-
-```yaml
-database:
-  type: postgres
-  host: localhost
-  port: 5432
-  database: enote
-  username: postgres
-  password: your_password
-```
+See `doc/application.yml`, `doc/application-mysql.yml`, `doc/application-posgres.yml` for examples.
 
 ## Contributing
 

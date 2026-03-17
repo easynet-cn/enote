@@ -11,8 +11,74 @@ import {
   NoteLink,
   NoteTemplate,
   PageResult,
+  ProfileConfig,
+  ProfileIndex,
+  ProfileSummary,
   Tag,
 } from '../types'
+
+// ============================================================================
+// Profile / Setup API
+// ============================================================================
+
+export const profileApi = {
+  async checkSetupNeeded(): Promise<boolean> {
+    return await invoke('check_setup_needed')
+  },
+
+  async getProfileIndex(): Promise<ProfileIndex> {
+    return await invoke('get_profile_index')
+  },
+
+  async listProfiles(): Promise<ProfileSummary[]> {
+    return await invoke('list_profiles')
+  },
+
+  async getProfile(profileId: string): Promise<ProfileConfig> {
+    return await invoke('get_profile', { profileId })
+  },
+
+  async saveProfile(
+    profileId: string,
+    config: ProfileConfig,
+    dbPassword?: string,
+    encryptionKey?: string,
+  ): Promise<void> {
+    return await invoke('save_profile_config', {
+      profileId,
+      config,
+      dbPassword: dbPassword || null,
+      encryptionKey: encryptionKey || null,
+    })
+  },
+
+  async deleteProfile(profileId: string): Promise<void> {
+    return await invoke('delete_profile_config', { profileId })
+  },
+
+  async selectProfile(profileId: string): Promise<void> {
+    return await invoke('select_profile', { profileId })
+  },
+
+  async setAutoConnect(autoConnect: boolean): Promise<void> {
+    return await invoke('set_auto_connect', { autoConnect })
+  },
+
+  async testConnection(config: ProfileConfig, dbPassword?: string): Promise<boolean> {
+    return await invoke('test_db_connection', {
+      config,
+      dbPassword: dbPassword || null,
+    })
+  },
+
+  async generateEncryptionKey(): Promise<string> {
+    return await invoke('generate_encryption_key')
+  },
+
+  async restartWithProfile(profileId: string): Promise<void> {
+    return await invoke('restart_with_profile', { profileId })
+  },
+}
 
 export const settingsApi = {
   async getAll(): Promise<Record<string, string>> {

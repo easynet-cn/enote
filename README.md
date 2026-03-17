@@ -5,11 +5,27 @@
 ## 功能特性
 
 - **富文本编辑** - 基于 TipTap 的所见即所得编辑器，支持多种格式
-- **Markdown 模式** - 可切换为 Markdown 纯文本编辑模式
-- **笔记本管理** - 按笔记本分类组织笔记
+- **Markdown 模式** - 可切换为 Markdown 纯文本编辑模式，支持分屏预览
+- **笔记本管理** - 按笔记本分类组织笔记，拖拽排序
 - **标签系统** - 灵活的标签管理，支持多标签筛选
 - **历史版本** - 自动保存笔记历史，随时可回溯查看
-- **全文搜索** - 快速搜索笔记内容
+- **全文搜索** - FTS5 全文搜索，支持中文子串匹配
+- **设置向导** - 首次启动引导配置数据库，支持 SQLite/MySQL/PostgreSQL
+- **多配置管理** - 支持多个数据库配置（Profile），启动时选择或自动连接
+- **内容加密** - AES-256-GCM 透明加密笔记内容，密钥安全存储在系统钥匙串
+- **SSL/TLS 认证** - MySQL/PostgreSQL 支持证书登录
+- **笔记加密** - 单篇笔记密码保护
+- **锁屏安全** - 密码保护（Argon2id）、超时锁定、最小化锁定
+- **笔记模板** - 模板管理，快速创建笔记
+- **双向链接** - 笔记间建立关联引用
+- **命令面板** - Ctrl+P 快速执行操作
+- **系统托盘** - 最小化到托盘运行
+- **多窗口** - 支持在新窗口中打开笔记
+- **MCP 集成** - AI 工具通过 MCP 协议操作笔记，三层访问控制
+- **数据备份** - SQL/Excel/CSV 导出导入，自动定时备份
+- **导入导出** - 支持印象笔记、有道笔记、Notion 导入，Word/Markdown/JSON/XML 导出
+- **深色模式** - 浅色/深色/跟随系统主题切换
+- **多语言** - 支持中文简体和英文
 - **跨平台** - 支持 Windows、macOS 和 Linux
 
 ## 技术栈
@@ -116,39 +132,23 @@ pnpm format
 
 ## 数据库配置
 
-支持 SQLite（默认）、MySQL 和 PostgreSQL。配置文件位于 `doc/application.yml`。
+支持 SQLite（默认）、MySQL 和 PostgreSQL。
 
-### SQLite（默认）
+**首次启动**时，设置向导将引导您完成数据库连接配置：
 
-```yaml
-database:
-  type: sqlite
-  path: ./data/enote.db
+- **SQLite** - 本地文件数据库，开箱即用，无需安装额外服务
+- **MySQL** - 支持密码登录和 SSL 证书认证
+- **PostgreSQL** - 支持密码登录和 SSL 证书认证
+
+配置以 Profile 形式管理，支持多个数据库配置随时切换。数据库密码和加密密钥安全存储在操作系统钥匙串中（macOS Keychain / Windows Credential Store / Linux Secret Service），不保存在配置文件里。
+
+也可通过命令行参数使用传统配置文件：
+
+```bash
+enote --config /path/to/application.yml
 ```
 
-### MySQL
-
-```yaml
-database:
-  type: mysql
-  host: localhost
-  port: 3306
-  database: enote
-  username: root
-  password: your_password
-```
-
-### PostgreSQL
-
-```yaml
-database:
-  type: postgres
-  host: localhost
-  port: 5432
-  database: enote
-  username: postgres
-  password: your_password
-```
+配置文件示例参见 `doc/application.yml`、`doc/application-mysql.yml`、`doc/application-posgres.yml`。
 
 ## 贡献指南
 

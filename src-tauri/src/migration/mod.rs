@@ -29,6 +29,7 @@ mod m20260311_000003_create_note_link_table;
 mod m20260315_000001_add_note_history_source;
 mod m20260315_000002_add_note_template_content_type;
 mod m20260315_000003_add_mcp_access;
+mod m20260317_000001_upgrade_note_fts_tags;
 
 /// 数据库迁移器
 ///
@@ -55,6 +56,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20260315_000001_add_note_history_source::Migration),
             Box::new(m20260315_000002_add_note_template_content_type::Migration),
             Box::new(m20260315_000003_add_mcp_access::Migration),
+            Box::new(m20260317_000001_upgrade_note_fts_tags::Migration),
         ]
     }
 }

@@ -198,6 +198,60 @@ export interface NoteTemplate {
   updateTime: string | null
 }
 
+// ============================================================================
+// Profile / Setup 相关类型
+// ============================================================================
+
+/** Profile 索引信息 */
+export interface ProfileIndex {
+  active: string
+  autoConnect: boolean
+}
+
+/** SSL 配置 */
+export interface SslConfig {
+  mode: string
+  caCert: string
+  clientCert: string
+  clientKey: string
+}
+
+/** 数据源配置 */
+export interface DatasourceConfig {
+  type: string
+  path: string
+  host: string
+  port: number
+  database: string
+  username: string
+  authMethod: string
+  ssl: SslConfig
+}
+
+/** 安全配置 */
+export interface SecurityConfig {
+  contentEncryption: boolean
+}
+
+/** Profile 配置 */
+export interface ProfileConfig {
+  name: string
+  icon: string
+  datasource: DatasourceConfig
+  security: SecurityConfig
+}
+
+/** Profile 摘要信息（列表展示） */
+export interface ProfileSummary {
+  id: string
+  name: string
+  icon: string
+  dbType: string
+  connectionInfo: string
+  contentEncryption: boolean
+  isActive: boolean
+}
+
 export interface AppState {
   notePageIndex: number
   notePageSize: number

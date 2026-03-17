@@ -26,6 +26,7 @@ use crate::{
         Note, NoteHistoryExtra, NoteSearchPageParam, NoteStatsResult, OperateSource,
         OperationType, PageResult, Tag,
     },
+    service::crypto,
 };
 use chrono::Local;
 use sea_orm::{
@@ -37,7 +38,37 @@ use sea_orm::{
     sea_query::{Asterisk, Query},
 };
 
+// ============================================================================
+// 透明加密/解密辅助函数
+// ============================================================================
+
+/// 加密内容（如果提供了密钥）
+fn encrypt_content(content: &str, encryption_key: Option<&str>) -> anyhow::Result<String> {
+    match encryption_key {
+        Some(key) if !key.is_empty() => crypto::encrypt(content, key),
+        _ => Ok(content.to_string()),
+    }
+}
+
+/// 解密内容（如果内容已加密且提供了密钥）
+fn decrypt_content(content: &str, encryption_key: Option<&str>) -> String {
+    match encryption_key {
+        Some(key) if !key.is_empty() && crypto::is_encrypted(content) => {
+            crypto::decrypt(content, key).unwrap_or_else(|_| content.to_string())
+        }
+        _ => content.to_string(),
+    }
+}
+
+/// 解密 Note 的内容字段
+fn decrypt_note(note: &mut Note, encryption_key: Option<&str>) {
+    note.content = decrypt_content(&note.content, encryption_key);
+}
+
 /// Build keyword filter condition based on database backend
+///
+/// SQLite: 使用 FTS5 全文搜索（title + content + tags）
+/// MySQL/PG: 使用 LIKE 搜索 title、content 和 tag name
 fn apply_keyword_filter<E: EntityTrait>(
     builder: Select<E>,
     keyword: &str,
@@ -54,18 +85,32 @@ fn apply_keyword_filter<E: EntityTrait>(
             .replace('^', "")
             .replace(':', "");
         let fts_query = format!("\"{}\"", fts_keyword);
-        // 使用 BM25 排序：标题权重 10，内容权重 1
+        // 使用 BM25 排序：标题权重 10，内容权重 1，标签权重 5
         let fts_condition = Expr::cust_with_values(
-            "id IN (SELECT rowid FROM note_fts WHERE note_fts MATCH ? ORDER BY bm25(note_fts, 10.0, 1.0))",
+            "id IN (SELECT rowid FROM note_fts WHERE note_fts MATCH ? ORDER BY bm25(note_fts, 10.0, 1.0, 5.0))",
             [fts_query],
         );
         builder.filter(fts_condition)
     } else {
+        // MySQL/PG: LIKE 搜索 title、content，加上 tag name 子查询
+        let tag_subquery = Query::select()
+            .column(entity::note_tags::Column::NoteId)
+            .distinct()
+            .from(entity::note_tags::Entity)
+            .inner_join(
+                entity::tag::Entity,
+                Expr::col((entity::tag::Entity, entity::tag::Column::Id))
+                    .equals((entity::note_tags::Entity, entity::note_tags::Column::TagId)),
+            )
+            .and_where(entity::tag::Column::Name.contains(keyword))
+            .to_owned();
+
         builder.filter(
             Condition::all().add(
                 Condition::any()
                     .add(entity::note::Column::Title.contains(keyword))
-                    .add(entity::note::Column::Content.contains(keyword)),
+                    .add(entity::note::Column::Content.contains(keyword))
+                    .add(entity::note::Column::Id.in_subquery(tag_subquery)),
             ),
         )
     }
@@ -113,7 +158,19 @@ async fn fetch_note_tags<C: ConnectionTrait>(db: &C, note_id: i64) -> anyhow::Re
 }
 
 /// 根据 ID 查询笔记（优化版本：2 次查询代替 4 次）
-pub async fn find_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<Option<Note>> {
+pub async fn find_by_id(
+    db: &DatabaseConnection,
+    id: i64,
+) -> anyhow::Result<Option<Note>> {
+    find_by_id_with_key(db, id, None).await
+}
+
+/// 根据 ID 查询笔记（支持解密）
+pub async fn find_by_id_with_key(
+    db: &DatabaseConnection,
+    id: i64,
+    encryption_key: Option<&str>,
+) -> anyhow::Result<Option<Note>> {
     // 查询 1: 获取笔记和笔记本（使用 LEFT JOIN）
     let result = entity::note::Entity::find_by_id(id)
         .find_also_related(entity::notebook::Entity)
@@ -129,6 +186,9 @@ pub async fn find_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<Opti
 
         // 查询 2: 使用 JOIN 一次性获取所有标签（代替原来的 2 次查询）
         note.tags = fetch_note_tags(db, id).await?;
+
+        // 透明解密
+        decrypt_note(&mut note, encryption_key);
 
         Ok(Some(note))
     } else {
@@ -159,14 +219,28 @@ pub async fn create(
     note: &Note,
     source: OperateSource,
 ) -> anyhow::Result<Option<Note>> {
+    create_with_key(db, note, source, None).await
+}
+
+/// 创建笔记（支持内容加密）
+pub async fn create_with_key(
+    db: &DatabaseConnection,
+    note: &Note,
+    source: OperateSource,
+    encryption_key: Option<&str>,
+) -> anyhow::Result<Option<Note>> {
     let txn = db.begin().await?;
 
     let now = Local::now().naive_local();
+
+    // 透明加密：对内容进行加密
+    let encrypted_content = encrypt_content(&note.content, encryption_key)?;
 
     let mut active_model: entity::note::ActiveModel = note.into();
 
     active_model.id = NotSet;
     active_model.is_pinned = Set(0);
+    active_model.content = Set(encrypted_content);
     active_model.create_time = Set(now);
     active_model.update_time = Set(now);
     active_model.deleted_at = Set(None);
@@ -231,7 +305,7 @@ pub async fn create(
 
     txn.commit().await?;
 
-    find_by_id(db, entity.id).await
+    find_by_id_with_key(db, entity.id, encryption_key).await
 }
 
 /// 软删除笔记（移入回收站）
@@ -335,7 +409,15 @@ pub async fn empty_trash(db: &DatabaseConnection) -> anyhow::Result<()> {
 
 /// 获取回收站中的笔记列表
 pub async fn find_deleted(db: &DatabaseConnection) -> anyhow::Result<Vec<Note>> {
-    let notes: Vec<Note> = entity::note::Entity::find()
+    find_deleted_with_key(db, None).await
+}
+
+/// 获取回收站中的笔记列表（支持解密）
+pub async fn find_deleted_with_key(
+    db: &DatabaseConnection,
+    encryption_key: Option<&str>,
+) -> anyhow::Result<Vec<Note>> {
+    let mut notes: Vec<Note> = entity::note::Entity::find()
         .filter(entity::note::Column::DeletedAt.is_not_null())
         .order_by_desc(entity::note::Column::UpdateTime)
         .all(db)
@@ -343,6 +425,11 @@ pub async fn find_deleted(db: &DatabaseConnection) -> anyhow::Result<Vec<Note>> 
         .into_iter()
         .map(Note::from)
         .collect();
+
+    // 透明解密
+    for note in notes.iter_mut() {
+        decrypt_note(note, encryption_key);
+    }
 
     Ok(notes)
 }
@@ -386,6 +473,16 @@ pub async fn update(
     note: &Note,
     source: OperateSource,
 ) -> anyhow::Result<Option<Note>> {
+    update_with_key(db, note, source, None).await
+}
+
+/// 更新笔记（支持内容加密）
+pub async fn update_with_key(
+    db: &DatabaseConnection,
+    note: &Note,
+    source: OperateSource,
+    encryption_key: Option<&str>,
+) -> anyhow::Result<Option<Note>> {
     if let Some(entity) = entity::note::Entity::find_by_id(note.id).one(db).await? {
         let old_title = entity.title.clone();
 
@@ -407,11 +504,14 @@ pub async fn update(
         let old_content_type = entity.content_type;
         let old_content = entity.content.clone();
 
+        // 透明加密：对新内容进行加密
+        let encrypted_content = encrypt_content(&note.content, encryption_key)?;
+
         let mut active_model: entity::note::ActiveModel = entity.into_active_model();
 
         active_model.notebook_id.set_if_not_equals(note.notebook_id);
         active_model.title.set_if_not_equals(note.title.clone());
-        active_model.content.set_if_not_equals(note.content.clone());
+        active_model.content.set_if_not_equals(encrypted_content);
         active_model
             .content_type
             .set_if_not_equals(note.content_type);
@@ -513,7 +613,7 @@ pub async fn update(
         txn.commit().await?;
     }
 
-    find_by_id(db, note.id).await
+    find_by_id_with_key(db, note.id, encryption_key).await
 }
 
 /// 分页搜索笔记
@@ -543,6 +643,15 @@ pub async fn update(
 pub async fn search_page(
     db: &DatabaseConnection,
     search_param: &NoteSearchPageParam,
+) -> anyhow::Result<PageResult<Note>> {
+    search_page_with_key(db, search_param, None).await
+}
+
+/// 分页搜索笔记（支持解密）
+pub async fn search_page_with_key(
+    db: &DatabaseConnection,
+    search_param: &NoteSearchPageParam,
+    encryption_key: Option<&str>,
 ) -> anyhow::Result<PageResult<Note>> {
     search_param.validate()?;
 
@@ -643,6 +752,11 @@ pub async fn search_page(
                     }
                 }
             }
+        }
+
+        // 透明解密
+        for note in notes.iter_mut() {
+            decrypt_note(note, encryption_key);
         }
 
         let mut page_result = PageResult::<Note>::with_data(total, notes);

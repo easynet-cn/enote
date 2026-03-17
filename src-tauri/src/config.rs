@@ -2,8 +2,9 @@
 //!
 //! 本模块负责：
 //! - 加载和解析 YAML 配置文件
-//! - 自动创建默认配置文件（如不存在）
+//! - 支持 Profile 模式（多数据库配置）
 //! - 管理数据库连接池配置
+//! - 支持 SSL/TLS 证书认证
 //! - 提供应用全局状态
 
 use std::fs;
@@ -17,6 +18,7 @@ use tauri::{AppHandle, Manager};
 use tracing::info;
 
 use crate::i18n::t_simple;
+use crate::service::profile::{self, ProfileConfig};
 
 /// 应用配置结构体
 ///
@@ -38,12 +40,6 @@ impl Configuration {
     /// # 返回
     /// - `Ok(Configuration)`: 配置加载成功
     /// - `Err`: 配置加载失败（目录不存在、文件格式错误等）
-    ///
-    /// # 配置文件位置
-    /// 配置文件位于应用数据目录下的 `application.yml`
-    ///
-    /// # 自动创建
-    /// 如果配置文件不存在，会自动创建包含 SQLite 数据库配置的默认文件
     pub fn new(app_handle: &AppHandle, custom_config_path: Option<&str>) -> Result<Self> {
         // 获取应用数据目录
         let app_data_dir = app_handle
@@ -123,18 +119,6 @@ impl Configuration {
     }
 
     /// 创建默认配置文件
-    ///
-    /// # 参数
-    /// - `app_data_dir`: 应用数据目录
-    /// - `config_file_path`: 配置文件完整路径
-    ///
-    /// # 返回
-    /// - `Ok(())`: 创建成功
-    /// - `Err`: 创建失败
-    ///
-    /// # 默认配置
-    /// - 使用 SQLite 数据库
-    /// - 数据库文件位于应用数据目录下的 `enote.db`
     fn create_default_config(app_data_dir: &PathBuf, config_file_path: &PathBuf) -> Result<()> {
         // SQLite 数据库文件路径
         let db_path = app_data_dir.join("enote.db");
@@ -187,22 +171,7 @@ mcp:
         Ok(())
     }
 
-    /// 创建数据库连接
-    ///
-    /// 根据配置文件中的数据库设置创建连接池
-    ///
-    /// # 配置项
-    /// - `datasource.url`: 数据库连接 URL（必需）
-    /// - `datasource.max-connections`: 最大连接数（默认: 100）
-    /// - `datasource.min-connections`: 最小连接数（默认: 1）
-    /// - `datasource.connect_timeout`: 连接超时时间，秒（默认: 30）
-    /// - `datasource.acquire-timeout`: 获取连接超时时间，秒（默认: 8）
-    /// - `datasource.idle-time`: 空闲连接超时时间，秒（默认: 10）
-    /// - `datasource.max-lifetime`: 连接最大生命周期，秒（默认: 30）
-    ///
-    /// # 返回
-    /// - `Ok(DatabaseConnection)`: 数据库连接创建成功
-    /// - `Err`: 连接失败（配置错误、网络问题等）
+    /// 创建数据库连接（兼容旧的 application.yml 方式）
     pub async fn database_connection(&self) -> Result<DatabaseConnection> {
         // 获取数据库连接 URL（必需配置项）
         let mut url = self
@@ -265,23 +234,68 @@ mcp:
 
         // Enable WAL mode and optimize SQLite for better performance
         if is_sqlite {
-            let backend = db.get_database_backend();
-            for pragma in [
-                "PRAGMA journal_mode=WAL",
-                "PRAGMA synchronous=NORMAL",
-                "PRAGMA journal_size_limit=67108864",
-            ] {
-                db.execute(Statement::from_string(backend, pragma.to_string()))
-                    .await
-                    .context(format!(
-                        "{}: {}",
-                        t_simple("config.database.pragma.failed"),
-                        pragma
-                    ))?;
-            }
+            Self::optimize_sqlite(&db).await?;
         }
 
         Ok(db)
+    }
+}
+
+// ============================================================================
+// Profile 模式的数据库连接
+// ============================================================================
+
+/// 从 Profile 配置创建数据库连接
+pub async fn database_connection_from_profile(
+    profile_config: &ProfileConfig,
+    db_password: Option<&str>,
+) -> Result<DatabaseConnection> {
+    let url = profile::build_database_url(profile_config, db_password);
+
+    let is_sqlite = url.starts_with("sqlite:");
+    let default_max = if is_sqlite { 5 } else { 20 };
+
+    let mut opt = ConnectOptions::new(url);
+    opt.max_connections(default_max)
+        .min_connections(1)
+        .connect_timeout(Duration::from_secs(10))
+        .acquire_timeout(Duration::from_secs(5))
+        .idle_timeout(Duration::from_secs(300))
+        .max_lifetime(Duration::from_secs(1800));
+
+    // SSL 证书配置通过 URL 参数传递（无需直接依赖 sqlx 类型）
+    // MySQL: ?ssl-mode=REQUIRED&ssl-ca=/path/to/ca.pem&ssl-cert=...&ssl-key=...
+    // PostgreSQL: ?sslmode=require&sslrootcert=...&sslcert=...&sslkey=...
+
+    let db = Database::connect(opt)
+        .await
+        .context(t_simple("config.database.connect.failed"))?;
+
+    if is_sqlite {
+        Configuration::optimize_sqlite(&db).await?;
+    }
+
+    Ok(db)
+}
+
+impl Configuration {
+    /// 优化 SQLite 连接性能
+    async fn optimize_sqlite(db: &DatabaseConnection) -> Result<()> {
+        let backend = db.get_database_backend();
+        for pragma in [
+            "PRAGMA journal_mode=WAL",
+            "PRAGMA synchronous=NORMAL",
+            "PRAGMA journal_size_limit=67108864",
+        ] {
+            db.execute(Statement::from_string(backend, pragma.to_string()))
+                .await
+                .context(format!(
+                    "{}: {}",
+                    t_simple("config.database.pragma.failed"),
+                    pragma
+                ))?;
+        }
+        Ok(())
     }
 }
 
@@ -296,4 +310,8 @@ pub struct AppState {
     pub database_connection: DatabaseConnection,
     /// 应用数据目录（用于图片等文件存储）
     pub app_data_dir: PathBuf,
+    /// 当前活跃的 profile ID
+    pub active_profile_id: String,
+    /// 内容加密密钥（启动时从 Keychain 加载，如果启用了加密）
+    pub encryption_key: Option<String>,
 }

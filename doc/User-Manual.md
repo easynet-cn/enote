@@ -2,7 +2,7 @@
 
 **Software Name:** enote Intelligent Note Management System
 
-**Version:** V0.7.0
+**Version:** V0.8.0
 
 **Date:** March 2026
 
@@ -96,11 +96,17 @@
   - [14.3 Automatic Backup Settings](#143-automatic-backup-settings)
   - [14.4 Security Settings (Lock Screen)](#144-security-settings-lock-screen)
   - [14.5 MCP Settings](#145-mcp-settings)
+  - [14.6 Profile Management](#146-profile-management)
 - [15. Command Palette](#15-command-palette)
 - [16. System Tray](#16-system-tray)
 - [17. Keyboard Shortcuts](#17-keyboard-shortcuts)
 - [18. Status Bar Information](#18-status-bar-information)
 - [19. Application Startup and Initialization](#19-application-startup-and-initialization)
+  - [19.1 Command-Line Parameters](#191-command-line-parameters)
+  - [19.2 First Launch (Setup Wizard)](#192-first-launch-setup-wizard)
+  - [19.3 Multi-Profile Selection](#193-multi-profile-selection)
+  - [19.4 Startup Error Handling](#194-startup-error-handling)
+  - [19.5 Subsequent Launches](#195-subsequent-launches)
 - [20. MCP (AI Tool Integration)](#20-mcp-ai-tool-integration)
   - [20.1 Feature Overview](#201-feature-overview)
   - [20.2 Configuration and Activation](#202-configuration-and-activation)
@@ -116,7 +122,10 @@
   - [21.2 Configuration File](#212-configuration-file)
   - [21.3 Configuration Options](#213-configuration-options)
   - [21.4 Database Configuration Examples](#214-database-configuration-examples)
-  - [21.5 History Version Protection](#215-history-version-protection)
+  - [21.5 Profile Configuration Management](#215-profile-configuration-management)
+  - [21.6 Content Encryption and Key Management](#216-content-encryption-and-key-management)
+  - [21.7 SSL/TLS Certificate Authentication](#217-ssltls-certificate-authentication)
+  - [21.8 History Version Protection](#218-history-version-protection)
 - [Appendix A: Changelog](#appendix-a-changelog)
 
 ---
@@ -1063,6 +1072,17 @@ After enabling the master switch, expand the individual tool switch list to prec
 >
 > In addition to global and tool-level control, enote also supports more fine-grained **data-level access control** -- you can set AI access permissions (Inherit / Read-Write / Read-Only / Deny) separately on notebooks, tags, and individual notes. See [20.4 Access Control](#204-access-control) for details.
 
+### 14.6 Profile Management
+
+In the Settings dialog, the **Profile Management** section provides the following:
+
+- **Current Profile Info:** Displays the name and database type of the currently active profile.
+- **Switch Profile:** Click the "Switch Profile" button to return to the profile selection page. From there you can:
+  - Select an existing database configuration and connect
+  - Click "New Profile" to enter the Setup Wizard and create a new database configuration
+  - Edit or delete existing configurations
+  - Click the ✕ button in the upper right to close the selection page and return to the main interface
+
 ---
 
 ## 15. Command Palette
@@ -1161,37 +1181,81 @@ The status bar at the bottom of the editor displays the following real-time info
 enote supports specifying the configuration file path through command-line parameters, useful for development debugging or multi-environment deployment scenarios:
 
 ```bash
-# Launch with a custom configuration file
+# Launch with a custom configuration file (legacy mode)
 enote --config /path/to/application.yml
 enote -c /path/to/application.yml
 ```
 
 - Both absolute and relative paths are supported (relative paths are resolved based on the current working directory).
-- When the `--config` parameter is not specified, the default configuration file in the application data directory is used.
+- When using the `--config` parameter, the Profile mode is skipped and the specified configuration file is used directly.
+- When the `--config` parameter is not specified, the application enters Profile mode (see below).
 
-### 19.2 First Launch
+### 19.2 First Launch (Setup Wizard)
 
-On the first launch of enote, the system automatically completes the following initialization operations:
+On the first launch of enote, the system detects that no Profile configuration exists and automatically displays the **Setup Wizard** to guide the user through database connection configuration.
 
-1. **Create Configuration File:** Automatically generates an `application.yml` configuration file in the application data directory with default database connection settings (only when no custom configuration is specified via `--config`).
-2. **Create Database:** Automatically creates the SQLite database file (the connection URL must include the `?mode=rwc` parameter) and performs table structure initialization (automatic migration).
-3. **Load Data:** Loads notebook list, tag list, and note data in parallel.
-4. **Load Settings:** Reads user settings (theme, language, automatic backup configuration, security settings, etc.) from the database and applies them.
-5. **Lock Screen Check:** If the user has enabled the lock screen feature, the lock screen interface is displayed immediately after startup, requiring a password to unlock before the application can be used.
+The Setup Wizard includes the following steps:
 
-During the startup process, a loading notification is displayed in the interface and automatically disappears when loading is complete.
+**Step 1: Select Database Type**
 
-### 19.3 Startup Error Handling
+- **SQLite (Recommended):** Local file database, no additional service installation required, ready to use out of the box. Suitable for personal use.
+- **MySQL:** Network database, suitable for team collaboration or remote access. Requires pre-installation of MySQL 5.7+.
+- **PostgreSQL:** Feature-rich enterprise database. Requires pre-installation of PostgreSQL 12+.
+
+**Step 2: Configure Connection**
+
+Fill in the corresponding connection parameters based on the selected database type:
+
+- **Profile Name:** Give this configuration an identifiable name (e.g., "Local Notes", "Work Database").
+- **SQLite:** Select the database file storage path. Supports "New" (choose a save location to create a new database) and "Open Existing" (select an existing .db file). Leave empty to use the default location (application data directory).
+- **MySQL / PostgreSQL:** Enter host address, port, and database name, then select the authentication method:
+  - **Password Login:** Enter username and password. The password is securely stored in the operating system keychain, not saved in the configuration file.
+  - **Certificate Login:** Enter username, select the SSL mode (Preferred/Required/Verify CA/Verify Identity), and specify the CA certificate, client certificate, and client key file paths.
+
+You can click the "Test Connection" button to verify the configuration.
+
+**Step 3: Security Settings**
+
+- **Content Encryption:** Toggle to enable note content encryption. When enabled:
+  - The system automatically generates an AES-256 encryption key, securely stored in the operating system keychain (macOS Keychain / Windows Credential Store / Linux Secret Service).
+  - All note content is automatically encrypted before writing to the database and automatically decrypted when reading, completely transparent to the user.
+  - Even if the database file is accessed directly, note content cannot be read.
+  - **Note:** With encryption enabled, note titles remain searchable, but content cannot be retrieved through full-text search.
+
+**Step 4: Save and Connect**
+
+After confirming the configuration, the system automatically saves the configuration file and keys, connects to the database, performs initialization, then restarts the application to enter the main interface.
+
+> **Language Switching:** The Setup Wizard provides a language switch button (🌐 icon) in the upper right corner. Click to toggle between Chinese and English, convenient for non-Chinese users on first use.
+
+> **Window Close:** On first launch, the Setup Wizard is a mandatory step and does not provide a skip or cancel button. To exit, simply close the window (click the title bar ✕ button), and the application will exit immediately.
+
+### 19.3 Multi-Profile Selection
+
+When multiple Profile configurations exist, a **Profile Selection Page** is displayed after startup:
+
+- All configurations are displayed as cards showing name, database type, connection info, encryption status, etc.
+- The last used configuration is marked with a "Last Used" label.
+- Double-click or select and click "Connect" to start with that configuration.
+- Click "New Profile" to enter the Setup Wizard and create a new database configuration.
+- Supports editing and deleting existing configurations.
+- Check "Auto-connect to last used profile next time" to skip the selection page and directly use the last configuration on next startup.
+
+When only one configuration exists, or when auto-connect is enabled, the selection page is skipped and the application starts directly.
+
+> **Close Behavior:** The profile selection page on first launch does not have a close button (a configuration must be selected). The profile selection page accessed from the main interface via Settings provides a ✕ close button to return to the main interface and continue using the current configuration.
+
+### 19.4 Startup Error Handling
 
 If an error occurs during the startup process, the system displays a native operating system error dialog with specific error information:
 
-- **Configuration File Loading Failed:** Indicates a configuration file reading error. Please check whether the `application.yml` format is correct.
-- **Database Connection Failed:** Indicates a database connection error. Please check the database configuration or whether the database service is available.
+- **Configuration File Loading Failed:** Indicates a configuration file reading error. Please check whether the configuration file format is correct.
+- **Database Connection Failed:** Indicates a database connection error. Please check the database configuration or whether the database service is available. On connection failure, the system automatically falls back to the Setup Wizard, allowing the user to reconfigure.
 - **Database Migration Failed:** Indicates a table structure update error.
 
-Error messages support internationalization in Chinese and English, automatically displaying in the corresponding language based on the system locale. After acknowledging the error dialog, the application will automatically exit. Users need to investigate and fix the issue before restarting.
+Error messages support internationalization in Chinese and English, automatically displaying in the corresponding language based on the system locale.
 
-### 19.4 Subsequent Launches
+### 19.5 Subsequent Launches
 
 On non-first launches, the system automatically detects and performs database structure upgrades (if there are table structure changes in a new version) to ensure data compatibility. The entire process is transparent to the user and requires no manual intervention. During startup, the system also automatically checks automatic backup settings. If enabled and the time since the last backup exceeds the configured interval, a backup is automatically performed.
 
@@ -1409,8 +1473,10 @@ This directory contains the following files and subdirectories:
 
 | File/Directory | Description |
 |----------------|-------------|
-| `application.yml` | Application configuration file (automatically generated on first launch) |
-| `enote.db` | SQLite database file, present only when using the default SQLite configuration |
+| `profiles.yml` | Profile index file, records the active configuration and auto-connect settings |
+| `profiles/` | Profile configuration directory, each database configuration is a YAML file |
+| `application.yml` | Legacy configuration file (compatibility mode, used with the `--config` parameter) |
+| `enote.db` | SQLite database file, present only when using SQLite configuration |
 | `enote.db-wal` | SQLite WAL journal file (automatically generated), present only with SQLite |
 | `enote.db-shm` | SQLite shared memory file (automatically generated), present only with SQLite |
 | `images/` | Local image storage directory, stores image files inserted in the editor |
@@ -1525,7 +1591,106 @@ datasource:
 
 > **Note:** After switching database types, data from the original database will not be automatically migrated. If you need to preserve data, please use the export function to back up your notes before switching, then import them afterwards. When connecting to a new database for the first time, the system will automatically create the required table structures.
 
-### 21.5 History Version Protection
+### 21.5 Profile Configuration Management
+
+enote uses a Profile system to manage multiple database configurations. Profile files are stored in the `profiles/` subdirectory of the application data directory.
+
+**Index file `profiles.yml`:**
+
+```yaml
+active: local-sqlite    # Currently active Profile ID
+auto-connect: false      # Whether to auto-connect to the last used profile
+```
+
+**Single Profile configuration example (`profiles/local-sqlite.yml`):**
+
+```yaml
+name: Local Notes
+icon: ''
+datasource:
+  type: sqlite
+  path: /path/to/enote.db
+security:
+  content-encryption: false
+```
+
+**MySQL Profile example (`profiles/work-mysql.yml`):**
+
+```yaml
+name: Work Database
+icon: ''
+datasource:
+  type: mysql
+  host: 192.168.1.100
+  port: 3306
+  database: enote
+  username: enote_user
+  auth-method: password
+  ssl:
+    mode: ''
+security:
+  content-encryption: true
+```
+
+> **Note:** Database passwords and encryption keys are not stored in configuration files; they are securely stored in the operating system keychain.
+
+### 21.6 Content Encryption and Key Management
+
+When content encryption is enabled, the system uses the AES-256-GCM algorithm to encrypt note content.
+
+**Key Storage:**
+
+Encryption keys are stored in the operating system's native secure storage:
+
+| Operating System | Storage Location | Management |
+|-----------------|-----------------|------------|
+| **macOS** | Keychain | Viewable via "Keychain Access" app |
+| **Windows** | Credential Store | Viewable via "Control Panel > Credential Manager" |
+| **Linux** | Secret Service (e.g., GNOME Keyring) | Viewable via `seahorse` or similar tools |
+
+Key entries use the application identifier `net.easycloudcn.enote` as the service name, with the format `{profile_id}.encryption_key`.
+
+**Encryption Behavior:**
+
+- Note content is automatically encrypted before saving to the database and automatically decrypted when reading.
+- Encryption is completely transparent to the user and requires no manual operation.
+- Note titles are **not encrypted** and remain searchable.
+- Note content is stored as ciphertext in the database; even direct access to the database file cannot reveal the original content.
+- Content in note history records is also protected by encryption.
+
+### 21.7 SSL/TLS Certificate Authentication
+
+When using MySQL or PostgreSQL, SSL/TLS certificates can be used for secure authentication to protect data transmission.
+
+**MySQL SSL Modes:**
+
+| Mode | Description |
+|------|-------------|
+| `disabled` | Do not use SSL |
+| `preferred` | Prefer SSL, fall back if unavailable |
+| `required` | Must use SSL |
+| `verify-ca` | Verify server CA certificate |
+| `verify-identity` | Verify server identity (strictest) |
+
+**PostgreSQL SSL Modes:**
+
+| Mode | Description |
+|------|-------------|
+| `disabled` | Do not use SSL |
+| `preferred` | Prefer SSL |
+| `required` | Must use SSL |
+| `verify-ca` | Verify server CA certificate |
+| `verify-full` | Full verification (strictest) |
+
+**Required Certificate Files (PEM format):**
+
+- **CA Certificate:** Server CA root certificate (`.pem` or `.crt`)
+- **Client Certificate:** Client identity certificate (`.pem` or `.crt`)
+- **Client Key:** Client private key file (`.pem` or `.key`)
+
+Certificate file paths are specified via file selectors in the Setup Wizard and saved in the Profile configuration file.
+
+### 21.8 History Version Protection
 
 The system automatically records the history version of every modification and deletion operation on notes, including the complete content before and after the operation, supporting tracking and comparison at any time and effectively preventing accidental data loss. History records contain the following information:
 
@@ -1542,6 +1707,14 @@ The system automatically records the history version of every modification and d
 
 | Version | Date | Changes |
 |---------|------|---------|
+| V0.8.0 | March 2026 | Multi-Profile Management and Content Security Enhancement |
+| | | - Setup Wizard: First-launch guided database connection setup for SQLite/MySQL/PostgreSQL |
+| | | - Multi-Profile Management: Support multiple database configurations with startup selection or auto-connect |
+| | | - OS Keychain Integration: Database passwords and encryption keys securely stored in OS keychain |
+| | | - Transparent Content Encryption: AES-256-GCM automatic note content encryption, keys never on disk |
+| | | - SSL/TLS Certificate Authentication: MySQL/PostgreSQL support certificate-based login |
+| | | - Wizard Language Switching: Setup wizard and profile selector support instant Chinese/English toggle |
+| | | - Profile Management Entry: New "Switch Profile" function in the Settings dialog |
 | V0.7.0 | March 2026 | MCP Integration and Template Enhancement |
 | | | - MCP Server: Built-in MCP protocol support; AI tools can operate on notes via stdio (10 tools) |
 | | | - MCP Access Control: Fine-grained control of each MCP tool's enable/disable in the settings panel |
@@ -1587,4 +1760,4 @@ The system automatically records the history version of every modification and d
 
 ---
 
-*This manual is based on enote Intelligent Note Management System V0.7.0. For feature updates, please refer to the actual software.*
+*This manual is based on enote Intelligent Note Management System V0.8.0. Please refer to the actual software for any feature updates.*

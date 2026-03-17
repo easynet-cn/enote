@@ -84,3 +84,13 @@ pub mod auth;
 ///
 /// 实现笔记的三层访问控制权限解析
 pub mod mcp_access;
+
+/// 系统 Keychain 服务模块
+///
+/// 使用 OS 原生安全存储管理敏感数据（加密密钥、数据库密码等）
+pub mod keychain;
+
+/// Profile 配置管理模块
+///
+/// 管理多数据库配置的 CRUD 和切换
+pub mod profile;

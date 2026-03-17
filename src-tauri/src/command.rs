@@ -25,6 +25,145 @@ use crate::{
 };
 
 // ============================================================================
+// Setup / Profile 相关命令
+// ============================================================================
+
+/// 检查是否需要初始化设置
+#[tauri::command]
+pub async fn check_setup_needed(
+    app_state: tauri::State<'_, Arc<AppState>>,
+) -> Result<bool, AppError> {
+    Ok(service::profile::needs_setup(&app_state.app_data_dir))
+}
+
+/// 获取 Profile 索引信息
+#[tauri::command]
+pub async fn get_profile_index(
+    app_state: tauri::State<'_, Arc<AppState>>,
+) -> Result<service::profile::ProfileIndex, AppError> {
+    service::profile::read_index(&app_state.app_data_dir).map_err(AppError::from)
+}
+
+/// 列出所有 Profile
+#[tauri::command]
+pub async fn list_profiles(
+    app_state: tauri::State<'_, Arc<AppState>>,
+) -> Result<Vec<service::profile::ProfileSummary>, AppError> {
+    service::profile::list_profiles(&app_state.app_data_dir).map_err(AppError::from)
+}
+
+/// 获取单个 Profile 配置
+#[tauri::command]
+pub async fn get_profile(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    profile_id: String,
+) -> Result<service::profile::ProfileConfig, AppError> {
+    service::profile::read_profile(&app_state.app_data_dir, &profile_id).map_err(AppError::from)
+}
+
+/// 保存 Profile 配置
+///
+/// 同时处理 Keychain 中的密码和加密密钥存储
+#[tauri::command]
+pub async fn save_profile_config(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    profile_id: String,
+    config: service::profile::ProfileConfig,
+    db_password: Option<String>,
+    encryption_key: Option<String>,
+) -> Result<(), AppError> {
+    // 保存 profile 文件
+    service::profile::save_profile(&app_state.app_data_dir, &profile_id, &config)
+        .map_err(AppError::from)?;
+
+    // 保存数据库密码到 Keychain
+    if let Some(password) = db_password {
+        if !password.is_empty() {
+            service::keychain::set_db_password(&profile_id, &password)
+                .map_err(AppError::from)?;
+        }
+    }
+
+    // 保存加密密钥到 Keychain
+    if let Some(key) = encryption_key {
+        if !key.is_empty() {
+            service::keychain::set_encryption_key(&profile_id, &key)
+                .map_err(AppError::from)?;
+        }
+    }
+
+    Ok(())
+}
+
+/// 删除 Profile 配置
+#[tauri::command]
+pub async fn delete_profile_config(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    profile_id: String,
+) -> Result<(), AppError> {
+    // 删除 Keychain 中的密钥
+    service::keychain::delete_profile_secrets(&profile_id)
+        .map_err(AppError::from)?;
+    // 删除 profile 文件
+    service::profile::delete_profile(&app_state.app_data_dir, &profile_id)
+        .map_err(AppError::from)
+}
+
+/// 选择活跃 Profile
+#[tauri::command]
+pub async fn select_profile(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    profile_id: String,
+) -> Result<(), AppError> {
+    service::profile::set_active_profile(&app_state.app_data_dir, &profile_id)
+        .map_err(AppError::from)
+}
+
+/// 设置是否自动连接
+#[tauri::command]
+pub async fn set_auto_connect(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    auto_connect: bool,
+) -> Result<(), AppError> {
+    service::profile::set_auto_connect(&app_state.app_data_dir, auto_connect)
+        .map_err(AppError::from)
+}
+
+/// 测试数据库连接
+#[tauri::command]
+pub async fn test_db_connection(
+    config: service::profile::ProfileConfig,
+    db_password: Option<String>,
+) -> Result<bool, AppError> {
+    match crate::config::database_connection_from_profile(&config, db_password.as_deref()).await {
+        Ok(_) => Ok(true),
+        Err(e) => Err(AppError::Business(format!("连接失败: {}", e))),
+    }
+}
+
+/// 生成加密密钥
+#[tauri::command]
+pub async fn generate_encryption_key() -> Result<String, AppError> {
+    Ok(service::keychain::generate_encryption_key())
+}
+
+/// 使用指定 profile 重启应用
+///
+/// 设置活跃 profile 后通过前端触发 app restart
+#[tauri::command]
+pub async fn restart_with_profile(
+    app_handle: tauri::AppHandle,
+    app_state: tauri::State<'_, Arc<AppState>>,
+    profile_id: String,
+) -> Result<(), AppError> {
+    service::profile::set_active_profile(&app_state.app_data_dir, &profile_id)
+        .map_err(AppError::from)?;
+
+    // 通过 Tauri 重启应用
+    app_handle.restart();
+}
+
+// ============================================================================
 // 数据备份相关命令
 // ============================================================================
 
@@ -235,14 +374,6 @@ pub async fn update_tag(
 // ============================================================================
 
 /// 创建笔记
-///
-/// # 参数
-/// - `note`: 要创建的笔记数据（包含标题、内容、标签等）
-///
-/// # 返回
-/// - `Ok(Some(Note))`: 创建成功，返回新笔记（包含关联的标签信息）
-/// - `Ok(None)`: 创建后未找到（异常情况）
-/// - `Err(AppError)`: 创建失败
 #[tauri::command]
 pub async fn create_note(
     app_state: tauri::State<'_, Arc<AppState>>,
@@ -250,23 +381,17 @@ pub async fn create_note(
 ) -> Result<Option<Note>, AppError> {
     note.validate().map_err(AppError::from)?;
     let db = &app_state.database_connection;
-    service::note::create(db, &note, OperateSource::User)
-        .await
-        .map_err(AppError::from)
+    service::note::create_with_key(
+        db,
+        &note,
+        OperateSource::User,
+        app_state.encryption_key.as_deref(),
+    )
+    .await
+    .map_err(AppError::from)
 }
 
 /// 更新笔记
-///
-/// # 参数
-/// - `note`: 包含更新数据的笔记对象（需包含 ID）
-///
-/// # 返回
-/// - `Ok(Some(Note))`: 更新成功，返回更新后的笔记
-/// - `Ok(None)`: 笔记不存在
-/// - `Err(AppError)`: 更新失败
-///
-/// # 说明
-/// 更新操作会自动创建历史记录
 #[tauri::command]
 pub async fn update_note(
     app_state: tauri::State<'_, Arc<AppState>>,
@@ -274,9 +399,14 @@ pub async fn update_note(
 ) -> Result<Option<Note>, AppError> {
     note.validate().map_err(AppError::from)?;
     let db = &app_state.database_connection;
-    service::note::update(db, &note, OperateSource::User)
-        .await
-        .map_err(AppError::from)
+    service::note::update_with_key(
+        db,
+        &note,
+        OperateSource::User,
+        app_state.encryption_key.as_deref(),
+    )
+    .await
+    .map_err(AppError::from)
 }
 
 /// 根据 ID 删除笔记
@@ -302,18 +432,6 @@ pub async fn delete_note_by_id(
 }
 
 /// 分页搜索笔记
-///
-/// # 参数
-/// - `search_param`: 搜索参数，包含：
-///   - `page_index`: 页码（从 1 开始）
-///   - `page_size`: 每页数量
-///   - `notebook_id`: 筛选笔记本 ID（0 表示不筛选）
-///   - `tag_id`: 筛选标签 ID（0 表示不筛选）
-///   - `keyword`: 搜索关键词（搜索标题和内容）
-///
-/// # 返回
-/// - `Ok(NotePageResult)`: 搜索结果
-/// - `Err(AppError)`: 搜索失败
 #[tauri::command]
 pub async fn search_page_notes(
     app_state: tauri::State<'_, Arc<AppState>>,
@@ -321,7 +439,7 @@ pub async fn search_page_notes(
 ) -> Result<PageResult<Note>, AppError> {
     search_param.normalize();
     let db = &app_state.database_connection;
-    service::note::search_page(db, &search_param)
+    service::note::search_page_with_key(db, &search_param, app_state.encryption_key.as_deref())
         .await
         .map_err(AppError::from)
 }
@@ -447,7 +565,7 @@ pub async fn find_deleted_notes(
     app_state: tauri::State<'_, Arc<AppState>>,
 ) -> Result<Vec<Note>, AppError> {
     let db = &app_state.database_connection;
-    service::note::find_deleted(db)
+    service::note::find_deleted_with_key(db, app_state.encryption_key.as_deref())
         .await
         .map_err(AppError::from)
 }

@@ -1,6 +1,6 @@
 [package]
 name = "enote-mcp"
-version = "0.7.0"
+version = "0.8.0"
 description = "ENote MCP Server - AI 工具集成"
 edition = "2024"
 

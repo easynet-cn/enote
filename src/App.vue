@@ -1,5 +1,24 @@
 <template>
-  <div class="flex h-screen bg-surface-alt relative">
+  <!-- 设置向导模式 -->
+  <SetupWizard
+    v-if="appMode === 'setup'"
+    :show-back="hasExistingProfiles"
+    @complete="onSetupComplete"
+    @back="appMode = 'select'"
+  />
+
+  <!-- Profile 选择模式 -->
+  <ProfileSelector
+    v-else-if="appMode === 'select'"
+    :show-close="canCloseSelector"
+    @create="appMode = 'setup'"
+    @edit="onEditProfile"
+    @connected="onSetupComplete"
+    @close="returnToMain"
+  />
+
+  <!-- 主应用 -->
+  <div v-else class="flex h-screen bg-surface-alt relative">
     <!-- 侧边栏组件 -->
     <AppSidebar
       :notebooks="notebooks"
@@ -83,7 +102,7 @@
     <BackupDialog v-model="backupDialogVisible" @imported="refreshAllData" />
 
     <!-- 设置对话框 -->
-    <SettingsDialog v-model="settingsDialogVisible" />
+    <SettingsDialog v-model="settingsDialogVisible" @switch-profile="switchToProfileSelector" />
 
     <!-- 回收站对话框 -->
     <TrashDialog v-model="trashDialogVisible" @restored="refreshAllData" />
@@ -104,7 +123,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { ask } from '@tauri-apps/plugin-dialog'
-import { noteApi, settingsApi, backupApi, templateApi } from './api/note'
+import { noteApi, settingsApi, backupApi, templateApi, profileApi } from './api/note'
 import { noteToShowNote } from './utils/converters'
 import { useNotes } from './composables/useNotes'
 import { useKeyboardShortcuts } from './composables/useKeyboardShortcuts'
@@ -119,6 +138,8 @@ import SettingsDialog from './components/SettingsDialog.vue'
 import TrashDialog from './components/TrashDialog.vue'
 import CommandPalette from './components/CommandPalette.vue'
 import TemplateDialog from './components/TemplateDialog.vue'
+import SetupWizard from './components/SetupWizard.vue'
+import ProfileSelector from './components/ProfileSelector.vue'
 import { showNotification } from './components/ui/notification'
 import LockScreen from './components/LockScreen.vue'
 import type { PaletteCommand } from './components/CommandPalette.vue'
@@ -139,6 +160,33 @@ import {
 
 const { t } = useI18n()
 const appStore = useAppStore()
+
+// 应用模式：'loading' | 'setup' | 'select' | 'main'
+const appMode = ref<'loading' | 'setup' | 'select' | 'main'>('loading')
+const hasExistingProfiles = ref(false)
+
+const onSetupComplete = () => {
+  // 应用会重启，这里只是占位
+}
+
+// 是否可以关闭 ProfileSelector 返回主界面（从设置进入时可以，首次启动时不行）
+const canCloseSelector = ref(false)
+
+const switchToProfileSelector = () => {
+  hasExistingProfiles.value = true
+  canCloseSelector.value = true
+  appMode.value = 'select'
+}
+
+const returnToMain = async () => {
+  await enterMainMode()
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const onEditProfile = async (_profileId: string) => {
+  // TODO: 编辑已有 profile
+  appMode.value = 'setup'
+}
 
 // 锁屏
 const { isLocked, lock, unlock, checkStartupLock, setupMinimizeListener } = useLockScreen()
@@ -212,6 +260,7 @@ const {
   handleNoteHistorySizeChange,
   handleNoteHistoryCurrentChange,
   refreshAllData,
+  initialize: initializeNotes,
 } = useNotes()
 
 // 拖拽排序
@@ -522,7 +571,13 @@ const doAutoBackup = async (retention: number) => {
   }
 }
 
-onMounted(async () => {
+/** 进入主应用模式后的初始化 */
+const enterMainMode = async () => {
+  appMode.value = 'main'
+
+  // 初始化数据
+  await initializeNotes()
+
   const currentWindow = getCurrentWindow()
   await currentWindow.onCloseRequested(async (event) => {
     event.preventDefault()
@@ -543,6 +598,34 @@ onMounted(async () => {
   // 检查启动锁屏
   await checkStartupLock()
   setupMinimizeListener()
+}
+
+onMounted(async () => {
+  // 检查应用启动模式
+  try {
+    const needsSetup = await profileApi.checkSetupNeeded()
+    if (needsSetup) {
+      appMode.value = 'setup'
+      // 向导/选择模式：不拦截窗口关闭，系统 ✕ 直接退出应用
+      return
+    }
+
+    // 检查是否有多个 profile 需要选择
+    const profiles = await profileApi.listProfiles()
+    hasExistingProfiles.value = profiles.length > 0
+    const index = await profileApi.getProfileIndex()
+
+    if (profiles.length > 1 && !index.autoConnect) {
+      appMode.value = 'select'
+      // 不拦截窗口关闭，系统 ✕ 直接退出应用
+      return
+    }
+  } catch {
+    // 如果 check 失败，说明后端已正常初始化（兼容旧模式），直接进入主界面
+  }
+
+  // 进入主应用模式
+  await enterMainMode()
 })
 
 onUnmounted(() => {

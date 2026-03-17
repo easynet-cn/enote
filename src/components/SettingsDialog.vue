@@ -140,6 +140,22 @@
         </div>
       </div>
 
+      <!-- 配置管理 -->
+      <div>
+        <h3 class="text-sm font-semibold text-content-secondary mb-3">
+          {{ t('profile.currentProfile') }}
+        </h3>
+        <div class="flex items-center justify-between p-3 bg-surface-dim rounded-lg">
+          <span class="text-sm text-content-secondary">{{ t('profile.manageProfiles') }}</span>
+          <button
+            @click="switchProfile"
+            class="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+          >
+            {{ t('profile.switchProfile') }}
+          </button>
+        </div>
+      </div>
+
       <!-- 安全设置 -->
       <div>
         <h3 class="text-sm font-semibold text-content-secondary mb-3">
@@ -341,6 +357,10 @@ import { showNotification } from './ui/notification'
 
 const { t, locale } = useI18n()
 const appStore = useAppStore()
+
+const emit = defineEmits<{
+  (e: 'switchProfile'): void
+}>()
 
 const visible = defineModel<boolean>({ default: false })
 
@@ -561,6 +581,11 @@ const saveSettings = async () => {
   } catch {
     showNotification({ type: 'error', message: t('settings.saveFailed') })
   }
+}
+
+const switchProfile = () => {
+  visible.value = false
+  emit('switchProfile')
 }
 
 const loadSettings = async () => {

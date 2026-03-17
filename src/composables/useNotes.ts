@@ -1,4 +1,3 @@
-import { onBeforeMount } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAppStore } from '../stores/app'
 import { useNotebookManager } from './useNotebookManager'
@@ -129,11 +128,9 @@ export function useNotes() {
     }
   }
 
-  onBeforeMount(() => {
-    initialize()
-  })
-
   return {
+    // 初始化方法（由调用方在合适时机手动调用）
+    initialize,
     // 数据状态
     notebooks,
     tags,
