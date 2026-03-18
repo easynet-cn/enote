@@ -31,7 +31,7 @@ anyhow = "1.0.102"
 thiserror = "2.0.17"
 tokio = { version = "1.49.0", features = ["rt", "rt-multi-thread", "macros", "sync", "time", "io-util", "fs"] }
 chrono = "0.4.44"
-config = "0.15.21"
+config = "0.15.22"
 serde_with = "3.17.0"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
