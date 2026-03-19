@@ -368,4 +368,20 @@ const createRipple = (event: MouseEvent) => {
 .btn-warning:focus-visible {
   outline-color: var(--color-warning);
 }
+
+.btn-success:focus-visible {
+  outline-color: var(--color-success);
+}
+
+.btn-secondary:focus-visible {
+  outline-color: var(--color-primary);
+}
+
+.btn-tertiary:focus-visible {
+  outline-color: var(--color-primary);
+}
+
+.btn-text:focus-visible {
+  outline-color: var(--color-primary);
+}
 </style>

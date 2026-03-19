@@ -286,6 +286,7 @@ async fn setup_normal_mode(
         app_data_dir,
         active_profile_id,
         encryption_key,
+        settings_cache: tokio::sync::RwLock::new(None),
     });
 
     app.manage(app_state);
@@ -321,6 +322,7 @@ async fn setup_wizard_mode_state(
         app_data_dir,
         active_profile_id: String::new(),
         encryption_key: None,
+        settings_cache: tokio::sync::RwLock::new(None),
     });
 
     app.manage(app_state);

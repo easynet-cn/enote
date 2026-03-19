@@ -22,21 +22,44 @@ pub async fn find_links(db: &DatabaseConnection, note_id: i64) -> Result<Vec<Not
         .all(db)
         .await?;
 
+    if links.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    // 批量收集所有关联笔记 ID
+    let linked_note_ids: Vec<i64> = links
+        .iter()
+        .map(|link| {
+            if link.source_note_id == note_id {
+                link.target_note_id
+            } else {
+                link.source_note_id
+            }
+        })
+        .collect();
+
+    // 一次查询获取所有关联笔记标题
+    let notes_map: std::collections::HashMap<i64, String> = note::Entity::find()
+        .filter(note::Column::Id.is_in(linked_note_ids))
+        .all(db)
+        .await?
+        .into_iter()
+        .map(|n| (n.id, n.title))
+        .collect();
+
     let mut result = Vec::new();
     for link in &links {
-        // 获取另一端的笔记 ID
         let linked_note_id = if link.source_note_id == note_id {
             link.target_note_id
         } else {
             link.source_note_id
         };
 
-        // 获取笔记标题
-        if let Some(note_model) = note::Entity::find_by_id(linked_note_id).one(db).await? {
+        if let Some(title) = notes_map.get(&linked_note_id) {
             result.push(NoteLink {
                 id: link.id,
                 note_id: linked_note_id,
-                note_title: note_model.title,
+                note_title: title.clone(),
                 create_time: Some(link.create_time),
             });
         }

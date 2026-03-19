@@ -1,11 +1,20 @@
 <template>
-  <div ref="triggerRef" class="inline-block" @mouseenter="show" @mouseleave="hide">
+  <div
+    ref="triggerRef"
+    class="inline-block"
+    @mouseenter="show"
+    @mouseleave="hide"
+    @focus.capture="show"
+    @blur.capture="hide"
+  >
     <slot></slot>
     <Teleport to="body">
       <Transition name="tooltip">
         <div
           v-if="visible"
           ref="tooltipRef"
+          role="tooltip"
+          :id="tooltipId"
           class="fixed z-[9999] px-2 py-1 text-xs text-white bg-slate-800 rounded whitespace-nowrap pointer-events-none"
           :style="tooltipStyle"
         >
@@ -20,6 +29,8 @@
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue'
 
+let tooltipCounter = 0
+
 interface Props {
   content: string
   placement?: 'top' | 'bottom' | 'left' | 'right'
@@ -33,6 +44,7 @@ const visible = ref(false)
 const triggerRef = ref<HTMLElement | null>(null)
 const tooltipRef = ref<HTMLElement | null>(null)
 const position = ref({ top: 0, left: 0 })
+const tooltipId = `tooltip-${++tooltipCounter}`
 
 const show = async () => {
   visible.value = true
@@ -72,6 +84,15 @@ const updatePosition = () => {
       left = triggerRect.right + gap
       break
   }
+
+  // 视口边界检测
+  const viewportWidth = window.innerWidth
+  const viewportHeight = window.innerHeight
+
+  if (left < 4) left = 4
+  if (left + tooltipRect.width > viewportWidth - 4) left = viewportWidth - tooltipRect.width - 4
+  if (top < 4) top = 4
+  if (top + tooltipRect.height > viewportHeight - 4) top = viewportHeight - tooltipRect.height - 4
 
   position.value = { top, left }
 }

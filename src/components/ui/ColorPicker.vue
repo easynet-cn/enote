@@ -3,7 +3,13 @@
     <Tooltip :content="t('colorPicker.selectColor')">
       <button
         @click="toggle"
+        @keydown.enter.prevent="toggle"
+        @keydown.space.prevent="toggle"
+        @keydown.escape="visible = false"
         :disabled="disabled"
+        :aria-expanded="visible"
+        :aria-label="t('colorPicker.selectColor')"
+        aria-haspopup="true"
         class="w-7 h-7 rounded-lg border border-edge transition-colors"
         :class="
           disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-edge-dark'
@@ -15,13 +21,20 @@
     <Transition name="picker">
       <div
         v-if="visible"
+        role="listbox"
+        :aria-label="t('colorPicker.selectColor')"
         class="absolute top-full left-0 mt-1 p-3 bg-surface rounded-xl shadow-lg border border-edge z-50"
+        @keydown.escape="visible = false"
       >
         <div class="grid grid-cols-5 gap-1 mb-2">
           <button
             v-for="color in predefineColors"
             :key="color"
+            role="option"
+            :aria-selected="modelValue === color"
+            :aria-label="color"
             @click="selectColor(color)"
+            @keydown.enter.prevent="selectColor(color)"
             class="w-6 h-6 rounded-lg border border-edge cursor-pointer hover:scale-110 transition-transform"
             :style="{ backgroundColor: color }"
             :class="{ 'ring-2 ring-indigo-500 ring-offset-1': modelValue === color }"
@@ -32,6 +45,7 @@
             type="color"
             :value="modelValue || '#000000'"
             @input="handleInput"
+            :aria-label="t('colorPicker.selectColor')"
             class="w-8 h-8 cursor-pointer border-0 p-0"
           />
           <input
@@ -40,6 +54,7 @@
             @input="handleTextInput"
             class="flex-1 h-8 px-2 text-sm border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             placeholder="#000000"
+            :aria-label="t('colorPicker.selectColor')"
           />
         </div>
       </div>

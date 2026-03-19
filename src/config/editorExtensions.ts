@@ -125,6 +125,10 @@ export const markdownExtension = Markdown.configure({
   transformCopiedText: true,
 })
 
+// 缓存扩展数组，避免每次创建编辑器时重复构建
+let _richTextExtensionsCache: AnyExtension[] | null = null
+let _markdownExtensionsCache: AnyExtension[] | null = null
+
 function buildPlaceholder(placeholder?: string): AnyExtension {
   return Placeholder.configure({
     placeholder: placeholder || '',
@@ -137,20 +141,30 @@ function buildPlaceholder(placeholder?: string): AnyExtension {
  * 获取富文本编辑器扩展
  */
 export function getRichTextExtensions(placeholder?: string): AnyExtension[] {
-  return [
+  if (!placeholder && _richTextExtensionsCache) {
+    return _richTextExtensionsCache
+  }
+  const extensions = [
     ...coreExtensions,
     buildPlaceholder(placeholder),
     ...formattingExtensions,
     ...mediaExtensions,
     ...taskExtensions,
   ]
+  if (!placeholder) {
+    _richTextExtensionsCache = extensions
+  }
+  return extensions
 }
 
 /**
  * 获取 Markdown 编辑器扩展
  */
 export function getMarkdownExtensions(placeholder?: string): AnyExtension[] {
-  return [
+  if (!placeholder && _markdownExtensionsCache) {
+    return _markdownExtensionsCache
+  }
+  const extensions = [
     ...coreExtensions,
     buildPlaceholder(placeholder),
     ...formattingExtensions,
@@ -158,4 +172,8 @@ export function getMarkdownExtensions(placeholder?: string): AnyExtension[] {
     ...taskExtensions,
     markdownExtension,
   ]
+  if (!placeholder) {
+    _markdownExtensionsCache = extensions
+  }
+  return extensions
 }

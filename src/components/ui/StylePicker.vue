@@ -1,7 +1,17 @@
 <template>
   <div ref="pickerRef" class="style-picker-wrapper">
     <!-- 触发器 -->
-    <div class="style-picker-trigger" @click="toggleDropdown">
+    <div
+      class="style-picker-trigger"
+      role="combobox"
+      :aria-expanded="isOpen"
+      aria-haspopup="listbox"
+      tabindex="0"
+      @click="toggleDropdown"
+      @keydown.enter.prevent="toggleDropdown"
+      @keydown.space.prevent="toggleDropdown"
+      @keydown.escape="closeDropdown"
+    >
       <!-- 颜色预览 -->
       <div class="style-picker-preview">
         <span v-if="modelValue" :class="['style-picker-dot', modelValue]">●</span>
@@ -269,7 +279,7 @@ defineExpose({
   height: 36px;
   padding: 0 12px;
   background: var(--color-bg-primary);
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border-dark, #d1d5db);
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -277,7 +287,7 @@ defineExpose({
 }
 
 .style-picker-trigger:hover {
-  border-color: #9ca3af;
+  border-color: var(--color-text-tertiary, #9ca3af);
 }
 
 /* 预览 */
@@ -294,7 +304,7 @@ defineExpose({
 
 .style-picker-value {
   font-size: 14px;
-  color: #374151;
+  color: var(--color-text-primary, #374151);
 }
 
 /* 清除按钮 */
@@ -302,7 +312,7 @@ defineExpose({
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #9ca3af;
+  color: var(--color-text-tertiary, #9ca3af);
   cursor: pointer;
   opacity: 0;
   transition: all 0.2s;
@@ -313,14 +323,14 @@ defineExpose({
 }
 
 .style-picker-clear:hover {
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
 }
 
 /* 箭头 */
 .style-picker-arrow {
   display: inline-flex;
   align-items: center;
-  color: #9ca3af;
+  color: var(--color-text-tertiary, #9ca3af);
   transition: transform 0.2s ease;
 }
 
@@ -345,7 +355,7 @@ defineExpose({
 /* 区块 */
 .style-picker-section {
   padding: 12px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
 }
 
 .style-picker-section:last-child {
@@ -355,7 +365,7 @@ defineExpose({
 .style-picker-section-title {
   font-size: 12px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
   margin-bottom: 8px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -385,7 +395,7 @@ defineExpose({
 }
 
 .style-picker-color-selected {
-  border-color: #1f2937;
+  border-color: var(--color-text-primary, #1f2937);
   transform: scale(1.1);
 }
 
@@ -408,18 +418,18 @@ defineExpose({
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.15s ease;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border, #e5e7eb);
   font-size: 12px;
 }
 
 .style-picker-shade-item:hover {
-  background: #f3f4f6;
-  border-color: #d1d5db;
+  background: var(--color-bg-tertiary, #f3f4f6);
+  border-color: var(--color-border-dark, #d1d5db);
 }
 
 .style-picker-shade-selected {
-  background: #f0fdf4;
-  border-color: #22c55e;
+  background: var(--color-success-lighter, #f0fdf4);
+  border-color: var(--color-success, #22c55e);
 }
 
 .style-picker-shade-dot {
@@ -427,7 +437,7 @@ defineExpose({
 }
 
 .style-picker-shade-label {
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
 }
 
 /* 自定义输入 */
@@ -439,21 +449,23 @@ defineExpose({
 .style-picker-custom-input {
   flex: 1;
   padding: 8px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border-dark, #d1d5db);
   border-radius: 6px;
   font-size: 13px;
   outline: none;
+  color: var(--color-text-primary);
+  background: var(--color-bg-primary);
   transition: all 0.2s ease;
 }
 
 .style-picker-custom-input:focus {
-  border-color: #22c55e;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+  border-color: var(--color-success, #22c55e);
+  box-shadow: 0 0 0 3px var(--color-success-ring, rgba(34, 197, 94, 0.1));
 }
 
 .style-picker-custom-btn {
   padding: 8px 16px;
-  background: #22c55e;
+  background: var(--color-success, #22c55e);
   color: white;
   border: none;
   border-radius: 6px;
@@ -464,7 +476,7 @@ defineExpose({
 }
 
 .style-picker-custom-btn:hover:not(:disabled) {
-  background: #16a34a;
+  background: var(--color-success-dark, #16a34a);
 }
 
 .style-picker-custom-btn:disabled {
@@ -479,19 +491,19 @@ defineExpose({
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
 }
 
 /* 底部信息 */
 .style-picker-footer {
   padding: 8px 12px;
-  border-top: 1px solid #e5e7eb;
-  background: #f9fafb;
+  border-top: 1px solid var(--color-border, #e5e7eb);
+  background: var(--color-bg-secondary, #f9fafb);
 }
 
 .style-picker-footer-text {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--color-text-secondary, #6b7280);
 }
 
 /* 下拉动画 */
@@ -516,11 +528,11 @@ defineExpose({
 }
 
 .style-picker-dropdown::-webkit-scrollbar-thumb {
-  background: #d1d5db;
+  background: var(--color-border, #d1d5db);
   border-radius: 3px;
 }
 
 .style-picker-dropdown::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+  background: var(--color-text-tertiary, #9ca3af);
 }
 </style>

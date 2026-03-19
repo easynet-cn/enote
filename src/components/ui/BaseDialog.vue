@@ -187,6 +187,7 @@ const handleOverlayClick = () => {
     0 25px 50px -12px rgba(0, 0, 0, 0.25),
     0 0 0 1px rgba(0, 0, 0, 0.05);
   max-height: 90vh;
+  max-width: calc(100vw - 2rem);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -282,5 +283,30 @@ const handleOverlayClick = () => {
 .dialog-leave-to .dialog-content {
   opacity: 0;
   transform: scale(0.95) translateY(-10px);
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .dialog-overlay {
+    padding: 0.5rem;
+  }
+
+  .dialog-content {
+    max-width: calc(100vw - 1rem);
+    border-radius: 8px;
+  }
+
+  .dialog-header {
+    padding: 1rem;
+  }
+
+  .dialog-body {
+    padding: 1rem;
+    max-height: 70vh;
+  }
+
+  .dialog-footer {
+    padding: 0.75rem 1rem;
+  }
 }
 </style>

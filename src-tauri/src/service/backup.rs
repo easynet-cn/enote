@@ -62,8 +62,11 @@ async fn clear_tables(txn: &impl ConnectionTrait) -> anyhow::Result<()> {
 }
 
 async fn restore_data(txn: &impl ConnectionTrait, data: &BackupData) -> anyhow::Result<()> {
-    for m in &data.notebooks {
-        notebook::Entity::insert(notebook::ActiveModel {
+    use sea_orm::ActiveValue::Set;
+
+    // 批量插入 notebooks
+    if !data.notebooks.is_empty() {
+        let models: Vec<notebook::ActiveModel> = data.notebooks.iter().map(|m| notebook::ActiveModel {
             id: Set(m.id),
             parent_id: Set(m.parent_id),
             name: Set(m.name.clone()),
@@ -74,13 +77,13 @@ async fn restore_data(txn: &impl ConnectionTrait, data: &BackupData) -> anyhow::
             mcp_access: Set(m.mcp_access),
             create_time: Set(m.create_time),
             update_time: Set(m.update_time),
-        })
-        .exec(txn)
-        .await?;
+        }).collect();
+        notebook::Entity::insert_many(models).exec(txn).await?;
     }
 
-    for m in &data.tags {
-        tag::Entity::insert(tag::ActiveModel {
+    // 批量插入 tags
+    if !data.tags.is_empty() {
+        let models: Vec<tag::ActiveModel> = data.tags.iter().map(|m| tag::ActiveModel {
             id: Set(m.id),
             name: Set(m.name.clone()),
             icon: Set(m.icon.clone()),
@@ -89,13 +92,13 @@ async fn restore_data(txn: &impl ConnectionTrait, data: &BackupData) -> anyhow::
             mcp_access: Set(m.mcp_access),
             create_time: Set(m.create_time),
             update_time: Set(m.update_time),
-        })
-        .exec(txn)
-        .await?;
+        }).collect();
+        tag::Entity::insert_many(models).exec(txn).await?;
     }
 
-    for m in &data.notes {
-        note::Entity::insert(note::ActiveModel {
+    // 批量插入 notes（分批 500 条，避免大数据集内存压力）
+    for chunk in data.notes.chunks(500) {
+        let models: Vec<note::ActiveModel> = chunk.iter().map(|m| note::ActiveModel {
             id: Set(m.id),
             notebook_id: Set(m.notebook_id),
             title: Set(m.title.clone()),
@@ -106,26 +109,28 @@ async fn restore_data(txn: &impl ConnectionTrait, data: &BackupData) -> anyhow::
             create_time: Set(m.create_time),
             update_time: Set(m.update_time),
             deleted_at: Set(m.deleted_at),
-        })
-        .exec(txn)
-        .await?;
+        }).collect();
+        note::Entity::insert_many(models).exec(txn).await?;
     }
 
-    for m in &data.note_tags {
-        note_tags::Entity::insert(note_tags::ActiveModel {
-            id: Set(m.id),
-            note_id: Set(m.note_id),
-            tag_id: Set(m.tag_id),
-            sort_order: Set(m.sort_order),
-            create_time: Set(m.create_time),
-            update_time: Set(m.update_time),
-        })
-        .exec(txn)
-        .await?;
+    // 批量插入 note_tags
+    if !data.note_tags.is_empty() {
+        for chunk in data.note_tags.chunks(500) {
+            let models: Vec<note_tags::ActiveModel> = chunk.iter().map(|m| note_tags::ActiveModel {
+                id: Set(m.id),
+                note_id: Set(m.note_id),
+                tag_id: Set(m.tag_id),
+                sort_order: Set(m.sort_order),
+                create_time: Set(m.create_time),
+                update_time: Set(m.update_time),
+            }).collect();
+            note_tags::Entity::insert_many(models).exec(txn).await?;
+        }
     }
 
-    for m in &data.note_histories {
-        note_history::Entity::insert(note_history::ActiveModel {
+    // 批量插入 note_histories
+    for chunk in data.note_histories.chunks(500) {
+        let models: Vec<note_history::ActiveModel> = chunk.iter().map(|m| note_history::ActiveModel {
             id: Set(m.id),
             note_id: Set(m.note_id),
             old_content: Set(m.old_content.clone()),
@@ -135,9 +140,8 @@ async fn restore_data(txn: &impl ConnectionTrait, data: &BackupData) -> anyhow::
             operate_source: Set(m.operate_source),
             operate_time: Set(m.operate_time),
             create_time: Set(m.create_time),
-        })
-        .exec(txn)
-        .await?;
+        }).collect();
+        note_history::Entity::insert_many(models).exec(txn).await?;
     }
 
     Ok(())
@@ -247,7 +251,9 @@ fn split_sql_statements(sql: &str) -> Vec<String> {
             current.push(ch);
             if ch == '\'' {
                 if chars.peek() == Some(&'\'') {
-                    current.push(chars.next().unwrap());
+                    if let Some(ch) = chars.next() {
+                    current.push(ch);
+                }
                 } else {
                     in_string = false;
                 }

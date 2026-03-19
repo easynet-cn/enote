@@ -417,8 +417,8 @@ defineExpose({
 }
 
 .select-open .select-trigger {
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-ring, rgba(79, 70, 229, 0.1));
 }
 
 /* 禁用状态 */
@@ -554,17 +554,17 @@ defineExpose({
 }
 
 .select-option-selected {
-  color: #4f46e5;
+  color: var(--color-primary);
   font-weight: 500;
 }
 
 .select-option-selected:hover,
 .select-option-selected.select-option-highlighted {
-  background: #eef2ff;
+  background: var(--color-primary-lighter, #eef2ff);
 }
 
 .select-option-disabled {
-  color: #cbd5e1;
+  color: var(--color-text-disabled, #cbd5e1);
   cursor: not-allowed;
 }
 
@@ -584,7 +584,7 @@ defineExpose({
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #4f46e5;
+  color: var(--color-primary);
   flex-shrink: 0;
 }
 
@@ -613,30 +613,30 @@ defineExpose({
 
 /* 状态样式 */
 .select-status-error .select-trigger {
-  border-color: #ef4444;
+  border-color: var(--color-danger);
 }
 
 .select-status-error.select-open .select-trigger {
-  border-color: #ef4444;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 3px var(--color-danger-ring, rgba(239, 68, 68, 0.1));
 }
 
 .select-status-warning .select-trigger {
-  border-color: #f59e0b;
+  border-color: var(--color-warning);
 }
 
 .select-status-warning.select-open .select-trigger {
-  border-color: #f59e0b;
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+  border-color: var(--color-warning);
+  box-shadow: 0 0 0 3px var(--color-warning-ring, rgba(245, 158, 11, 0.1));
 }
 
 .select-status-success .select-trigger {
-  border-color: #10b981;
+  border-color: var(--color-success);
 }
 
 .select-status-success.select-open .select-trigger {
-  border-color: #10b981;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+  border-color: var(--color-success);
+  box-shadow: 0 0 0 3px var(--color-success-ring, rgba(16, 185, 129, 0.1));
 }
 
 /* 下拉动画 */
@@ -666,6 +666,6 @@ defineExpose({
 }
 
 .select-options::-webkit-scrollbar-thumb:hover {
-  background: #cbd5e1;
+  background: var(--color-text-disabled, #cbd5e1);
 }
 </style>

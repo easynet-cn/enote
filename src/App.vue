@@ -119,7 +119,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, markRaw } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { ask } from '@tauri-apps/plugin-dialog'
@@ -268,8 +268,9 @@ const handleReorderNotebooks = async (orders: [string, number][]) => {
   try {
     await noteApi.reorderNotebooks(orders.map(([id, order]) => [Number(id), order]))
     await refreshAllData()
-  } catch {
-    // 静默失败
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e)
+    showNotification({ type: 'error', message: msg })
   }
 }
 
@@ -277,8 +278,9 @@ const handleReorderTags = async (orders: [string, number][]) => {
   try {
     await noteApi.reorderTags(orders.map(([id, order]) => [Number(id), order]))
     await refreshAllData()
-  } catch {
-    // 静默失败
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e)
+    showNotification({ type: 'error', message: msg })
   }
 }
 
@@ -291,8 +293,9 @@ const handleTogglePin = async (noteId: string) => {
       // 刷新列表以更新排序
       await refreshAllData()
     }
-  } catch {
-    // 静默失败
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e)
+    showNotification({ type: 'error', message: msg })
   }
 }
 
@@ -334,7 +337,7 @@ const paletteCommands = computed<PaletteCommand[]>(() => [
   {
     id: 'new-note',
     name: t('commandPalette.commands.newNote'),
-    icon: Plus,
+    icon: markRaw(Plus),
     category: t('commandPalette.categories.notes'),
     shortcut: 'Ctrl+N',
     handler: () => createNewNote(),
@@ -342,7 +345,7 @@ const paletteCommands = computed<PaletteCommand[]>(() => [
   {
     id: 'save-note',
     name: t('commandPalette.commands.saveNote'),
-    icon: Save,
+    icon: markRaw(Save),
     category: t('commandPalette.categories.notes'),
     shortcut: 'Ctrl+S',
     handler: () => {
@@ -352,7 +355,7 @@ const paletteCommands = computed<PaletteCommand[]>(() => [
   {
     id: 'edit-note',
     name: t('commandPalette.commands.editNote'),
-    icon: Pencil,
+    icon: markRaw(Pencil),
     category: t('commandPalette.categories.notes'),
     shortcut: 'Ctrl+E',
     handler: () => {
@@ -362,7 +365,7 @@ const paletteCommands = computed<PaletteCommand[]>(() => [
   {
     id: 'delete-note',
     name: t('commandPalette.commands.deleteNote'),
-    icon: Trash2,
+    icon: markRaw(Trash2),
     category: t('commandPalette.categories.notes'),
     handler: () => {
       if (activeNote.value) deleteNote()
@@ -371,7 +374,7 @@ const paletteCommands = computed<PaletteCommand[]>(() => [
   {
     id: 'toggle-sidebar',
     name: t('commandPalette.commands.toggleSidebar'),
-    icon: PanelLeft,
+    icon: markRaw(PanelLeft),
     category: t('commandPalette.categories.view'),
     shortcut: 'Ctrl+B',
     handler: () => {
@@ -381,7 +384,7 @@ const paletteCommands = computed<PaletteCommand[]>(() => [
   {
     id: 'toggle-dark-mode',
     name: t('commandPalette.commands.toggleDarkMode'),
-    icon: document.documentElement.getAttribute('data-theme') === 'dark' ? Sun : Moon,
+    icon: markRaw(document.documentElement.getAttribute('data-theme') === 'dark' ? Sun : Moon),
     category: t('commandPalette.categories.view'),
     handler: () => {
       const current = document.documentElement.getAttribute('data-theme')
@@ -392,7 +395,7 @@ const paletteCommands = computed<PaletteCommand[]>(() => [
   {
     id: 'open-settings',
     name: t('commandPalette.commands.openSettings'),
-    icon: Settings,
+    icon: markRaw(Settings),
     category: t('commandPalette.categories.app'),
     handler: () => {
       settingsDialogVisible.value = true
@@ -401,7 +404,7 @@ const paletteCommands = computed<PaletteCommand[]>(() => [
   {
     id: 'open-trash',
     name: t('commandPalette.commands.openTrash'),
-    icon: Trash2,
+    icon: markRaw(Trash2),
     category: t('commandPalette.categories.app'),
     handler: () => {
       trashDialogVisible.value = true
@@ -410,7 +413,7 @@ const paletteCommands = computed<PaletteCommand[]>(() => [
   {
     id: 'open-backup',
     name: t('commandPalette.commands.openBackup'),
-    icon: Database,
+    icon: markRaw(Database),
     category: t('commandPalette.categories.app'),
     handler: () => {
       backupDialogVisible.value = true
@@ -419,7 +422,7 @@ const paletteCommands = computed<PaletteCommand[]>(() => [
   {
     id: 'open-templates',
     name: t('commandPalette.commands.openTemplates'),
-    icon: LayoutTemplate,
+    icon: markRaw(LayoutTemplate),
     category: t('commandPalette.categories.app'),
     handler: () => {
       templateDialogVisible.value = true
@@ -428,7 +431,7 @@ const paletteCommands = computed<PaletteCommand[]>(() => [
   {
     id: 'new-from-template',
     name: t('commandPalette.commands.newFromTemplate'),
-    icon: LayoutTemplate,
+    icon: markRaw(LayoutTemplate),
     category: t('commandPalette.categories.notes'),
     handler: () => {
       templateDialogVisible.value = true
@@ -437,7 +440,7 @@ const paletteCommands = computed<PaletteCommand[]>(() => [
   {
     id: 'lock-app',
     name: t('shortcuts.lockApp'),
-    icon: Lock,
+    icon: markRaw(Lock),
     category: t('commandPalette.categories.app'),
     shortcut: 'Ctrl+L',
     handler: () => lock(),
@@ -445,7 +448,7 @@ const paletteCommands = computed<PaletteCommand[]>(() => [
   {
     id: 'save-as-template',
     name: t('commandPalette.commands.saveAsTemplate'),
-    icon: FileDown,
+    icon: markRaw(FileDown),
     category: t('commandPalette.categories.notes'),
     handler: () => {
       if (activeNoteData.value) handleSaveAsTemplate()
@@ -518,7 +521,7 @@ useKeyboardShortcuts([
 
 // 关闭窗口拦截：未保存时提示确认
 // 自动备份定时器
-let autoBackupTimer: ReturnType<typeof setInterval> | null = null
+let autoBackupTimer: ReturnType<typeof setTimeout> | ReturnType<typeof setInterval> | null = null
 
 const startAutoBackup = async () => {
   try {
@@ -547,7 +550,7 @@ const startAutoBackup = async () => {
               () => doAutoBackup(retention),
               intervalHours * 3600 * 1000,
             )
-          }, remaining) as unknown as ReturnType<typeof setInterval>
+          }, remaining)
           return
         }
       }

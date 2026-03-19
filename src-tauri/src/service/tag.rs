@@ -145,10 +145,22 @@ pub async fn update(db: &DatabaseConnection, tag: &Tag) -> anyhow::Result<Option
 
 /// 批量更新标签排序
 pub async fn reorder(db: &DatabaseConnection, orders: Vec<(i64, i32)>) -> anyhow::Result<()> {
+    if orders.is_empty() {
+        return Ok(());
+    }
+
+    let ids: Vec<i64> = orders.iter().map(|(id, _)| *id).collect();
+    let entities = entity::tag::Entity::find()
+        .filter(entity::tag::Column::Id.is_in(ids))
+        .all(db)
+        .await?;
+
+    let order_map: std::collections::HashMap<i64, i32> = orders.into_iter().collect();
     let now = Local::now().naive_local();
-    for (id, sort_order) in orders {
-        if let Some(entity) = entity::tag::Entity::find_by_id(id).one(db).await? {
-            let mut active_model: entity::tag::ActiveModel = entity.into_active_model();
+
+    for entity_model in entities {
+        if let Some(&sort_order) = order_map.get(&entity_model.id) {
+            let mut active_model: entity::tag::ActiveModel = entity_model.into_active_model();
             active_model.sort_order.set_if_not_equals(sort_order);
             if active_model.is_changed() {
                 active_model.update_time = Set(now);

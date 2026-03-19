@@ -11,42 +11,42 @@
   font-size: 2rem;
   font-weight: bold;
   margin: 1rem 0;
-  color: #1f2937;
+  color: var(--color-text-primary);
 }
 
 .ProseMirror h2 {
   font-size: 1.5rem;
   font-weight: bold;
   margin: 0.875rem 0;
-  color: #374151;
+  color: var(--color-text-primary);
 }
 
 .ProseMirror h3 {
   font-size: 1.25rem;
   font-weight: bold;
   margin: 0.75rem 0;
-  color: #4b5563;
+  color: var(--color-text-secondary);
 }
 
 .ProseMirror h4 {
   font-size: 1.125rem;
   font-weight: 600;
   margin: 0.625rem 0;
-  color: #4b5563;
+  color: var(--color-text-secondary);
 }
 
 .ProseMirror h5 {
   font-size: 1rem;
   font-weight: 600;
   margin: 0.5rem 0;
-  color: #6b7280;
+  color: var(--color-text-tertiary);
 }
 
 .ProseMirror h6 {
   font-size: 0.875rem;
   font-weight: 600;
   margin: 0.5rem 0;
-  color: #6b7280;
+  color: var(--color-text-tertiary);
 }
 
 /* 段落 */
@@ -86,8 +86,8 @@
 
 /* 代码块 */
 .ProseMirror pre {
-  background-color: #1f2937;
-  color: #f9fafb;
+  background-color: var(--color-code-block-bg, #1f2937);
+  color: var(--color-code-block-text, #f9fafb);
   padding: 0.75rem;
   border-radius: 0.5rem;
   overflow-x: auto;
@@ -158,7 +158,7 @@
   width: 1rem;
   height: 1rem;
   cursor: pointer;
-  accent-color: #10b981;
+  accent-color: var(--color-success, #10b981);
 }
 
 .ProseMirror ul[data-type='taskList'] li > div {
@@ -167,7 +167,7 @@
 
 .ProseMirror ul[data-type='taskList'] li[data-checked='true'] > div {
   text-decoration: line-through;
-  color: #9ca3af;
+  color: var(--color-text-disabled, #9ca3af);
 }
 
 /* 上标和下标 */

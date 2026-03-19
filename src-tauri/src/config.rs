@@ -314,4 +314,6 @@ pub struct AppState {
     pub active_profile_id: String,
     /// 内容加密密钥（启动时从 Keychain 加载，如果启用了加密）
     pub encryption_key: Option<String>,
+    /// 设置缓存（避免频繁查询数据库）
+    pub settings_cache: tokio::sync::RwLock<Option<std::collections::HashMap<String, String>>>,
 }

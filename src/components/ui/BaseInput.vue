@@ -18,6 +18,9 @@
       :readonly="readonly"
       :maxlength="maxlength"
       :autofocus="autofocus"
+      :aria-invalid="status === 'error' ? 'true' : undefined"
+      :aria-describedby="ariaDescribedby || undefined"
+      :aria-label="ariaLabel || undefined"
       @input="handleInput"
       @focus="handleFocus"
       @blur="handleBlur"
@@ -99,6 +102,8 @@ interface Props {
   autofocus?: boolean
   prefixIcon?: Component
   suffixIcon?: Component
+  ariaLabel?: string
+  ariaDescribedby?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -309,7 +314,7 @@ defineExpose({
   bottom: -1px;
   width: 0;
   height: 2px;
-  background: linear-gradient(90deg, #4f46e5, #4338ca);
+  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-hover));
   transform: translateX(-50%);
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 0 0 8px 8px;
@@ -322,8 +327,8 @@ defineExpose({
 
 /* Focus 状态 */
 .input-focused:not(.input-disabled) {
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-ring, rgba(79, 70, 229, 0.1));
 }
 
 .input-focused .input-focus-line {
@@ -352,43 +357,43 @@ defineExpose({
 
 /* 状态样式 - Error */
 .input-status-error {
-  border-color: #ef4444;
+  border-color: var(--color-danger);
 }
 
 .input-status-error.input-focused {
-  border-color: #ef4444;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 3px var(--color-danger-ring, rgba(239, 68, 68, 0.1));
 }
 
 .input-status-error .input-focus-line {
-  background: linear-gradient(90deg, #ef4444, #dc2626);
+  background: linear-gradient(90deg, var(--color-danger), var(--color-danger-hover, #dc2626));
 }
 
 /* 状态样式 - Warning */
 .input-status-warning {
-  border-color: #f59e0b;
+  border-color: var(--color-warning);
 }
 
 .input-status-warning.input-focused {
-  border-color: #f59e0b;
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+  border-color: var(--color-warning);
+  box-shadow: 0 0 0 3px var(--color-warning-ring, rgba(245, 158, 11, 0.1));
 }
 
 .input-status-warning .input-focus-line {
-  background: linear-gradient(90deg, #f59e0b, #d97706);
+  background: linear-gradient(90deg, var(--color-warning), var(--color-warning-hover, #d97706));
 }
 
 /* 状态样式 - Success */
 .input-status-success {
-  border-color: #10b981;
+  border-color: var(--color-success);
 }
 
 .input-status-success.input-focused {
-  border-color: #10b981;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+  border-color: var(--color-success);
+  box-shadow: 0 0 0 3px var(--color-success-ring, rgba(16, 185, 129, 0.1));
 }
 
 .input-status-success .input-focus-line {
-  background: linear-gradient(90deg, #10b981, #059669);
+  background: linear-gradient(90deg, var(--color-success), var(--color-success-hover, #059669));
 }
 </style>

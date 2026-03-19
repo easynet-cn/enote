@@ -279,12 +279,20 @@ const splitPanelStyle = computed(() => {
 // TipTap 编辑器实例（根据内容类型动态选择扩展）
 const editor = shallowRef<Editor | undefined>(undefined)
 
+// 编辑器创建请求 ID，用于防止快速切换笔记时的竞态条件
+let editorCreateRequestId = 0
+
 // 创建编辑器实例
 const createEditor = (contentType: ContentType, content: string) => {
+  const requestId = ++editorCreateRequestId
+
   // 销毁旧编辑器
   if (editor.value) {
     editor.value.destroy()
   }
+
+  // 检查是否已被更新的请求取代
+  if (requestId !== editorCreateRequestId) return
 
   // 根据内容类型选择扩展：Markdown 模式使用 Markdown 扩展，富文本模式不使用
   const extensions =
