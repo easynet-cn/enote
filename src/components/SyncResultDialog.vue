@@ -27,6 +27,7 @@ import type { SyncLog, SyncLogDetail } from '../types'
 import { save } from '@tauri-apps/plugin-dialog'
 import { syncApi } from '../api/note'
 import { showNotification } from './ui/notification'
+import { parseError } from '../utils/errorHandler'
 
 const props = defineProps<{
   modelValue?: boolean
@@ -57,8 +58,7 @@ async function handleExport() {
       showNotification({ type: 'success', message: t('sync.exportLog') + ' OK' })
     }
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : 'Export failed'
-    showNotification({ type: 'error', message: msg })
+    showNotification({ type: 'error', message: parseError(e) })
   }
 }
 

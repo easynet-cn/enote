@@ -404,6 +404,7 @@ import { useI18n } from 'vue-i18n'
 import { open, save } from '@tauri-apps/plugin-dialog'
 import { profileApi } from '../api/note'
 import { showNotification } from './ui/notification'
+import { parseError } from '../utils/errorHandler'
 import { availableLocales, setLocale, getCurrentLocale } from '../i18n'
 import type { LocaleType } from '../i18n'
 import type { ProfileConfig } from '../types'
@@ -584,8 +585,7 @@ const testConn = async () => {
     await profileApi.testConnection(form, dbPassword.value || undefined)
     showNotification({ type: 'success', message: t('setup.testSuccess') })
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e)
-    showNotification({ type: 'error', message: `${t('setup.testFailed')}: ${msg}` })
+    showNotification({ type: 'error', message: `${t('setup.testFailed')}: ${parseError(e)}` })
   } finally {
     testing.value = false
   }
@@ -611,8 +611,7 @@ const saveAndConnect = async () => {
 
     emit('complete')
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e)
-    saveError.value = msg
+    saveError.value = parseError(e)
     saving.value = false
   }
 }

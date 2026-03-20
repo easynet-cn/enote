@@ -126,6 +126,7 @@ import { useI18n } from 'vue-i18n'
 import { ask } from '@tauri-apps/plugin-dialog'
 import { profileApi } from '../api/note'
 import { showNotification } from './ui/notification'
+import { parseError } from '../utils/errorHandler'
 import { availableLocales, setLocale, getCurrentLocale } from '../i18n'
 import type { LocaleType } from '../i18n'
 import type { ProfileSummary } from '../types'
@@ -207,11 +208,13 @@ const connectProfile = async (profileId: string) => {
   if (!profileId) return
   connecting.value = true
   try {
+    // 标记本次为用户主动选择，重启后跳过选择页面
+    localStorage.setItem('enote-skip-profile-select', '1')
     await profileApi.restartWithProfile(profileId)
     emit('connected')
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e)
-    showNotification({ type: 'error', message: msg })
+    localStorage.removeItem('enote-skip-profile-select')
+    showNotification({ type: 'error', message: parseError(e) })
     connecting.value = false
   }
 }
@@ -231,8 +234,7 @@ const confirmDeleteProfile = async (profile: ProfileSummary) => {
     await profileApi.deleteProfile(profile.id)
     await loadProfiles()
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e)
-    showNotification({ type: 'error', message: msg })
+    showNotification({ type: 'error', message: parseError(e) })
   }
 }
 

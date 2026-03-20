@@ -253,6 +253,7 @@ import {
 import { Dialog, Button } from './ui'
 import { templateApi } from '../api/note'
 import { showNotification } from './ui/notification'
+import { parseError } from '../utils/errorHandler'
 import { getRichTextExtensions, getMarkdownExtensions } from '../config/editorExtensions'
 import { ContentType } from '../types'
 import type { NoteTemplate } from '../types'
@@ -396,8 +397,7 @@ const handleSave = async () => {
     await loadTemplates()
     handleBack()
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e)
-    showNotification({ type: 'error', message: msg })
+    showNotification({ type: 'error', message: parseError(e) })
   }
 }
 
@@ -406,8 +406,7 @@ const handleDelete = async (tpl: NoteTemplate) => {
     await templateApi.delete(tpl.id)
     await loadTemplates()
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e)
-    showNotification({ type: 'error', message: msg })
+    showNotification({ type: 'error', message: parseError(e) })
   }
 }
 

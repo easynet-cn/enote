@@ -141,6 +141,7 @@ import TemplateDialog from './components/TemplateDialog.vue'
 import SetupWizard from './components/SetupWizard.vue'
 import ProfileSelector from './components/ProfileSelector.vue'
 import { showNotification } from './components/ui/notification'
+import { parseError } from './utils/errorHandler'
 import LockScreen from './components/LockScreen.vue'
 import type { PaletteCommand } from './components/CommandPalette.vue'
 import {
@@ -269,8 +270,7 @@ const handleReorderNotebooks = async (orders: [string, number][]) => {
     await noteApi.reorderNotebooks(orders.map(([id, order]) => [Number(id), order]))
     await refreshAllData()
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e)
-    showNotification({ type: 'error', message: msg })
+    showNotification({ type: 'error', message: parseError(e) })
   }
 }
 
@@ -279,8 +279,7 @@ const handleReorderTags = async (orders: [string, number][]) => {
     await noteApi.reorderTags(orders.map(([id, order]) => [Number(id), order]))
     await refreshAllData()
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e)
-    showNotification({ type: 'error', message: msg })
+    showNotification({ type: 'error', message: parseError(e) })
   }
 }
 
@@ -294,8 +293,7 @@ const handleTogglePin = async (noteId: string) => {
       await refreshAllData()
     }
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e)
-    showNotification({ type: 'error', message: msg })
+    showNotification({ type: 'error', message: parseError(e) })
   }
 }
 
@@ -327,8 +325,7 @@ const handleSaveAsTemplate = async () => {
     })
     showNotification({ type: 'success', message: t('template.saveAsTemplateSuccess') })
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e)
-    showNotification({ type: 'error', message: msg })
+    showNotification({ type: 'error', message: parseError(e) })
   }
 }
 
@@ -565,10 +562,9 @@ const startAutoBackup = async () => {
     // 自动备份初始化失败，首次通知用户
     if (!autoBackupErrorNotified) {
       autoBackupErrorNotified = true
-      const msg = e instanceof Error ? e.message : String(e)
       showNotification({
         type: 'warning',
-        message: `${t('settings.autoBackupFailed')}: ${msg}`,
+        message: `${t('settings.autoBackupFailed')}: ${parseError(e)}`,
         duration: 5000,
       })
     }
@@ -583,10 +579,9 @@ const doAutoBackup = async (retention: number) => {
   } catch (e: unknown) {
     if (!autoBackupErrorNotified) {
       autoBackupErrorNotified = true
-      const msg = e instanceof Error ? e.message : String(e)
       showNotification({
         type: 'warning',
-        message: `${t('settings.autoBackupFailed')}: ${msg}`,
+        message: `${t('settings.autoBackupFailed')}: ${parseError(e)}`,
         duration: 5000,
       })
     }
@@ -634,14 +629,16 @@ const initApp = async () => {
     hasExistingProfiles.value = profiles.length > 0
     const index = await profileApi.getProfileIndex()
 
-    if (profiles.length > 1 && !index.autoConnect) {
+    // 从选择页面连接 profile 后会重启应用，用一次性标记跳过本次选择页
+    const skipSelect = localStorage.getItem('enote-skip-profile-select')
+    if (skipSelect) {
+      localStorage.removeItem('enote-skip-profile-select')
+    } else if (profiles.length > 1 && !index.autoConnect) {
       appMode.value = 'select'
       return
     }
   } catch (err: unknown) {
-    const errorMsg =
-      err instanceof Error ? err.message : typeof err === 'string' ? err : String(err)
-    const shouldRetry = await ask(`${t('error.startupErrorMessage')}\n\n${errorMsg}`, {
+    const shouldRetry = await ask(`${t('error.startupErrorMessage')}\n\n${parseError(err)}`, {
       title: t('error.startupError'),
       kind: 'error',
       okLabel: t('common.retry'),

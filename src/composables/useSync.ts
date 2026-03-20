@@ -10,12 +10,7 @@ import type {
   ProfileSummary,
 } from '../types'
 import { showNotification } from '../components/ui/notification'
-
-function getErrorMessage(e: unknown, fallback: string): string {
-  if (e instanceof Error) return e.message
-  if (typeof e === 'string') return e
-  return fallback
-}
+import { parseError } from '../utils/errorHandler'
 
 export function useSync() {
   const loading = ref(false)
@@ -32,7 +27,7 @@ export function useSync() {
       const all = await profileApi.listProfiles()
       profiles.value = all.filter((p) => !p.isActive)
     } catch (e: unknown) {
-      showNotification({ type: 'error', message: getErrorMessage(e, '加载 Profile 列表失败') })
+      showNotification({ type: 'error', message: parseError(e) })
     }
   }
 
@@ -41,7 +36,7 @@ export function useSync() {
     try {
       preview.value = await syncApi.getPreview(targetProfileId, targetDbPassword)
     } catch (e: unknown) {
-      showNotification({ type: 'error', message: getErrorMessage(e, '获取预览信息失败') })
+      showNotification({ type: 'error', message: parseError(e) })
       preview.value = null
     } finally {
       loading.value = false
@@ -69,7 +64,7 @@ export function useSync() {
         showNotification({ type: 'success', message: `同步完成: ${result.successCount} 条记录` })
       }
     } catch (e: unknown) {
-      showNotification({ type: 'error', message: getErrorMessage(e, '同步失败') })
+      showNotification({ type: 'error', message: parseError(e) })
     } finally {
       syncing.value = false
     }
@@ -128,7 +123,7 @@ export function useSyncHistory() {
       logs.value = result.data
       total.value = result.total
     } catch (e: unknown) {
-      showNotification({ type: 'error', message: getErrorMessage(e, '加载同步记录失败') })
+      showNotification({ type: 'error', message: parseError(e) })
     } finally {
       loading.value = false
     }
@@ -147,7 +142,7 @@ export function useSyncHistory() {
       details.value = result.data
       detailTotal.value = result.total
     } catch (e: unknown) {
-      showNotification({ type: 'error', message: getErrorMessage(e, '加载同步明细失败') })
+      showNotification({ type: 'error', message: parseError(e) })
     } finally {
       loading.value = false
     }
@@ -159,7 +154,7 @@ export function useSyncHistory() {
       showNotification({ type: 'success', message: '删除成功' })
       await loadLogs()
     } catch (e: unknown) {
-      showNotification({ type: 'error', message: getErrorMessage(e, '删除失败') })
+      showNotification({ type: 'error', message: parseError(e) })
     }
   }
 
@@ -170,7 +165,7 @@ export function useSyncHistory() {
       logs.value = []
       total.value = 0
     } catch (e: unknown) {
-      showNotification({ type: 'error', message: getErrorMessage(e, '清空失败') })
+      showNotification({ type: 'error', message: parseError(e) })
     }
   }
 
@@ -179,7 +174,7 @@ export function useSyncHistory() {
       await syncApi.exportSyncLog(syncLogId, path)
       showNotification({ type: 'success', message: '导出成功' })
     } catch (e: unknown) {
-      showNotification({ type: 'error', message: getErrorMessage(e, '导出失败') })
+      showNotification({ type: 'error', message: parseError(e) })
     }
   }
 

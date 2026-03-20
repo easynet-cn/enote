@@ -113,6 +113,7 @@ import { useI18n } from 'vue-i18n'
 import { ArrowLeft } from 'lucide-vue-next'
 import { Dialog, Button, Pagination } from './ui'
 import { showNotification } from './ui/notification'
+import { parseError } from '../utils/errorHandler'
 import SyncResultDialog from './SyncResultDialog.vue'
 import { useSyncHistory } from '../composables/useSync'
 import { save } from '@tauri-apps/plugin-dialog'
@@ -168,8 +169,7 @@ async function handleExport(log: SyncLog) {
       showNotification({ type: 'success', message: t('sync.exportLog') + ' OK' })
     }
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : 'Export failed'
-    showNotification({ type: 'error', message: msg })
+    showNotification({ type: 'error', message: parseError(e) })
   }
 }
 </script>
