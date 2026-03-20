@@ -4,9 +4,9 @@
     :class="{ 'transition-all duration-300': !isResizing }"
     :style="{ width: collapsed ? '48px' : `${width}px` }"
   >
-    <!-- 拖拽调整宽度的边界 -->
+    <!-- 拖拽调整宽度的边界（移动端隐藏） -->
     <div
-      v-if="!collapsed"
+      v-if="!collapsed && !mobile"
       class="absolute right-0 top-0 h-full w-1 cursor-ew-resize hover:bg-indigo-400 z-20 group"
       @mousedown="startResize"
     >
@@ -15,8 +15,9 @@
       ></div>
     </div>
 
-    <!-- 折叠/展开按钮（右侧边界中间） -->
+    <!-- 折叠/展开按钮（右侧边界中间，移动端隐藏） -->
     <button
+      v-if="!mobile"
       @click="$emit('toggle-collapse')"
       class="absolute -right-3.5 top-1/2 -translate-y-1/2 z-30 w-7 h-7 bg-surface border border-edge rounded-full shadow-sm flex items-center justify-center text-content-tertiary hover:text-indigo-600 transition-all hover:scale-110 active:scale-95"
       :aria-label="collapsed ? t('noteList.expandList') : t('noteList.collapseList')"
@@ -29,9 +30,19 @@
     <template v-if="!collapsed">
       <div class="p-4 border-b border-edge">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-lg font-semibold text-content">
-            {{ activeNotebookName }}
-          </h2>
+          <div class="flex items-center gap-2">
+            <button
+              v-if="mobile"
+              @click="$emit('open-sidebar')"
+              class="p-1.5 -ml-1.5 text-content-secondary hover:text-content hover:bg-surface-dim rounded-lg transition-colors"
+              :aria-label="t('sidebar.notebooks')"
+            >
+              <Menu class="w-5 h-5" />
+            </button>
+            <h2 class="text-lg font-semibold text-content">
+              {{ activeNotebookName }}
+            </h2>
+          </div>
         </div>
 
         <div class="relative">
@@ -149,7 +160,7 @@
 <script setup lang="ts">
 import { computed, ref, onUnmounted, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Search, X, FileText, ChevronLeft, ChevronRight, Pin } from 'lucide-vue-next'
+import { Search, X, FileText, ChevronLeft, ChevronRight, Pin, Menu } from 'lucide-vue-next'
 import { Pagination, Tooltip } from './ui'
 import NoteListSkeleton from './NoteListSkeleton.vue'
 import { stripHtml, truncateText, markdownToHtml } from '../utils'
@@ -180,6 +191,7 @@ interface Props {
   width?: number
   minWidth?: number
   maxWidth?: number
+  mobile?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -188,6 +200,7 @@ const props = withDefaults(defineProps<Props>(), {
   width: 320,
   minWidth: 200,
   maxWidth: 600,
+  mobile: false,
 })
 
 const appStore = useAppStore()
@@ -206,6 +219,7 @@ const emit = defineEmits<{
   'toggle-collapse': []
   'update:width': [width: number]
   togglePin: [id: string]
+  'open-sidebar': []
 }>()
 
 // 拖拽状态

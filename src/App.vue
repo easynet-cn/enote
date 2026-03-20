@@ -21,14 +21,16 @@
   <div v-else class="flex h-screen bg-surface-alt relative">
     <!-- 侧边栏组件 -->
     <AppSidebar
+      v-show="!isMobile || mobileView === 'sidebar'"
+      :class="isMobile ? 'w-full' : ''"
       :notebooks="notebooks"
       :tags="tags"
       :active-notebook="activeNotebook"
       :active-tag="activeTag"
-      :collapsed="sidebarCollapsed"
-      @set-active-notebook="setActiveNotebook"
-      @set-active-tag="setActiveTag"
-      @create-new-note="createNewNote"
+      :collapsed="isMobile ? false : sidebarCollapsed"
+      @set-active-notebook="handleMobileNotebook"
+      @set-active-tag="handleMobileTag"
+      @create-new-note="handleMobileCreateNote"
       @save-notebook="saveNotebook"
       @delete-notebook="deleteNotebook"
       @save-tag="saveTag"
@@ -45,26 +47,31 @@
 
     <!-- 笔记列表组件 -->
     <NoteList
+      v-show="!isMobile || mobileView === 'list'"
+      :class="isMobile ? 'w-full' : ''"
       :notebooks="notebooks"
       :notes="notes"
       :active-notebook="activeNotebook"
       :active-note="activeNote"
-      :collapsed="noteListCollapsed"
+      :collapsed="isMobile ? false : noteListCollapsed"
+      :mobile="isMobile"
       v-model:current-page="notePageIndex"
       v-model:page-size="notePageSize"
       v-model:total="noteTotal"
       v-model:query="query"
       v-model:width="noteListWidth"
-      @set-active-note="setActiveNote"
+      @set-active-note="handleMobileSelectNote"
       @update-search-query="handleUpdateSearchQuery"
       @size-change="handleNoteSizeChange"
       @current-change="handleNoteCurrentChange"
       @toggle-collapse="handleNoteListToggle"
       @toggle-pin="handleTogglePin"
+      @open-sidebar="mobileView = 'sidebar'"
     />
 
     <!-- 编辑器组件 -->
     <NoteEditor
+      v-show="!isMobile || mobileView === 'editor'"
       v-model:history-data="histories"
       v-model:current-page="historyPageIndex"
       v-model:page-size="historyPageSize"
@@ -88,6 +95,8 @@
       @size-change="handleNoteHistorySizeChange"
       @current-change="handleNoteHistoryCurrentChange"
       @save-as-template="handleSaveAsTemplate"
+      @back="mobileView = 'list'"
+      :mobile="isMobile"
     />
 
     <!-- 导入对话框 -->
@@ -142,6 +151,7 @@ import SetupWizard from './components/SetupWizard.vue'
 import ProfileSelector from './components/ProfileSelector.vue'
 import { showNotification } from './components/ui/notification'
 import { parseError } from './utils/errorHandler'
+import { usePlatform } from './composables/usePlatform'
 import LockScreen from './components/LockScreen.vue'
 import type { PaletteCommand } from './components/CommandPalette.vue'
 import {
@@ -161,6 +171,10 @@ import {
 
 const { t } = useI18n()
 const appStore = useAppStore()
+const { isMobile } = usePlatform()
+
+// 移动端导航状态
+const mobileView = ref<'sidebar' | 'list' | 'editor'>('list')
 
 // 应用模式：'loading' | 'setup' | 'select' | 'main'
 const appMode = ref<'loading' | 'setup' | 'select' | 'main'>('loading')
@@ -295,6 +309,30 @@ const handleTogglePin = async (noteId: string) => {
   } catch (e: unknown) {
     showNotification({ type: 'error', message: parseError(e) })
   }
+}
+
+// ============================================================================
+// 移动端导航处理
+// ============================================================================
+
+const handleMobileNotebook = (id: string) => {
+  setActiveNotebook(id)
+  if (isMobile.value) mobileView.value = 'list'
+}
+
+const handleMobileTag = (id: string) => {
+  setActiveTag(id)
+  if (isMobile.value) mobileView.value = 'list'
+}
+
+const handleMobileSelectNote = (id: string) => {
+  setActiveNote(id)
+  if (isMobile.value) mobileView.value = 'editor'
+}
+
+const handleMobileCreateNote = () => {
+  createNewNote()
+  if (isMobile.value) mobileView.value = 'editor'
 }
 
 // 使用模板创建新笔记
@@ -595,19 +633,21 @@ const enterMainMode = async () => {
   // 初始化数据
   await initializeNotes()
 
-  const currentWindow = getCurrentWindow()
-  await currentWindow.onCloseRequested(async (event) => {
-    event.preventDefault()
-    if (appStore.isDirty) {
-      const confirmed = await ask(t('editor.unsavedChanges.message'), {
-        title: t('editor.unsavedChanges.title'),
-        kind: 'warning',
-      })
-      if (!confirmed) return
-    }
-    // 最小化到托盘而非退出
-    await currentWindow.hide()
-  })
+  // 桌面端：窗口关闭时最小化到托盘
+  if (!isMobile.value) {
+    const currentWindow = getCurrentWindow()
+    await currentWindow.onCloseRequested(async (event) => {
+      event.preventDefault()
+      if (appStore.isDirty) {
+        const confirmed = await ask(t('editor.unsavedChanges.message'), {
+          title: t('editor.unsavedChanges.title'),
+          kind: 'warning',
+        })
+        if (!confirmed) return
+      }
+      await currentWindow.hide()
+    })
+  }
 
   // 启动自动备份
   startAutoBackup()

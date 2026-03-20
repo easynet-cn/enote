@@ -13,7 +13,9 @@ use std::sync::Arc;
 
 use sea_orm_migration::MigratorTrait;
 use tauri::Manager;
+#[cfg(desktop)]
 use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem};
+#[cfg(desktop)]
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder};
 use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 use tracing::{error, info};
@@ -32,17 +34,14 @@ pub mod migration; // 数据库迁移
 pub mod model; // 数据传输对象（DTO）
 pub mod service; // 业务逻辑服务层
 
-/// 应用程序入口函数
-///
-/// 启动流程：
-/// 1. 检查是否存在 profile 配置
-/// 2. 如果没有 profile → 进入设置向导模式（精简命令集）
-/// 3. 如果有 profile → 正常连接数据库并启动
-///
-/// # 参数
-/// - `config_path`: 可选的配置文件路径，如果为 None 则使用 Profile 模式
+/// 移动端入口（无参数）
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub fn run(config_path: Option<String>) {
+pub fn run() {
+    run_with_config(None);
+}
+
+/// 桌面端入口（支持配置文件路径参数）
+pub fn run_with_config(config_path: Option<String>) {
     // 初始化 tracing 日志系统
     tracing_subscriber::registry()
         .with(EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")))
@@ -72,8 +71,13 @@ pub fn run(config_path: Option<String>) {
                 if config_path.is_some() || !service::profile::needs_setup(&app_data_dir) {
                     // 正常模式：有配置，连接数据库
                     setup_normal_mode(app, config_path).await?;
+                } else if cfg!(target_os = "android") || cfg!(target_os = "ios") {
+                    // 移动端：自动创建默认 SQLite profile，跳过向导
+                    info!("移动端首次启动，自动创建默认 SQLite profile");
+                    auto_create_mobile_profile(&app_data_dir)?;
+                    setup_normal_mode(app, None).await?;
                 } else {
-                    // 设置向导模式：没有任何 profile
+                    // 桌面端设置向导模式：没有任何 profile
                     info!("未找到 profile 配置，进入设置向导模式");
                     setup_wizard_mode(app).await?;
                 }
@@ -167,6 +171,42 @@ pub fn run(config_path: Option<String>) {
         .expect(&t_simple("error.appStartFailed"));
 }
 
+/// 移动端首次启动时自动创建默认 SQLite profile
+fn auto_create_mobile_profile(
+    app_data_dir: &std::path::Path,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use service::profile::{
+        DatasourceConfig, ProfileConfig, ProfileIndex, SecurityConfig,
+    };
+
+    let db_path = app_data_dir.join("enote.db");
+    let db_path_str = db_path.to_string_lossy().to_string();
+
+    let config = ProfileConfig {
+        name: "Local".to_string(),
+        icon: "database".to_string(),
+        datasource: DatasourceConfig {
+            db_type: "sqlite".to_string(),
+            path: db_path_str,
+            ..Default::default()
+        },
+        security: SecurityConfig::default(),
+    };
+
+    let profile_id = "local-sqlite";
+    service::profile::save_profile(app_data_dir, profile_id, &config)?;
+    service::profile::save_index(
+        app_data_dir,
+        &ProfileIndex {
+            active: profile_id.to_string(),
+            auto_connect: true,
+        },
+    )?;
+
+    info!("移动端默认 profile 已创建: {}", db_path.display());
+    Ok(())
+}
+
 /// 正常模式启动：连接数据库并初始化完整应用状态
 async fn setup_normal_mode(
     app: &mut tauri::App,
@@ -227,7 +267,8 @@ async fn setup_normal_mode(
 
             let profile_config = service::profile::read_profile(&app_data_dir, &profile_id)?;
 
-            // 从 Keychain 获取数据库密码（MySQL/PG）
+            // 从 Keychain 获取数据库密码（仅桌面端 MySQL/PG 需要）
+            #[cfg(desktop)]
             let db_password = if profile_config.datasource.db_type != "sqlite"
                 && profile_config.datasource.auth_method != "certificate"
             {
@@ -235,6 +276,8 @@ async fn setup_normal_mode(
             } else {
                 None
             };
+            #[cfg(not(desktop))]
+            let db_password: Option<String> = None;
 
             let database_connection = match config::database_connection_from_profile(
                 &profile_config,
@@ -258,12 +301,15 @@ async fn setup_normal_mode(
                 }
             };
 
-            // 从 Keychain 获取加密密钥
+            // 从 Keychain 获取加密密钥（仅桌面端）
+            #[cfg(desktop)]
             let encryption_key = if profile_config.security.content_encryption {
                 service::keychain::get_encryption_key(&profile_id)?
             } else {
                 None
             };
+            #[cfg(not(desktop))]
+            let encryption_key: Option<String> = None;
 
             let configuration = config::Configuration::default();
             (
@@ -299,7 +345,8 @@ async fn setup_normal_mode(
 
     app.manage(app_state);
 
-    // 设置系统托盘
+    // 设置系统托盘（仅桌面端）
+    #[cfg(desktop)]
     setup_tray(app)?;
 
     Ok(())
@@ -331,13 +378,15 @@ async fn setup_wizard_mode_state(app: &mut tauri::App) -> Result<(), Box<dyn std
 
     app.manage(app_state);
 
-    // 设置系统托盘
+    // 设置系统托盘（仅桌面端）
+    #[cfg(desktop)]
     setup_tray(app)?;
 
     Ok(())
 }
 
-/// 设置系统托盘
+/// 设置系统托盘（仅桌面端编译）
+#[cfg(desktop)]
 fn setup_tray(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let show_item = MenuItemBuilder::with_id("show", "显示窗口").build(app)?;
     let quit_item = MenuItemBuilder::with_id("quit", "退出").build(app)?;

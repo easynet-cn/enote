@@ -12,6 +12,18 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 [build-dependencies]
 tauri-build.workspace = true
 
+[features]
+default = ["desktop"]
+desktop = [
+  "tauri/tray-icon",
+  "dep:keyring",
+  "dep:clap",
+  "sea-orm/sqlx-mysql",
+  "sea-orm/sqlx-postgres",
+  "sea-orm-migration/sqlx-mysql",
+  "sea-orm-migration/sqlx-postgres",
+]
+
 [dependencies]
 # Tauri
 tauri.workspace = true
@@ -41,8 +53,9 @@ thiserror.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 
-# CLI
-clap.workspace = true
+# Desktop-only (optional)
+clap = { workspace = true, optional = true }
+keyring = { workspace = true, optional = true }
 
 # Crypto
 aes-gcm.workspace = true
@@ -63,4 +76,3 @@ config.workspace = true
 uuid.workspace = true
 dirs.workspace = true
 sys-locale.workspace = true
-keyring.workspace = true

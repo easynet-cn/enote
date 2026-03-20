@@ -32,6 +32,14 @@
 
       <!-- 标题输入区域 -->
       <div v-if="activeNote" class="flex items-center mt-4 mb-2">
+        <button
+          v-if="mobile"
+          @click="emit('back')"
+          class="p-1.5 -ml-1.5 mr-1 text-content-secondary hover:text-content hover:bg-surface-dim rounded-lg transition-colors shrink-0"
+          :aria-label="t('common.close')"
+        >
+          <ArrowLeft class="w-5 h-5" />
+        </button>
         <div class="flex-1">
           <input
             ref="titleInput"
@@ -177,6 +185,7 @@ import TiptapToolbar from './TiptapToolbar.vue'
 import EditorSettingsDialog from './EditorSettingsDialog.vue'
 import ExportDialog from './ExportDialog.vue'
 import { ConfirmDialog } from './ui'
+import { ArrowLeft } from 'lucide-vue-next'
 import { ContentType, McpAccess, MarkdownLayout } from '../types'
 import type { NoteHistory, ShowNote, ShowNotebook, ShowTag } from '../types'
 import { getMarkdownFromEditor } from '../types/tiptap-markdown'
@@ -201,6 +210,7 @@ interface Props {
   activeNote: ShowNote | null
   editMode: boolean
   historyLoading?: boolean
+  mobile?: boolean
 }
 
 const { t } = useI18n()
@@ -221,6 +231,7 @@ const emit = defineEmits<{
   open: []
   navigateToNote: [id: number]
   saveAsTemplate: []
+  back: []
 }>()
 
 // 判断是否为新建笔记
