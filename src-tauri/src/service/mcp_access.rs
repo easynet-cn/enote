@@ -209,10 +209,7 @@ pub async fn check_write(db: &DatabaseConnection, note_id: i64) -> anyhow::Resul
 }
 
 /// 检查笔记本是否可写（用于 create_note 时检查目标笔记本）
-pub async fn check_notebook_write(
-    db: &DatabaseConnection,
-    notebook_id: i64,
-) -> anyhow::Result<()> {
+pub async fn check_notebook_write(db: &DatabaseConnection, notebook_id: i64) -> anyhow::Result<()> {
     if notebook_id == 0 {
         return Ok(()); // 不归属笔记本，允许
     }

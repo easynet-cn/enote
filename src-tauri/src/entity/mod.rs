@@ -9,4 +9,6 @@ pub mod note_tags;
 pub mod note_template;
 pub mod notebook;
 pub mod settings;
+pub mod sync_log;
+pub mod sync_log_detail;
 pub mod tag;

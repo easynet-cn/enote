@@ -94,3 +94,13 @@ pub mod keychain;
 ///
 /// 管理多数据库配置的 CRUD 和切换
 pub mod profile;
+
+/// 跨 Profile 同步服务模块
+///
+/// 通过 service 层实现跨数据库同步，保证加密和历史记录一致性
+pub mod sync;
+
+/// 同步日志服务模块
+///
+/// 管理同步记录和明细的 CRUD 操作
+pub mod sync_log;

@@ -32,11 +32,7 @@ impl MigrationTrait for Migration {
                             .big_integer()
                             .not_null(),
                     )
-                    .col(
-                        ColumnDef::new(NoteLink::CreateTime)
-                            .date_time()
-                            .not_null(),
-                    )
+                    .col(ColumnDef::new(NoteLink::CreateTime).date_time().not_null())
                     .to_owned(),
             )
             .await?;

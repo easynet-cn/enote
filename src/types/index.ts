@@ -252,6 +252,96 @@ export interface ProfileSummary {
   isActive: boolean
 }
 
+// ============================================================================
+// 跨 Profile 同步相关类型
+// ============================================================================
+
+/** 同步模式 */
+export type SyncMode = 'append' | 'overwrite'
+
+/** 同步范围 */
+export interface SyncScope {
+  notebooks: boolean
+  tags: boolean
+  notes: boolean
+  noteHistories: boolean
+  templates: boolean
+  settings: boolean
+}
+
+/** 同步请求参数 */
+export interface SyncOptions {
+  targetProfileId: string
+  mode: SyncMode
+  scope: SyncScope
+  autoBackup: boolean
+  backupFormat?: string
+}
+
+/** 同步日志 */
+export interface SyncLog {
+  id: number
+  sourceProfile: string
+  targetProfile: string
+  sourceDbType: string
+  targetDbType: string
+  syncMode: string
+  syncScope: string
+  backupFormat: string | null
+  sourceBackup: string | null
+  targetBackup: string | null
+  status: string
+  totalCount: number
+  successCount: number
+  failedCount: number
+  errorMessage: string | null
+  startedAt: string | null
+  finishedAt: string | null
+  createTime: string | null
+}
+
+/** 同步明细 */
+export interface SyncLogDetail {
+  id: number
+  syncLogId: number
+  tableName: string
+  sourceId: number
+  targetId: number | null
+  recordName: string
+  status: string
+  errorMessage: string | null
+  syncedAt: string | null
+  createTime: string | null
+}
+
+/** 同步预览 */
+export interface SyncPreview {
+  source: DataStats
+  target: DataStats
+}
+
+/** 数据统计 */
+export interface DataStats {
+  profileName: string
+  dbType: string
+  notebookCount: number
+  tagCount: number
+  noteCount: number
+  noteHistoryCount: number
+  templateCount: number
+  settingsCount: number
+}
+
+/** 同步进度事件 */
+export interface SyncProgress {
+  syncLogId: number
+  stage: string
+  tableName: string
+  current: number
+  total: number
+  recordName: string
+}
+
 export interface AppState {
   notePageIndex: number
   notePageSize: number

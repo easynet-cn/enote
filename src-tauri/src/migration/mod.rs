@@ -31,6 +31,8 @@ mod m20260315_000002_add_note_template_content_type;
 mod m20260315_000003_add_mcp_access;
 mod m20260317_000001_upgrade_note_fts_tags;
 mod m20260318_000001_add_performance_indexes;
+mod m20260320_000001_create_sync_log_tables;
+mod m20260320_000002_add_query_indexes;
 
 /// 数据库迁移器
 ///
@@ -59,6 +61,8 @@ impl MigratorTrait for Migrator {
             Box::new(m20260315_000003_add_mcp_access::Migration),
             Box::new(m20260317_000001_upgrade_note_fts_tags::Migration),
             Box::new(m20260318_000001_add_performance_indexes::Migration),
+            Box::new(m20260320_000001_create_sync_log_tables::Migration),
+            Box::new(m20260320_000002_add_query_indexes::Migration),
         ]
     }
 }

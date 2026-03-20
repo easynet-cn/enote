@@ -10,14 +10,10 @@ export const useAppStore = defineStore('app', () => {
 
   // ==================== 数据状态 ====================
   // 使用 Map 优化查询性能 O(1)
+  // 使用 Map 优化查询性能 O(1)，Map 保持插入顺序
   const notebooksMap = ref<Map<string, ShowNotebook>>(new Map())
   const tagsMap = ref<Map<string, ShowTag>>(new Map())
   const notesMap = ref<Map<string, ShowNote>>(new Map())
-
-  // 排序后的 ID 列表（保持顺序）
-  const notebookIds = ref<string[]>(['0'])
-  const tagIds = ref<string[]>(['0'])
-  const noteIds = ref<string[]>([])
 
   // 默认项（使用计算属性支持国际化）
   const defaultNotebook = computed<ShowNotebook>(() => ({
@@ -52,6 +48,7 @@ export const useAppStore = defineStore('app', () => {
   const activeNote = ref<string | null>(null)
   const editMode = ref<boolean>(false)
   const loading = ref<boolean>(false)
+  const notesLoading = ref<boolean>(false)
 
   // 笔记分页（通过 computed 代理 noteSearchPageParam，避免双重状态）
   const notePageIndex = computed({
@@ -86,15 +83,15 @@ export const useAppStore = defineStore('app', () => {
   // ==================== Getters ====================
   // 计算属性：数组形式（兼容现有组件）
   const notebooks = computed<ShowNotebook[]>(() => {
-    return notebookIds.value.map((id) => notebooksMap.value.get(id)!).filter(Boolean)
+    return Array.from(notebooksMap.value.values())
   })
 
   const tags = computed<ShowTag[]>(() => {
-    return tagIds.value.map((id) => tagsMap.value.get(id)!).filter(Boolean)
+    return Array.from(tagsMap.value.values())
   })
 
   const notes = computed<ShowNote[]>(() => {
-    return noteIds.value.map((id) => notesMap.value.get(id)!).filter(Boolean)
+    return Array.from(notesMap.value.values())
   })
 
   // 当前活动笔记数据
@@ -123,11 +120,9 @@ export const useAppStore = defineStore('app', () => {
   const setNotebooks = (items: ShowNotebook[]) => {
     notebooksMap.value.clear()
     notebooksMap.value.set('0', defaultNotebook.value)
-    notebookIds.value = ['0']
 
     for (const item of items) {
       notebooksMap.value.set(item.id, item)
-      notebookIds.value.push(item.id)
     }
   }
 
@@ -139,18 +134,15 @@ export const useAppStore = defineStore('app', () => {
   // 删除笔记本
   const removeNotebook = (id: string) => {
     notebooksMap.value.delete(id)
-    notebookIds.value = notebookIds.value.filter((nid) => nid !== id)
   }
 
   // 设置标签列表
   const setTags = (items: ShowTag[]) => {
     tagsMap.value.clear()
     tagsMap.value.set('0', defaultTag.value)
-    tagIds.value = ['0']
 
     for (const item of items) {
       tagsMap.value.set(item.id, item)
-      tagIds.value.push(item.id)
     }
   }
 
@@ -162,7 +154,6 @@ export const useAppStore = defineStore('app', () => {
   // 删除标签
   const removeTag = (id: string) => {
     tagsMap.value.delete(id)
-    tagIds.value = tagIds.value.filter((tid) => tid !== id)
   }
 
   // 更新默认项的语言（用于语言切换时调用）
@@ -174,18 +165,21 @@ export const useAppStore = defineStore('app', () => {
   // 设置笔记列表
   const setNotes = (items: ShowNote[]) => {
     notesMap.value.clear()
-    noteIds.value = []
 
     for (const item of items) {
       notesMap.value.set(item.id, item)
-      noteIds.value.push(item.id)
     }
   }
 
   // 添加笔记到开头
   const prependNote = (note: ShowNote) => {
-    notesMap.value.set(note.id, note)
-    noteIds.value = [note.id, ...noteIds.value]
+    // Map 保持插入顺序，需重建以确保新笔记在前
+    const newMap = new Map<string, ShowNote>()
+    newMap.set(note.id, note)
+    for (const [id, n] of notesMap.value) {
+      newMap.set(id, n)
+    }
+    notesMap.value = newMap
   }
 
   // 更新笔记
@@ -196,7 +190,6 @@ export const useAppStore = defineStore('app', () => {
   // 删除笔记
   const removeNote = (id: string) => {
     notesMap.value.delete(id)
-    noteIds.value = noteIds.value.filter((nid) => nid !== id)
   }
 
   // 根据 ID 获取笔记
@@ -294,6 +287,7 @@ export const useAppStore = defineStore('app', () => {
     activeNote,
     editMode,
     loading,
+    notesLoading,
 
     // 分页状态
     notePageIndex,

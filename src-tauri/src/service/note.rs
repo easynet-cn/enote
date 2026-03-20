@@ -23,8 +23,8 @@ use std::collections::{HashMap, HashSet};
 use crate::{
     entity::{self, notebook},
     model::{
-        Note, NoteHistoryExtra, NoteSearchPageParam, NoteStatsResult, OperateSource,
-        OperationType, PageResult, Tag,
+        Note, NoteHistoryExtra, NoteSearchPageParam, NoteStatsResult, OperateSource, OperationType,
+        PageResult, Tag,
     },
     service::crypto,
 };
@@ -161,10 +161,7 @@ async fn fetch_note_tags<C: ConnectionTrait>(db: &C, note_id: i64) -> anyhow::Re
 }
 
 /// 根据 ID 查询笔记（优化版本：2 次查询代替 4 次）
-pub async fn find_by_id(
-    db: &DatabaseConnection,
-    id: i64,
-) -> anyhow::Result<Option<Note>> {
+pub async fn find_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<Option<Note>> {
     find_by_id_with_key(db, id, None).await
 }
 

@@ -16,18 +16,14 @@ const SERVICE_NAME: &str = "net.easycloudcn.enote";
 
 /// 存储字符串到 Keychain
 pub fn set_secret(key: &str, value: &str) -> Result<()> {
-    let entry = keyring::Entry::new(SERVICE_NAME, key)
-        .context("创建 Keychain 条目失败")?;
-    entry
-        .set_password(value)
-        .context("写入 Keychain 失败")?;
+    let entry = keyring::Entry::new(SERVICE_NAME, key).context("创建 Keychain 条目失败")?;
+    entry.set_password(value).context("写入 Keychain 失败")?;
     Ok(())
 }
 
 /// 从 Keychain 读取字符串
 pub fn get_secret(key: &str) -> Result<Option<String>> {
-    let entry = keyring::Entry::new(SERVICE_NAME, key)
-        .context("创建 Keychain 条目失败")?;
+    let entry = keyring::Entry::new(SERVICE_NAME, key).context("创建 Keychain 条目失败")?;
     match entry.get_password() {
         Ok(value) => Ok(Some(value)),
         Err(keyring::Error::NoEntry) => Ok(None),
@@ -37,8 +33,7 @@ pub fn get_secret(key: &str) -> Result<Option<String>> {
 
 /// 从 Keychain 删除条目
 pub fn delete_secret(key: &str) -> Result<()> {
-    let entry = keyring::Entry::new(SERVICE_NAME, key)
-        .context("创建 Keychain 条目失败")?;
+    let entry = keyring::Entry::new(SERVICE_NAME, key).context("创建 Keychain 条目失败")?;
     match entry.delete_credential() {
         Ok(()) => Ok(()),
         Err(keyring::Error::NoEntry) => Ok(()), // 不存在也算成功

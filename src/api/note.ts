@@ -14,6 +14,10 @@ import {
   ProfileConfig,
   ProfileIndex,
   ProfileSummary,
+  SyncLog,
+  SyncLogDetail,
+  SyncOptions,
+  SyncPreview,
   Tag,
 } from '../types'
 
@@ -311,5 +315,61 @@ export const noteApi = {
     searchParam: NoteHistorySearchPageParam,
   ): Promise<PageResult<NoteHistory>> {
     return await invoke('search_page_note_histories', { searchParam })
+  },
+}
+
+// ============================================================================
+// 跨 Profile 同步 API
+// ============================================================================
+
+export const syncApi = {
+  async getPreview(targetProfileId: string, targetDbPassword?: string): Promise<SyncPreview> {
+    return await invoke('get_sync_preview', {
+      targetProfileId,
+      targetDbPassword: targetDbPassword || null,
+    })
+  },
+
+  async startSync(
+    options: SyncOptions,
+    targetDbPassword?: string,
+    targetEncryptionKey?: string,
+  ): Promise<SyncLog> {
+    return await invoke('start_sync', {
+      options,
+      targetDbPassword: targetDbPassword || null,
+      targetEncryptionKey: targetEncryptionKey || null,
+    })
+  },
+
+  async findSyncLogs(pageIndex: number = 1, pageSize: number = 20): Promise<PageResult<SyncLog>> {
+    return await invoke('find_sync_logs', { page: { pageIndex, pageSize } })
+  },
+
+  async findSyncLogDetails(
+    syncLogId: number,
+    tableName?: string,
+    status?: string,
+    pageIndex: number = 1,
+    pageSize: number = 50,
+  ): Promise<PageResult<SyncLogDetail>> {
+    return await invoke('find_sync_log_details', {
+      syncLogId,
+      tableName: tableName || null,
+      status: status || null,
+      page: { pageIndex, pageSize },
+    })
+  },
+
+  async deleteSyncLog(syncLogId: number): Promise<void> {
+    return await invoke('delete_sync_log', { syncLogId })
+  },
+
+  async clearSyncLogs(): Promise<void> {
+    return await invoke('clear_sync_logs')
+  },
+
+  async exportSyncLog(syncLogId: number, path: string): Promise<void> {
+    return await invoke('export_sync_log', { syncLogId, path })
   },
 }

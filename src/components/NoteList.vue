@@ -57,7 +57,7 @@
 
       <div class="flex-1 overflow-y-auto">
         <!-- 加载骨架屏 -->
-        <NoteListSkeleton v-if="loading" :count="5" />
+        <NoteListSkeleton v-if="isLoading" :count="5" />
 
         <!-- 空态 -->
         <div
@@ -157,6 +157,7 @@ import { LRUCache } from '../utils/lruCache'
 import { throttle } from '../utils/debounce'
 import { ContentType, type ShowNotebook, type ShowNote } from '../types'
 import { PREVIEW_CACHE_MAX_SIZE, PREVIEW_TEXT_MAX_LENGTH } from '../config/constants'
+import { useAppStore } from '../stores/app'
 
 const { t } = useI18n()
 
@@ -188,6 +189,9 @@ const props = withDefaults(defineProps<Props>(), {
   minWidth: 200,
   maxWidth: 600,
 })
+
+const appStore = useAppStore()
+const isLoading = computed(() => props.loading || appStore.notesLoading)
 
 const query = defineModel<string>('query')
 const currentPage = defineModel<number>('currentPage')

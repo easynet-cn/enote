@@ -101,9 +101,7 @@ impl Configuration {
             path.to_path_buf()
         };
 
-        let config_str = path
-            .to_str()
-            .context("配置文件路径包含无效字符")?;
+        let config_str = path.to_str().context("配置文件路径包含无效字符")?;
 
         let config = Config::builder()
             .add_source(config::File::with_name(config_str))

@@ -117,7 +117,7 @@ watch(
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--color-overlay-heavy);
   backdrop-filter: blur(20px);
 }
 
@@ -126,7 +126,7 @@ watch(
   padding: 2.5rem 2rem;
   background: var(--color-bg-primary);
   border-radius: 1.25rem;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-dialog);
   text-align: center;
 }
 

@@ -61,6 +61,8 @@ pub enum OperateSource {
     User = 0,
     /// AI 工具通过 MCP 操作
     Mcp = 1,
+    /// 跨 Profile 同步操作
+    Sync = 2,
 }
 
 impl OperateSource {
@@ -873,6 +875,216 @@ impl From<entity::note_template::Model> for NoteTemplate {
             update_time: Some(value.update_time),
         }
     }
+}
+
+// ============================================================================
+// 跨 Profile 同步相关
+// ============================================================================
+
+/// 同步模式
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum SyncMode {
+    /// 追加模式：只新增数据到目标
+    Append,
+    /// 覆盖模式：清空目标后全量写入
+    Overwrite,
+}
+
+/// 同步范围
+#[serde_as]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct SyncScope {
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub notebooks: bool,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub tags: bool,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub notes: bool,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub note_histories: bool,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub templates: bool,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub settings: bool,
+}
+
+/// 同步请求参数
+#[serde_as]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SyncOptions {
+    pub target_profile_id: String,
+    pub mode: SyncMode,
+    pub scope: SyncScope,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub auto_backup: bool,
+    pub backup_format: Option<String>,
+}
+
+/// 同步日志 DTO（对应 sync_log 表）
+#[serde_as]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct SyncLog {
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub id: i64,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub source_profile: String,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub target_profile: String,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub source_db_type: String,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub target_db_type: String,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub sync_mode: String,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub sync_scope: String,
+    pub backup_format: Option<String>,
+    pub source_backup: Option<String>,
+    pub target_backup: Option<String>,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub status: String,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub total_count: i32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub success_count: i32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub failed_count: i32,
+    pub error_message: Option<String>,
+    #[serde(
+        serialize_with = "serialize_option_dt",
+        deserialize_with = "deserialize_option_dt"
+    )]
+    pub started_at: Option<NaiveDateTime>,
+    #[serde(
+        serialize_with = "serialize_option_dt",
+        deserialize_with = "deserialize_option_dt"
+    )]
+    pub finished_at: Option<NaiveDateTime>,
+    #[serde(
+        serialize_with = "serialize_option_dt",
+        deserialize_with = "deserialize_option_dt"
+    )]
+    pub create_time: Option<NaiveDateTime>,
+}
+
+impl From<entity::sync_log::Model> for SyncLog {
+    fn from(value: entity::sync_log::Model) -> Self {
+        Self {
+            id: value.id,
+            source_profile: value.source_profile,
+            target_profile: value.target_profile,
+            source_db_type: value.source_db_type,
+            target_db_type: value.target_db_type,
+            sync_mode: value.sync_mode,
+            sync_scope: value.sync_scope,
+            backup_format: value.backup_format,
+            source_backup: value.source_backup,
+            target_backup: value.target_backup,
+            status: value.status,
+            total_count: value.total_count,
+            success_count: value.success_count,
+            failed_count: value.failed_count,
+            error_message: value.error_message,
+            started_at: Some(value.started_at),
+            finished_at: value.finished_at,
+            create_time: Some(value.create_time),
+        }
+    }
+}
+
+/// 同步明细 DTO（对应 sync_log_detail 表）
+#[serde_as]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct SyncLogDetail {
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub id: i64,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub sync_log_id: i64,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub table_name: String,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub source_id: i64,
+    pub target_id: Option<i64>,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub record_name: String,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub status: String,
+    pub error_message: Option<String>,
+    #[serde(
+        serialize_with = "serialize_option_dt",
+        deserialize_with = "deserialize_option_dt"
+    )]
+    pub synced_at: Option<NaiveDateTime>,
+    #[serde(
+        serialize_with = "serialize_option_dt",
+        deserialize_with = "deserialize_option_dt"
+    )]
+    pub create_time: Option<NaiveDateTime>,
+}
+
+impl From<entity::sync_log_detail::Model> for SyncLogDetail {
+    fn from(value: entity::sync_log_detail::Model) -> Self {
+        Self {
+            id: value.id,
+            sync_log_id: value.sync_log_id,
+            table_name: value.table_name,
+            source_id: value.source_id,
+            target_id: value.target_id,
+            record_name: value.record_name,
+            status: value.status,
+            error_message: value.error_message,
+            synced_at: Some(value.synced_at),
+            create_time: Some(value.create_time),
+        }
+    }
+}
+
+/// 同步预览
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SyncPreview {
+    pub source: DataStats,
+    pub target: DataStats,
+}
+
+/// 数据统计
+#[serde_as]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct DataStats {
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub profile_name: String,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub db_type: String,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub notebook_count: u32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub tag_count: u32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub note_count: u32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub note_history_count: u32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub template_count: u32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub settings_count: u32,
+}
+
+/// 同步进度事件
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SyncProgress {
+    pub sync_log_id: i64,
+    pub stage: String,
+    pub table_name: String,
+    pub current: u32,
+    pub total: u32,
+    pub record_name: String,
 }
 
 // ============================================================================

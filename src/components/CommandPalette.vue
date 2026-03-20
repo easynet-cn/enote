@@ -212,7 +212,7 @@ watch(visible, (val) => {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--color-overlay);
   display: flex;
   justify-content: center;
   padding-top: 15vh;

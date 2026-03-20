@@ -522,6 +522,7 @@ useKeyboardShortcuts([
 // 关闭窗口拦截：未保存时提示确认
 // 自动备份定时器
 let autoBackupTimer: ReturnType<typeof setTimeout> | ReturnType<typeof setInterval> | null = null
+let autoBackupErrorNotified = false
 
 const startAutoBackup = async () => {
   try {
@@ -560,8 +561,17 @@ const startAutoBackup = async () => {
     await doAutoBackup(retention)
     // 设置定时
     autoBackupTimer = setInterval(() => doAutoBackup(retention), intervalHours * 3600 * 1000)
-  } catch {
-    // 自动备份初始化失败，静默忽略
+  } catch (e: unknown) {
+    // 自动备份初始化失败，首次通知用户
+    if (!autoBackupErrorNotified) {
+      autoBackupErrorNotified = true
+      const msg = e instanceof Error ? e.message : String(e)
+      showNotification({
+        type: 'warning',
+        message: `${t('settings.autoBackupFailed')}: ${msg}`,
+        duration: 5000,
+      })
+    }
   }
 }
 
@@ -569,8 +579,17 @@ const doAutoBackup = async (retention: number) => {
   try {
     await backupApi.autoBackup()
     await backupApi.cleanupOldBackups(retention)
-  } catch {
-    // 静默忽略
+    autoBackupErrorNotified = false // 成功后重置，下次失败可再通知
+  } catch (e: unknown) {
+    if (!autoBackupErrorNotified) {
+      autoBackupErrorNotified = true
+      const msg = e instanceof Error ? e.message : String(e)
+      showNotification({
+        type: 'warning',
+        message: `${t('settings.autoBackupFailed')}: ${msg}`,
+        duration: 5000,
+      })
+    }
   }
 }
 
@@ -603,33 +622,43 @@ const enterMainMode = async () => {
   setupMinimizeListener()
 }
 
-onMounted(async () => {
-  // 检查应用启动模式
+const initApp = async () => {
   try {
     const needsSetup = await profileApi.checkSetupNeeded()
     if (needsSetup) {
       appMode.value = 'setup'
-      // 向导/选择模式：不拦截窗口关闭，系统 ✕ 直接退出应用
       return
     }
 
-    // 检查是否有多个 profile 需要选择
     const profiles = await profileApi.listProfiles()
     hasExistingProfiles.value = profiles.length > 0
     const index = await profileApi.getProfileIndex()
 
     if (profiles.length > 1 && !index.autoConnect) {
       appMode.value = 'select'
-      // 不拦截窗口关闭，系统 ✕ 直接退出应用
       return
     }
-  } catch {
-    // 如果 check 失败，说明后端已正常初始化（兼容旧模式），直接进入主界面
+  } catch (err: unknown) {
+    const errorMsg =
+      err instanceof Error ? err.message : typeof err === 'string' ? err : String(err)
+    const shouldRetry = await ask(`${t('error.startupErrorMessage')}\n\n${errorMsg}`, {
+      title: t('error.startupError'),
+      kind: 'error',
+      okLabel: t('common.retry'),
+      cancelLabel: t('common.close'),
+    })
+    if (shouldRetry) {
+      await initApp()
+    } else {
+      await getCurrentWindow().close()
+    }
+    return
   }
 
-  // 进入主应用模式
   await enterMainMode()
-})
+}
+
+onMounted(() => initApp())
 
 onUnmounted(() => {
   if (autoBackupTimer) {

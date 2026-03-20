@@ -1,8 +1,9 @@
 [package]
 name = "enote-mcp"
-version = "0.8.0"
 description = "ENote MCP Server - AI 工具集成"
-edition = "2024"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
 
 [[bin]]
 name = "enote-mcp"
@@ -10,14 +11,28 @@ path = "src/main.rs"
 
 [dependencies]
 enote_lib = { path = "../../src-tauri", package = "enote" }
-rmcp = { version = "0.16", features = ["server", "transport-io"] }
-schemars = "1"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
-sea-orm = { version = "1.1", features = ["sqlx-sqlite", "runtime-tokio"] }
-sea-orm-migration = { version = "1.1", features = ["runtime-tokio", "sqlx-sqlite"] }
-anyhow = "1"
-clap = { version = "4", features = ["derive"] }
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# MCP
+rmcp.workspace = true
+schemars.workspace = true
+
+# Serde
+serde.workspace = true
+serde_json.workspace = true
+
+# Database
+sea-orm = { workspace = true, features = ["sqlx-sqlite", "runtime-tokio"] }
+sea-orm-migration = { workspace = true, features = ["runtime-tokio", "sqlx-sqlite"] }
+
+# Async
+tokio.workspace = true
+
+# Error handling
+anyhow.workspace = true
+
+# CLI
+clap.workspace = true
+
+# Logging
+tracing.workspace = true
+tracing-subscriber.workspace = true

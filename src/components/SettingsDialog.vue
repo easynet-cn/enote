@@ -335,6 +335,42 @@
           </div>
         </div>
       </div>
+      <!-- 系统维护 -->
+      <div>
+        <h3 class="text-sm font-semibold text-content-secondary mb-3">
+          {{ t('settings.maintenance') }}
+        </h3>
+        <div class="space-y-2">
+          <!-- 跨 Profile 同步 -->
+          <div class="flex items-center justify-between p-3 bg-surface-dim rounded-lg">
+            <div>
+              <span class="text-sm text-content">{{ t('sync.title') }}</span>
+              <p class="text-xs text-content-tertiary mt-0.5">{{ t('settings.syncDesc') }}</p>
+            </div>
+            <button
+              @click="openSyncDialog"
+              class="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors shrink-0"
+            >
+              {{ t('sync.startSync') }}
+            </button>
+          </div>
+          <!-- 同步记录 -->
+          <div class="flex items-center justify-between p-3 bg-surface-dim rounded-lg">
+            <div>
+              <span class="text-sm text-content">{{ t('sync.history') }}</span>
+              <p class="text-xs text-content-tertiary mt-0.5">
+                {{ t('settings.syncHistoryDesc') }}
+              </p>
+            </div>
+            <button
+              @click="openSyncHistoryDialog"
+              class="px-3 py-1.5 text-sm text-indigo-600 hover:bg-indigo-100 rounded-md transition-colors shrink-0"
+            >
+              {{ t('sync.viewDetails') }}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <template #footer>
@@ -343,12 +379,20 @@
       </div>
     </template>
   </Dialog>
+
+  <!-- 跨 Profile 同步对话框 -->
+  <SyncDialog v-model="syncDialogVisible" />
+
+  <!-- 同步记录管理对话框 -->
+  <SyncHistoryDialog v-model="syncHistoryDialogVisible" />
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Dialog, Button } from './ui'
+import SyncDialog from './SyncDialog.vue'
+import SyncHistoryDialog from './SyncHistoryDialog.vue'
 import { settingsApi, backupApi, authApi } from '../api/note'
 import { setLocale, type LocaleType } from '../i18n'
 import { useAppStore } from '../stores/app'
@@ -581,6 +625,18 @@ const saveSettings = async () => {
   } catch {
     showNotification({ type: 'error', message: t('settings.saveFailed') })
   }
+}
+
+// 同步对话框
+const syncDialogVisible = ref(false)
+const syncHistoryDialogVisible = ref(false)
+
+const openSyncDialog = () => {
+  syncDialogVisible.value = true
+}
+
+const openSyncHistoryDialog = () => {
+  syncHistoryDialogVisible.value = true
 }
 
 const switchProfile = () => {

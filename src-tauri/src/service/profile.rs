@@ -207,13 +207,11 @@ pub fn needs_setup(app_data_dir: &Path) -> bool {
         return true;
     }
     match fs::read_dir(&dir) {
-        Ok(entries) => !entries
-            .filter_map(|e| e.ok())
-            .any(|e| {
-                e.path()
-                    .extension()
-                    .is_some_and(|ext| ext == "yml" || ext == "yaml")
-            }),
+        Ok(entries) => !entries.filter_map(|e| e.ok()).any(|e| {
+            e.path()
+                .extension()
+                .is_some_and(|ext| ext == "yml" || ext == "yaml")
+        }),
         Err(_) => true,
     }
 }
@@ -278,10 +276,9 @@ pub fn list_profiles(app_data_dir: &Path) -> Result<Vec<ProfileSummary>> {
 /// 读取单个 profile 配置
 pub fn read_profile(app_data_dir: &Path, profile_id: &str) -> Result<ProfileConfig> {
     let path = profile_file_path(app_data_dir, profile_id);
-    let content = fs::read_to_string(&path)
-        .with_context(|| format!("读取 profile 文件失败: {:?}", path))?;
-    serde_yaml::from_str(&content)
-        .with_context(|| format!("解析 profile 文件失败: {:?}", path))
+    let content =
+        fs::read_to_string(&path).with_context(|| format!("读取 profile 文件失败: {:?}", path))?;
+    serde_yaml::from_str(&content).with_context(|| format!("解析 profile 文件失败: {:?}", path))
 }
 
 /// 保存 profile 配置

@@ -2,7 +2,7 @@
 //!
 //! 支持 SQL、Excel、CSV 三种格式的导出和导入
 
-use std::io::{Read, Write};
+use std::io::{BufWriter, Read, Write};
 use std::path::Path;
 
 use chrono::NaiveDateTime;
@@ -10,6 +10,9 @@ use sea_orm::*;
 use tracing::info;
 
 use crate::entity::{note, note_history, note_tags, notebook, tag};
+
+/// 分页批次大小
+const BATCH_SIZE: u64 = 500;
 
 const DT_FMT: &str = "%Y-%m-%d %H:%M:%S";
 
@@ -42,16 +45,6 @@ fn escape_sql(s: &str) -> String {
     format!("'{}'", s.replace('\'', "''"))
 }
 
-async fn fetch_all(db: &DatabaseConnection) -> anyhow::Result<BackupData> {
-    Ok(BackupData {
-        notebooks: notebook::Entity::find().all(db).await?,
-        tags: tag::Entity::find().all(db).await?,
-        notes: note::Entity::find().all(db).await?,
-        note_tags: note_tags::Entity::find().all(db).await?,
-        note_histories: note_history::Entity::find().all(db).await?,
-    })
-}
-
 async fn clear_tables(txn: &impl ConnectionTrait) -> anyhow::Result<()> {
     note_tags::Entity::delete_many().exec(txn).await?;
     note_history::Entity::delete_many().exec(txn).await?;
@@ -66,81 +59,98 @@ async fn restore_data(txn: &impl ConnectionTrait, data: &BackupData) -> anyhow::
 
     // 批量插入 notebooks
     if !data.notebooks.is_empty() {
-        let models: Vec<notebook::ActiveModel> = data.notebooks.iter().map(|m| notebook::ActiveModel {
-            id: Set(m.id),
-            parent_id: Set(m.parent_id),
-            name: Set(m.name.clone()),
-            description: Set(m.description.clone()),
-            icon: Set(m.icon.clone()),
-            cls: Set(m.cls.clone()),
-            sort_order: Set(m.sort_order),
-            mcp_access: Set(m.mcp_access),
-            create_time: Set(m.create_time),
-            update_time: Set(m.update_time),
-        }).collect();
+        let models: Vec<notebook::ActiveModel> = data
+            .notebooks
+            .iter()
+            .map(|m| notebook::ActiveModel {
+                id: Set(m.id),
+                parent_id: Set(m.parent_id),
+                name: Set(m.name.clone()),
+                description: Set(m.description.clone()),
+                icon: Set(m.icon.clone()),
+                cls: Set(m.cls.clone()),
+                sort_order: Set(m.sort_order),
+                mcp_access: Set(m.mcp_access),
+                create_time: Set(m.create_time),
+                update_time: Set(m.update_time),
+            })
+            .collect();
         notebook::Entity::insert_many(models).exec(txn).await?;
     }
 
     // 批量插入 tags
     if !data.tags.is_empty() {
-        let models: Vec<tag::ActiveModel> = data.tags.iter().map(|m| tag::ActiveModel {
-            id: Set(m.id),
-            name: Set(m.name.clone()),
-            icon: Set(m.icon.clone()),
-            cls: Set(m.cls.clone()),
-            sort_order: Set(m.sort_order),
-            mcp_access: Set(m.mcp_access),
-            create_time: Set(m.create_time),
-            update_time: Set(m.update_time),
-        }).collect();
+        let models: Vec<tag::ActiveModel> = data
+            .tags
+            .iter()
+            .map(|m| tag::ActiveModel {
+                id: Set(m.id),
+                name: Set(m.name.clone()),
+                icon: Set(m.icon.clone()),
+                cls: Set(m.cls.clone()),
+                sort_order: Set(m.sort_order),
+                mcp_access: Set(m.mcp_access),
+                create_time: Set(m.create_time),
+                update_time: Set(m.update_time),
+            })
+            .collect();
         tag::Entity::insert_many(models).exec(txn).await?;
     }
 
     // 批量插入 notes（分批 500 条，避免大数据集内存压力）
     for chunk in data.notes.chunks(500) {
-        let models: Vec<note::ActiveModel> = chunk.iter().map(|m| note::ActiveModel {
-            id: Set(m.id),
-            notebook_id: Set(m.notebook_id),
-            title: Set(m.title.clone()),
-            content: Set(m.content.clone()),
-            content_type: Set(m.content_type),
-            is_pinned: Set(m.is_pinned),
-            mcp_access: Set(m.mcp_access),
-            create_time: Set(m.create_time),
-            update_time: Set(m.update_time),
-            deleted_at: Set(m.deleted_at),
-        }).collect();
+        let models: Vec<note::ActiveModel> = chunk
+            .iter()
+            .map(|m| note::ActiveModel {
+                id: Set(m.id),
+                notebook_id: Set(m.notebook_id),
+                title: Set(m.title.clone()),
+                content: Set(m.content.clone()),
+                content_type: Set(m.content_type),
+                is_pinned: Set(m.is_pinned),
+                mcp_access: Set(m.mcp_access),
+                create_time: Set(m.create_time),
+                update_time: Set(m.update_time),
+                deleted_at: Set(m.deleted_at),
+            })
+            .collect();
         note::Entity::insert_many(models).exec(txn).await?;
     }
 
     // 批量插入 note_tags
     if !data.note_tags.is_empty() {
         for chunk in data.note_tags.chunks(500) {
-            let models: Vec<note_tags::ActiveModel> = chunk.iter().map(|m| note_tags::ActiveModel {
-                id: Set(m.id),
-                note_id: Set(m.note_id),
-                tag_id: Set(m.tag_id),
-                sort_order: Set(m.sort_order),
-                create_time: Set(m.create_time),
-                update_time: Set(m.update_time),
-            }).collect();
+            let models: Vec<note_tags::ActiveModel> = chunk
+                .iter()
+                .map(|m| note_tags::ActiveModel {
+                    id: Set(m.id),
+                    note_id: Set(m.note_id),
+                    tag_id: Set(m.tag_id),
+                    sort_order: Set(m.sort_order),
+                    create_time: Set(m.create_time),
+                    update_time: Set(m.update_time),
+                })
+                .collect();
             note_tags::Entity::insert_many(models).exec(txn).await?;
         }
     }
 
     // 批量插入 note_histories
     for chunk in data.note_histories.chunks(500) {
-        let models: Vec<note_history::ActiveModel> = chunk.iter().map(|m| note_history::ActiveModel {
-            id: Set(m.id),
-            note_id: Set(m.note_id),
-            old_content: Set(m.old_content.clone()),
-            new_content: Set(m.new_content.clone()),
-            extra: Set(m.extra.clone()),
-            operate_type: Set(m.operate_type),
-            operate_source: Set(m.operate_source),
-            operate_time: Set(m.operate_time),
-            create_time: Set(m.create_time),
-        }).collect();
+        let models: Vec<note_history::ActiveModel> = chunk
+            .iter()
+            .map(|m| note_history::ActiveModel {
+                id: Set(m.id),
+                note_id: Set(m.note_id),
+                old_content: Set(m.old_content.clone()),
+                new_content: Set(m.new_content.clone()),
+                extra: Set(m.extra.clone()),
+                operate_type: Set(m.operate_type),
+                operate_source: Set(m.operate_source),
+                operate_time: Set(m.operate_time),
+                create_time: Set(m.create_time),
+            })
+            .collect();
         note_history::Entity::insert_many(models).exec(txn).await?;
     }
 
@@ -152,68 +162,109 @@ async fn restore_data(txn: &impl ConnectionTrait, data: &BackupData) -> anyhow::
 // ============================================================================
 
 pub async fn export_sql(db: &DatabaseConnection, path: &str) -> anyhow::Result<()> {
-    let data = fetch_all(db).await?;
-    let mut out = String::new();
+    let file = std::fs::File::create(path)?;
+    let mut w = BufWriter::new(file);
 
-    out.push_str("-- ENote Database Backup\n");
-    out.push_str(&format!(
-        "-- Generated: {}\n\n",
-        chrono::Local::now().format(DT_FMT)
-    ));
+    writeln!(w, "-- ENote Database Backup")?;
+    writeln!(w, "-- Generated: {}\n", chrono::Local::now().format(DT_FMT))?;
 
-    out.push_str("-- Table: notebook\n");
-    for m in &data.notebooks {
-        out.push_str(&format!(
-            "INSERT INTO notebook (id, parent_id, name, description, icon, cls, sort_order, create_time, update_time) VALUES ({}, {}, {}, {}, {}, {}, {}, {}, {});\n",
-            m.id, m.parent_id, escape_sql(&m.name), escape_sql(&m.description),
-            escape_sql(&m.icon), escape_sql(&m.cls), m.sort_order,
-            escape_sql(&format_dt(&m.create_time)), escape_sql(&format_dt(&m.update_time)),
-        ));
+    // notebook（小表，直接全量）
+    writeln!(w, "-- Table: notebook")?;
+    for m in notebook::Entity::find().all(db).await? {
+        writeln!(
+            w,
+            "INSERT INTO notebook (id, parent_id, name, description, icon, cls, sort_order, create_time, update_time) VALUES ({}, {}, {}, {}, {}, {}, {}, {}, {});",
+            m.id,
+            m.parent_id,
+            escape_sql(&m.name),
+            escape_sql(&m.description),
+            escape_sql(&m.icon),
+            escape_sql(&m.cls),
+            m.sort_order,
+            escape_sql(&format_dt(&m.create_time)),
+            escape_sql(&format_dt(&m.update_time)),
+        )?;
     }
-    out.push('\n');
+    writeln!(w)?;
 
-    out.push_str("-- Table: tag\n");
-    for m in &data.tags {
-        out.push_str(&format!(
-            "INSERT INTO tag (id, name, icon, cls, sort_order, create_time, update_time) VALUES ({}, {}, {}, {}, {}, {}, {});\n",
-            m.id, escape_sql(&m.name), escape_sql(&m.icon), escape_sql(&m.cls),
-            m.sort_order, escape_sql(&format_dt(&m.create_time)), escape_sql(&format_dt(&m.update_time)),
-        ));
+    // tag（小表，直接全量）
+    writeln!(w, "-- Table: tag")?;
+    for m in tag::Entity::find().all(db).await? {
+        writeln!(
+            w,
+            "INSERT INTO tag (id, name, icon, cls, sort_order, create_time, update_time) VALUES ({}, {}, {}, {}, {}, {}, {});",
+            m.id,
+            escape_sql(&m.name),
+            escape_sql(&m.icon),
+            escape_sql(&m.cls),
+            m.sort_order,
+            escape_sql(&format_dt(&m.create_time)),
+            escape_sql(&format_dt(&m.update_time)),
+        )?;
     }
-    out.push('\n');
+    writeln!(w)?;
 
-    out.push_str("-- Table: note\n");
-    for m in &data.notes {
-        out.push_str(&format!(
-            "INSERT INTO note (id, notebook_id, title, content, content_type, create_time, update_time) VALUES ({}, {}, {}, {}, {}, {}, {});\n",
-            m.id, m.notebook_id, escape_sql(&m.title), escape_sql(&m.content),
-            m.content_type, escape_sql(&format_dt(&m.create_time)), escape_sql(&format_dt(&m.update_time)),
-        ));
+    // note（大表，分页流式写入）
+    writeln!(w, "-- Table: note")?;
+    let mut paginator = note::Entity::find().paginate(db, BATCH_SIZE);
+    while let Some(batch) = paginator.fetch_and_next().await? {
+        for m in &batch {
+            writeln!(
+                w,
+                "INSERT INTO note (id, notebook_id, title, content, content_type, create_time, update_time) VALUES ({}, {}, {}, {}, {}, {}, {});",
+                m.id,
+                m.notebook_id,
+                escape_sql(&m.title),
+                escape_sql(&m.content),
+                m.content_type,
+                escape_sql(&format_dt(&m.create_time)),
+                escape_sql(&format_dt(&m.update_time)),
+            )?;
+        }
     }
-    out.push('\n');
+    writeln!(w)?;
 
-    out.push_str("-- Table: note_tags\n");
-    for m in &data.note_tags {
-        out.push_str(&format!(
-            "INSERT INTO note_tags (id, note_id, tag_id, sort_order, create_time, update_time) VALUES ({}, {}, {}, {}, {}, {});\n",
-            m.id, m.note_id, m.tag_id, m.sort_order,
-            escape_sql(&format_dt(&m.create_time)), escape_sql(&format_dt(&m.update_time)),
-        ));
+    // note_tags（大表，分页流式写入）
+    writeln!(w, "-- Table: note_tags")?;
+    let mut paginator = note_tags::Entity::find().paginate(db, BATCH_SIZE);
+    while let Some(batch) = paginator.fetch_and_next().await? {
+        for m in &batch {
+            writeln!(
+                w,
+                "INSERT INTO note_tags (id, note_id, tag_id, sort_order, create_time, update_time) VALUES ({}, {}, {}, {}, {}, {});",
+                m.id,
+                m.note_id,
+                m.tag_id,
+                m.sort_order,
+                escape_sql(&format_dt(&m.create_time)),
+                escape_sql(&format_dt(&m.update_time)),
+            )?;
+        }
     }
-    out.push('\n');
+    writeln!(w)?;
 
-    out.push_str("-- Table: note_history\n");
-    for m in &data.note_histories {
-        out.push_str(&format!(
-            "INSERT INTO note_history (id, note_id, old_content, new_content, extra, operate_type, operate_time, create_time) VALUES ({}, {}, {}, {}, {}, {}, {}, {});\n",
-            m.id, m.note_id, escape_sql(&m.old_content), escape_sql(&m.new_content),
-            escape_sql(&m.extra), m.operate_type,
-            escape_sql(&format_dt(&m.operate_time)), escape_sql(&format_dt(&m.create_time)),
-        ));
+    // note_history（大表，分页流式写入）
+    writeln!(w, "-- Table: note_history")?;
+    let mut paginator = note_history::Entity::find().paginate(db, BATCH_SIZE);
+    while let Some(batch) = paginator.fetch_and_next().await? {
+        for m in &batch {
+            writeln!(
+                w,
+                "INSERT INTO note_history (id, note_id, old_content, new_content, extra, operate_type, operate_time, create_time) VALUES ({}, {}, {}, {}, {}, {}, {}, {});",
+                m.id,
+                m.note_id,
+                escape_sql(&m.old_content),
+                escape_sql(&m.new_content),
+                escape_sql(&m.extra),
+                m.operate_type,
+                escape_sql(&format_dt(&m.operate_time)),
+                escape_sql(&format_dt(&m.create_time)),
+            )?;
+        }
     }
 
+    w.flush()?;
     info!("SQL 备份导出完成: {}", path);
-    tokio::fs::write(path, out).await?;
     Ok(())
 }
 
@@ -252,8 +303,8 @@ fn split_sql_statements(sql: &str) -> Vec<String> {
             if ch == '\'' {
                 if chars.peek() == Some(&'\'') {
                     if let Some(ch) = chars.next() {
-                    current.push(ch);
-                }
+                        current.push(ch);
+                    }
                 } else {
                     in_string = false;
                 }
@@ -302,10 +353,9 @@ fn split_sql_statements(sql: &str) -> Vec<String> {
 // ============================================================================
 
 pub async fn export_excel(db: &DatabaseConnection, path: &str) -> anyhow::Result<()> {
-    let data = fetch_all(db).await?;
     let mut workbook = rust_xlsxwriter::Workbook::new();
 
-    // notebook
+    // notebook（小表）
     {
         let sheet = workbook.add_worksheet();
         sheet.set_name("notebook")?;
@@ -325,7 +375,7 @@ pub async fn export_excel(db: &DatabaseConnection, path: &str) -> anyhow::Result
         {
             sheet.write_string(0, i as u16, *h)?;
         }
-        for (r, m) in data.notebooks.iter().enumerate() {
+        for (r, m) in notebook::Entity::find().all(db).await?.iter().enumerate() {
             let row = (r + 1) as u32;
             sheet.write_number(row, 0, m.id as f64)?;
             sheet.write_number(row, 1, m.parent_id as f64)?;
@@ -339,7 +389,7 @@ pub async fn export_excel(db: &DatabaseConnection, path: &str) -> anyhow::Result
         }
     }
 
-    // tag
+    // tag（小表）
     {
         let sheet = workbook.add_worksheet();
         sheet.set_name("tag")?;
@@ -357,7 +407,7 @@ pub async fn export_excel(db: &DatabaseConnection, path: &str) -> anyhow::Result
         {
             sheet.write_string(0, i as u16, *h)?;
         }
-        for (r, m) in data.tags.iter().enumerate() {
+        for (r, m) in tag::Entity::find().all(db).await?.iter().enumerate() {
             let row = (r + 1) as u32;
             sheet.write_number(row, 0, m.id as f64)?;
             sheet.write_string(row, 1, &m.name)?;
@@ -369,7 +419,7 @@ pub async fn export_excel(db: &DatabaseConnection, path: &str) -> anyhow::Result
         }
     }
 
-    // note
+    // note（大表，分页读取）
     {
         let sheet = workbook.add_worksheet();
         sheet.set_name("note")?;
@@ -387,19 +437,24 @@ pub async fn export_excel(db: &DatabaseConnection, path: &str) -> anyhow::Result
         {
             sheet.write_string(0, i as u16, *h)?;
         }
-        for (r, m) in data.notes.iter().enumerate() {
-            let row = (r + 1) as u32;
-            sheet.write_number(row, 0, m.id as f64)?;
-            sheet.write_number(row, 1, m.notebook_id as f64)?;
-            sheet.write_string(row, 2, &m.title)?;
-            sheet.write_string(row, 3, &m.content)?;
-            sheet.write_number(row, 4, m.content_type as f64)?;
-            sheet.write_string(row, 5, format_dt(&m.create_time))?;
-            sheet.write_string(row, 6, format_dt(&m.update_time))?;
+        let mut row_offset: u32 = 1;
+        let mut paginator = note::Entity::find().paginate(db, BATCH_SIZE);
+        while let Some(batch) = paginator.fetch_and_next().await? {
+            for (r, m) in batch.iter().enumerate() {
+                let row = row_offset + r as u32;
+                sheet.write_number(row, 0, m.id as f64)?;
+                sheet.write_number(row, 1, m.notebook_id as f64)?;
+                sheet.write_string(row, 2, &m.title)?;
+                sheet.write_string(row, 3, &m.content)?;
+                sheet.write_number(row, 4, m.content_type as f64)?;
+                sheet.write_string(row, 5, format_dt(&m.create_time))?;
+                sheet.write_string(row, 6, format_dt(&m.update_time))?;
+            }
+            row_offset += batch.len() as u32;
         }
     }
 
-    // note_tags
+    // note_tags（大表，分页读取）
     {
         let sheet = workbook.add_worksheet();
         sheet.set_name("note_tags")?;
@@ -416,18 +471,23 @@ pub async fn export_excel(db: &DatabaseConnection, path: &str) -> anyhow::Result
         {
             sheet.write_string(0, i as u16, *h)?;
         }
-        for (r, m) in data.note_tags.iter().enumerate() {
-            let row = (r + 1) as u32;
-            sheet.write_number(row, 0, m.id as f64)?;
-            sheet.write_number(row, 1, m.note_id as f64)?;
-            sheet.write_number(row, 2, m.tag_id as f64)?;
-            sheet.write_number(row, 3, m.sort_order as f64)?;
-            sheet.write_string(row, 4, format_dt(&m.create_time))?;
-            sheet.write_string(row, 5, format_dt(&m.update_time))?;
+        let mut row_offset: u32 = 1;
+        let mut paginator = note_tags::Entity::find().paginate(db, BATCH_SIZE);
+        while let Some(batch) = paginator.fetch_and_next().await? {
+            for (r, m) in batch.iter().enumerate() {
+                let row = row_offset + r as u32;
+                sheet.write_number(row, 0, m.id as f64)?;
+                sheet.write_number(row, 1, m.note_id as f64)?;
+                sheet.write_number(row, 2, m.tag_id as f64)?;
+                sheet.write_number(row, 3, m.sort_order as f64)?;
+                sheet.write_string(row, 4, format_dt(&m.create_time))?;
+                sheet.write_string(row, 5, format_dt(&m.update_time))?;
+            }
+            row_offset += batch.len() as u32;
         }
     }
 
-    // note_history
+    // note_history（大表，分页读取）
     {
         let sheet = workbook.add_worksheet();
         sheet.set_name("note_history")?;
@@ -446,16 +506,21 @@ pub async fn export_excel(db: &DatabaseConnection, path: &str) -> anyhow::Result
         {
             sheet.write_string(0, i as u16, *h)?;
         }
-        for (r, m) in data.note_histories.iter().enumerate() {
-            let row = (r + 1) as u32;
-            sheet.write_number(row, 0, m.id as f64)?;
-            sheet.write_number(row, 1, m.note_id as f64)?;
-            sheet.write_string(row, 2, &m.old_content)?;
-            sheet.write_string(row, 3, &m.new_content)?;
-            sheet.write_string(row, 4, &m.extra)?;
-            sheet.write_number(row, 5, m.operate_type as f64)?;
-            sheet.write_string(row, 6, format_dt(&m.operate_time))?;
-            sheet.write_string(row, 7, format_dt(&m.create_time))?;
+        let mut row_offset: u32 = 1;
+        let mut paginator = note_history::Entity::find().paginate(db, BATCH_SIZE);
+        while let Some(batch) = paginator.fetch_and_next().await? {
+            for (r, m) in batch.iter().enumerate() {
+                let row = row_offset + r as u32;
+                sheet.write_number(row, 0, m.id as f64)?;
+                sheet.write_number(row, 1, m.note_id as f64)?;
+                sheet.write_string(row, 2, &m.old_content)?;
+                sheet.write_string(row, 3, &m.new_content)?;
+                sheet.write_string(row, 4, &m.extra)?;
+                sheet.write_number(row, 5, m.operate_type as f64)?;
+                sheet.write_string(row, 6, format_dt(&m.operate_time))?;
+                sheet.write_string(row, 7, format_dt(&m.create_time))?;
+            }
+            row_offset += batch.len() as u32;
         }
     }
 
@@ -607,14 +672,12 @@ fn cell_dt(cell: &calamine::Data) -> anyhow::Result<NaiveDateTime> {
 // ============================================================================
 
 pub async fn export_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<()> {
-    let data = fetch_all(db).await?;
-
     let file = std::fs::File::create(path)?;
     let mut zip = zip::ZipWriter::new(file);
     let opts = zip::write::SimpleFileOptions::default()
         .compression_method(zip::CompressionMethod::Deflated);
 
-    // notebook.csv
+    // notebook.csv（小表）
     {
         let mut wtr = csv::Writer::from_writer(Vec::new());
         wtr.write_record([
@@ -628,14 +691,14 @@ pub async fn export_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
             "create_time",
             "update_time",
         ])?;
-        for m in &data.notebooks {
+        for m in notebook::Entity::find().all(db).await? {
             wtr.write_record(&[
                 m.id.to_string(),
                 m.parent_id.to_string(),
-                m.name.clone(),
-                m.description.clone(),
-                m.icon.clone(),
-                m.cls.clone(),
+                m.name,
+                m.description,
+                m.icon,
+                m.cls,
                 m.sort_order.to_string(),
                 format_dt(&m.create_time),
                 format_dt(&m.update_time),
@@ -645,7 +708,7 @@ pub async fn export_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
         zip.write_all(&wtr.into_inner()?)?;
     }
 
-    // tag.csv
+    // tag.csv（小表）
     {
         let mut wtr = csv::Writer::from_writer(Vec::new());
         wtr.write_record([
@@ -657,12 +720,12 @@ pub async fn export_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
             "create_time",
             "update_time",
         ])?;
-        for m in &data.tags {
+        for m in tag::Entity::find().all(db).await? {
             wtr.write_record(&[
                 m.id.to_string(),
-                m.name.clone(),
-                m.icon.clone(),
-                m.cls.clone(),
+                m.name,
+                m.icon,
+                m.cls,
                 m.sort_order.to_string(),
                 format_dt(&m.create_time),
                 format_dt(&m.update_time),
@@ -672,7 +735,7 @@ pub async fn export_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
         zip.write_all(&wtr.into_inner()?)?;
     }
 
-    // note.csv
+    // note.csv（大表，分页读取写入 CSV 缓冲）
     {
         let mut wtr = csv::Writer::from_writer(Vec::new());
         wtr.write_record([
@@ -684,22 +747,25 @@ pub async fn export_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
             "create_time",
             "update_time",
         ])?;
-        for m in &data.notes {
-            wtr.write_record(&[
-                m.id.to_string(),
-                m.notebook_id.to_string(),
-                m.title.clone(),
-                m.content.clone(),
-                m.content_type.to_string(),
-                format_dt(&m.create_time),
-                format_dt(&m.update_time),
-            ])?;
+        let mut paginator = note::Entity::find().paginate(db, BATCH_SIZE);
+        while let Some(batch) = paginator.fetch_and_next().await? {
+            for m in batch {
+                wtr.write_record(&[
+                    m.id.to_string(),
+                    m.notebook_id.to_string(),
+                    m.title,
+                    m.content,
+                    m.content_type.to_string(),
+                    format_dt(&m.create_time),
+                    format_dt(&m.update_time),
+                ])?;
+            }
         }
         zip.start_file("note.csv", opts)?;
         zip.write_all(&wtr.into_inner()?)?;
     }
 
-    // note_tags.csv
+    // note_tags.csv（大表，分页读取）
     {
         let mut wtr = csv::Writer::from_writer(Vec::new());
         wtr.write_record([
@@ -710,21 +776,24 @@ pub async fn export_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
             "create_time",
             "update_time",
         ])?;
-        for m in &data.note_tags {
-            wtr.write_record(&[
-                m.id.to_string(),
-                m.note_id.to_string(),
-                m.tag_id.to_string(),
-                m.sort_order.to_string(),
-                format_dt(&m.create_time),
-                format_dt(&m.update_time),
-            ])?;
+        let mut paginator = note_tags::Entity::find().paginate(db, BATCH_SIZE);
+        while let Some(batch) = paginator.fetch_and_next().await? {
+            for m in batch {
+                wtr.write_record(&[
+                    m.id.to_string(),
+                    m.note_id.to_string(),
+                    m.tag_id.to_string(),
+                    m.sort_order.to_string(),
+                    format_dt(&m.create_time),
+                    format_dt(&m.update_time),
+                ])?;
+            }
         }
         zip.start_file("note_tags.csv", opts)?;
         zip.write_all(&wtr.into_inner()?)?;
     }
 
-    // note_history.csv
+    // note_history.csv（大表，分页读取）
     {
         let mut wtr = csv::Writer::from_writer(Vec::new());
         wtr.write_record([
@@ -737,17 +806,20 @@ pub async fn export_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
             "operate_time",
             "create_time",
         ])?;
-        for m in &data.note_histories {
-            wtr.write_record(&[
-                m.id.to_string(),
-                m.note_id.to_string(),
-                m.old_content.clone(),
-                m.new_content.clone(),
-                m.extra.clone(),
-                m.operate_type.to_string(),
-                format_dt(&m.operate_time),
-                format_dt(&m.create_time),
-            ])?;
+        let mut paginator = note_history::Entity::find().paginate(db, BATCH_SIZE);
+        while let Some(batch) = paginator.fetch_and_next().await? {
+            for m in batch {
+                wtr.write_record(&[
+                    m.id.to_string(),
+                    m.note_id.to_string(),
+                    m.old_content,
+                    m.new_content,
+                    m.extra,
+                    m.operate_type.to_string(),
+                    format_dt(&m.operate_time),
+                    format_dt(&m.create_time),
+                ])?;
+            }
         }
         zip.start_file("note_history.csv", opts)?;
         zip.write_all(&wtr.into_inner()?)?;

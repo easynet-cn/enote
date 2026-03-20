@@ -10,8 +10,7 @@ use sea_orm_migration::prelude::*;
 pub struct Migration;
 
 /// 构建获取笔记关联标签名称的子查询 SQL
-const TAGS_SUBQUERY: &str =
-    "(SELECT group_concat(t.name, ' ') FROM note_tags nt JOIN tag t ON t.id = nt.tag_id WHERE nt.note_id = {note_id})";
+const TAGS_SUBQUERY: &str = "(SELECT group_concat(t.name, ' ') FROM note_tags nt JOIN tag t ON t.id = nt.tag_id WHERE nt.note_id = {note_id})";
 
 /// 构建去除 HTML 标签的 content 表达式（跳过加密内容）
 const CLEAN_CONTENT_EXPR: &str = r#"

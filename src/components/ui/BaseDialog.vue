@@ -173,7 +173,7 @@ const handleOverlayClick = () => {
 .dialog-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--color-overlay);
   backdrop-filter: blur(4px);
   transition: opacity 0.3s ease;
 }
@@ -183,9 +183,7 @@ const handleOverlayClick = () => {
   position: relative;
   background: var(--color-bg-primary);
   border-radius: 12px;
-  box-shadow:
-    0 25px 50px -12px rgba(0, 0, 0, 0.25),
-    0 0 0 1px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-dialog);
   max-height: 90vh;
   max-width: calc(100vw - 2rem);
   overflow: hidden;

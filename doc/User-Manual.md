@@ -2,7 +2,7 @@
 
 **Software Name:** enote Intelligent Note Management System
 
-**Version:** V0.8.0
+**Version:** V0.9.0
 
 **Date:** March 2026
 
@@ -97,6 +97,7 @@
   - [14.4 Security Settings (Lock Screen)](#144-security-settings-lock-screen)
   - [14.5 MCP Settings](#145-mcp-settings)
   - [14.6 Profile Management](#146-profile-management)
+  - [14.7 System Maintenance (Cross-Profile Sync)](#147-system-maintenance-cross-profile-sync)
 - [15. Command Palette](#15-command-palette)
 - [16. System Tray](#16-system-tray)
 - [17. Keyboard Shortcuts](#17-keyboard-shortcuts)
@@ -1083,6 +1084,71 @@ In the Settings dialog, the **Profile Management** section provides the followin
   - Edit or delete existing configurations
   - Click the ✕ button in the upper right to close the selection page and return to the main interface
 
+### 14.7 System Maintenance (Cross-Profile Sync)
+
+At the bottom of the Settings dialog, the "System Maintenance" section provides cross-profile data synchronization and sync history management.
+
+#### 14.7.1 Cross-Profile Sync
+
+Synchronize data from the current profile to another profile, supporting cross-database synchronization (SQLite ↔ MySQL ↔ PostgreSQL).
+
+**Steps:**
+
+1. In the "System Maintenance" section, click "Start Sync" to open the sync dialog.
+2. Select the target profile from the dropdown (lists all available profiles except the current one).
+3. If the target profile uses password authentication (MySQL/PostgreSQL), enter the target database password.
+4. Select the sync mode:
+
+| Mode | Description |
+|------|-------------|
+| **Append (Default)** | Appends data to the target database without affecting existing data. IDs are auto-assigned by the target |
+| **Overwrite** | Clears the target database before writing all data. Requires confirmation |
+
+5. Select the sync scope (multiple selections allowed):
+
+| Data Type | Description |
+|-----------|-------------|
+| **Notebooks** | Notebooks and hierarchy structure |
+| **Tags** | All tags |
+| **Notes** | Note content, tag associations, pin status, trash status |
+| **Note History** | Original history records from the source |
+| **Templates** | Note templates |
+| **Settings** | Application settings (key-value pairs) |
+
+6. Backup settings: It is recommended to enable "Auto backup before sync". You can choose the backup format (SQL / Excel / CSV).
+7. After selecting the target profile, a data count preview is displayed at the bottom.
+8. Click "Start Sync" to execute. The interface shows real-time progress (per-table progress + overall progress bar).
+
+**Key Behaviors:**
+
+- **Encryption Handling:** If the source and target have different encryption configurations, the system automatically handles the conversion — decrypts from source, re-encrypts to target, ensuring data consistency.
+- **History Records:** Notes are synced through the service layer. The target automatically generates history records with the operation source marked as "Sync".
+- **Foreign Key Mapping:** Notebook and tag IDs are reassigned in the target database. Note associations with notebooks and tags are automatically corrected.
+
+#### 14.7.2 Sync History Management
+
+Each sync operation automatically generates detailed records, including the status of each data record.
+
+Click "View Details" in the "System Maintenance" section to open the sync history management dialog.
+
+**Sync History List:** Displays all historical sync operations with the following information:
+
+| Field | Description |
+|-------|-------------|
+| Source → Target | Source and target profile names |
+| Status | Completed / Failed |
+| Success/Failed Count | Number of successful and failed records |
+| Sync Mode | Append / Overwrite |
+| Database Types | e.g., sqlite → mysql |
+| Time | Time when the sync was executed |
+
+**Actions:**
+
+- **View Details:** Expand the complete result of a single sync, including summary table and per-record details. Details support filtering by table name and status.
+- **Export Log:** Export the sync record as a JSON file for troubleshooting.
+- **Delete Record:** Delete a single sync record and its details.
+- **Clear All Records:** Remove all historical sync records.
+
 ---
 
 ## 15. Command Palette
@@ -1707,6 +1773,21 @@ The system automatically records the history version of every modification and d
 
 | Version | Date | Changes |
 |---------|------|---------|
+| V0.9.0 | March 2026 | Cross-Profile Sync and System Optimization |
+| | | - Cross-Profile Sync: Sync data to other profiles with Append/Overwrite modes |
+| | | - Cross-Database Sync: SQLite ↔ MySQL ↔ PostgreSQL in any direction, automatic encryption conversion |
+| | | - Sync History Management: Automatic per-record logging for each sync, with view/export/delete support |
+| | | - Pre-Sync Auto Backup: SQL/Excel/CSV formats, both source and target backed up |
+| | | - Streaming Backup Export: Large dataset export uses batched streaming to prevent OOM |
+| | | - Database Index Optimization: 5 new query indexes (tag filtering, bidirectional links, history, template sorting) |
+| | | - Startup Error Handling: Error dialog with retry/close on startup failure |
+| | | - Encryption Service Tests: 10 unit tests covering encrypt/decrypt core logic |
+| | | - Toolbar Refactoring: TiptapToolbar split into 8 independent sub-components |
+| | | - Note List Loading State: Skeleton feedback during search and pagination |
+| | | - Auto Backup Failure Notification: User notified on failure instead of silent ignore |
+| | | - CSS Variable Normalization: Overlays and shadows unified via CSS variables for dark mode consistency |
+| | | - Store Simplification: Removed redundant ID arrays, data derived directly from Map |
+| | | - Cargo Workspace Restructuring: Dependency versions unified at workspace level |
 | V0.8.0 | March 2026 | Multi-Profile Management and Content Security Enhancement |
 | | | - Setup Wizard: First-launch guided database connection setup for SQLite/MySQL/PostgreSQL |
 | | | - Multi-Profile Management: Support multiple database configurations with startup selection or auto-connect |
@@ -1760,4 +1841,4 @@ The system automatically records the history version of every modification and d
 
 ---
 
-*This manual is based on enote Intelligent Note Management System V0.8.0. Please refer to the actual software for any feature updates.*
+*This manual is based on enote Intelligent Note Management System V0.9.0. Please refer to the actual software for any feature updates.*

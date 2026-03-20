@@ -9,4 +9,6 @@ pub use super::note_tags::Entity as NoteTags;
 pub use super::note_template::Entity as NoteTemplate;
 pub use super::notebook::Entity as Notebook;
 pub use super::settings::Entity as Settings;
+pub use super::sync_log::Entity as SyncLog;
+pub use super::sync_log_detail::Entity as SyncLogDetail;
 pub use super::tag::Entity as Tag;

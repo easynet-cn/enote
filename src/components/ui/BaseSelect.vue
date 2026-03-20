@@ -520,9 +520,7 @@ defineExpose({
 .select-dropdown {
   background: var(--color-bg-primary);
   border-radius: 12px;
-  box-shadow:
-    0 10px 40px rgba(0, 0, 0, 0.12),
-    0 0 0 1px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-dropdown);
   max-height: 280px;
   overflow: hidden;
   display: flex;

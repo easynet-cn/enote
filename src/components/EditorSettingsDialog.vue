@@ -164,7 +164,11 @@ const handleSubmit = () => {
 
 .tag-select-item-active:hover {
   border-color: var(--color-primary-hover);
-  background: linear-gradient(135deg, var(--color-primary-light) 0%, #c7d2fe 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-light) 0%,
+    var(--color-primary-lighter) 100%
+  );
 }
 
 .tag-select-check {

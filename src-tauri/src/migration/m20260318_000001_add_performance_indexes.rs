@@ -30,8 +30,9 @@ impl MigrationTrait for Migration {
                 )).await?;
                 if has_idx1.is_empty() {
                     db.execute_unprepared(
-                        "CREATE INDEX idx_note_deleted_notebook ON note (deleted_at, notebook_id)"
-                    ).await?;
+                        "CREATE INDEX idx_note_deleted_notebook ON note (deleted_at, notebook_id)",
+                    )
+                    .await?;
                 }
 
                 let has_idx2: Vec<sea_orm::QueryResult> = db.query_all(sea_orm::Statement::from_string(
@@ -59,8 +60,12 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         let db = manager.get_connection();
-        db.execute_unprepared("DROP INDEX IF EXISTS idx_note_deleted_notebook").await.ok();
-        db.execute_unprepared("DROP INDEX IF EXISTS idx_note_pinned_update").await.ok();
+        db.execute_unprepared("DROP INDEX IF EXISTS idx_note_deleted_notebook")
+            .await
+            .ok();
+        db.execute_unprepared("DROP INDEX IF EXISTS idx_note_pinned_update")
+            .await
+            .ok();
         Ok(())
     }
 }

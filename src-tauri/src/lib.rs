@@ -61,15 +61,11 @@ pub fn run(config_path: Option<String>) {
                 let handle = app.handle();
 
                 // 获取应用数据目录
-                let app_data_dir = handle
-                    .path()
-                    .app_data_dir()
-                    .expect("无法获取应用数据目录");
+                let app_data_dir = handle.path().app_data_dir().expect("无法获取应用数据目录");
 
                 // 确保目录存在
                 if !app_data_dir.exists() {
-                    std::fs::create_dir_all(&app_data_dir)
-                        .expect("无法创建应用数据目录");
+                    std::fs::create_dir_all(&app_data_dir).expect("无法创建应用数据目录");
                 }
 
                 // 决定启动模式
@@ -158,6 +154,14 @@ pub fn run(config_path: Option<String>) {
             command::set_lock_password,
             command::verify_lock_password,
             command::clear_lock_password,
+            // 跨 Profile 同步相关命令
+            command::get_sync_preview,
+            command::start_sync,
+            command::find_sync_logs,
+            command::find_sync_log_details,
+            command::delete_sync_log,
+            command::clear_sync_logs,
+            command::export_sync_log,
         ])
         .run(tauri::generate_context!())
         .expect(&t_simple("error.appStartFailed"));
@@ -174,21 +178,20 @@ async fn setup_normal_mode(
     let (configuration, database_connection, active_profile_id, encryption_key) =
         if let Some(ref _config_path) = config_path {
             // 兼容旧模式：使用 application.yml
-            let configuration =
-                match config::Configuration::new(handle, config_path.as_deref()) {
-                    Ok(config) => config,
-                    Err(e) => {
-                        error!("配置加载失败: {:#}", e);
-                        let error_msg = format!("{}", e);
-                        handle
-                            .dialog()
-                            .message(t("config.load.failed.message", &[&error_msg]))
-                            .kind(MessageDialogKind::Error)
-                            .title(t_simple("config.load.failed.title"))
-                            .blocking_show();
-                        std::process::exit(1);
-                    }
-                };
+            let configuration = match config::Configuration::new(handle, config_path.as_deref()) {
+                Ok(config) => config,
+                Err(e) => {
+                    error!("配置加载失败: {:#}", e);
+                    let error_msg = format!("{}", e);
+                    handle
+                        .dialog()
+                        .message(t("config.load.failed.message", &[&error_msg]))
+                        .kind(MessageDialogKind::Error)
+                        .title(t_simple("config.load.failed.title"))
+                        .blocking_show();
+                    std::process::exit(1);
+                }
+            };
 
             let database_connection = match configuration.database_connection().await {
                 Ok(conn) => conn,
@@ -263,7 +266,12 @@ async fn setup_normal_mode(
             };
 
             let configuration = config::Configuration::default();
-            (configuration, database_connection, profile_id, encryption_key)
+            (
+                configuration,
+                database_connection,
+                profile_id,
+                encryption_key,
+            )
         };
 
     // 运行数据库迁移
@@ -298,16 +306,12 @@ async fn setup_normal_mode(
 }
 
 /// 设置向导模式：不连接数据库，仅提供 setup 命令
-async fn setup_wizard_mode(
-    app: &mut tauri::App,
-) -> Result<(), Box<dyn std::error::Error>> {
+async fn setup_wizard_mode(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     setup_wizard_mode_state(app).await
 }
 
 /// 创建向导模式的 AppState（无数据库连接）
-async fn setup_wizard_mode_state(
-    app: &mut tauri::App,
-) -> Result<(), Box<dyn std::error::Error>> {
+async fn setup_wizard_mode_state(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let handle = app.handle();
     let app_data_dir = handle.path().app_data_dir()?;
 
@@ -348,19 +352,17 @@ fn setup_tray(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .icon(app.default_window_icon().cloned().unwrap())
         .tooltip("ENote")
         .menu(&tray_menu)
-        .on_menu_event(|app_handle, event| {
-            match event.id().as_ref() {
-                "show" => {
-                    if let Some(window) = app_handle.get_webview_window("main") {
-                        let _ = window.show();
-                        let _ = window.set_focus();
-                    }
+        .on_menu_event(|app_handle, event| match event.id().as_ref() {
+            "show" => {
+                if let Some(window) = app_handle.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
                 }
-                "quit" => {
-                    std::process::exit(0);
-                }
-                _ => {}
             }
+            "quit" => {
+                std::process::exit(0);
+            }
+            _ => {}
         })
         .on_tray_icon_event(|tray, event| {
             if let tauri::tray::TrayIconEvent::Click {

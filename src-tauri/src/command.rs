@@ -18,8 +18,9 @@ use crate::{
     config::AppState,
     error::AppError,
     model::{
-        Note, NoteHistory, NoteHistorySearchPageParam, NoteSearchPageParam, NoteStatsResult,
-        NoteLink, NoteTemplate, Notebook, OperateSource, PageResult, Tag,
+        Note, NoteHistory, NoteHistorySearchPageParam, NoteLink, NoteSearchPageParam,
+        NoteStatsResult, NoteTemplate, Notebook, OperateSource, PageParam, PageResult, SyncLog,
+        SyncLogDetail, SyncOptions, SyncPreview, Tag,
     },
     service,
 };
@@ -79,16 +80,14 @@ pub async fn save_profile_config(
     // 保存数据库密码到 Keychain
     if let Some(password) = db_password {
         if !password.is_empty() {
-            service::keychain::set_db_password(&profile_id, &password)
-                .map_err(AppError::from)?;
+            service::keychain::set_db_password(&profile_id, &password).map_err(AppError::from)?;
         }
     }
 
     // 保存加密密钥到 Keychain
     if let Some(key) = encryption_key {
         if !key.is_empty() {
-            service::keychain::set_encryption_key(&profile_id, &key)
-                .map_err(AppError::from)?;
+            service::keychain::set_encryption_key(&profile_id, &key).map_err(AppError::from)?;
         }
     }
 
@@ -102,11 +101,9 @@ pub async fn delete_profile_config(
     profile_id: String,
 ) -> Result<(), AppError> {
     // 删除 Keychain 中的密钥
-    service::keychain::delete_profile_secrets(&profile_id)
-        .map_err(AppError::from)?;
+    service::keychain::delete_profile_secrets(&profile_id).map_err(AppError::from)?;
     // 删除 profile 文件
-    service::profile::delete_profile(&app_state.app_data_dir, &profile_id)
-        .map_err(AppError::from)
+    service::profile::delete_profile(&app_state.app_data_dir, &profile_id).map_err(AppError::from)
 }
 
 /// 选择活跃 Profile
@@ -502,7 +499,9 @@ pub async fn get_all_settings(
 
     // 缓存未命中，从数据库读取
     let db = &app_state.database_connection;
-    let settings = service::settings::get_all(db).await.map_err(AppError::from)?;
+    let settings = service::settings::get_all(db)
+        .await
+        .map_err(AppError::from)?;
 
     // 写入缓存
     {
@@ -652,9 +651,7 @@ pub async fn delete_image(path: String) -> Result<(), AppError> {
 
 /// 执行一次自动备份
 #[tauri::command]
-pub async fn auto_backup(
-    app_state: tauri::State<'_, Arc<AppState>>,
-) -> Result<String, AppError> {
+pub async fn auto_backup(app_state: tauri::State<'_, Arc<AppState>>) -> Result<String, AppError> {
     let db = &app_state.database_connection;
     let filename = service::backup::auto_backup(db, &app_state.app_data_dir)
         .await
@@ -668,8 +665,7 @@ pub async fn cleanup_old_backups(
     app_state: tauri::State<'_, Arc<AppState>>,
     max_count: usize,
 ) -> Result<u32, AppError> {
-    service::backup::cleanup_old_backups(&app_state.app_data_dir, max_count)
-        .map_err(AppError::from)
+    service::backup::cleanup_old_backups(&app_state.app_data_dir, max_count).map_err(AppError::from)
 }
 
 /// 列出所有自动备份
@@ -839,4 +835,154 @@ pub async fn clear_lock_password(
     service::auth::clear_password(&app_state.database_connection)
         .await
         .map_err(AppError::from)
+}
+
+// ============================================================================
+// 跨 Profile 同步相关命令
+// ============================================================================
+
+/// 获取同步预览信息
+#[tauri::command]
+pub async fn get_sync_preview(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    target_profile_id: String,
+    target_db_password: Option<String>,
+) -> Result<SyncPreview, AppError> {
+    let db = &app_state.database_connection;
+    service::sync::get_preview(
+        db,
+        &app_state.app_data_dir,
+        &app_state.active_profile_id,
+        &target_profile_id,
+        target_db_password.as_deref(),
+    )
+    .await
+    .map_err(AppError::from)
+}
+
+/// 开始同步
+#[tauri::command]
+pub async fn start_sync(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    app_handle: tauri::AppHandle,
+    options: SyncOptions,
+    target_db_password: Option<String>,
+    target_encryption_key: Option<String>,
+) -> Result<SyncLog, AppError> {
+    let db = &app_state.database_connection;
+
+    // 获取目标端加密密钥：优先使用前端传入的，否则从 Keychain 获取
+    let target_key = if let Some(key) = target_encryption_key {
+        if key.is_empty() { None } else { Some(key) }
+    } else {
+        service::keychain::get_encryption_key(&options.target_profile_id).unwrap_or(None)
+    };
+
+    service::sync::sync_to_profile(
+        db,
+        &app_state.app_data_dir,
+        &app_state.active_profile_id,
+        &options,
+        target_db_password.as_deref(),
+        app_state.encryption_key.as_deref(),
+        target_key.as_deref(),
+        &app_handle,
+    )
+    .await
+    .map_err(AppError::from)
+}
+
+/// 查询同步日志列表（分页）
+#[tauri::command]
+pub async fn find_sync_logs(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    mut page: PageParam,
+) -> Result<PageResult<SyncLog>, AppError> {
+    page.normalize();
+    let db = &app_state.database_connection;
+    service::sync_log::search_page(db, &page)
+        .await
+        .map_err(AppError::from)
+}
+
+/// 查询同步明细（分页，支持过滤）
+#[tauri::command]
+pub async fn find_sync_log_details(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    sync_log_id: i64,
+    table_name: Option<String>,
+    status: Option<String>,
+    mut page: PageParam,
+) -> Result<PageResult<SyncLogDetail>, AppError> {
+    page.normalize();
+    let db = &app_state.database_connection;
+    service::sync_log::search_detail_page(
+        db,
+        sync_log_id,
+        table_name.as_deref(),
+        status.as_deref(),
+        &page,
+    )
+    .await
+    .map_err(AppError::from)
+}
+
+/// 删除同步日志
+#[tauri::command]
+pub async fn delete_sync_log(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    sync_log_id: i64,
+) -> Result<(), AppError> {
+    let db = &app_state.database_connection;
+    service::sync_log::delete_by_id(db, sync_log_id)
+        .await
+        .map_err(AppError::from)
+}
+
+/// 清空所有同步日志
+#[tauri::command]
+pub async fn clear_sync_logs(app_state: tauri::State<'_, Arc<AppState>>) -> Result<(), AppError> {
+    let db = &app_state.database_connection;
+    service::sync_log::clear_all(db)
+        .await
+        .map_err(AppError::from)
+}
+
+/// 导出同步日志为 JSON
+#[tauri::command]
+pub async fn export_sync_log(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    sync_log_id: i64,
+    path: String,
+) -> Result<(), AppError> {
+    let db = &app_state.database_connection;
+
+    // 获取日志
+    let log = service::sync_log::find_by_id(db, sync_log_id)
+        .await
+        .map_err(AppError::from)?
+        .ok_or_else(|| AppError::Business("同步日志不存在".to_string()))?;
+
+    // 获取所有明细
+    let page = PageParam {
+        page_index: 1,
+        page_size: 10000,
+    };
+    let details = service::sync_log::search_detail_page(db, sync_log_id, None, None, &page)
+        .await
+        .map_err(AppError::from)?;
+
+    // 构造导出数据
+    let export_data = serde_json::json!({
+        "syncLog": log,
+        "details": details.data,
+    });
+
+    // 写入文件
+    let json_str = serde_json::to_string_pretty(&export_data)
+        .map_err(|e| AppError::Business(e.to_string()))?;
+    std::fs::write(&path, json_str)
+        .map_err(|e| AppError::Business(format!("写入文件失败: {}", e)))?;
+
+    Ok(())
 }

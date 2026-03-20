@@ -1,64 +1,66 @@
 [package]
 name = "enote"
-version = "0.8.0"
 description = "个人笔记"
-authors = ["124244236@qq.com"]
-edition = "2024"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
 
 [lib]
-# The `_lib` suffix may seem redundant but it is necessary
-# to make the lib name unique and wouldn't conflict with the bin name.
-# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
 name = "enote_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "2", features = [] }
+tauri-build.workspace = true
 
 [dependencies]
-tauri = { version = "2.10.2", features = ["tray-icon"] }
-tauri-plugin-fs = "2"
-tauri-plugin-opener = "2"
-tauri-plugin-shell = "2"
-tauri-plugin-dialog = "2"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1.0.149"
-sea-orm = { version = "1.1.19", features = ["sqlx-mysql", "sqlx-sqlite", "sqlx-postgres", "runtime-tokio"] }
-sea-orm-migration = { version = "1.1", features = ["runtime-tokio", "sqlx-sqlite", "sqlx-mysql", "sqlx-postgres"] }
-anyhow = "1.0.102"
-thiserror = "2.0.17"
-tokio = { version = "1.49.0", features = ["rt", "rt-multi-thread", "macros", "sync", "time", "io-util", "fs"] }
-chrono = "0.4.44"
-config = "0.15.22"
-serde_with = "3.17.0"
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-sys-locale = "0.3"
-rust_xlsxwriter = "0.82"
-calamine = "0.26"
-csv = "1.3"
-zip = "2.2"
-uuid = { version = "1.22.0", features = ["v4"] }
-base64 = "0.22.1"
-aes-gcm = "0.10"
-sha2 = "0.10"
-rand = "0.8"
-clap = { version = "4", features = ["derive"] }
-argon2 = "0.5"
-dirs = "6"
-keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service"] }
-serde_yaml = "0.9"
+# Tauri
+tauri.workspace = true
+tauri-plugin-fs.workspace = true
+tauri-plugin-opener.workspace = true
+tauri-plugin-shell.workspace = true
+tauri-plugin-dialog.workspace = true
 
-[profile.dev]
-incremental = true # Compile your binary in smaller steps.
+# Serde
+serde.workspace = true
+serde_json.workspace = true
+serde_with.workspace = true
+serde_yaml.workspace = true
 
-[profile.release]
-codegen-units = 1 # Allows LLVM to perform better optimization.
-lto = true # Enables link-time-optimizations.
-opt-level = "s" # Prioritizes small binary size. Use `3` if you prefer speed.
-panic = "abort" # Higher performance by disabling panic handlers.
-strip = true # Ensures debug symbols are removed.
+# Database
+sea-orm.workspace = true
+sea-orm-migration.workspace = true
 
+# Async
+tokio.workspace = true
 
+# Error handling
+anyhow.workspace = true
+thiserror.workspace = true
+
+# Logging
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+# CLI
+clap.workspace = true
+
+# Crypto
+aes-gcm.workspace = true
+argon2.workspace = true
+sha2.workspace = true
+rand.workspace = true
+base64.workspace = true
+
+# Data formats
+rust_xlsxwriter.workspace = true
+calamine.workspace = true
+csv.workspace = true
+zip.workspace = true
+
+# Utilities
+chrono.workspace = true
+config.workspace = true
+uuid.workspace = true
+dirs.workspace = true
+sys-locale.workspace = true
+keyring.workspace = true

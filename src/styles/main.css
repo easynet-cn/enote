@@ -79,6 +79,12 @@
   --shadow-primary: 0 4px 14px rgba(79, 70, 229, 0.4);
   --shadow-danger: 0 4px 14px rgba(239, 68, 68, 0.4);
 
+  /* 遮罩层 */
+  --color-overlay: rgba(0, 0, 0, 0.4);
+  --color-overlay-heavy: rgba(0, 0, 0, 0.6);
+  --shadow-dialog: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  --shadow-dropdown: 0 10px 40px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05);
+
   /* 过渡时间 */
   --transition-fast: 0.15s;
   --transition-normal: 0.2s;
@@ -156,6 +162,11 @@
   --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
   --shadow-primary: 0 4px 14px rgba(129, 140, 248, 0.3);
   --shadow-danger: 0 4px 14px rgba(248, 113, 113, 0.3);
+
+  --color-overlay: rgba(0, 0, 0, 0.6);
+  --color-overlay-heavy: rgba(0, 0, 0, 0.75);
+  --shadow-dialog: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --shadow-dropdown: 0 10px 40px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05);
 
   color-scheme: dark;
 }

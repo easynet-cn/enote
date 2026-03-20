@@ -43,37 +43,44 @@ export function useNoteSearch() {
     }
 
     const currentRequestId = ++searchRequestId
+    store.notesLoading = true
 
-    const result = await withNotification(
-      async () => {
-        const pageResult: PageResult<Note> = await noteApi.searchPageNotes(
-          store.noteSearchPageParam,
-        )
+    try {
+      const result = await withNotification(
+        async () => {
+          const pageResult: PageResult<Note> = await noteApi.searchPageNotes(
+            store.noteSearchPageParam,
+          )
 
-        // 丢弃过期的搜索响应（已有更新的请求发出）
-        if (currentRequestId !== searchRequestId) {
-          return null
-        }
+          // 丢弃过期的搜索响应（已有更新的请求发出）
+          if (currentRequestId !== searchRequestId) {
+            return null
+          }
 
-        store.noteTotal = pageResult.total
+          store.noteTotal = pageResult.total
 
-        const notes = pageResult.data.map(noteToShowNote)
+          const notes = pageResult.data.map(noteToShowNote)
 
-        // 更新 LRU 缓存
-        searchCache.set(cacheKey, {
-          result: notes,
-          total: pageResult.total,
-        })
+          // 更新 LRU 缓存
+          searchCache.set(cacheKey, {
+            result: notes,
+            total: pageResult.total,
+          })
 
-        return notes
-      },
-      {
-        loading: i18n.global.t('composable.loadingNotes'),
-        error: i18n.global.t('composable.loadNotesFailed'),
-      },
-    )
+          return notes
+        },
+        {
+          loading: i18n.global.t('composable.loadingNotes'),
+          error: i18n.global.t('composable.loadNotesFailed'),
+        },
+      )
 
-    return result || []
+      return result || []
+    } finally {
+      if (currentRequestId === searchRequestId) {
+        store.notesLoading = false
+      }
+    }
   }
 
   // 清除搜索缓存（在数据变更后调用）

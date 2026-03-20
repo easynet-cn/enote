@@ -45,8 +45,8 @@ pub async fn verify_password(db: &DatabaseConnection, password: &str) -> Result<
         return Ok(false);
     }
 
-    let parsed = PasswordHash::new(hash_str)
-        .map_err(|e| anyhow::anyhow!("密码哈希格式无效: {}", e))?;
+    let parsed =
+        PasswordHash::new(hash_str).map_err(|e| anyhow::anyhow!("密码哈希格式无效: {}", e))?;
 
     Ok(Argon2::default()
         .verify_password(password.as_bytes(), &parsed)
