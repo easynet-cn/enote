@@ -5,10 +5,17 @@ import { resolve } from 'path'
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST
+// @ts-expect-error process is a nodejs global
+const isMobileBuild = ['android', 'ios'].includes(process.env.TAURI_ENV_PLATFORM ?? '')
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
   plugins: [vue(), tailwindcss()],
+
+  // 编译时注入平台标记（Tauri 构建移动端时 TAURI_ENV_PLATFORM = 'android' | 'ios'）
+  define: {
+    __IS_MOBILE__: JSON.stringify(isMobileBuild),
+  },
 
   // Use relative paths for Tauri production build
   base: './',

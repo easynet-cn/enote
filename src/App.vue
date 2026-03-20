@@ -22,7 +22,7 @@
     <!-- 侧边栏组件 -->
     <AppSidebar
       v-show="!isMobile || mobileView === 'sidebar'"
-      :class="isMobile ? 'w-full' : ''"
+      :mobile="isMobile"
       :notebooks="notebooks"
       :tags="tags"
       :active-notebook="activeNotebook"
@@ -48,7 +48,6 @@
     <!-- 笔记列表组件 -->
     <NoteList
       v-show="!isMobile || mobileView === 'list'"
-      :class="isMobile ? 'w-full' : ''"
       :notebooks="notebooks"
       :notes="notes"
       :active-notebook="activeNotebook"

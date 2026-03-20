@@ -2,7 +2,7 @@
   <aside
     :class="[
       'flex flex-col bg-surface-alt transition-all duration-300 relative',
-      collapsed ? 'w-12' : 'w-64',
+      mobile ? 'w-full' : collapsed ? 'w-12' : 'w-64',
     ]"
     role="navigation"
     :aria-label="t('aria.sidebar')"
@@ -507,6 +507,7 @@ const props = defineProps<{
   activeNotebook: string
   activeTag: string
   collapsed: boolean
+  mobile?: boolean
 }>()
 
 const emit = defineEmits<{

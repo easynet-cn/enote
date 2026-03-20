@@ -2,7 +2,7 @@
   <aside
     class="bg-surface border-r border-edge flex flex-col relative shadow-sm"
     :class="{ 'transition-all duration-300': !isResizing }"
-    :style="{ width: collapsed ? '48px' : `${width}px` }"
+    :style="{ width: mobile ? '100%' : collapsed ? '48px' : `${width}px` }"
   >
     <!-- 拖拽调整宽度的边界（移动端隐藏） -->
     <div

@@ -71,9 +71,13 @@ export function useSync() {
   }
 
   async function setupProgressListener() {
-    unlistenProgress = await listen<SyncProgress>('sync-progress', (event) => {
-      progress.value = event.payload
-    })
+    try {
+      unlistenProgress = await listen<SyncProgress>('sync-progress', (event) => {
+        progress.value = event.payload
+      })
+    } catch {
+      // 非 Tauri 环境（浏览器直接访问）忽略
+    }
   }
 
   function cleanup() {
