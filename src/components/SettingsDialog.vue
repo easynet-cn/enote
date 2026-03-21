@@ -55,6 +55,87 @@
               </button>
             </div>
           </div>
+
+          <!-- 布局模式 -->
+          <div class="flex items-center justify-between">
+            <label class="text-sm text-content-secondary">{{ t('settings.layoutMode') }}</label>
+            <div class="flex gap-1 bg-surface-dim rounded-lg p-1">
+              <button
+                v-for="option in layoutModeOptions"
+                :key="option.value"
+                @click="setLayoutMode(option.value)"
+                class="px-3 py-1.5 text-sm rounded-md transition-colors"
+                :class="
+                  currentLayoutMode === option.value
+                    ? 'bg-surface text-indigo-600 shadow-sm'
+                    : 'text-content-secondary hover:text-content'
+                "
+              >
+                {{ option.label }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 快捷键设置 -->
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-semibold text-content-secondary">
+            {{ t('settings.shortcutsTitle') }}
+          </h3>
+          <button
+            @click="handleResetAllShortcuts"
+            class="text-xs text-content-tertiary hover:text-indigo-600 transition-colors"
+          >
+            {{ t('settings.shortcutsResetAll') }}
+          </button>
+        </div>
+        <div class="space-y-2">
+          <div
+            v-for="def in shortcutDefs"
+            :key="def.id"
+            class="flex items-center justify-between py-1.5"
+          >
+            <label class="text-sm text-content-secondary flex-1 min-w-0 truncate mr-3">
+              {{ t(def.descriptionKey) }}
+            </label>
+            <div class="flex items-center gap-2 shrink-0">
+              <!-- 系统级快捷键：只读显示 -->
+              <template v-if="def.system">
+                <span
+                  class="inline-flex items-center h-8 px-3 text-xs font-mono border border-edge rounded-md bg-surface-dim text-content-secondary"
+                >
+                  {{ bindingToText(def.defaultBinding) }}
+                </span>
+                <span class="text-xs text-content-tertiary w-10 text-center">{{
+                  t('settings.shortcutsSystem')
+                }}</span>
+              </template>
+              <!-- 可自定义快捷键 -->
+              <template v-else>
+                <div class="flex flex-col items-end gap-0.5">
+                  <ShortcutRecorder
+                    :model-value="shortcutBindings[def.id]"
+                    :customized="shortcutCustomized[def.id]"
+                    :conflict-name="shortcutConflicts[def.id]"
+                    @record="(b: KeyBinding) => handleShortcutRecord(def.id, b)"
+                  />
+                  <span v-if="shortcutConflicts[def.id]" class="text-xs text-red-500">
+                    {{ t('settings.shortcutsConflict', { name: shortcutConflicts[def.id] }) }}
+                  </span>
+                </div>
+                <button
+                  v-if="shortcutCustomized[def.id]"
+                  @click="handleResetShortcut(def.id)"
+                  class="text-xs text-content-tertiary hover:text-indigo-600 transition-colors w-10 text-center"
+                >
+                  {{ t('settings.shortcutsReset') }}
+                </button>
+                <span v-else class="w-10" />
+              </template>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -397,10 +478,15 @@ import { settingsApi, backupApi, authApi } from '../api/note'
 import { setLocale, type LocaleType } from '../i18n'
 import { useAppStore } from '../stores/app'
 import { useLockScreen } from '../composables/useLockScreen'
+import { usePlatform, type LayoutMode } from '../composables/usePlatform'
+import { useShortcutSettings } from '../composables/useShortcutSettings'
+import { SHORTCUT_DEFS, bindingToText, type KeyBinding } from '../config/shortcuts'
+import ShortcutRecorder from './ui/ShortcutRecorder.vue'
 import { showNotification } from './ui/notification'
 
 const { t, locale } = useI18n()
 const appStore = useAppStore()
+const { setLayoutOverride } = usePlatform()
 
 const emit = defineEmits<{
   (e: 'switchProfile'): void
@@ -477,6 +563,91 @@ const themeOptions = computed(() => [
   { value: 'dark', label: t('settings.themeDark') },
   { value: 'system', label: t('settings.themeSystem') },
 ])
+
+// 布局模式
+const currentLayoutMode = ref<LayoutMode | 'auto'>('auto')
+
+const layoutModeOptions = computed(() => [
+  { value: 'auto' as const, label: t('settings.layoutAuto') },
+  { value: 'desktop' as LayoutMode | 'auto', label: t('settings.layoutDesktop') },
+  { value: 'tablet' as LayoutMode | 'auto', label: t('settings.layoutTablet') },
+  { value: 'mobile' as LayoutMode | 'auto', label: t('settings.layoutMobile') },
+])
+
+const setLayoutMode = async (mode: LayoutMode | 'auto') => {
+  currentLayoutMode.value = mode
+  setLayoutOverride(mode)
+  await saveSettings()
+}
+
+// ============================================================================
+// 快捷键设置
+// ============================================================================
+
+const {
+  getBinding,
+  setBinding: setShortcutBinding,
+  resetBinding: resetShortcutBinding,
+  resetAll: resetAllShortcuts,
+  isCustomized: isShortcutCustomized,
+  checkConflict: checkShortcutConflict,
+  save: saveShortcuts,
+} = useShortcutSettings()
+
+const shortcutDefs = SHORTCUT_DEFS
+
+// 冲突状态
+const shortcutConflicts = ref<Record<string, string>>({})
+
+// 响应式绑定和自定义状态
+const shortcutBindings = computed(() => {
+  const result: Record<string, KeyBinding> = {}
+  for (const def of SHORTCUT_DEFS) {
+    result[def.id] = getBinding(def.id)
+  }
+  return result
+})
+
+const shortcutCustomized = computed(() => {
+  const result: Record<string, boolean> = {}
+  for (const def of SHORTCUT_DEFS) {
+    result[def.id] = isShortcutCustomized(def.id)
+  }
+  return result
+})
+
+const handleShortcutRecord = async (id: string, binding: KeyBinding) => {
+  // 清除冲突提示
+  const conflicts = { ...shortcutConflicts.value }
+  delete conflicts[id]
+
+  // 检测冲突
+  const conflict = checkShortcutConflict(id, binding)
+  if (conflict) {
+    conflicts[id] = t(conflict.descriptionKey)
+    shortcutConflicts.value = conflicts
+    return
+  }
+
+  shortcutConflicts.value = conflicts
+  setShortcutBinding(id, binding)
+  await saveShortcuts()
+}
+
+const handleResetShortcut = async (id: string) => {
+  const conflicts = { ...shortcutConflicts.value }
+  delete conflicts[id]
+  shortcutConflicts.value = conflicts
+  resetShortcutBinding(id)
+  await saveShortcuts()
+}
+
+const handleResetAllShortcuts = async () => {
+  shortcutConflicts.value = {}
+  resetAllShortcuts()
+  await saveShortcuts()
+  showNotification({ type: 'success', message: t('settings.shortcutsResetAllDone') })
+}
 
 const applyTheme = (theme: string) => {
   const root = document.documentElement
@@ -613,6 +784,7 @@ const saveSettings = async () => {
     await settingsApi.save({
       theme: currentTheme.value,
       locale: locale.value,
+      layoutMode: currentLayoutMode.value,
       autoBackupEnabled: autoBackupEnabled.value ? '1' : '0',
       autoBackupInterval: autoBackupInterval.value,
       autoBackupRetention: autoBackupRetention.value,
@@ -655,6 +827,13 @@ const loadSettings = async () => {
       setLocale(settings.locale as LocaleType)
       appStore.updateDefaultItems()
     }
+    // 加载布局模式
+    if (settings.layoutMode) {
+      const mode = settings.layoutMode as LayoutMode | 'auto'
+      currentLayoutMode.value = mode
+      setLayoutOverride(mode)
+    }
+
     autoBackupEnabled.value = settings.autoBackupEnabled === '1'
     if (settings.autoBackupInterval) autoBackupInterval.value = settings.autoBackupInterval
     if (settings.autoBackupRetention) autoBackupRetention.value = settings.autoBackupRetention

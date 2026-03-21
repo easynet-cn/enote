@@ -220,6 +220,7 @@ watch(visible, (val) => {
 
 .command-palette {
   width: 560px;
+  max-width: calc(100vw - 2rem);
   max-height: 420px;
   background: var(--color-bg-primary);
   border-radius: var(--radius-xl);
@@ -228,6 +229,20 @@ watch(visible, (val) => {
   flex-direction: column;
   overflow: hidden;
   border: 1px solid var(--color-border);
+}
+
+@media (max-width: 639px) {
+  .command-palette {
+    width: 100%;
+    max-width: calc(100vw - 1rem);
+    max-height: 70vh;
+  }
+
+  .command-palette-overlay {
+    padding-top: 10vh;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
 }
 
 .command-palette-input-wrapper {

@@ -1,10 +1,10 @@
 <template>
   <footer
-    class="h-12 flex items-center justify-between px-4 text-xs text-content-secondary border-t border-edge bg-surface-alt"
+    class="h-10 flex items-center justify-between px-4 text-xs text-content-secondary border-t border-edge bg-surface-alt"
     role="contentinfo"
   >
     <div class="flex items-center gap-4">
-      <span
+      <span class="hidden sm:inline"
         >{{ t('editor.statusBar.line') }} {{ cursorPosition.line }},
         {{ t('editor.statusBar.column') }} {{ cursorPosition.column }}</span
       >
@@ -15,7 +15,7 @@
     </div>
     <div class="flex items-center gap-4">
       <span>{{ characterCount }} {{ t('editor.statusBar.characters') }}</span>
-      <span>{{ wordCount }} {{ t('editor.statusBar.words') }}</span>
+      <span class="hidden sm:inline">{{ wordCount }} {{ t('editor.statusBar.words') }}</span>
     </div>
   </footer>
 </template>

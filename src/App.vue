@@ -18,85 +18,97 @@
   />
 
   <!-- 主应用 -->
-  <div v-else class="flex h-screen bg-surface-alt relative">
+  <div v-else class="flex h-screen bg-surface-alt relative overflow-hidden">
+    <!-- 侧边栏遮罩（手机/平板覆盖层模式） -->
+    <Transition name="sidebar-overlay">
+      <div v-if="sidebarOverlayVisible" class="sidebar-overlay" @click="closeSidebar" />
+    </Transition>
+
     <!-- 侧边栏组件 -->
-    <AppSidebar
-      v-show="!isMobile || mobileView === 'sidebar'"
-      :mobile="isMobile"
-      :notebooks="notebooks"
-      :tags="tags"
-      :active-notebook="activeNotebook"
-      :active-tag="activeTag"
-      :collapsed="isMobile ? false : sidebarCollapsed"
-      @set-active-notebook="handleMobileNotebook"
-      @set-active-tag="handleMobileTag"
-      @create-new-note="handleMobileCreateNote"
-      @save-notebook="saveNotebook"
-      @delete-notebook="deleteNotebook"
-      @save-tag="saveTag"
-      @delete-tag="deleteTag"
-      @toggle-collapse="sidebarCollapsed = !sidebarCollapsed"
-      @open-import="importDialogVisible = true"
-      @open-backup="backupDialogVisible = true"
-      @open-settings="settingsDialogVisible = true"
-      @open-trash="trashDialogVisible = true"
-      @reorder-notebooks="handleReorderNotebooks"
-      @reorder-tags="handleReorderTags"
-      @open-templates="templateDialogVisible = true"
-    />
+    <div :class="sidebarContainerClass">
+      <AppSidebar
+        :mobile="isMobileLayout"
+        :overlay="!isDesktopLayout"
+        :notebooks="notebooks"
+        :tags="tags"
+        :active-notebook="activeNotebook"
+        :active-tag="activeTag"
+        :collapsed="isDesktopLayout ? sidebarCollapsed : false"
+        @set-active-notebook="handleSelectNotebook"
+        @set-active-tag="handleSelectTag"
+        @create-new-note="handleCreateNote"
+        @save-notebook="saveNotebook"
+        @delete-notebook="deleteNotebook"
+        @save-tag="saveTag"
+        @delete-tag="deleteTag"
+        @toggle-collapse="sidebarCollapsed = !sidebarCollapsed"
+        @open-import="importDialogVisible = true"
+        @open-backup="backupDialogVisible = true"
+        @open-settings="settingsDialogVisible = true"
+        @open-trash="trashDialogVisible = true"
+        @reorder-notebooks="handleReorderNotebooks"
+        @reorder-tags="handleReorderTags"
+        @open-templates="templateDialogVisible = true"
+        @close-overlay="closeSidebar"
+      />
+    </div>
 
     <!-- 笔记列表组件 -->
-    <NoteList
-      v-show="!isMobile || mobileView === 'list'"
-      :notebooks="notebooks"
-      :notes="notes"
-      :active-notebook="activeNotebook"
-      :active-note="activeNote"
-      :collapsed="isMobile ? false : noteListCollapsed"
-      :mobile="isMobile"
-      v-model:current-page="notePageIndex"
-      v-model:page-size="notePageSize"
-      v-model:total="noteTotal"
-      v-model:query="query"
-      v-model:width="noteListWidth"
-      @set-active-note="handleMobileSelectNote"
-      @update-search-query="handleUpdateSearchQuery"
-      @size-change="handleNoteSizeChange"
-      @current-change="handleNoteCurrentChange"
-      @toggle-collapse="handleNoteListToggle"
-      @toggle-pin="handleTogglePin"
-      @open-sidebar="mobileView = 'sidebar'"
-    />
+    <div :class="noteListContainerClass">
+      <NoteList
+        :notebooks="notebooks"
+        :notes="notes"
+        :active-notebook="activeNotebook"
+        :active-note="activeNote"
+        :collapsed="isDesktopLayout ? noteListCollapsed : false"
+        :mobile="isMobileLayout"
+        :layout="layout"
+        v-model:current-page="notePageIndex"
+        v-model:page-size="notePageSize"
+        v-model:total="noteTotal"
+        v-model:query="query"
+        v-model:width="noteListWidth"
+        @set-active-note="handleSelectNote"
+        @update-search-query="handleUpdateSearchQuery"
+        @size-change="handleNoteSizeChange"
+        @current-change="handleNoteCurrentChange"
+        @toggle-collapse="handleNoteListToggle"
+        @toggle-pin="handleTogglePin"
+        @open-sidebar="openSidebar"
+      />
+    </div>
 
     <!-- 编辑器组件 -->
-    <NoteEditor
-      v-show="!isMobile || mobileView === 'editor'"
-      v-model:history-data="histories"
-      v-model:current-page="historyPageIndex"
-      v-model:page-size="historyPageSize"
-      v-model:total="historyTotal"
-      :notebooks="notebooks"
-      :tags="tags"
-      :active-note="activeNoteData"
-      :edit-mode="editMode"
-      :history-loading="historyLoading"
-      @save-note="saveNote"
-      @cancel-edit="cancelEdit"
-      @delete-note="deleteNote"
-      @toggle-edit-mode="editMode = !editMode"
-      @update-note-title="updateNoteTitle"
-      @update-note-content="updateNoteContent"
-      @update-note-content-type="updateNoteContentType"
-      @update-note-setting="
-        (notebookId, tagIds, mcpAccess) => updateNoteSetting(notebookId, tagIds, tags, mcpAccess)
-      "
-      @open="openHistoryDialog"
-      @size-change="handleNoteHistorySizeChange"
-      @current-change="handleNoteHistoryCurrentChange"
-      @save-as-template="handleSaveAsTemplate"
-      @back="mobileView = 'list'"
-      :mobile="isMobile"
-    />
+    <div :class="editorContainerClass">
+      <NoteEditor
+        v-model:history-data="histories"
+        v-model:current-page="historyPageIndex"
+        v-model:page-size="historyPageSize"
+        v-model:total="historyTotal"
+        :notebooks="notebooks"
+        :tags="tags"
+        :active-note="activeNoteData"
+        :edit-mode="editMode"
+        :history-loading="historyLoading"
+        :mobile="isMobileLayout"
+        :layout="layout"
+        @save-note="saveNote"
+        @cancel-edit="cancelEdit"
+        @delete-note="deleteNote"
+        @toggle-edit-mode="editMode = !editMode"
+        @update-note-title="updateNoteTitle"
+        @update-note-content="updateNoteContent"
+        @update-note-content-type="updateNoteContentType"
+        @update-note-setting="
+          (notebookId, tagIds, mcpAccess) => updateNoteSetting(notebookId, tagIds, tags, mcpAccess)
+        "
+        @open="openHistoryDialog"
+        @size-change="handleNoteHistorySizeChange"
+        @current-change="handleNoteHistoryCurrentChange"
+        @save-as-template="handleSaveAsTemplate"
+        @back="handleEditorBack"
+      />
+    </div>
 
     <!-- 导入对话框 -->
     <ImportDialog
@@ -135,6 +147,7 @@ import { noteApi, settingsApi, backupApi, templateApi, profileApi } from './api/
 import { noteToShowNote } from './utils/converters'
 import { useNotes } from './composables/useNotes'
 import { useKeyboardShortcuts } from './composables/useKeyboardShortcuts'
+import { useShortcutSettings } from './composables/useShortcutSettings'
 import { useLockScreen } from './composables/useLockScreen'
 import { useAppStore } from './stores/app'
 import AppSidebar from './components/AppSidebar.vue'
@@ -166,21 +179,80 @@ import {
   LayoutTemplate,
   FileDown,
   Lock,
+  Monitor,
 } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const appStore = useAppStore()
-const { isMobile } = usePlatform()
+const {
+  isMobileLayout,
+  isTabletLayout,
+  isDesktopLayout,
+  layout,
+  isTauriMobile,
+  layoutOverride,
+  setLayoutOverride,
+} = usePlatform()
 
 // 移动端导航状态
 const mobileView = ref<'sidebar' | 'list' | 'editor'>('list')
+
+// 侧边栏覆盖层（手机/平板模式）
+const sidebarVisible = ref(false)
+const sidebarOverlayVisible = computed(() => !isDesktopLayout.value && sidebarVisible.value)
+
+const openSidebar = () => {
+  if (isDesktopLayout.value) return
+  sidebarVisible.value = true
+}
+
+const closeSidebar = () => {
+  sidebarVisible.value = false
+}
+
+// 布局容器样式计算
+const sidebarContainerClass = computed(() => {
+  if (isDesktopLayout.value) {
+    return 'sidebar-container-desktop'
+  }
+  return [
+    'sidebar-container-overlay',
+    sidebarVisible.value ? 'sidebar-overlay-visible' : 'sidebar-overlay-hidden',
+  ]
+})
+
+const noteListContainerClass = computed(() => {
+  if (isDesktopLayout.value) {
+    return 'notelist-container-desktop'
+  }
+  if (isTabletLayout.value) {
+    return 'notelist-container-tablet'
+  }
+  // 手机模式
+  return [
+    'notelist-container-mobile',
+    mobileView.value === 'list' ? 'mobile-view-active' : 'mobile-view-hidden-left',
+  ]
+})
+
+const editorContainerClass = computed(() => {
+  if (isDesktopLayout.value || isTabletLayout.value) {
+    return 'editor-container-flex'
+  }
+  // 手机模式
+  return [
+    'editor-container-mobile',
+    mobileView.value === 'editor' ? 'mobile-view-active' : 'mobile-view-hidden-right',
+  ]
+})
 
 // 应用模式：'loading' | 'setup' | 'select' | 'main'
 const appMode = ref<'loading' | 'setup' | 'select' | 'main'>('loading')
 const hasExistingProfiles = ref(false)
 
-const onSetupComplete = () => {
-  // 应用会重启，这里只是占位
+const onSetupComplete = async () => {
+  // 热重连后进入主界面（不再依赖进程重启）
+  await enterMainMode()
 }
 
 // 是否可以关闭 ProfileSelector 返回主界面（从设置进入时可以，首次启动时不行）
@@ -311,27 +383,34 @@ const handleTogglePin = async (noteId: string) => {
 }
 
 // ============================================================================
-// 移动端导航处理
+// 响应式导航处理
 // ============================================================================
 
-const handleMobileNotebook = (id: string) => {
+const handleSelectNotebook = (id: string) => {
   setActiveNotebook(id)
-  if (isMobile.value) mobileView.value = 'list'
+  closeSidebar()
+  if (isMobileLayout.value) mobileView.value = 'list'
 }
 
-const handleMobileTag = (id: string) => {
+const handleSelectTag = (id: string) => {
   setActiveTag(id)
-  if (isMobile.value) mobileView.value = 'list'
+  closeSidebar()
+  if (isMobileLayout.value) mobileView.value = 'list'
 }
 
-const handleMobileSelectNote = (id: string) => {
+const handleSelectNote = (id: string) => {
   setActiveNote(id)
-  if (isMobile.value) mobileView.value = 'editor'
+  if (isMobileLayout.value) mobileView.value = 'editor'
 }
 
-const handleMobileCreateNote = () => {
+const handleCreateNote = () => {
   createNewNote()
-  if (isMobile.value) mobileView.value = 'editor'
+  closeSidebar()
+  if (isMobileLayout.value) mobileView.value = 'editor'
+}
+
+const handleEditorBack = () => {
+  if (isMobileLayout.value) mobileView.value = 'list'
 }
 
 // 使用模板创建新笔记
@@ -366,14 +445,58 @@ const handleSaveAsTemplate = async () => {
   }
 }
 
-// 命令面板命令列表
+// ============================================================================
+// 快捷键配置驱动
+// ============================================================================
+
+const { getBindingText, buildHandlers, load: loadShortcuts } = useShortcutSettings()
+
+// 快捷键处理函数映射（id → handler）
+const switchLayoutHandler = () => {
+  const modes: Array<'auto' | 'desktop' | 'tablet' | 'mobile'> = [
+    'auto',
+    'desktop',
+    'tablet',
+    'mobile',
+  ]
+  const currentIndex = modes.indexOf(layoutOverride.value as (typeof modes)[number])
+  const nextIndex = (currentIndex + 1) % modes.length
+  setLayoutOverride(modes[nextIndex])
+}
+
+const shortcutHandlerMap: Record<string, () => void> = {
+  'save-note': () => {
+    if (editMode.value && activeNote.value) saveNote()
+  },
+  'new-note': () => createNewNote(),
+  'edit-note': () => {
+    if (activeNote.value && !editMode.value) editMode.value = true
+  },
+  'cancel-edit': () => {
+    if (editMode.value) cancelEdit()
+  },
+  'toggle-sidebar': () => {
+    sidebarCollapsed.value = !sidebarCollapsed.value
+  },
+  'lock-app': () => lock(),
+  'command-palette': () => {
+    commandPaletteVisible.value = !commandPaletteVisible.value
+  },
+  'switch-layout': switchLayoutHandler,
+}
+
+// 响应式快捷键（当用户修改绑定后自动更新）
+const shortcutHandlers = computed(() => buildHandlers(shortcutHandlerMap))
+useKeyboardShortcuts(shortcutHandlers)
+
+// 命令面板命令列表（快捷键显示从配置读取）
 const paletteCommands = computed<PaletteCommand[]>(() => [
   {
     id: 'new-note',
     name: t('commandPalette.commands.newNote'),
     icon: markRaw(Plus),
     category: t('commandPalette.categories.notes'),
-    shortcut: 'Ctrl+N',
+    shortcut: getBindingText('new-note'),
     handler: () => createNewNote(),
   },
   {
@@ -381,7 +504,7 @@ const paletteCommands = computed<PaletteCommand[]>(() => [
     name: t('commandPalette.commands.saveNote'),
     icon: markRaw(Save),
     category: t('commandPalette.categories.notes'),
-    shortcut: 'Ctrl+S',
+    shortcut: getBindingText('save-note'),
     handler: () => {
       if (editMode.value && activeNote.value) saveNote()
     },
@@ -391,7 +514,7 @@ const paletteCommands = computed<PaletteCommand[]>(() => [
     name: t('commandPalette.commands.editNote'),
     icon: markRaw(Pencil),
     category: t('commandPalette.categories.notes'),
-    shortcut: 'Ctrl+E',
+    shortcut: getBindingText('edit-note'),
     handler: () => {
       if (activeNote.value && !editMode.value) editMode.value = true
     },
@@ -410,7 +533,7 @@ const paletteCommands = computed<PaletteCommand[]>(() => [
     name: t('commandPalette.commands.toggleSidebar'),
     icon: markRaw(PanelLeft),
     category: t('commandPalette.categories.view'),
-    shortcut: 'Ctrl+B',
+    shortcut: getBindingText('toggle-sidebar'),
     handler: () => {
       sidebarCollapsed.value = !sidebarCollapsed.value
     },
@@ -476,7 +599,7 @@ const paletteCommands = computed<PaletteCommand[]>(() => [
     name: t('shortcuts.lockApp'),
     icon: markRaw(Lock),
     category: t('commandPalette.categories.app'),
-    shortcut: 'Ctrl+L',
+    shortcut: getBindingText('lock-app'),
     handler: () => lock(),
   },
   {
@@ -488,68 +611,13 @@ const paletteCommands = computed<PaletteCommand[]>(() => [
       if (activeNoteData.value) handleSaveAsTemplate()
     },
   },
-])
-
-// 键盘快捷键
-useKeyboardShortcuts([
   {
-    key: 's',
-    ctrl: true,
-    handler: () => {
-      if (editMode.value && activeNote.value) {
-        saveNote()
-      }
-    },
-    description: t('shortcuts.save'),
-  },
-  {
-    key: 'n',
-    ctrl: true,
-    handler: () => {
-      createNewNote()
-    },
-    description: t('shortcuts.newNote'),
-  },
-  {
-    key: 'e',
-    ctrl: true,
-    handler: () => {
-      if (activeNote.value && !editMode.value) {
-        editMode.value = true
-      }
-    },
-    description: t('shortcuts.editNote'),
-  },
-  {
-    key: 'Escape',
-    handler: () => {
-      if (editMode.value) {
-        cancelEdit()
-      }
-    },
-    description: t('shortcuts.cancelEdit'),
-  },
-  {
-    key: 'b',
-    ctrl: true,
-    handler: () => {
-      sidebarCollapsed.value = !sidebarCollapsed.value
-    },
-    description: t('shortcuts.toggleSidebar'),
-  },
-  {
-    key: 'l',
-    ctrl: true,
-    handler: () => lock(),
-    description: t('shortcuts.lockApp'),
-  },
-  {
-    key: 'p',
-    ctrl: true,
-    handler: () => {
-      commandPaletteVisible.value = !commandPaletteVisible.value
-    },
-    description: t('shortcuts.commandPalette'),
+    id: 'switch-layout',
+    name: t('shortcuts.switchLayout'),
+    icon: markRaw(Monitor),
+    category: t('commandPalette.categories.view'),
+    shortcut: getBindingText('switch-layout'),
+    handler: switchLayoutHandler,
   },
 ])
 
@@ -630,10 +698,11 @@ const enterMainMode = async () => {
   appMode.value = 'main'
 
   // 初始化数据
+  await loadShortcuts()
   await initializeNotes()
 
-  // 桌面端：窗口关闭时最小化到托盘
-  if (!isMobile.value) {
+  // 桌面端：窗口关闭时最小化到托盘（Tauri 平台特性）
+  if (!isTauriMobile.value) {
     const currentWindow = getCurrentWindow()
     await currentWindow.onCloseRequested(async (event) => {
       event.preventDefault()
@@ -668,11 +737,7 @@ const initApp = async () => {
     hasExistingProfiles.value = profiles.length > 0
     const index = await profileApi.getProfileIndex()
 
-    // 从选择页面连接 profile 后会重启应用，用一次性标记跳过本次选择页
-    const skipSelect = localStorage.getItem('enote-skip-profile-select')
-    if (skipSelect) {
-      localStorage.removeItem('enote-skip-profile-select')
-    } else if (profiles.length > 1 && !index.autoConnect) {
+    if (profiles.length > 1 && !index.autoConnect) {
       appMode.value = 'select'
       return
     }

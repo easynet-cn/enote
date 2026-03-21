@@ -532,15 +532,56 @@ onBeforeUnmount(() => {
   border-color: var(--color-primary);
 }
 
-/* 响应式设计 */
-@media (max-width: 768px) {
+/* 响应式设计 - 平板 */
+@media (min-width: 640px) and (max-width: 1024px) {
   .tiptap-toolbar {
     gap: 0.25rem;
-    padding: 0.25rem 0.5rem;
+    padding: 0.375rem 0.5rem;
+  }
+
+  .toolbar-fixed {
+    padding: 0.375rem;
+  }
+
+  .toolbar-fixed-left {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  :deep(.toolbar-btn) {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+/* 响应式设计 - 手机 */
+@media (max-width: 639px) {
+  .tiptap-toolbar-wrapper {
+    flex-wrap: nowrap;
+  }
+
+  .tiptap-toolbar {
+    gap: 0.125rem;
+    padding: 0.25rem 0.375rem;
+  }
+
+  .toolbar-fixed {
+    padding: 0.25rem;
+  }
+
+  .toolbar-fixed-left {
+    padding-left: 0.375rem;
+    padding-right: 0.375rem;
   }
 
   .scroll-btn {
-    width: 24px;
+    width: 22px;
+    min-height: 40px;
+  }
+
+  :deep(.toolbar-btn) {
+    width: 28px;
+    height: 28px;
   }
 }
 </style>

@@ -1,12 +1,12 @@
 <template>
   <aside
-    class="bg-surface border-r border-edge flex flex-col relative shadow-sm"
+    class="bg-surface border-r border-edge flex flex-col relative shadow-sm h-full"
     :class="{ 'transition-all duration-300': !isResizing }"
-    :style="{ width: mobile ? '100%' : collapsed ? '48px' : `${width}px` }"
+    :style="noteListStyle"
   >
-    <!-- 拖拽调整宽度的边界（移动端隐藏） -->
+    <!-- 拖拽调整宽度的边界（仅桌面模式） -->
     <div
-      v-if="!collapsed && !mobile"
+      v-if="!collapsed && layout === 'desktop'"
       class="absolute right-0 top-0 h-full w-1 cursor-ew-resize hover:bg-indigo-400 z-20 group"
       @mousedown="startResize"
     >
@@ -15,9 +15,9 @@
       ></div>
     </div>
 
-    <!-- 折叠/展开按钮（右侧边界中间，移动端隐藏） -->
+    <!-- 折叠/展开按钮（仅桌面模式） -->
     <button
-      v-if="!mobile"
+      v-if="layout === 'desktop'"
       @click="$emit('toggle-collapse')"
       class="absolute -right-3.5 top-1/2 -translate-y-1/2 z-30 w-7 h-7 bg-surface border border-edge rounded-full shadow-sm flex items-center justify-center text-content-tertiary hover:text-indigo-600 transition-all hover:scale-110 active:scale-95"
       :aria-label="collapsed ? t('noteList.expandList') : t('noteList.collapseList')"
@@ -32,7 +32,7 @@
         <div class="flex justify-between items-center mb-4">
           <div class="flex items-center gap-2">
             <button
-              v-if="mobile"
+              v-if="layout !== 'desktop'"
               @click="$emit('open-sidebar')"
               class="p-1.5 -ml-1.5 text-content-secondary hover:text-content hover:bg-surface-dim rounded-lg transition-colors"
               :aria-label="t('sidebar.notebooks')"
@@ -167,6 +167,7 @@ import { stripHtml, truncateText, markdownToHtml } from '../utils'
 import { LRUCache } from '../utils/lruCache'
 import { throttle } from '../utils/debounce'
 import { ContentType, type ShowNotebook, type ShowNote } from '../types'
+import type { LayoutMode } from '../composables/usePlatform'
 import { PREVIEW_CACHE_MAX_SIZE, PREVIEW_TEXT_MAX_LENGTH } from '../config/constants'
 import { useAppStore } from '../stores/app'
 
@@ -192,6 +193,7 @@ interface Props {
   minWidth?: number
   maxWidth?: number
   mobile?: boolean
+  layout?: LayoutMode
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -201,6 +203,15 @@ const props = withDefaults(defineProps<Props>(), {
   minWidth: 200,
   maxWidth: 600,
   mobile: false,
+  layout: 'desktop',
+})
+
+// 根据布局模式计算列表宽度样式
+const noteListStyle = computed(() => {
+  if (props.layout === 'mobile') return { width: '100%' }
+  if (props.layout === 'tablet') return { width: '320px' }
+  // 桌面模式
+  return { width: props.collapsed ? '48px' : `${props.width}px` }
 })
 
 const appStore = useAppStore()

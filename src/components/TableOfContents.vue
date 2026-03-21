@@ -217,4 +217,14 @@ watch(
   padding-left: 76px;
   font-size: 12px;
 }
+
+/* 小屏适配：目录面板全宽覆盖 */
+@media (max-width: 768px) {
+  .toc-panel {
+    width: 100%;
+    border-left: none;
+    box-shadow: var(--shadow-lg);
+    background: var(--color-bg-primary);
+  }
+}
 </style>

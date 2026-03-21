@@ -606,8 +606,8 @@ const saveAndConnect = async () => {
       form.security.contentEncryption ? encryptionKey.value : undefined,
     )
 
-    // 重启应用使用新 profile
-    await profileApi.restartWithProfile(profileId)
+    // 热连接新 profile（不重启进程）
+    await profileApi.reconnectProfile(profileId)
 
     emit('complete')
   } catch (e: unknown) {

@@ -82,6 +82,10 @@ export const profileApi = {
   async restartWithProfile(profileId: string): Promise<void> {
     return await invoke('restart_with_profile', { profileId })
   },
+
+  async reconnectProfile(profileId: string): Promise<void> {
+    return await invoke('reconnect_profile', { profileId })
+  },
 }
 
 export const settingsApi = {

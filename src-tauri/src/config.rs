@@ -304,14 +304,14 @@ pub struct AppState {
     /// 应用配置（保留以备将来使用）
     #[allow(dead_code)]
     pub configuration: Configuration,
-    /// 数据库连接（连接池）
-    pub database_connection: DatabaseConnection,
+    /// 数据库连接（连接池），使用 RwLock 支持 Profile 热切换
+    pub database_connection: tokio::sync::RwLock<DatabaseConnection>,
     /// 应用数据目录（用于图片等文件存储）
     pub app_data_dir: PathBuf,
-    /// 当前活跃的 profile ID
-    pub active_profile_id: String,
-    /// 内容加密密钥（启动时从 Keychain 加载，如果启用了加密）
-    pub encryption_key: Option<String>,
+    /// 当前活跃的 profile ID，使用 RwLock 支持 Profile 热切换
+    pub active_profile_id: tokio::sync::RwLock<String>,
+    /// 内容加密密钥（启动时从 Keychain 加载，如果启用了加密），使用 RwLock 支持 Profile 热切换
+    pub encryption_key: tokio::sync::RwLock<Option<String>>,
     /// 设置缓存（避免频繁查询数据库）
     pub settings_cache: tokio::sync::RwLock<Option<std::collections::HashMap<String, String>>>,
 }

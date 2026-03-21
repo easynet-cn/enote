@@ -1,4 +1,4 @@
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, type Ref, isRef } from 'vue'
 
 export interface ShortcutHandler {
   key: string
@@ -11,15 +11,18 @@ export interface ShortcutHandler {
 
 /**
  * 键盘快捷键管理
+ * 支持静态数组或响应式 Ref<ShortcutHandler[]>
  */
-export function useKeyboardShortcuts(shortcuts: ShortcutHandler[]) {
+export function useKeyboardShortcuts(shortcuts: ShortcutHandler[] | Ref<ShortcutHandler[]>) {
+  const getShortcuts = () => (isRef(shortcuts) ? shortcuts.value : shortcuts)
+
   const handleKeyDown = (e: KeyboardEvent) => {
     // 忽略输入框中的快捷键（除非是特定组合键）
     const target = e.target as HTMLElement
     const isInput =
       target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable
 
-    for (const shortcut of shortcuts) {
+    for (const shortcut of getShortcuts()) {
       const ctrlMatch = shortcut.ctrl ? e.ctrlKey || e.metaKey : !e.ctrlKey && !e.metaKey
       const shiftMatch = shortcut.shift ? e.shiftKey : !e.shiftKey
       const altMatch = shortcut.alt ? e.altKey : !e.altKey

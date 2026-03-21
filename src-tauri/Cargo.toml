@@ -18,6 +18,11 @@ desktop = [
   "tauri/tray-icon",
   "dep:keyring",
   "dep:clap",
+  "db-full",
+]
+# 数据库驱动 + Keychain（独立于桌面 UI 功能，debug 构建也需要）
+db-full = [
+  "dep:keyring",
   "sea-orm/sqlx-mysql",
   "sea-orm/sqlx-postgres",
   "sea-orm-migration/sqlx-mysql",

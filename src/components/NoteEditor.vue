@@ -1,7 +1,7 @@
 <template>
   <div class="flex-1 h-full flex flex-col overflow-hidden bg-surface shadow-sm">
     <main
-      class="flex-1 flex flex-col min-h-0 overflow-hidden px-4 pt-4 pb-2"
+      class="flex-1 flex flex-col min-h-0 overflow-hidden editor-main"
       role="main"
       :aria-label="t('aria.noteEditor')"
     >
@@ -33,7 +33,7 @@
       <!-- 标题输入区域 -->
       <div v-if="activeNote" class="flex items-center mt-4 mb-2">
         <button
-          v-if="mobile"
+          v-if="props.layout === 'mobile'"
           @click="emit('back')"
           class="p-1.5 -ml-1.5 mr-1 text-content-secondary hover:text-content hover:bg-surface-dim rounded-lg transition-colors shrink-0"
           :aria-label="t('common.close')"
@@ -188,6 +188,7 @@ import { ConfirmDialog } from './ui'
 import { ArrowLeft } from 'lucide-vue-next'
 import { ContentType, McpAccess, MarkdownLayout } from '../types'
 import type { NoteHistory, ShowNote, ShowNotebook, ShowTag } from '../types'
+import type { LayoutMode } from '../composables/usePlatform'
 import { getMarkdownFromEditor } from '../types/tiptap-markdown'
 import { isTemporaryId } from '../utils/validation'
 import { throttle } from '../utils/debounce'
@@ -211,6 +212,7 @@ interface Props {
   editMode: boolean
   historyLoading?: boolean
   mobile?: boolean
+  layout?: LayoutMode
 }
 
 const { t } = useI18n()
@@ -652,12 +654,29 @@ const handlePreviewScroll = throttle(() => syncScroll('preview'), SCROLL_SYNC_TH
 <style src="../styles/prosemirror.css"></style>
 
 <style scoped>
+.editor-main {
+  padding: 1rem 1rem 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .editor-main {
+    padding: 1rem 1.5rem 0.5rem;
+  }
+}
+
 .tiptap-editor,
 .tiptap-editor-edit {
   position: absolute;
   inset: 0;
-  padding: 1rem 1.5rem;
+  padding: 1rem 1rem;
   overflow-y: auto;
+}
+
+@media (min-width: 640px) {
+  .tiptap-editor,
+  .tiptap-editor-edit {
+    padding: 1rem 1.5rem;
+  }
 }
 
 .tiptap-editor:focus {

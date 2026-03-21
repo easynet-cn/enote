@@ -13,9 +13,9 @@ use std::sync::Arc;
 
 use sea_orm_migration::MigratorTrait;
 use tauri::Manager;
-#[cfg(desktop)]
+#[cfg(feature = "desktop")]
 use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem};
-#[cfg(desktop)]
+#[cfg(feature = "desktop")]
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder};
 use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 use tracing::{error, info};
@@ -99,6 +99,7 @@ pub fn run_with_config(config_path: Option<String>) {
             command::get_profile_index,
             command::set_auto_connect,
             command::restart_with_profile,
+            command::reconnect_profile,
             // 笔记本相关命令
             command::find_all_notebooks,
             command::create_notebook,
@@ -267,8 +268,8 @@ async fn setup_normal_mode(
 
             let profile_config = service::profile::read_profile(&app_data_dir, &profile_id)?;
 
-            // 从 Keychain 获取数据库密码（仅桌面端 MySQL/PG 需要）
-            #[cfg(desktop)]
+            // 从 Keychain 获取数据库密码（桌面端/db-full 模式 MySQL/PG 需要）
+            #[cfg(any(feature = "desktop", feature = "db-full"))]
             let db_password = if profile_config.datasource.db_type != "sqlite"
                 && profile_config.datasource.auth_method != "certificate"
             {
@@ -276,7 +277,7 @@ async fn setup_normal_mode(
             } else {
                 None
             };
-            #[cfg(not(desktop))]
+            #[cfg(not(any(feature = "desktop", feature = "db-full")))]
             let db_password: Option<String> = None;
 
             let database_connection = match config::database_connection_from_profile(
@@ -301,14 +302,14 @@ async fn setup_normal_mode(
                 }
             };
 
-            // 从 Keychain 获取加密密钥（仅桌面端）
-            #[cfg(desktop)]
+            // 从 Keychain 获取加密密钥（桌面端/db-full 模式）
+            #[cfg(any(feature = "desktop", feature = "db-full"))]
             let encryption_key = if profile_config.security.content_encryption {
                 service::keychain::get_encryption_key(&profile_id)?
             } else {
                 None
             };
-            #[cfg(not(desktop))]
+            #[cfg(not(any(feature = "desktop", feature = "db-full")))]
             let encryption_key: Option<String> = None;
 
             let configuration = config::Configuration::default();
@@ -336,17 +337,17 @@ async fn setup_normal_mode(
 
     let app_state = Arc::new(AppState {
         configuration,
-        database_connection,
+        database_connection: tokio::sync::RwLock::new(database_connection),
         app_data_dir,
-        active_profile_id,
-        encryption_key,
+        active_profile_id: tokio::sync::RwLock::new(active_profile_id),
+        encryption_key: tokio::sync::RwLock::new(encryption_key),
         settings_cache: tokio::sync::RwLock::new(None),
     });
 
     app.manage(app_state);
 
     // 设置系统托盘（仅桌面端）
-    #[cfg(desktop)]
+    #[cfg(feature = "desktop")]
     setup_tray(app)?;
 
     Ok(())
@@ -369,24 +370,24 @@ async fn setup_wizard_mode_state(app: &mut tauri::App) -> Result<(), Box<dyn std
 
     let app_state = Arc::new(AppState {
         configuration: config::Configuration::default(),
-        database_connection: db,
+        database_connection: tokio::sync::RwLock::new(db),
         app_data_dir,
-        active_profile_id: String::new(),
-        encryption_key: None,
+        active_profile_id: tokio::sync::RwLock::new(String::new()),
+        encryption_key: tokio::sync::RwLock::new(None),
         settings_cache: tokio::sync::RwLock::new(None),
     });
 
     app.manage(app_state);
 
     // 设置系统托盘（仅桌面端）
-    #[cfg(desktop)]
+    #[cfg(feature = "desktop")]
     setup_tray(app)?;
 
     Ok(())
 }
 
 /// 设置系统托盘（仅桌面端编译）
-#[cfg(desktop)]
+#[cfg(feature = "desktop")]
 fn setup_tray(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let show_item = MenuItemBuilder::with_id("show", "显示窗口").build(app)?;
     let quit_item = MenuItemBuilder::with_id("quit", "退出").build(app)?;

@@ -173,7 +173,7 @@ const toggleLang = () => {
 const profiles = ref<ProfileSummary[]>([])
 const selectedId = ref('')
 const connecting = ref(false)
-const autoConnect = ref(false)
+const autoConnect = ref(true)
 
 const getDbIcon = (dbType: string) => {
   switch (dbType) {
@@ -208,12 +208,12 @@ const connectProfile = async (profileId: string) => {
   if (!profileId) return
   connecting.value = true
   try {
-    // 标记本次为用户主动选择，重启后跳过选择页面
-    localStorage.setItem('enote-skip-profile-select', '1')
-    await profileApi.restartWithProfile(profileId)
+    // 使用热重连代替进程重启，避免 dev 模式下白屏
+    await profileApi.reconnectProfile(profileId)
+    // 连接成功后保存 autoConnect 设置（非阻塞，失败不影响进入）
+    profileApi.setAutoConnect(autoConnect.value).catch(() => {})
     emit('connected')
   } catch (e: unknown) {
-    localStorage.removeItem('enote-skip-profile-select')
     showNotification({ type: 'error', message: parseError(e) })
     connecting.value = false
   }

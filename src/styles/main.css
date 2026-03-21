@@ -201,6 +201,23 @@ html {
   scroll-behavior: smooth;
 }
 
+/* 移动端安全区域适配 */
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* 移动端禁止选中和拖拽 */
+@media (max-width: 639px) {
+  .sidebar-item,
+  .note-item {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+}
+
 /* 默认字体设置 */
 body {
   font-family:
@@ -395,7 +412,108 @@ pre {
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
 
-/* 响应式设计 */
+/* ============================================
+   响应式布局容器
+   ============================================ */
+
+/* 侧边栏容器 - 桌面模式 */
+.sidebar-container-desktop {
+  position: relative;
+  flex-shrink: 0;
+  height: 100%;
+}
+
+/* 侧边栏容器 - 覆盖层模式（手机/平板） */
+.sidebar-container-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 40;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-overlay-visible {
+  transform: translateX(0);
+}
+
+.sidebar-overlay-hidden {
+  transform: translateX(-100%);
+}
+
+/* 侧边栏遮罩 */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  background: var(--color-overlay);
+  backdrop-filter: blur(2px);
+}
+
+.sidebar-overlay-enter-active,
+.sidebar-overlay-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay-enter-from,
+.sidebar-overlay-leave-to {
+  opacity: 0;
+}
+
+/* 笔记列表容器 - 桌面模式 */
+.notelist-container-desktop {
+  position: relative;
+  flex-shrink: 0;
+  height: 100%;
+}
+
+/* 笔记列表容器 - 平板模式 */
+.notelist-container-tablet {
+  position: relative;
+  flex-shrink: 0;
+  height: 100%;
+  width: 320px;
+}
+
+/* 笔记列表容器 - 手机模式 */
+.notelist-container-mobile {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 编辑器容器 - 桌面/平板 */
+.editor-container-flex {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+}
+
+/* 编辑器容器 - 手机模式 */
+.editor-container-mobile {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 手机视图切换动画 */
+.mobile-view-active {
+  transform: translateX(0);
+}
+
+.mobile-view-hidden-left {
+  transform: translateX(-100%);
+}
+
+.mobile-view-hidden-right {
+  transform: translateX(100%);
+}
+
+/* ============================================
+   响应式设计 - 工具栏
+   ============================================ */
 @media (max-width: 768px) {
   .tiptap-toolbar {
     gap: 0.25rem;
@@ -404,5 +522,20 @@ pre {
 
   .toolbar-section {
     margin-bottom: 0.25rem;
+  }
+}
+
+/* ============================================
+   响应式设计 - 平板适配
+   ============================================ */
+@media (min-width: 640px) and (max-width: 1024px) {
+  .toolbar-section {
+    gap: 1px;
+    padding: 0 2px;
+  }
+
+  .note-item {
+    padding: 0.75rem;
+    margin: 0.125rem 0.375rem;
   }
 }

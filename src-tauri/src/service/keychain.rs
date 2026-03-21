@@ -18,7 +18,7 @@ pub fn generate_encryption_key() -> String {
 // 桌面端：使用 keyring crate 访问 OS Keychain
 // ============================================================================
 
-#[cfg(desktop)]
+#[cfg(any(feature = "desktop", feature = "db-full"))]
 mod platform {
     use anyhow::{Context, Result};
 
@@ -53,7 +53,7 @@ mod platform {
 // 移动端：Stub 实现（不访问 Keychain）
 // ============================================================================
 
-#[cfg(not(desktop))]
+#[cfg(not(any(feature = "desktop", feature = "db-full")))]
 mod platform {
     use anyhow::Result;
 

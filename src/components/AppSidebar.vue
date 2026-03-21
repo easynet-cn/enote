@@ -1,14 +1,25 @@
 <template>
   <aside
     :class="[
-      'flex flex-col bg-surface-alt transition-all duration-300 relative',
-      mobile ? 'w-full' : collapsed ? 'w-12' : 'w-64',
+      'flex flex-col bg-surface-alt transition-all duration-300 relative h-full',
+      overlay ? 'w-72 shadow-2xl' : collapsed ? 'w-12' : 'w-64',
     ]"
     role="navigation"
     :aria-label="t('aria.sidebar')"
   >
-    <!-- 折叠/展开按钮（右侧边界中间） -->
+    <!-- 覆盖层模式关闭按钮 -->
     <button
+      v-if="overlay"
+      @click="$emit('close-overlay')"
+      class="absolute top-3 right-3 z-10 w-7 h-7 bg-surface border border-edge rounded-full shadow-sm flex items-center justify-center text-content-tertiary hover:text-indigo-600 transition-all hover:scale-110 active:scale-95"
+      :aria-label="t('common.close')"
+    >
+      <X class="w-4 h-4" aria-hidden="true" />
+    </button>
+
+    <!-- 折叠/展开按钮（仅桌面模式） -->
+    <button
+      v-if="!overlay"
       @click="$emit('toggle-collapse')"
       class="absolute -right-3.5 top-1/2 -translate-y-1/2 z-10 w-7 h-7 bg-surface border border-edge rounded-full shadow-sm flex items-center justify-center text-content-tertiary hover:text-indigo-600 transition-all hover:scale-110 active:scale-95"
       :aria-label="collapsed ? t('sidebar.expand') : t('sidebar.collapse')"
@@ -426,6 +437,7 @@ import {
   Settings,
   LayoutTemplate,
   Shield,
+  X,
 } from 'lucide-vue-next'
 import {
   Button,
@@ -508,6 +520,7 @@ const props = defineProps<{
   activeTag: string
   collapsed: boolean
   mobile?: boolean
+  overlay?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -526,6 +539,7 @@ const emit = defineEmits<{
   reorderNotebooks: [orders: [string, number][]]
   reorderTags: [orders: [string, number][]]
   openTemplates: []
+  'close-overlay': []
 }>()
 
 const showNotebookEditAndDelete = computed(() => {

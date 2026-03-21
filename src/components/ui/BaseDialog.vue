@@ -283,17 +283,62 @@ const handleOverlayClick = () => {
   transform: scale(0.95) translateY(-10px);
 }
 
-/* 移动端适配 */
-@media (max-width: 768px) {
+/* 平板端适配 */
+@media (min-width: 640px) and (max-width: 1024px) {
+  .dialog-content {
+    max-width: min(90vw, 560px);
+  }
+}
+
+/* 移动端适配 - 底部抽屉模式 */
+@media (max-width: 639px) {
   .dialog-overlay {
-    padding: 0.5rem;
+    padding: 0;
+    align-items: flex-end;
   }
 
   .dialog-content {
-    max-width: calc(100vw - 1rem);
-    border-radius: 8px;
+    width: 100% !important;
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: 16px 16px 0 0;
+    animation: dialog-slide-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
+  .dialog-fullscreen {
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .dialog-header {
+    padding: 1rem;
+  }
+
+  .dialog-body {
+    padding: 1rem;
+    max-height: 70vh;
+  }
+
+  .dialog-footer {
+    padding: 0.75rem 1rem;
+    /* 安全区域适配 */
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+}
+
+@keyframes dialog-slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 中等屏幕（640px-768px 之间） */
+@media (min-width: 640px) and (max-width: 768px) {
   .dialog-header {
     padding: 1rem;
   }

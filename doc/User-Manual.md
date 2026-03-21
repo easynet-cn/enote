@@ -2,7 +2,7 @@
 
 **Software Name:** enote Intelligent Note Management System
 
-**Version:** V0.9.0
+**Version:** V0.10.0
 
 **Date:** March 2026
 
@@ -93,11 +93,13 @@
 - [14. Application Settings](#14-application-settings)
   - [14.1 Theme Settings](#141-theme-settings)
   - [14.2 Language Settings](#142-language-settings)
-  - [14.3 Automatic Backup Settings](#143-automatic-backup-settings)
-  - [14.4 Security Settings (Lock Screen)](#144-security-settings-lock-screen)
-  - [14.5 MCP Settings](#145-mcp-settings)
-  - [14.6 Profile Management](#146-profile-management)
-  - [14.7 System Maintenance (Cross-Profile Sync)](#147-system-maintenance-cross-profile-sync)
+  - [14.3 Layout Mode Settings](#143-layout-mode-settings)
+  - [14.4 Shortcut Settings](#144-shortcut-settings)
+  - [14.5 Automatic Backup Settings](#145-automatic-backup-settings)
+  - [14.6 Security Settings (Lock Screen)](#146-security-settings-lock-screen)
+  - [14.7 MCP Settings](#147-mcp-settings)
+  - [14.8 Profile Management](#148-profile-management)
+  - [14.9 System Maintenance (Cross-Profile Sync)](#149-system-maintenance-cross-profile-sync)
 - [15. Command Palette](#15-command-palette)
 - [16. System Tray](#16-system-tray)
 - [17. Keyboard Shortcuts](#17-keyboard-shortcuts)
@@ -301,13 +303,27 @@ enote Intelligent Note Management System
 
 ### 3.2 Interface Layout
 
-enote uses a classic three-column layout, arranged from left to right:
+enote uses a responsive three-column layout that automatically adapts to different screen sizes:
+
+#### Desktop Mode (width > 1024px)
+
+Three columns displayed side by side, arranged from left to right:
 
 **Sidebar (Left):** 256 pixels wide, collapsible to a 48-pixel icon bar. Contains the new note button, notebook list, and tag list. The bottom toolbar includes icon buttons for importing notes, data backup, template management, settings, and trash (tooltips appear on hover).
 
 **Note List Area (Center):** Default width of 320 pixels, supports drag-to-resize (200-600 pixel range), and can be fully collapsed. Contains the current notebook name as title, search bar, note card list, and pagination controls. Pinned notes are displayed at the top of the list with a pin indicator.
 
 **Editor Area (Right):** Occupies all remaining width. The top features a feature-rich editing toolbar, followed by the note title input field and the content editing area. Below the editing area is the linked notes panel (expandable/collapsible), and the bottom status bar displays cursor position and word count.
+
+#### Tablet Mode (width 640px ~ 1024px)
+
+Two columns displayed: Note List (fixed 320px) + Editor. The sidebar opens as an overlay by clicking the menu icon in the top-left of the note list, and can be dismissed by clicking the backdrop or close button. Drag-to-resize and collapse buttons are hidden in this mode.
+
+#### Mobile Mode (width < 640px)
+
+Single-view fullscreen switching: the note list and editor are each displayed in fullscreen, with slide animations for transitions. Selecting a note in the list automatically switches to the editor view; a back button in the editor's top-left returns to the list. The sidebar also opens as an overlay.
+
+> **Tip:** The layout mode can be manually switched in Settings (Auto/Desktop/Tablet/Mobile), or cycled via the Ctrl+Shift+M shortcut. See [14.3 Layout Mode Settings](#143-layout-mode-settings).
 
 ---
 
@@ -1008,7 +1024,37 @@ enote supports two interface languages: Simplified Chinese (zh-CN) and English (
 
 In the "Appearance" area of the settings dialog, click the corresponding language button to switch. After switching, all interface text is updated immediately without requiring an application restart. The language preference is saved automatically and applied on the next launch.
 
-### 14.3 Automatic Backup Settings
+### 14.3 Layout Mode Settings
+
+enote supports automatic layout adaptation based on window width, or manual layout mode selection:
+
+| Mode | Description |
+|------|-------------|
+| **Auto (Default)** | Automatically selects based on window width: > 1024px Desktop, 640-1024px Tablet, < 640px Mobile |
+| **Desktop** | Force three-column side-by-side layout |
+| **Tablet** | Force two-column layout (sidebar as overlay) |
+| **Mobile** | Force single-view fullscreen switching layout |
+
+In the "Appearance" area of the settings dialog, click the corresponding layout button to switch. You can also use the Ctrl+Shift+M shortcut (Cmd+Shift+M on macOS) to cycle through modes, or search "Switch Layout" in the command palette.
+
+### 14.4 Shortcut Settings
+
+In the "Shortcuts" area of the settings dialog, you can customize application-level keyboard shortcuts.
+
+**System-level shortcuts** (such as Ctrl+S for save, Esc for cancel editing) are fixed bindings that cannot be modified, indicated by a "System" label.
+
+**To customize a shortcut:**
+
+1. Click the shortcut display area to enter recording mode. The interface shows "Press shortcut keys...".
+2. Press the new key combination (e.g., Ctrl+K). The recording completes and saves automatically.
+3. If the new shortcut conflicts with an existing one, a red conflict warning is displayed and the change is not saved.
+4. Press Esc to cancel recording.
+
+Each customizable shortcut has a "Reset" button on the right to restore its default value. A "Reset All to Default" button at the top restores all shortcuts at once.
+
+Shortcut settings are automatically persisted and remain effective after restarting the application. Shortcut text displayed in the command palette is updated accordingly.
+
+### 14.5 Automatic Backup Settings
 
 In the "Automatic Backup" area of the settings dialog, the following options can be configured:
 
@@ -1022,7 +1068,7 @@ In the "Automatic Backup" area of the settings dialog, the following options can
 
 After enabling automatic backup, the system automatically performs backups at the set interval in the background and automatically cleans up old backup files based on the retention count.
 
-### 14.4 Security Settings (Lock Screen)
+### 14.6 Security Settings (Lock Screen)
 
 enote provides a lock screen security feature that can automatically lock the interface when the application starts or after a period of inactivity, requiring a password to continue using the application and preventing unauthorized access.
 
@@ -1047,7 +1093,7 @@ When the application is locked, a full-screen semi-transparent overlay is displa
 
 **Password Security:** The lock screen password is stored after being hashed with the Argon2id algorithm, not saved in plaintext, ensuring password security.
 
-### 14.5 MCP Settings
+### 14.7 MCP Settings
 
 MCP (Model Context Protocol) is an AI tool integration feature that allows AI clients such as Claude Desktop and Claude Code to operate on note data through a standard protocol. MCP functionality is disabled by default and must be manually enabled in the settings.
 
@@ -1073,7 +1119,7 @@ After enabling the master switch, expand the individual tool switch list to prec
 >
 > In addition to global and tool-level control, enote also supports more fine-grained **data-level access control** -- you can set AI access permissions (Inherit / Read-Write / Read-Only / Deny) separately on notebooks, tags, and individual notes. See [20.4 Access Control](#204-access-control) for details.
 
-### 14.6 Profile Management
+### 14.8 Profile Management
 
 In the Settings dialog, the **Profile Management** section provides the following:
 
@@ -1084,11 +1130,11 @@ In the Settings dialog, the **Profile Management** section provides the followin
   - Edit or delete existing configurations
   - Click the ✕ button in the upper right to close the selection page and return to the main interface
 
-### 14.7 System Maintenance (Cross-Profile Sync)
+### 14.9 System Maintenance (Cross-Profile Sync)
 
 At the bottom of the Settings dialog, the "System Maintenance" section provides cross-profile data synchronization and sync history management.
 
-#### 14.7.1 Cross-Profile Sync
+#### 14.9.1 Cross-Profile Sync
 
 Synchronize data from the current profile to another profile, supporting cross-database synchronization (SQLite ↔ MySQL ↔ PostgreSQL).
 
@@ -1125,7 +1171,7 @@ Synchronize data from the current profile to another profile, supporting cross-d
 - **History Records:** Notes are synced through the service layer. The target automatically generates history records with the operation source marked as "Sync".
 - **Foreign Key Mapping:** Notebook and tag IDs are reassigned in the target database. Note associations with notebooks and tags are automatically corrected.
 
-#### 14.7.2 Sync History Management
+#### 14.9.2 Sync History Management
 
 Each sync operation automatically generates detailed records, including the status of each data record.
 
@@ -1181,8 +1227,9 @@ enote provides a command palette feature similar to VS Code for quickly executin
 | New Note from Template | Open the template list and create a note from a template | Template |
 | Save as Template | Save the current note as a template | Template |
 | Lock Application | Lock the application immediately (requires lock screen to be enabled) | App |
+| Switch Layout Mode | Cycle through layout modes (Auto/Desktop/Tablet/Mobile) | View |
 
-Commands are displayed grouped by category for quick reference.
+Commands are displayed grouped by category for quick reference. Shortcut text displayed in the command palette is updated in real time based on user customizations.
 
 ---
 
@@ -1211,21 +1258,22 @@ enote supports minimizing to the system tray, allowing the application to contin
 
 enote provides the following keyboard shortcuts to improve operational efficiency:
 
-| Shortcut | Function |
-|----------|----------|
-| Ctrl/Cmd + N | Create a new note |
-| Ctrl/Cmd + S | Save the current note |
-| Ctrl/Cmd + E | Enter editing mode |
-| Ctrl/Cmd + B | Expand/Collapse sidebar |
-| Ctrl/Cmd + P | Open command palette |
-| Ctrl/Cmd + L | Lock the application (requires lock screen to be enabled) |
-| Esc | Cancel editing (exit editing mode) / Close command palette |
-| Tab | Increase indent (in editor) |
-| Shift + Tab | Decrease indent (in editor) |
-| Arrow Keys ↑/↓ | Move focus up/down in note list / Select command in command palette |
-| Enter/Space | Select the focused item in note list / Execute the command in command palette |
+| Shortcut | Function | Customizable |
+|----------|----------|-------------|
+| Ctrl/Cmd + S | Save the current note | No (System) |
+| Esc | Cancel editing / Close command palette | No (System) |
+| Ctrl/Cmd + N | Create a new note | Yes |
+| Ctrl/Cmd + E | Enter editing mode | Yes |
+| Ctrl/Cmd + B | Expand/Collapse sidebar | Yes |
+| Ctrl/Cmd + P | Open command palette | Yes |
+| Ctrl/Cmd + L | Lock the application (requires lock screen to be enabled) | Yes |
+| Ctrl/Cmd + Shift + M | Cycle through layout modes | Yes |
+| Tab | Increase indent (in editor) | — |
+| Shift + Tab | Decrease indent (in editor) | — |
+| Arrow Keys ↑/↓ | Move focus up/down in note list / Select command in command palette | — |
+| Enter/Space | Select the focused item in note list / Execute the command in command palette | — |
 
-> **Note:** On macOS, the Ctrl key corresponds to the Cmd key.
+> **Note:** On macOS, the Ctrl key corresponds to the Cmd key. Shortcuts marked as "Customizable" can be remapped in Settings. See [14.4 Shortcut Settings](#144-shortcut-settings).
 
 ---
 
@@ -1773,6 +1821,19 @@ The system automatically records the history version of every modification and d
 
 | Version | Date | Changes |
 |---------|------|---------|
+| V0.10.0 | March 2026 | Responsive Layout and Shortcut Customization |
+| | | - Responsive Layout: Auto-adapts to Desktop (three-column), Tablet (two-column + sidebar overlay), Mobile (single-view fullscreen switching) |
+| | | - Layout Mode Settings: Manual layout mode selection (Auto/Desktop/Tablet/Mobile), persisted to settings |
+| | | - Shortcut Customization: 6 application-level shortcuts are customizable with recording, conflict detection, and reset |
+| | | - Shortcut Persistence: Custom shortcuts saved to database, effective after restart |
+| | | - Command Palette Enhancement: New "Switch Layout Mode" command, shortcut text updates in real time |
+| | | - View Transition Animations: Slide transitions for note list and editor in mobile mode |
+| | | - Mobile Dialog Adaptation: Dialogs become bottom sheets on small screens |
+| | | - Responsive Toolbar: Editor toolbar and action buttons auto-compact on small screens |
+| | | - Profile Hot-Switch: Switching database profiles no longer restarts the process, works in all environments |
+| | | - Feature Split: Rust compile features split into desktop (desktop UI) and db-full (DB drivers + Keychain) |
+| | | - Safe Area Adaptation: iOS safe area support (notch/home indicator) |
+| | | - Responsive Status Bar: Line/column info hidden on small screens, character count only |
 | V0.9.0 | March 2026 | Cross-Profile Sync and System Optimization |
 | | | - Cross-Profile Sync: Sync data to other profiles with Append/Overwrite modes |
 | | | - Cross-Database Sync: SQLite ↔ MySQL ↔ PostgreSQL in any direction, automatic encryption conversion |
@@ -1841,4 +1902,4 @@ The system automatically records the history version of every modification and d
 
 ---
 
-*This manual is based on enote Intelligent Note Management System V0.9.0. Please refer to the actual software for any feature updates.*
+*This manual is based on enote Intelligent Note Management System V0.10.0. Please refer to the actual software for any feature updates.*

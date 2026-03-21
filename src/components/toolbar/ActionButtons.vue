@@ -212,4 +212,41 @@ const emit = defineEmits<{
   background: var(--color-border-dark);
   margin: 0 4px;
 }
+
+/* 平板适配 */
+@media (min-width: 640px) and (max-width: 1024px) {
+  .toolbar-actions {
+    gap: 4px;
+  }
+
+  .action-btn {
+    height: 28px;
+    padding: 0 8px;
+    font-size: 12px;
+  }
+
+  .action-divider {
+    margin: 0 2px;
+    height: 16px;
+  }
+}
+
+/* 手机适配 */
+@media (max-width: 639px) {
+  .toolbar-actions {
+    gap: 2px;
+  }
+
+  .action-btn {
+    height: 28px;
+    padding: 0 6px;
+    border-radius: 6px;
+    font-size: 12px;
+  }
+
+  .action-divider {
+    margin: 0 1px;
+    height: 14px;
+  }
+}
 </style>
