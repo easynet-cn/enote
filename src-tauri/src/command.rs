@@ -16,6 +16,8 @@ use std::collections::HashMap;
 
 use tracing::info;
 
+use sea_orm::DatabaseConnection;
+
 use crate::{
     config::AppState,
     error::AppError,
@@ -26,6 +28,18 @@ use crate::{
     },
     service,
 };
+
+/// 从 AppState 获取数据库连接，未连接时返回明确错误。
+///
+/// `DatabaseConnection` 内部基于 `Arc<Pool>`，clone 为 O(1) 操作。
+async fn require_db(app_state: &AppState) -> Result<DatabaseConnection, AppError> {
+    app_state
+        .database_connection
+        .read()
+        .await
+        .clone()
+        .ok_or_else(|| AppError::code("DB_NOT_CONNECTED"))
+}
 
 // ============================================================================
 // Setup / Profile 相关命令
@@ -136,7 +150,7 @@ pub async fn test_db_connection(
 ) -> Result<bool, AppError> {
     match crate::config::database_connection_from_profile(&config, db_password.as_deref()).await {
         Ok(_) => Ok(true),
-        Err(e) => Err(AppError::Business(format!("连接失败: {}", e))),
+        Err(e) => Err(AppError::code_with_args("DB_CONNECTION_FAILED", vec![e.to_string()])),
     }
 }
 
@@ -197,13 +211,13 @@ pub async fn reconnect_profile(
     let new_db =
         crate::config::database_connection_from_profile(&profile_config, db_password.as_deref())
             .await
-            .map_err(|e| AppError::Business(format!("数据库连接失败: {}", e)))?;
+            .map_err(|e| AppError::code_with_args("DB_CONNECTION_FAILED", vec![e.to_string()]))?;
 
     // 5. 运行数据库迁移
     use sea_orm_migration::MigratorTrait;
     crate::migration::Migrator::up(&new_db, None)
         .await
-        .map_err(|e| AppError::Business(format!("数据库迁移失败: {}", e)))?;
+        .map_err(|e| AppError::code_with_args("DB_MIGRATION_FAILED", vec![e.to_string()]))?;
 
     // 6. 从 Keychain 获取加密密钥（桌面端/db-full 模式）
     #[cfg(any(feature = "desktop", feature = "db-full"))]
@@ -218,7 +232,7 @@ pub async fn reconnect_profile(
     // 7. 替换 AppState 中的连接和相关状态
     {
         let mut db_guard = app_state.database_connection.write().await;
-        *db_guard = new_db;
+        *db_guard = Some(new_db);
     }
     {
         let mut profile_guard = app_state.active_profile_id.write().await;
@@ -249,18 +263,18 @@ pub async fn export_backup(
     format: String,
     path: String,
 ) -> Result<(), AppError> {
-    let db = app_state.database_connection.read().await;
+    let db = require_db(&app_state).await?;
     match format.as_str() {
-        "sql" => service::backup::export_sql(&*db, &path)
+        "sql" => service::backup::export_sql(&db, &path)
             .await
             .map_err(AppError::from)?,
-        "excel" => service::backup::export_excel(&*db, &path)
+        "excel" => service::backup::export_excel(&db, &path)
             .await
             .map_err(AppError::from)?,
-        "csv" => service::backup::export_csv(&*db, &path)
+        "csv" => service::backup::export_csv(&db, &path)
             .await
             .map_err(AppError::from)?,
-        _ => return Err(AppError::Business("不支持的导出格式".to_string())),
+        _ => return Err(AppError::code("UNSUPPORTED_EXPORT_FORMAT")),
     }
     Ok(())
 }
@@ -272,18 +286,18 @@ pub async fn import_backup(
     format: String,
     path: String,
 ) -> Result<(), AppError> {
-    let db = app_state.database_connection.read().await;
+    let db = require_db(&app_state).await?;
     match format.as_str() {
-        "sql" => service::backup::import_sql(&*db, &path)
+        "sql" => service::backup::import_sql(&db, &path)
             .await
             .map_err(AppError::from)?,
-        "excel" => service::backup::import_excel(&*db, &path)
+        "excel" => service::backup::import_excel(&db, &path)
             .await
             .map_err(AppError::from)?,
-        "csv" => service::backup::import_csv(&*db, &path)
+        "csv" => service::backup::import_csv(&db, &path)
             .await
             .map_err(AppError::from)?,
-        _ => return Err(AppError::Business("不支持的导入格式".to_string())),
+        _ => return Err(AppError::code("UNSUPPORTED_IMPORT_FORMAT")),
     }
     Ok(())
 }
@@ -297,8 +311,8 @@ pub async fn import_backup(
 pub async fn find_all_notebooks(
     app_state: tauri::State<'_, Arc<AppState>>,
 ) -> Result<Vec<Notebook>, AppError> {
-    let db = app_state.database_connection.read().await;
-    let notebooks = service::notebook::find_all(&*db)
+    let db = require_db(&app_state).await?;
+    let notebooks = service::notebook::find_all(&db)
         .await
         .map_err(AppError::from)?;
     Ok(notebooks)
@@ -311,8 +325,8 @@ pub async fn create_notebook(
     notebook: Notebook,
 ) -> Result<Option<Notebook>, AppError> {
     notebook.validate().map_err(AppError::from)?;
-    let db = app_state.database_connection.read().await;
-    service::notebook::create(&*db, &notebook)
+    let db = require_db(&app_state).await?;
+    service::notebook::create(&db, &notebook)
         .await
         .map_err(AppError::from)
 }
@@ -323,8 +337,8 @@ pub async fn delete_notebook_by_id(
     app_state: tauri::State<'_, Arc<AppState>>,
     id: i64,
 ) -> Result<(), AppError> {
-    let db = app_state.database_connection.read().await;
-    service::notebook::delete_by_id(&*db, id)
+    let db = require_db(&app_state).await?;
+    service::notebook::delete_by_id(&db, id)
         .await
         .map_err(AppError::from)
 }
@@ -336,8 +350,8 @@ pub async fn update_notebook(
     notebook: Notebook,
 ) -> Result<Option<Notebook>, AppError> {
     notebook.validate().map_err(AppError::from)?;
-    let db = app_state.database_connection.read().await;
-    service::notebook::update(&*db, &notebook)
+    let db = require_db(&app_state).await?;
+    service::notebook::update(&db, &notebook)
         .await
         .map_err(AppError::from)
 }
@@ -351,8 +365,8 @@ pub async fn update_notebook(
 pub async fn find_all_tags(
     app_state: tauri::State<'_, Arc<AppState>>,
 ) -> Result<Vec<Tag>, AppError> {
-    let db = app_state.database_connection.read().await;
-    let tags = service::tag::find_all(&*db).await.map_err(AppError::from)?;
+    let db = require_db(&app_state).await?;
+    let tags = service::tag::find_all(&db).await.map_err(AppError::from)?;
     Ok(tags)
 }
 
@@ -363,8 +377,8 @@ pub async fn create_tag(
     tag: Tag,
 ) -> Result<Option<Tag>, AppError> {
     tag.validate().map_err(AppError::from)?;
-    let db = app_state.database_connection.read().await;
-    service::tag::create(&*db, &tag).await.map_err(AppError::from)
+    let db = require_db(&app_state).await?;
+    service::tag::create(&db, &tag).await.map_err(AppError::from)
 }
 
 /// 根据 ID 删除标签
@@ -373,8 +387,8 @@ pub async fn delete_tag_by_id(
     app_state: tauri::State<'_, Arc<AppState>>,
     id: i64,
 ) -> Result<(), AppError> {
-    let db = app_state.database_connection.read().await;
-    service::tag::delete_by_id(&*db, id)
+    let db = require_db(&app_state).await?;
+    service::tag::delete_by_id(&db, id)
         .await
         .map_err(AppError::from)
 }
@@ -386,8 +400,8 @@ pub async fn update_tag(
     tag: Tag,
 ) -> Result<Option<Tag>, AppError> {
     tag.validate().map_err(AppError::from)?;
-    let db = app_state.database_connection.read().await;
-    service::tag::update(&*db, &tag).await.map_err(AppError::from)
+    let db = require_db(&app_state).await?;
+    service::tag::update(&db, &tag).await.map_err(AppError::from)
 }
 
 // ============================================================================
@@ -401,10 +415,10 @@ pub async fn create_note(
     note: Note,
 ) -> Result<Option<Note>, AppError> {
     note.validate().map_err(AppError::from)?;
-    let db = app_state.database_connection.read().await;
+    let db = require_db(&app_state).await?;
     let enc_key = app_state.encryption_key.read().await;
     service::note::create_with_key(
-        &*db,
+        &db,
         &note,
         OperateSource::User,
         enc_key.as_deref(),
@@ -420,10 +434,10 @@ pub async fn update_note(
     note: Note,
 ) -> Result<Option<Note>, AppError> {
     note.validate().map_err(AppError::from)?;
-    let db = app_state.database_connection.read().await;
+    let db = require_db(&app_state).await?;
     let enc_key = app_state.encryption_key.read().await;
     service::note::update_with_key(
-        &*db,
+        &db,
         &note,
         OperateSource::User,
         enc_key.as_deref(),
@@ -438,8 +452,8 @@ pub async fn delete_note_by_id(
     app_state: tauri::State<'_, Arc<AppState>>,
     id: i64,
 ) -> Result<(), AppError> {
-    let db = app_state.database_connection.read().await;
-    service::note::delete_by_id(&*db, id)
+    let db = require_db(&app_state).await?;
+    service::note::delete_by_id(&db, id)
         .await
         .map_err(AppError::from)
 }
@@ -451,9 +465,9 @@ pub async fn search_page_notes(
     mut search_param: NoteSearchPageParam,
 ) -> Result<PageResult<Note>, AppError> {
     search_param.normalize();
-    let db = app_state.database_connection.read().await;
+    let db = require_db(&app_state).await?;
     let enc_key = app_state.encryption_key.read().await;
-    service::note::search_page_with_key(&*db, &search_param, enc_key.as_deref())
+    service::note::search_page_with_key(&db, &search_param, enc_key.as_deref())
         .await
         .map_err(AppError::from)
 }
@@ -464,8 +478,8 @@ pub async fn note_stats(
     mut search_param: NoteSearchPageParam,
 ) -> Result<NoteStatsResult, AppError> {
     search_param.normalize();
-    let db = app_state.database_connection.read().await;
-    service::note::stats(&*db, &search_param)
+    let db = require_db(&app_state).await?;
+    service::note::stats(&db, &search_param)
         .await
         .map_err(AppError::from)
 }
@@ -481,8 +495,8 @@ pub async fn search_page_note_histories(
     mut search_param: NoteHistorySearchPageParam,
 ) -> Result<PageResult<NoteHistory>, AppError> {
     search_param.page_param.normalize();
-    let db = app_state.database_connection.read().await;
-    service::note_history::search_page(&*db, &search_param)
+    let db = require_db(&app_state).await?;
+    service::note_history::search_page(&db, &search_param)
         .await
         .map_err(AppError::from)
 }
@@ -505,8 +519,8 @@ pub async fn get_all_settings(
     }
 
     // 缓存未命中，从数据库读取
-    let db = app_state.database_connection.read().await;
-    let settings = service::settings::get_all(&*db)
+    let db = require_db(&app_state).await?;
+    let settings = service::settings::get_all(&db)
         .await
         .map_err(AppError::from)?;
 
@@ -525,8 +539,8 @@ pub async fn save_settings(
     app_state: tauri::State<'_, Arc<AppState>>,
     settings: HashMap<String, String>,
 ) -> Result<(), AppError> {
-    let db = app_state.database_connection.read().await;
-    service::settings::save(&*db, settings)
+    let db = require_db(&app_state).await?;
+    service::settings::save(&db, settings)
         .await
         .map_err(AppError::from)?;
 
@@ -549,8 +563,8 @@ pub async fn toggle_note_pin(
     app_state: tauri::State<'_, Arc<AppState>>,
     id: i64,
 ) -> Result<Option<Note>, AppError> {
-    let db = app_state.database_connection.read().await;
-    service::note::toggle_pin(&*db, id)
+    let db = require_db(&app_state).await?;
+    service::note::toggle_pin(&db, id)
         .await
         .map_err(AppError::from)
 }
@@ -565,8 +579,8 @@ pub async fn restore_note(
     app_state: tauri::State<'_, Arc<AppState>>,
     id: i64,
 ) -> Result<(), AppError> {
-    let db = app_state.database_connection.read().await;
-    service::note::restore_by_id(&*db, id)
+    let db = require_db(&app_state).await?;
+    service::note::restore_by_id(&db, id)
         .await
         .map_err(AppError::from)
 }
@@ -577,8 +591,8 @@ pub async fn permanent_delete_note(
     app_state: tauri::State<'_, Arc<AppState>>,
     id: i64,
 ) -> Result<(), AppError> {
-    let db = app_state.database_connection.read().await;
-    service::note::permanent_delete_by_id(&*db, id, OperateSource::User)
+    let db = require_db(&app_state).await?;
+    service::note::permanent_delete_by_id(&db, id, OperateSource::User)
         .await
         .map_err(AppError::from)
 }
@@ -586,8 +600,8 @@ pub async fn permanent_delete_note(
 /// 清空回收站
 #[tauri::command]
 pub async fn empty_trash(app_state: tauri::State<'_, Arc<AppState>>) -> Result<(), AppError> {
-    let db = app_state.database_connection.read().await;
-    service::note::empty_trash(&*db).await.map_err(AppError::from)
+    let db = require_db(&app_state).await?;
+    service::note::empty_trash(&db).await.map_err(AppError::from)
 }
 
 /// 获取回收站笔记列表
@@ -595,9 +609,9 @@ pub async fn empty_trash(app_state: tauri::State<'_, Arc<AppState>>) -> Result<(
 pub async fn find_deleted_notes(
     app_state: tauri::State<'_, Arc<AppState>>,
 ) -> Result<Vec<Note>, AppError> {
-    let db = app_state.database_connection.read().await;
+    let db = require_db(&app_state).await?;
     let enc_key = app_state.encryption_key.read().await;
-    service::note::find_deleted_with_key(&*db, enc_key.as_deref())
+    service::note::find_deleted_with_key(&db, enc_key.as_deref())
         .await
         .map_err(AppError::from)
 }
@@ -612,8 +626,8 @@ pub async fn reorder_notebooks(
     app_state: tauri::State<'_, Arc<AppState>>,
     orders: Vec<(i64, i32)>,
 ) -> Result<(), AppError> {
-    let db = app_state.database_connection.read().await;
-    service::notebook::reorder(&*db, orders)
+    let db = require_db(&app_state).await?;
+    service::notebook::reorder(&db, orders)
         .await
         .map_err(AppError::from)
 }
@@ -624,8 +638,8 @@ pub async fn reorder_tags(
     app_state: tauri::State<'_, Arc<AppState>>,
     orders: Vec<(i64, i32)>,
 ) -> Result<(), AppError> {
-    let db = app_state.database_connection.read().await;
-    service::tag::reorder(&*db, orders)
+    let db = require_db(&app_state).await?;
+    service::tag::reorder(&db, orders)
         .await
         .map_err(AppError::from)
 }
@@ -658,8 +672,8 @@ pub async fn delete_image(path: String) -> Result<(), AppError> {
 /// 执行一次自动备份
 #[tauri::command]
 pub async fn auto_backup(app_state: tauri::State<'_, Arc<AppState>>) -> Result<String, AppError> {
-    let db = app_state.database_connection.read().await;
-    let filename = service::backup::auto_backup(&*db, &app_state.app_data_dir)
+    let db = require_db(&app_state).await?;
+    let filename = service::backup::auto_backup(&db, &app_state.app_data_dir)
         .await
         .map_err(AppError::from)?;
     Ok(filename)
@@ -690,8 +704,8 @@ pub async fn list_auto_backups(
 pub async fn find_all_templates(
     app_state: tauri::State<'_, Arc<AppState>>,
 ) -> Result<Vec<NoteTemplate>, AppError> {
-    let db = app_state.database_connection.read().await;
-    service::note_template::find_all(&*db)
+    let db = require_db(&app_state).await?;
+    service::note_template::find_all(&db)
         .await
         .map_err(AppError::from)
 }
@@ -702,8 +716,8 @@ pub async fn create_template(
     template: NoteTemplate,
 ) -> Result<Option<NoteTemplate>, AppError> {
     template.validate().map_err(AppError::from)?;
-    let db = app_state.database_connection.read().await;
-    service::note_template::create(&*db, &template)
+    let db = require_db(&app_state).await?;
+    service::note_template::create(&db, &template)
         .await
         .map_err(AppError::from)
 }
@@ -714,8 +728,8 @@ pub async fn update_template(
     template: NoteTemplate,
 ) -> Result<Option<NoteTemplate>, AppError> {
     template.validate().map_err(AppError::from)?;
-    let db = app_state.database_connection.read().await;
-    service::note_template::update(&*db, &template)
+    let db = require_db(&app_state).await?;
+    service::note_template::update(&db, &template)
         .await
         .map_err(AppError::from)
 }
@@ -725,8 +739,8 @@ pub async fn delete_template_by_id(
     app_state: tauri::State<'_, Arc<AppState>>,
     id: i64,
 ) -> Result<(), AppError> {
-    let db = app_state.database_connection.read().await;
-    service::note_template::delete_by_id(&*db, id)
+    let db = require_db(&app_state).await?;
+    service::note_template::delete_by_id(&db, id)
         .await
         .map_err(AppError::from)
 }
@@ -741,8 +755,8 @@ pub async fn find_note_links(
     app_state: tauri::State<'_, Arc<AppState>>,
     note_id: i64,
 ) -> Result<Vec<NoteLink>, AppError> {
-    let db = app_state.database_connection.read().await;
-    service::note_link::find_links(&*db, note_id)
+    let db = require_db(&app_state).await?;
+    service::note_link::find_links(&db, note_id)
         .await
         .map_err(AppError::from)
 }
@@ -754,8 +768,8 @@ pub async fn create_note_link(
     source_note_id: i64,
     target_note_id: i64,
 ) -> Result<(), AppError> {
-    let db = app_state.database_connection.read().await;
-    service::note_link::create_link(&*db, source_note_id, target_note_id)
+    let db = require_db(&app_state).await?;
+    service::note_link::create_link(&db, source_note_id, target_note_id)
         .await
         .map_err(AppError::from)
 }
@@ -766,8 +780,8 @@ pub async fn delete_note_link(
     app_state: tauri::State<'_, Arc<AppState>>,
     link_id: i64,
 ) -> Result<(), AppError> {
-    let db = app_state.database_connection.read().await;
-    service::note_link::delete_link(&*db, link_id)
+    let db = require_db(&app_state).await?;
+    service::note_link::delete_link(&db, link_id)
         .await
         .map_err(AppError::from)
 }
@@ -779,8 +793,8 @@ pub async fn search_linkable_notes(
     note_id: i64,
     keyword: String,
 ) -> Result<Vec<NoteLink>, AppError> {
-    let db = app_state.database_connection.read().await;
-    service::note_link::search_linkable_notes(&*db, note_id, &keyword)
+    let db = require_db(&app_state).await?;
+    service::note_link::search_linkable_notes(&db, note_id, &keyword)
         .await
         .map_err(AppError::from)
 }
@@ -817,8 +831,8 @@ pub async fn set_lock_password(
     app_state: tauri::State<'_, Arc<AppState>>,
     password: String,
 ) -> Result<(), AppError> {
-    let db = app_state.database_connection.read().await;
-    service::auth::set_password(&*db, &password)
+    let db = require_db(&app_state).await?;
+    service::auth::set_password(&db, &password)
         .await
         .map_err(AppError::from)
 }
@@ -829,8 +843,8 @@ pub async fn verify_lock_password(
     app_state: tauri::State<'_, Arc<AppState>>,
     password: String,
 ) -> Result<bool, AppError> {
-    let db = app_state.database_connection.read().await;
-    service::auth::verify_password(&*db, &password)
+    let db = require_db(&app_state).await?;
+    service::auth::verify_password(&db, &password)
         .await
         .map_err(AppError::from)
 }
@@ -840,8 +854,8 @@ pub async fn verify_lock_password(
 pub async fn clear_lock_password(
     app_state: tauri::State<'_, Arc<AppState>>,
 ) -> Result<(), AppError> {
-    let db = app_state.database_connection.read().await;
-    service::auth::clear_password(&*db)
+    let db = require_db(&app_state).await?;
+    service::auth::clear_password(&db)
         .await
         .map_err(AppError::from)
 }
@@ -857,10 +871,10 @@ pub async fn get_sync_preview(
     target_profile_id: String,
     target_db_password: Option<String>,
 ) -> Result<SyncPreview, AppError> {
-    let db = app_state.database_connection.read().await;
+    let db = require_db(&app_state).await?;
     let profile_id = app_state.active_profile_id.read().await;
     service::sync::get_preview(
-        &*db,
+        &db,
         &app_state.app_data_dir,
         &*profile_id,
         &target_profile_id,
@@ -879,7 +893,7 @@ pub async fn start_sync(
     target_db_password: Option<String>,
     target_encryption_key: Option<String>,
 ) -> Result<SyncLog, AppError> {
-    let db = app_state.database_connection.read().await;
+    let db = require_db(&app_state).await?;
     let profile_id = app_state.active_profile_id.read().await;
     let enc_key = app_state.encryption_key.read().await;
 
@@ -891,7 +905,7 @@ pub async fn start_sync(
     };
 
     service::sync::sync_to_profile(
-        &*db,
+        &db,
         &app_state.app_data_dir,
         &*profile_id,
         &options,
@@ -911,8 +925,8 @@ pub async fn find_sync_logs(
     mut page: PageParam,
 ) -> Result<PageResult<SyncLog>, AppError> {
     page.normalize();
-    let db = app_state.database_connection.read().await;
-    service::sync_log::search_page(&*db, &page)
+    let db = require_db(&app_state).await?;
+    service::sync_log::search_page(&db, &page)
         .await
         .map_err(AppError::from)
 }
@@ -927,9 +941,9 @@ pub async fn find_sync_log_details(
     mut page: PageParam,
 ) -> Result<PageResult<SyncLogDetail>, AppError> {
     page.normalize();
-    let db = app_state.database_connection.read().await;
+    let db = require_db(&app_state).await?;
     service::sync_log::search_detail_page(
-        &*db,
+        &db,
         sync_log_id,
         table_name.as_deref(),
         status.as_deref(),
@@ -945,8 +959,8 @@ pub async fn delete_sync_log(
     app_state: tauri::State<'_, Arc<AppState>>,
     sync_log_id: i64,
 ) -> Result<(), AppError> {
-    let db = app_state.database_connection.read().await;
-    service::sync_log::delete_by_id(&*db, sync_log_id)
+    let db = require_db(&app_state).await?;
+    service::sync_log::delete_by_id(&db, sync_log_id)
         .await
         .map_err(AppError::from)
 }
@@ -954,8 +968,8 @@ pub async fn delete_sync_log(
 /// 清空所有同步日志
 #[tauri::command]
 pub async fn clear_sync_logs(app_state: tauri::State<'_, Arc<AppState>>) -> Result<(), AppError> {
-    let db = app_state.database_connection.read().await;
-    service::sync_log::clear_all(&*db)
+    let db = require_db(&app_state).await?;
+    service::sync_log::clear_all(&db)
         .await
         .map_err(AppError::from)
 }
@@ -967,20 +981,20 @@ pub async fn export_sync_log(
     sync_log_id: i64,
     path: String,
 ) -> Result<(), AppError> {
-    let db = app_state.database_connection.read().await;
+    let db = require_db(&app_state).await?;
 
     // 获取日志
-    let log = service::sync_log::find_by_id(&*db, sync_log_id)
+    let log = service::sync_log::find_by_id(&db, sync_log_id)
         .await
         .map_err(AppError::from)?
-        .ok_or_else(|| AppError::Business("同步日志不存在".to_string()))?;
+        .ok_or_else(|| AppError::code("SYNC_LOG_NOT_FOUND"))?;
 
     // 获取所有明细
     let page = PageParam {
         page_index: 1,
         page_size: 10000,
     };
-    let details = service::sync_log::search_detail_page(&*db, sync_log_id, None, None, &page)
+    let details = service::sync_log::search_detail_page(&db, sync_log_id, None, None, &page)
         .await
         .map_err(AppError::from)?;
 
@@ -992,9 +1006,9 @@ pub async fn export_sync_log(
 
     // 写入文件
     let json_str = serde_json::to_string_pretty(&export_data)
-        .map_err(|e| AppError::Business(e.to_string()))?;
+        .map_err(|e| AppError::code_with_args("JSON_SERIALIZE_FAILED", vec![e.to_string()]))?;
     std::fs::write(&path, json_str)
-        .map_err(|e| AppError::Business(format!("写入文件失败: {}", e)))?;
+        .map_err(|e| AppError::code_with_args("FILE_WRITE_FAILED", vec![e.to_string()]))?;
 
     Ok(())
 }

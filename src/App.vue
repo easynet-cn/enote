@@ -1,4 +1,13 @@
 <template>
+  <!-- 加载中 -->
+  <Transition name="fade">
+    <div v-if="appMode === 'loading'" class="loading-screen">
+      <NotebookPen class="loading-icon" :stroke-width="1.5" />
+      <div class="loading-spinner" />
+      <span class="loading-text">{{ t('common.loading') }}</span>
+    </div>
+  </Transition>
+
   <!-- 设置向导模式 -->
   <SetupWizard
     v-if="appMode === 'setup'"
@@ -180,6 +189,7 @@ import {
   FileDown,
   Lock,
   Monitor,
+  NotebookPen,
 } from 'lucide-vue-next'
 
 const { t } = useI18n()
@@ -768,3 +778,54 @@ onUnmounted(() => {
   }
 })
 </script>
+
+<style scoped>
+/* 加载屏 */
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  background: var(--color-bg-primary, #ffffff);
+  z-index: 9999;
+}
+
+.loading-icon {
+  width: 48px;
+  height: 48px;
+  color: var(--color-primary, #4f46e5);
+}
+
+.loading-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--color-border, #e2e8f0);
+  border-top-color: var(--color-primary, #4f46e5);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.loading-text {
+  font-size: 13px;
+  color: var(--color-text-secondary, #94a3b8);
+  letter-spacing: 0.5px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 淡出过渡 */
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-leave-to {
+  opacity: 0;
+}
+</style>

@@ -22,13 +22,17 @@ use serde::{Deserialize, Serialize};
 use tracing::info;
 
 /// Profile 索引文件（profiles.yml）
+///
+/// 序列化使用 camelCase（兼容前端 JSON IPC），
+/// 反序列化通过 alias 兼容旧 YAML 的 kebab-case 键名
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct ProfileIndex {
     /// 当前活跃的 profile 名称
     #[serde(default)]
     pub active: String,
     /// 是否自动连接上次使用的 profile
-    #[serde(default, rename = "auto-connect")]
+    #[serde(default, alias = "auto-connect")]
     pub auto_connect: bool,
 }
 

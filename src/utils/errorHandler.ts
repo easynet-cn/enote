@@ -33,6 +33,7 @@ export interface AppError {
 export interface BackendErrorResponse {
   code: string
   message: string
+  args?: string[]
   details?: string
 }
 
@@ -62,18 +63,30 @@ const mapBackendErrorCode = (backendCode: string): AppErrorCode => {
 
 /**
  * 根据错误码获取本地化的错误消息
+ *
+ * 优先使用 i18n 翻译（通过 errorCodes.{code}），如果找不到翻译则回退到后端消息
  */
-const getLocalizedErrorMessage = (code: AppErrorCode, fallbackMessage?: string): string => {
-  // 优先使用后端消息（作为备选）
+const getLocalizedErrorMessage = (
+  code: AppErrorCode | string,
+  fallbackMessage?: string,
+  args?: string[],
+): string => {
+  // 优先尝试 i18n 翻译（支持 errorCodes.DB_NOT_CONNECTED 等编码化错误）
+  const key = `errorCodes.${code}`
+  if (i18n.global.te(key)) {
+    return i18n.global.t(key, args || [])
+  }
+
+  // 回退到后端消息（兼容旧的 BUSINESS_ERROR）
   if (fallbackMessage) {
     return fallbackMessage
   }
 
-  // 使用 i18n 实例获取翻译
+  // 最终回退
   const locale = i18n.global.locale.value
   const messages = i18n.global.messages.value[locale]
   const errorMessages = (messages?.errorCodes ?? {}) as Record<string, string>
-  return errorMessages[code] || errorMessages.UNKNOWN_ERROR || 'Unknown error'
+  return errorMessages.UNKNOWN_ERROR || 'Unknown error'
 }
 
 /**
@@ -86,7 +99,11 @@ export const parseErrorToAppError = (error: unknown): AppError => {
     const frontendCode = mapBackendErrorCode(structuredError.code)
     return {
       code: frontendCode,
-      message: getLocalizedErrorMessage(frontendCode, structuredError.message),
+      message: getLocalizedErrorMessage(
+        structuredError.code,
+        structuredError.message || undefined,
+        structuredError.args,
+      ),
       details: structuredError.details,
       retryable: RETRYABLE_ERRORS.has(frontendCode),
     }

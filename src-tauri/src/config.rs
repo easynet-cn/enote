@@ -305,7 +305,8 @@ pub struct AppState {
     #[allow(dead_code)]
     pub configuration: Configuration,
     /// 数据库连接（连接池），使用 RwLock 支持 Profile 热切换
-    pub database_connection: tokio::sync::RwLock<DatabaseConnection>,
+    /// 在 Profile 选择模式下为 None，待用户选择后通过 reconnect_profile 填充
+    pub database_connection: tokio::sync::RwLock<Option<DatabaseConnection>>,
     /// 应用数据目录（用于图片等文件存储）
     pub app_data_dir: PathBuf,
     /// 当前活跃的 profile ID，使用 RwLock 支持 Profile 热切换

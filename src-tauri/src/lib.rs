@@ -216,8 +216,12 @@ async fn setup_normal_mode(
     let handle = app.handle();
     let app_data_dir = handle.path().app_data_dir()?;
 
-    let (configuration, database_connection, active_profile_id, encryption_key) =
-        if let Some(ref _config_path) = config_path {
+    let (configuration, database_connection, active_profile_id, encryption_key): (
+        config::Configuration,
+        Option<sea_orm::DatabaseConnection>,
+        String,
+        Option<String>,
+    ) = if let Some(ref _config_path) = config_path {
             // 兼容旧模式：使用 application.yml
             let configuration = match config::Configuration::new(handle, config_path.as_deref()) {
                 Ok(config) => config,
@@ -249,91 +253,114 @@ async fn setup_normal_mode(
                 }
             };
 
-            (configuration, database_connection, String::new(), None)
+            (configuration, Some(database_connection), String::new(), None)
         } else {
             // Profile 模式
             let index = service::profile::read_index(&app_data_dir)?;
-            let profile_id = if index.active.is_empty() {
-                // 没有活跃 profile，使用第一个
-                let profiles = service::profile::list_profiles(&app_data_dir)?;
-                if profiles.is_empty() {
-                    // 不应该到这里，但以防万一进入向导模式
-                    setup_wizard_mode_state(app).await?;
-                    return Ok(());
-                }
-                profiles[0].id.clone()
+            let profiles = service::profile::list_profiles(&app_data_dir)?;
+            info!(
+                "Profile 模式: auto_connect={}, profiles_count={}",
+                index.auto_connect,
+                profiles.len()
+            );
+
+            // 多 Profile + 非自动连接 → 延迟连接，等待用户在前端选择
+            if !index.auto_connect && profiles.len() > 1 {
+                info!("多 Profile 且未开启自动连接，等待用户选择");
+                (
+                    config::Configuration::default(),
+                    None,
+                    String::new(),
+                    None,
+                )
             } else {
-                index.active.clone()
-            };
+                let profile_id = if index.active.is_empty() {
+                    // 没有活跃 profile，使用第一个
+                    if profiles.is_empty() {
+                        // 不应该到这里，但以防万一进入向导模式
+                        setup_wizard_mode_state(app).await?;
+                        return Ok(());
+                    }
+                    profiles[0].id.clone()
+                } else {
+                    index.active.clone()
+                };
 
-            let profile_config = service::profile::read_profile(&app_data_dir, &profile_id)?;
+                let profile_config =
+                    service::profile::read_profile(&app_data_dir, &profile_id)?;
 
-            // 从 Keychain 获取数据库密码（桌面端/db-full 模式 MySQL/PG 需要）
-            #[cfg(any(feature = "desktop", feature = "db-full"))]
-            let db_password = if profile_config.datasource.db_type != "sqlite"
-                && profile_config.datasource.auth_method != "certificate"
-            {
-                service::keychain::get_db_password(&profile_id)?
-            } else {
-                None
-            };
-            #[cfg(not(any(feature = "desktop", feature = "db-full")))]
-            let db_password: Option<String> = None;
+                // 从 Keychain 获取数据库密码（桌面端/db-full 模式 MySQL/PG 需要）
+                #[cfg(any(feature = "desktop", feature = "db-full"))]
+                let db_password = if profile_config.datasource.db_type != "sqlite"
+                    && profile_config.datasource.auth_method != "certificate"
+                {
+                    service::keychain::get_db_password(&profile_id)?
+                } else {
+                    None
+                };
+                #[cfg(not(any(feature = "desktop", feature = "db-full")))]
+                let db_password: Option<String> = None;
 
-            let database_connection = match config::database_connection_from_profile(
-                &profile_config,
-                db_password.as_deref(),
-            )
-            .await
-            {
-                Ok(conn) => conn,
-                Err(e) => {
-                    error!("数据库连接失败: {:#}", e);
-                    let error_msg = format!("{}", e);
-                    handle
-                        .dialog()
-                        .message(t("database.connection.failed.message", &[&error_msg]))
-                        .kind(MessageDialogKind::Error)
-                        .title(t_simple("database.connection.failed.title"))
-                        .blocking_show();
-                    // 进入向导模式让用户重新配置
-                    setup_wizard_mode_state(app).await?;
-                    return Ok(());
-                }
-            };
+                let database_connection = match config::database_connection_from_profile(
+                    &profile_config,
+                    db_password.as_deref(),
+                )
+                .await
+                {
+                    Ok(conn) => conn,
+                    Err(e) => {
+                        error!("数据库连接失败: {:#}", e);
+                        let error_msg = format!("{}", e);
+                        handle
+                            .dialog()
+                            .message(t(
+                                "database.connection.failed.message",
+                                &[&error_msg],
+                            ))
+                            .kind(MessageDialogKind::Error)
+                            .title(t_simple("database.connection.failed.title"))
+                            .blocking_show();
+                        // 进入向导模式让用户重新配置
+                        setup_wizard_mode_state(app).await?;
+                        return Ok(());
+                    }
+                };
 
-            // 从 Keychain 获取加密密钥（桌面端/db-full 模式）
-            #[cfg(any(feature = "desktop", feature = "db-full"))]
-            let encryption_key = if profile_config.security.content_encryption {
-                service::keychain::get_encryption_key(&profile_id)?
-            } else {
-                None
-            };
-            #[cfg(not(any(feature = "desktop", feature = "db-full")))]
-            let encryption_key: Option<String> = None;
+                // 从 Keychain 获取加密密钥（桌面端/db-full 模式）
+                #[cfg(any(feature = "desktop", feature = "db-full"))]
+                let encryption_key = if profile_config.security.content_encryption {
+                    service::keychain::get_encryption_key(&profile_id)?
+                } else {
+                    None
+                };
+                #[cfg(not(any(feature = "desktop", feature = "db-full")))]
+                let encryption_key: Option<String> = None;
 
-            let configuration = config::Configuration::default();
-            (
-                configuration,
-                database_connection,
-                profile_id,
-                encryption_key,
-            )
+                let configuration = config::Configuration::default();
+                (
+                    configuration,
+                    Some(database_connection),
+                    profile_id,
+                    encryption_key,
+                )
+            }
         };
 
-    // 运行数据库迁移
-    if let Err(e) = migration::Migrator::up(&database_connection, None).await {
-        error!("数据库迁移失败: {:#}", e);
-        let error_msg = format!("{}", e);
-        handle
-            .dialog()
-            .message(t("database.migration.failed.message", &[&error_msg]))
-            .kind(MessageDialogKind::Error)
-            .title(t_simple("database.migration.failed.title"))
-            .blocking_show();
-        std::process::exit(1);
+    // 运行数据库迁移（仅在有数据库连接时）
+    if let Some(ref db) = database_connection {
+        if let Err(e) = migration::Migrator::up(db, None).await {
+            error!("数据库迁移失败: {:#}", e);
+            let error_msg = format!("{}", e);
+            handle
+                .dialog()
+                .message(t("database.migration.failed.message", &[&error_msg]))
+                .kind(MessageDialogKind::Error)
+                .title(t_simple("database.migration.failed.title"))
+                .blocking_show();
+            std::process::exit(1);
+        }
+        info!("数据库迁移完成");
     }
-    info!("数据库迁移完成");
 
     let app_state = Arc::new(AppState {
         configuration,
@@ -358,19 +385,14 @@ async fn setup_wizard_mode(app: &mut tauri::App) -> Result<(), Box<dyn std::erro
     setup_wizard_mode_state(app).await
 }
 
-/// 创建向导模式的 AppState（无数据库连接）
+/// 创建向导/选择模式的 AppState（无数据库连接）
 async fn setup_wizard_mode_state(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let handle = app.handle();
     let app_data_dir = handle.path().app_data_dir()?;
 
-    // 创建一个临时的内存 SQLite 连接（仅用于满足类型要求）
-    let db = sea_orm::Database::connect("sqlite::memory:")
-        .await
-        .expect("无法创建临时数据库连接");
-
     let app_state = Arc::new(AppState {
         configuration: config::Configuration::default(),
-        database_connection: tokio::sync::RwLock::new(db),
+        database_connection: tokio::sync::RwLock::new(None),
         app_data_dir,
         active_profile_id: tokio::sync::RwLock::new(String::new()),
         encryption_key: tokio::sync::RwLock::new(None),

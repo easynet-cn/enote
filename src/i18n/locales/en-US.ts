@@ -484,6 +484,15 @@ export default {
     TIMEOUT_ERROR: 'Request timeout, please try again later',
     PERMISSION_DENIED: 'Permission denied',
     UNKNOWN_ERROR: 'Operation failed, please try again later',
+    // Coded business errors
+    DB_NOT_CONNECTED: 'Database not connected, please select a profile first',
+    DB_CONNECTION_FAILED: 'Database connection failed: {0}',
+    DB_MIGRATION_FAILED: 'Database migration failed: {0}',
+    UNSUPPORTED_EXPORT_FORMAT: 'Unsupported export format',
+    UNSUPPORTED_IMPORT_FORMAT: 'Unsupported import format',
+    SYNC_LOG_NOT_FOUND: 'Sync log not found',
+    JSON_SERIALIZE_FAILED: 'Data serialization failed: {0}',
+    FILE_WRITE_FAILED: 'Failed to write file: {0}',
   },
 
   // Composable notification strings

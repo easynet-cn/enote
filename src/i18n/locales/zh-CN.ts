@@ -480,6 +480,15 @@ export default {
     TIMEOUT_ERROR: '请求超时，请稍后重试',
     PERMISSION_DENIED: '没有权限执行此操作',
     UNKNOWN_ERROR: '操作失败，请稍后重试',
+    // 编码化业务错误
+    DB_NOT_CONNECTED: '数据库未连接，请先选择配置',
+    DB_CONNECTION_FAILED: '数据库连接失败：{0}',
+    DB_MIGRATION_FAILED: '数据库迁移失败：{0}',
+    UNSUPPORTED_EXPORT_FORMAT: '不支持的导出格式',
+    UNSUPPORTED_IMPORT_FORMAT: '不支持的导入格式',
+    SYNC_LOG_NOT_FOUND: '同步日志不存在',
+    JSON_SERIALIZE_FAILED: '数据序列化失败：{0}',
+    FILE_WRITE_FAILED: '写入文件失败：{0}',
   },
 
   // Composable 通知字符串
