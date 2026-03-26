@@ -416,6 +416,20 @@
           </div>
         </div>
       </div>
+      <!-- 帮助手册 -->
+      <div class="flex items-center justify-between p-3 bg-surface-dim rounded-lg">
+        <div>
+          <span class="text-sm text-content">{{ t('help.title') }}</span>
+          <p class="text-xs text-content-tertiary mt-0.5">{{ t('help.description') }}</p>
+        </div>
+        <button
+          @click="openHelpManual"
+          class="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors shrink-0"
+        >
+          {{ t('help.viewButton') }}
+        </button>
+      </div>
+
       <!-- 系统维护 -->
       <div>
         <h3 class="text-sm font-semibold text-content-secondary mb-3">
@@ -802,6 +816,12 @@ const saveSettings = async () => {
 // 同步对话框
 const syncDialogVisible = ref(false)
 const syncHistoryDialogVisible = ref(false)
+
+const openHelpManual = async () => {
+  visible.value = false
+  const { openHelpInNewWindow } = await import('../utils/multiWindow')
+  await openHelpInNewWindow()
+}
 
 const openSyncDialog = () => {
   syncDialogVisible.value = true

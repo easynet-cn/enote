@@ -1,31 +1,57 @@
 # eNote
 
+English | [中文](README.md)
+
 A cross-platform desktop note-taking application built with Tauri, supporting rich text editing and Markdown mode.
 
 ## Features
 
+### Editor
 - **Rich Text Editing** - WYSIWYG editor powered by TipTap with various formatting options
 - **Markdown Mode** - Switch to Markdown editing with split-screen preview
+- **Find & Replace** - Global find and replace within the editor
+- **Math Formulas** - KaTeX math formula rendering
+- **Code Highlighting** - Syntax highlighting for code blocks via lowlight
+- **Table of Contents** - Auto-generated document outline
+- **Drag & Drop** - Drag handles for reordering content blocks
+- **Smart Paste** - Context-aware paste formatting
+- **Lazy Image Loading** - Deferred image loading for performance
+
+### Note Management
 - **Notebook Management** - Organize notes by notebooks with drag-and-drop sorting
 - **Tag System** - Flexible tag management with multi-tag filtering
-- **Version History** - Automatic note history saving with rollback capability
+- **Note Pinning** - Pin important notes to top
+- **Version History** - Automatic note history with source tracking (user/sync/import)
 - **Full-text Search** - FTS5 full-text search with Chinese substring matching
-- **Setup Wizard** - First-launch guided database configuration for SQLite/MySQL/PostgreSQL
-- **Multi-Profile Management** - Multiple database profiles with startup selection or auto-connect
-- **Content Encryption** - AES-256-GCM transparent note content encryption, keys stored in OS keychain
-- **SSL/TLS Authentication** - MySQL/PostgreSQL support certificate-based login
-- **Note Encryption** - Per-note password protection
-- **Lock Screen** - Password protection (Argon2id), timeout lock, minimize lock
 - **Note Templates** - Template management for quick note creation
 - **Bidirectional Links** - Cross-reference notes with linked notes panel
+- **Recycle Bin** - Soft delete with recovery support
 - **Command Palette** - Ctrl+P for quick operations
-- **System Tray** - Minimize to tray
-- **Multi-Window** - Open notes in separate windows
-- **MCP Integration** - AI tools operate notes via MCP protocol with three-layer access control
+- **Custom Shortcuts** - Configurable keyboard shortcuts
+
+### Security & Encryption
+- **Content Encryption** - AES-256-GCM transparent note content encryption, keys stored in OS keychain
+- **Note Encryption** - Per-note password protection
+- **Lock Screen** - Password protection (Argon2id), timeout lock, minimize lock
+- **Keychain Integration** - Passwords and keys stored in OS keychain (macOS Keychain / Windows Credential Store / Linux Secret Service)
+
+### Data Management
+- **Multi-Profile Management** - Multiple database profiles with startup selection or auto-connect
+- **Setup Wizard** - First-launch guided database configuration for SQLite/MySQL/PostgreSQL
+- **SSL/TLS Authentication** - MySQL/PostgreSQL support certificate-based login
 - **Data Backup** - SQL/Excel/CSV export/import with scheduled auto-backup
 - **Import/Export** - Import from Evernote, Youdao Notes, Notion; Export to Word/Markdown/JSON/XML
+- **Data Sync** - Synchronization infrastructure with sync logs and detailed tracking
+- **Local Image Storage** - Images saved locally, served via Tauri asset protocol
+
+### AI Integration
+- **MCP Integration** - AI tools operate notes via MCP protocol with three-layer access control (note/tag/notebook level)
+
+### Interface & Experience
 - **Dark Mode** - Light/Dark/System theme switching
 - **Multilingual** - Simplified Chinese and English
+- **System Tray** - Minimize to tray
+- **Multi-Window** - Open notes in separate windows
 - **Cross-platform** - Supports Windows, macOS, and Linux
 
 ## Tech Stack
@@ -35,54 +61,79 @@ A cross-platform desktop note-taking application built with Tauri, supporting ri
 - **TypeScript** - Type-safe development experience
 - **Vite** - Fast development build tool
 - **Tailwind CSS v4** - Utility-first CSS framework
-- **TipTap** - Extensible rich text editor
-- **Lucide Icons** - Beautiful icon library
+- **TipTap** - Extensible rich text editor (8 custom extensions)
+- **Pinia** - State management
+- **Vue I18n** - Internationalization
+- **Lucide Icons** - Icon library
 
 ### Backend
-- **Rust** - High-performance systems programming language
+- **Rust** (Edition 2024) - High-performance systems programming language
 - **Tauri 2.x** - Lightweight cross-platform desktop application framework
 - **SeaORM** - Async ORM framework
 - **SQLite/MySQL/PostgreSQL** - Multiple database support
+- **aes-gcm** - AES-256-GCM encryption
+- **argon2** - Password hashing
+- **keyring** - OS keychain integration
+- **rmcp** - MCP protocol server
 
 ## Project Structure
 
 ```
 enote/
-├── src/                    # Frontend source code
-│   ├── api/               # Tauri IPC call wrappers
-│   ├── components/        # Vue components
-│   │   ├── ui/           # Common UI component library
-│   │   ├── Editor.vue    # Main editor component
-│   │   ├── Sidebar.vue   # Sidebar (notebooks/tags)
-│   │   ├── NoteList.vue  # Note list
-│   │   └── TiptapToolbar.vue  # Editor toolbar
-│   ├── composables/       # Composable functions
-│   ├── types/             # TypeScript type definitions
-│   └── App.vue            # Application root component
-├── src-tauri/             # Tauri backend source code
+├── src/                        # Frontend source code
+│   ├── api/                    # Tauri IPC call wrappers
+│   ├── components/             # Vue components (58+)
+│   │   ├── toolbar/            # Editor toolbar components (13)
+│   │   ├── ui/                 # Common UI component library (17)
+│   │   ├── Editor.vue          # Editor container
+│   │   ├── TipTapEditor.vue    # TipTap rich text editor
+│   │   ├── MarkdownSplitEditor.vue  # Markdown split-screen editor
+│   │   ├── AppSidebar.vue      # Sidebar (notebooks/tags)
+│   │   ├── NoteList.vue        # Note list
+│   │   ├── LockScreen.vue      # Lock screen
+│   │   ├── SetupWizard.vue     # Setup wizard
+│   │   ├── ProfileSelector.vue # Profile selector
+│   │   └── CommandPalette.vue  # Command palette
+│   ├── composables/            # Composable functions (11)
+│   ├── extensions/             # Custom TipTap extensions (8)
+│   ├── utils/                  # Utility functions
+│   │   └── import/             # Import parsers (Evernote/Youdao/Notion)
+│   ├── stores/                 # Pinia state management
+│   ├── i18n/                   # Internationalization (zh-CN/en-US)
+│   ├── types/                  # TypeScript type definitions
+│   └── App.vue                 # Application root component
+├── src-tauri/                  # Tauri backend source code
 │   └── src/
-│       ├── command.rs     # IPC command handlers
-│       ├── service/       # Business logic layer
-│       ├── entity/        # Database entities
-│       └── config.rs      # Configuration management
-└── doc/                   # Documentation and config examples
+│       ├── command.rs          # IPC command handlers
+│       ├── service/            # Business logic layer (17 services)
+│       ├── entity/             # Database entities (12)
+│       ├── migration/          # Database migrations (21)
+│       ├── config.rs           # Configuration management
+│       ├── error.rs            # Error handling
+│       ├── model.rs            # Data transfer objects
+│       └── i18n.rs             # Backend internationalization
+├── crates/
+│   └── enote-mcp/              # MCP server (standalone binary)
+└── doc/                        # Documentation and config examples
 ```
 
 ## UI Component Library
 
 The project includes a custom UI component library:
 
-- **Button** - Button component with multiple types and states
-- **Input** - Input field component
-- **Select** - Dropdown select component
-- **Dialog** - Dialog/modal component
-- **Dropdown** - Dropdown menu component
-- **Pagination** - Pagination component
-- **Tooltip** - Tooltip component
+- **BaseButton** - Button component with multiple types and states
+- **BaseInput** - Input field component
+- **BaseSelect** - Dropdown select component
+- **BaseDialog** - Dialog/modal component
+- **BaseDropdown** - Dropdown menu component
+- **BasePagination** - Pagination component
+- **BaseTooltip** - Tooltip component
+- **BaseSkeleton** - Skeleton loading component
 - **ColorPicker** - Color picker
 - **IconPicker** - Icon picker
 - **StylePicker** - Style picker
 - **ConfirmDialog** - Confirmation dialog
+- **ShortcutRecorder** - Keyboard shortcut recorder
 - **Notification** - Toast notifications
 
 ## Development Guide
@@ -90,8 +141,8 @@ The project includes a custom UI component library:
 ### Requirements
 
 - Node.js 18+
-- pnpm 8+
-- Rust 1.70+
+- pnpm 10+
+- Rust 1.85+ (Edition 2024)
 - Tauri CLI
 
 ### Install Dependencies
@@ -124,10 +175,20 @@ pnpm build
 pnpm tauri:icon
 ```
 
-### Code Formatting
+### Code Formatting & Linting
 
 ```bash
+# Format code
 pnpm format
+
+# ESLint check
+pnpm lint
+
+# ESLint auto-fix
+pnpm lint:fix
+
+# Run tests
+pnpm test
 ```
 
 ## Database Configuration
@@ -150,6 +211,26 @@ enote --config /path/to/application.yml
 
 See `doc/application.yml`, `doc/application-mysql.yml`, `doc/application-posgres.yml` for examples.
 
+## MCP Integration
+
+eNote includes a built-in MCP (Model Context Protocol) server, allowing AI tools to operate on notes through a standardized protocol.
+
+### Three-Layer Access Control
+
+| Layer | Scope | Description |
+|-------|-------|-------------|
+| Note level | Per note | Highest priority |
+| Tag level | By tag | Strictest wins when multiple tags |
+| Notebook level | By notebook | Lowest priority |
+
+### Access Permissions
+
+- **Inherit** - Inherit from parent level (default)
+- **ReadWrite** - AI can read and write
+- **ReadOnly** - AI can only read
+- **Deny** - AI access completely blocked
+- Encrypted notes always force-deny AI access
+
 ## Contributing
 
 1. Fork this repository
@@ -168,3 +249,4 @@ MIT License
 - [Vue 3 Documentation](https://vuejs.org)
 - [TipTap Documentation](https://tiptap.dev)
 - [Tailwind CSS Documentation](https://tailwindcss.com)
+- [SeaORM Documentation](https://www.sea-ql.org/SeaORM)

@@ -70,6 +70,12 @@ export const SHORTCUT_DEFS: ShortcutDef[] = [
     descriptionKey: 'shortcuts.switchLayout',
     system: false,
   },
+  {
+    id: 'help-manual',
+    defaultBinding: { key: 'F1' },
+    descriptionKey: 'shortcuts.helpManual',
+    system: false,
+  },
 ]
 
 /** 按 id 查找快捷键定义 */

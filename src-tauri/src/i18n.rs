@@ -97,6 +97,10 @@ fn zh_cn_messages() -> HashMap<String, String> {
         "SQLite PRAGMA 设置失败".to_string(),
     );
 
+    // 帮助菜单
+    messages.insert("help.menuTitle".to_string(), "帮助".to_string());
+    messages.insert("help.menuItem".to_string(), "帮助手册".to_string());
+
     // 通用错误
     messages.insert("error.common.title".to_string(), "错误".to_string());
     messages.insert(
@@ -219,6 +223,10 @@ fn en_us_messages() -> HashMap<String, String> {
         "config.database.pragma.failed".to_string(),
         "Failed to set SQLite PRAGMA".to_string(),
     );
+
+    // Help menu
+    messages.insert("help.menuTitle".to_string(), "Help".to_string());
+    messages.insert("help.menuItem".to_string(), "Help Manual".to_string());
 
     // Common errors
     messages.insert("error.common.title".to_string(), "Error".to_string());

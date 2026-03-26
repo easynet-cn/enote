@@ -409,6 +409,7 @@ export default {
     commandPalette: 'Command Palette',
     lockApp: 'Lock App',
     switchLayout: 'Switch Layout Mode',
+    helpManual: 'Help Manual',
   },
 
   // Command Palette
@@ -433,6 +434,7 @@ export default {
       openTemplates: 'Template Manager',
       newFromTemplate: 'New from Template',
       saveAsTemplate: 'Save as Template',
+      viewHelp: 'View Help Manual',
     },
   },
 
@@ -1005,6 +1007,19 @@ export default {
     startupError: 'Application Startup Failed',
     startupErrorMessage:
       'Unable to connect to database or load configuration. Please check and try again.',
+  },
+
+  // Help Manual
+  help: {
+    title: 'Help Manual',
+    description: 'View application documentation',
+    viewButton: 'View',
+    loading: 'Loading manual...',
+    loadFailed: 'Failed to load manual',
+    searchPlaceholder: 'Search manual...',
+    noResults: 'No matching content',
+    openInNewWindow: 'Open in New Window',
+    backToTop: 'Back to Top',
   },
 
   // Youdao import

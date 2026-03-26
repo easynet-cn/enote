@@ -12,9 +12,9 @@
 use std::sync::Arc;
 
 use sea_orm_migration::MigratorTrait;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 #[cfg(feature = "desktop")]
-use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem};
+use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder};
 #[cfg(feature = "desktop")]
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder};
 use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
@@ -167,6 +167,8 @@ pub fn run_with_config(config_path: Option<String>) {
             command::delete_sync_log,
             command::clear_sync_logs,
             command::export_sync_log,
+            // 帮助手册
+            command::read_help_manual,
         ])
         .run(tauri::generate_context!())
         .expect(&t_simple("error.appStartFailed"));
@@ -373,9 +375,12 @@ async fn setup_normal_mode(
 
     app.manage(app_state);
 
-    // 设置系统托盘（仅桌面端）
+    // 设置应用菜单和系统托盘（仅桌面端）
     #[cfg(feature = "desktop")]
-    setup_tray(app)?;
+    {
+        setup_app_menu(app)?;
+        setup_tray(app)?;
+    }
 
     Ok(())
 }
@@ -401,9 +406,71 @@ async fn setup_wizard_mode_state(app: &mut tauri::App) -> Result<(), Box<dyn std
 
     app.manage(app_state);
 
-    // 设置系统托盘（仅桌面端）
+    // 设置应用菜单和系统托盘（仅桌面端）
     #[cfg(feature = "desktop")]
-    setup_tray(app)?;
+    {
+        setup_app_menu(app)?;
+        setup_tray(app)?;
+    }
+
+    Ok(())
+}
+
+/// 设置应用菜单栏（仅桌面端编译）
+#[cfg(feature = "desktop")]
+fn setup_app_menu(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+    let help_item = MenuItemBuilder::with_id("help-manual", &t_simple("help.menuItem"))
+        .build(app)?;
+
+    let help_menu = SubmenuBuilder::new(app, &t_simple("help.menuTitle"))
+        .item(&help_item)
+        .build()?;
+
+    // macOS 需要应用子菜单（包含隐藏、退出等）
+    #[cfg(target_os = "macos")]
+    let app_submenu = SubmenuBuilder::new(app, app.package_info().name.clone())
+        .about(None)
+        .separator()
+        .hide()
+        .hide_others()
+        .show_all()
+        .separator()
+        .quit()
+        .build()?;
+
+    // 编辑菜单（包含复制、粘贴、撤销等系统快捷键）
+    let edit_menu = SubmenuBuilder::new(app, "Edit")
+        .undo()
+        .redo()
+        .separator()
+        .cut()
+        .copy()
+        .paste()
+        .select_all()
+        .build()?;
+
+    let mut menu_builder = MenuBuilder::new(app);
+
+    #[cfg(target_os = "macos")]
+    {
+        menu_builder = menu_builder.item(&app_submenu);
+    }
+
+    let app_menu = menu_builder
+        .item(&edit_menu)
+        .item(&help_menu)
+        .build()?;
+
+    app.set_menu(app_menu)?;
+
+    let handle = app.handle().clone();
+    app.on_menu_event(move |_app, event| {
+        if event.id().as_ref() == "help-manual" {
+            if let Some(window) = handle.get_webview_window("main") {
+                let _ = window.emit("menu-help-manual", ());
+            }
+        }
+    });
 
     Ok(())
 }

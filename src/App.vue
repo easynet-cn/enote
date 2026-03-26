@@ -151,6 +151,7 @@
 import { ref, computed, onMounted, onUnmounted, markRaw } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getCurrentWindow } from '@tauri-apps/api/window'
+import { listen } from '@tauri-apps/api/event'
 import { ask } from '@tauri-apps/plugin-dialog'
 import { noteApi, settingsApi, backupApi, templateApi, profileApi } from './api/note'
 import { noteToShowNote } from './utils/converters'
@@ -168,6 +169,7 @@ import SettingsDialog from './components/SettingsDialog.vue'
 import TrashDialog from './components/TrashDialog.vue'
 import CommandPalette from './components/CommandPalette.vue'
 import TemplateDialog from './components/TemplateDialog.vue'
+import { openHelpInNewWindow } from './utils/multiWindow'
 import SetupWizard from './components/SetupWizard.vue'
 import ProfileSelector from './components/ProfileSelector.vue'
 import { showNotification } from './components/ui/notification'
@@ -190,6 +192,7 @@ import {
   Lock,
   Monitor,
   NotebookPen,
+  HelpCircle,
 } from 'lucide-vue-next'
 
 const { t } = useI18n()
@@ -303,6 +306,10 @@ const trashDialogVisible = ref(false)
 const templateDialogVisible = ref(false)
 // 命令面板
 const commandPaletteVisible = ref(false)
+// 帮助手册
+async function openHelp() {
+  await openHelpInNewWindow()
+}
 // NoteList宽度
 const noteListWidth = ref(320)
 const DEFAULT_NOTE_LIST_WIDTH = 320
@@ -493,6 +500,7 @@ const shortcutHandlerMap: Record<string, () => void> = {
     commandPaletteVisible.value = !commandPaletteVisible.value
   },
   'switch-layout': switchLayoutHandler,
+  'help-manual': () => openHelp(),
 }
 
 // 响应式快捷键（当用户修改绑定后自动更新）
@@ -629,6 +637,14 @@ const paletteCommands = computed<PaletteCommand[]>(() => [
     shortcut: getBindingText('switch-layout'),
     handler: switchLayoutHandler,
   },
+  {
+    id: 'help-manual',
+    name: t('commandPalette.commands.viewHelp'),
+    icon: markRaw(HelpCircle),
+    category: t('commandPalette.categories.app'),
+    shortcut: getBindingText('help-manual'),
+    handler: () => openHelp(),
+  },
 ])
 
 // 关闭窗口拦截：未保存时提示确认
@@ -726,6 +742,9 @@ const enterMainMode = async () => {
       await currentWindow.hide()
     })
   }
+
+  // 监听菜单栏帮助手册事件
+  listen('menu-help-manual', () => openHelp())
 
   // 启动自动备份
   startAutoBackup()

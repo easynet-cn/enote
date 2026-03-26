@@ -17,6 +17,7 @@ use std::collections::HashMap;
 use tracing::info;
 
 use sea_orm::DatabaseConnection;
+use tauri::Manager;
 
 use crate::{
     config::AppState,
@@ -1011,4 +1012,28 @@ pub async fn export_sync_log(
         .map_err(|e| AppError::code_with_args("FILE_WRITE_FAILED", vec![e.to_string()]))?;
 
     Ok(())
+}
+
+// ============================================================================
+// 帮助手册相关命令
+// ============================================================================
+
+/// 读取帮助手册内容
+#[tauri::command]
+pub async fn read_help_manual(app_handle: tauri::AppHandle, lang: String) -> Result<String, AppError> {
+    let filename = match lang.as_str() {
+        "en-US" => "manual-en-US.md",
+        _ => "manual-zh-CN.md",
+    };
+
+    let resource_path = app_handle
+        .path()
+        .resource_dir()
+        .map_err(|e| AppError::code_with_args("RESOURCE_DIR_ERROR", vec![e.to_string()]))?
+        .join("resources/help")
+        .join(filename);
+
+    std::fs::read_to_string(&resource_path).map_err(|e| {
+        AppError::code_with_args("HELP_MANUAL_READ_FAILED", vec![e.to_string()])
+    })
 }

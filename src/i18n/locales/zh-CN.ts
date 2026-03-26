@@ -405,6 +405,7 @@ export default {
     commandPalette: '命令面板',
     lockApp: '锁定应用',
     switchLayout: '切换布局模式',
+    helpManual: '帮助手册',
   },
 
   // 命令面板
@@ -429,6 +430,7 @@ export default {
       openTemplates: '模板管理',
       newFromTemplate: '从模板新建',
       saveAsTemplate: '存为模板',
+      viewHelp: '查看帮助手册',
     },
   },
 
@@ -1000,6 +1002,19 @@ export default {
   error: {
     startupError: '应用启动失败',
     startupErrorMessage: '无法连接到数据库或加载配置，请检查后重试。',
+  },
+
+  // 帮助手册
+  help: {
+    title: '帮助手册',
+    description: '查看应用使用文档',
+    viewButton: '查看',
+    loading: '正在加载手册...',
+    loadFailed: '手册加载失败',
+    searchPlaceholder: '搜索手册内容...',
+    noResults: '没有匹配的内容',
+    openInNewWindow: '在新窗口中打开',
+    backToTop: '返回顶部',
   },
 
   // 有道笔记导入
