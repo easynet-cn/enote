@@ -173,7 +173,7 @@ fn profile_file_path(app_data_dir: &Path, profile_id: &str) -> PathBuf {
 fn ensure_profiles_dir(app_data_dir: &Path) -> Result<()> {
     let dir = profiles_dir(app_data_dir);
     if !dir.exists() {
-        fs::create_dir_all(&dir).context("创建 profiles 目录失败")?;
+        fs::create_dir_all(&dir).context("Failed to create profiles directory")?;
     }
     Ok(())
 }
@@ -188,15 +188,15 @@ pub fn read_index(app_data_dir: &Path) -> Result<ProfileIndex> {
     if !path.exists() {
         return Ok(ProfileIndex::default());
     }
-    let content = fs::read_to_string(&path).context("读取 profiles.yml 失败")?;
-    serde_yaml::from_str(&content).context("解析 profiles.yml 失败")
+    let content = fs::read_to_string(&path).context("Failed to read profiles.yml")?;
+    serde_yaml::from_str(&content).context("Failed to parse profiles.yml")
 }
 
 /// 保存 profile 索引
 pub fn save_index(app_data_dir: &Path, index: &ProfileIndex) -> Result<()> {
     let path = index_file_path(app_data_dir);
-    let content = serde_yaml::to_string(index).context("序列化 profiles.yml 失败")?;
-    fs::write(&path, content).context("写入 profiles.yml 失败")?;
+    let content = serde_yaml::to_string(index).context("Failed to serialize profiles.yml")?;
+    fs::write(&path, content).context("Failed to write profiles.yml")?;
     Ok(())
 }
 
@@ -231,7 +231,7 @@ pub fn list_profiles(app_data_dir: &Path) -> Result<Vec<ProfileSummary>> {
     let mut profiles = Vec::new();
 
     let mut entries: Vec<_> = fs::read_dir(&dir)
-        .context("读取 profiles 目录失败")?
+        .context("Failed to read profiles directory")?
         .filter_map(|e| e.ok())
         .filter(|e| {
             e.path()
@@ -281,17 +281,17 @@ pub fn list_profiles(app_data_dir: &Path) -> Result<Vec<ProfileSummary>> {
 pub fn read_profile(app_data_dir: &Path, profile_id: &str) -> Result<ProfileConfig> {
     let path = profile_file_path(app_data_dir, profile_id);
     let content =
-        fs::read_to_string(&path).with_context(|| format!("读取 profile 文件失败: {:?}", path))?;
-    serde_yaml::from_str(&content).with_context(|| format!("解析 profile 文件失败: {:?}", path))
+        fs::read_to_string(&path).with_context(|| format!("Failed to read profile file: {:?}", path))?;
+    serde_yaml::from_str(&content).with_context(|| format!("Failed to parse profile file: {:?}", path))
 }
 
 /// 保存 profile 配置
 pub fn save_profile(app_data_dir: &Path, profile_id: &str, config: &ProfileConfig) -> Result<()> {
     ensure_profiles_dir(app_data_dir)?;
     let path = profile_file_path(app_data_dir, profile_id);
-    let content = serde_yaml::to_string(config).context("序列化 profile 配置失败")?;
-    fs::write(&path, content).context("写入 profile 文件失败")?;
-    info!("Profile 已保存: {:?}", path);
+    let content = serde_yaml::to_string(config).context("Failed to serialize profile config")?;
+    fs::write(&path, content).context("Failed to write profile file")?;
+    info!("Profile saved: {:?}", path);
     Ok(())
 }
 
@@ -299,7 +299,7 @@ pub fn save_profile(app_data_dir: &Path, profile_id: &str, config: &ProfileConfi
 pub fn delete_profile(app_data_dir: &Path, profile_id: &str) -> Result<()> {
     let path = profile_file_path(app_data_dir, profile_id);
     if path.exists() {
-        fs::remove_file(&path).context("删除 profile 文件失败")?;
+        fs::remove_file(&path).context("Failed to delete profile file")?;
     }
 
     // 如果当前活跃的就是被删除的 profile，清除 active
@@ -309,7 +309,7 @@ pub fn delete_profile(app_data_dir: &Path, profile_id: &str) -> Result<()> {
         save_index(app_data_dir, &index)?;
     }
 
-    info!("Profile 已删除: {}", profile_id);
+    info!("Profile deleted: {}", profile_id);
     Ok(())
 }
 
@@ -318,13 +318,17 @@ pub fn set_active_profile(app_data_dir: &Path, profile_id: &str) -> Result<()> {
     // 验证 profile 存在
     let path = profile_file_path(app_data_dir, profile_id);
     if !path.exists() {
-        anyhow::bail!("Profile 不存在: {}", profile_id);
+        return Err(crate::error::AppError::code_with_args(
+            "PROFILE_NOT_FOUND",
+            vec![profile_id.to_string()],
+        )
+        .into());
     }
 
     let mut index = read_index(app_data_dir)?;
     index.active = profile_id.to_string();
     save_index(app_data_dir, &index)?;
-    info!("活跃 Profile 已设置为: {}", profile_id);
+    info!("Active profile set to: {}", profile_id);
     Ok(())
 }
 

@@ -9,13 +9,30 @@ const messages = {
   'en-US': enUS,
 }
 
-// 默认语言设置为中文
-const savedLocale = (localStorage.getItem('app-locale') as LocaleType) || 'zh-CN'
+const supportedLocales: LocaleType[] = ['zh-CN', 'en-US']
+
+function detectDefaultLocale(): LocaleType {
+  const browserLang = navigator.language
+  // 精确匹配
+  if (supportedLocales.includes(browserLang as LocaleType)) {
+    return browserLang as LocaleType
+  }
+  // 前缀匹配（如 zh → zh-CN, en → en-US）
+  const prefix = browserLang.split('-')[0]
+  const matched = supportedLocales.find((l) => l.startsWith(prefix))
+  if (matched) {
+    return matched
+  }
+  // 不支持的语言，默认英文
+  return 'en-US'
+}
+
+const savedLocale = (localStorage.getItem('app-locale') as LocaleType) || detectDefaultLocale()
 
 const i18n = createI18n({
   legacy: false,
   locale: savedLocale,
-  fallbackLocale: 'zh-CN',
+  fallbackLocale: 'en-US',
   messages,
 })
 

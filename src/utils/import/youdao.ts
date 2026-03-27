@@ -64,7 +64,7 @@ async function embedImages(content: string, basePath: string, zip: JSZip): Promi
         const newSrc = `data:${mimeType};base64,${imageData}`
         result = result.replace(src, newSrc)
       } catch (error) {
-        console.warn(`无法读取图片: ${imagePath}`, error)
+        console.warn(`Failed to read image: ${imagePath}`, error)
       }
     }
   }
@@ -101,7 +101,7 @@ async function embedMarkdownImages(content: string, basePath: string, zip: JSZip
         const newSrc = `data:${mimeType};base64,${imageData}`
         result = result.replace(fullMatch, `![${alt}](${newSrc})`)
       } catch (error) {
-        console.warn(`无法读取图片: ${imagePath}`, error)
+        console.warn(`Failed to read image: ${imagePath}`, error)
       }
     }
   }

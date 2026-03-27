@@ -25,26 +25,26 @@ mod platform {
     const SERVICE_NAME: &str = "net.easycloudcn.enote";
 
     pub fn set_secret(key: &str, value: &str) -> Result<()> {
-        let entry = keyring::Entry::new(SERVICE_NAME, key).context("创建 Keychain 条目失败")?;
-        entry.set_password(value).context("写入 Keychain 失败")?;
+        let entry = keyring::Entry::new(SERVICE_NAME, key).context("Failed to create Keychain entry")?;
+        entry.set_password(value).context("Failed to write to Keychain")?;
         Ok(())
     }
 
     pub fn get_secret(key: &str) -> Result<Option<String>> {
-        let entry = keyring::Entry::new(SERVICE_NAME, key).context("创建 Keychain 条目失败")?;
+        let entry = keyring::Entry::new(SERVICE_NAME, key).context("Failed to create Keychain entry")?;
         match entry.get_password() {
             Ok(value) => Ok(Some(value)),
             Err(keyring::Error::NoEntry) => Ok(None),
-            Err(e) => Err(anyhow::anyhow!("读取 Keychain 失败: {}", e)),
+            Err(e) => Err(anyhow::anyhow!("Failed to read Keychain: {}", e)),
         }
     }
 
     pub fn delete_secret(key: &str) -> Result<()> {
-        let entry = keyring::Entry::new(SERVICE_NAME, key).context("创建 Keychain 条目失败")?;
+        let entry = keyring::Entry::new(SERVICE_NAME, key).context("Failed to create Keychain entry")?;
         match entry.delete_credential() {
             Ok(()) => Ok(()),
             Err(keyring::Error::NoEntry) => Ok(()),
-            Err(e) => Err(anyhow::anyhow!("删除 Keychain 条目失败: {}", e)),
+            Err(e) => Err(anyhow::anyhow!("Failed to delete Keychain entry: {}", e)),
         }
     }
 }

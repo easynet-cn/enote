@@ -17,7 +17,7 @@ fn derive_key(password: &str, salt: &[u8]) -> Result<[u8; 32]> {
     let mut key = [0u8; 32];
     Argon2::default()
         .hash_password_into(password.as_bytes(), salt, &mut key)
-        .map_err(|e| anyhow::anyhow!("Argon2 密钥派生失败: {}", e))?;
+        .map_err(|e| anyhow::anyhow!("Argon2 key derivation failed: {}", e))?;
     Ok(key)
 }
 
@@ -31,7 +31,7 @@ pub fn encrypt(content: &str, password: &str) -> Result<String> {
     rand::thread_rng().fill_bytes(&mut salt);
 
     let key = derive_key(password, &salt)?;
-    let cipher = Aes256Gcm::new_from_slice(&key).context("创建加密器失败")?;
+    let cipher = Aes256Gcm::new_from_slice(&key).context("Failed to create cipher")?;
 
     // 生成随机 nonce (96 bits)
     let mut nonce_bytes = [0u8; 12];
@@ -40,7 +40,7 @@ pub fn encrypt(content: &str, password: &str) -> Result<String> {
 
     let ciphertext = cipher
         .encrypt(nonce, content.as_bytes())
-        .map_err(|e| anyhow::anyhow!("加密失败: {}", e))?;
+        .map_err(|e| anyhow::anyhow!("Encryption failed: {}", e))?;
 
     // 组合 salt + nonce + ciphertext
     let mut combined = Vec::with_capacity(16 + 12 + ciphertext.len());
@@ -59,13 +59,13 @@ pub fn encrypt(content: &str, password: &str) -> Result<String> {
 pub fn decrypt(encrypted: &str, password: &str) -> Result<String> {
     let data = encrypted
         .strip_prefix(ENCRYPTED_PREFIX)
-        .context("不是有效的加密内容")?;
+        .context("Not a valid encrypted content")?;
 
-    let combined = STANDARD.decode(data).context("Base64 解码失败")?;
+    let combined = STANDARD.decode(data).context("Failed to decode Base64")?;
 
     // salt(16) + nonce(12) + ciphertext(>=1)
     if combined.len() < 29 {
-        anyhow::bail!("加密数据格式无效");
+        anyhow::bail!("Invalid encrypted data format");
     }
 
     let salt = &combined[..16];
@@ -73,14 +73,14 @@ pub fn decrypt(encrypted: &str, password: &str) -> Result<String> {
     let ciphertext = &combined[28..];
 
     let key = derive_key(password, salt)?;
-    let cipher = Aes256Gcm::new_from_slice(&key).context("创建解密器失败")?;
+    let cipher = Aes256Gcm::new_from_slice(&key).context("Failed to create decipher")?;
 
     let nonce = Nonce::from_slice(nonce_bytes);
     let plaintext = cipher
         .decrypt(nonce, ciphertext)
-        .map_err(|_| anyhow::anyhow!("解密失败：密码错误"))?;
+        .map_err(|_| anyhow::anyhow!("Decryption failed: wrong password"))?;
 
-    String::from_utf8(plaintext).context("解密后的内容不是有效的 UTF-8 文本")
+    String::from_utf8(plaintext).context("Decrypted content is not valid UTF-8")
 }
 
 /// 检测内容是否已加密

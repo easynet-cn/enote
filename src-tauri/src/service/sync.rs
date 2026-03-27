@@ -13,6 +13,7 @@ use tracing::info;
 
 use crate::{
     config::database_connection_from_profile,
+    i18n::t,
     entity,
     model::{DataStats, OperateSource, SyncLog, SyncMode, SyncOptions, SyncPreview, SyncProgress},
     service::{backup, note, note_template, notebook, profile, settings, sync_log, tag},
@@ -168,7 +169,7 @@ pub async fn sync_to_profile(
     let log_id = log.id;
 
     info!(
-        "开始同步: {} -> {}, 模式: {}",
+        "Starting sync: {} -> {}, mode: {}",
         source_profile_id, options.target_profile_id, mode_str
     );
 
@@ -245,7 +246,15 @@ pub async fn sync_to_profile(
             entity::settings::Entity::delete_many().exec(&txn).await?;
         }
         txn.commit().await?;
-        emit_progress(app_handle, log_id, "clear", "all", 1, 1, "清空目标数据");
+        emit_progress(
+            app_handle,
+            log_id,
+            "clear",
+            "all",
+            1,
+            1,
+            &t("sync.progress.clearTarget", &[]),
+        );
     }
 
     // ═══════════════════════════════════════
@@ -503,7 +512,7 @@ pub async fn sync_to_profile(
                     None,
                     &src_note.title,
                     "skipped",
-                    Some("源端笔记未找到"),
+                    Some(&t("sync.progress.sourceNoteNotFound", &[])),
                     synced_at,
                 )
                 .await?;
@@ -682,7 +691,7 @@ pub async fn sync_to_profile(
                         "settings",
                         0,
                         None,
-                        &format!("{} 项设置", count),
+                        &t("sync.progress.settingsCount", &[&count.to_string()]),
                         "success",
                         None,
                         synced_at,
@@ -697,7 +706,7 @@ pub async fn sync_to_profile(
                         "settings",
                         0,
                         None,
-                        &format!("{} 项设置", count),
+                        &t("sync.progress.settingsCount", &[&count.to_string()]),
                         "failed",
                         Some(&e.to_string()),
                         synced_at,
@@ -707,7 +716,15 @@ pub async fn sync_to_profile(
                 }
             }
             total += 1;
-            emit_progress(app_handle, log_id, "sync", "settings", 1, 1, "设置");
+            emit_progress(
+                app_handle,
+                log_id,
+                "sync",
+                "settings",
+                1,
+                1,
+                &t("sync.progress.settings", &[]),
+            );
         }
     }
 
@@ -720,11 +737,11 @@ pub async fn sync_to_profile(
     sync_log::finish(source_db, log_id, status, total, success, failed, None).await?;
 
     info!(
-        "同步完成: 总计={}, 成功={}, 失败={}",
+        "Sync completed: total={}, success={}, failed={}",
         total, success, failed
     );
 
     sync_log::find_by_id(source_db, log_id)
         .await?
-        .ok_or_else(|| anyhow::anyhow!("同步日志未找到"))
+        .ok_or_else(|| anyhow::Error::from(crate::error::AppError::code("SYNC_LOG_NOT_FOUND")))
 }

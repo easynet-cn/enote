@@ -104,7 +104,7 @@ async function embedNotionImages(content: string, basePath: string, zip: JSZip):
         const newSrc = `data:${mimeType};base64,${imageData}`
         result = result.replace(fullMatch, `![${alt}](${newSrc})`)
       } catch (error) {
-        console.warn(`无法读取图片: ${imagePath}`, error)
+        console.warn(`Failed to read image: ${imagePath}`, error)
       }
     }
   }

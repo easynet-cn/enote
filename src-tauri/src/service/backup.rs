@@ -38,7 +38,7 @@ fn format_dt(dt: &NaiveDateTime) -> String {
 
 fn parse_dt(s: &str) -> anyhow::Result<NaiveDateTime> {
     NaiveDateTime::parse_from_str(s.trim(), DT_FMT)
-        .map_err(|e| anyhow::anyhow!("日期解析失败 '{}': {}", s, e))
+        .map_err(|e| anyhow::anyhow!("Failed to parse date '{}': {}", s, e))
 }
 
 fn escape_sql(s: &str) -> String {
@@ -264,7 +264,7 @@ pub async fn export_sql(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
     }
 
     w.flush()?;
-    info!("SQL 备份导出完成: {}", path);
+    info!("SQL backup export completed: {}", path);
     Ok(())
 }
 
@@ -273,7 +273,7 @@ pub async fn import_sql(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
     let statements = split_sql_statements(&content);
 
     if statements.is_empty() {
-        anyhow::bail!("SQL 文件中没有找到有效的 INSERT 语句");
+        return Err(crate::error::AppError::code("NO_VALID_SQL_STATEMENTS").into());
     }
 
     let backend = db.get_database_backend();
@@ -283,11 +283,16 @@ pub async fn import_sql(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
     for stmt in &statements {
         txn.execute(Statement::from_string(backend, stmt.to_owned()))
             .await
-            .map_err(|e| anyhow::anyhow!("执行 SQL 失败: {}", e))?;
+            .map_err(|e| {
+                anyhow::Error::from(crate::error::AppError::code_with_args(
+                    "SQL_EXEC_FAILED",
+                    vec![e.to_string()],
+                ))
+            })?;
     }
 
     txn.commit().await?;
-    info!("SQL 备份导入完成: {}", path);
+    info!("SQL backup import completed: {}", path);
     Ok(())
 }
 
@@ -525,7 +530,7 @@ pub async fn export_excel(db: &DatabaseConnection, path: &str) -> anyhow::Result
     }
 
     workbook.save(path)?;
-    info!("Excel 备份导出完成: {}", path);
+    info!("Excel backup export completed: {}", path);
     Ok(())
 }
 
@@ -642,7 +647,7 @@ pub async fn import_excel(db: &DatabaseConnection, path: &str) -> anyhow::Result
     clear_tables(&txn).await?;
     restore_data(&txn, &data).await?;
     txn.commit().await?;
-    info!("Excel 备份导入完成: {}", path);
+    info!("Excel backup import completed: {}", path);
     Ok(())
 }
 
@@ -826,7 +831,7 @@ pub async fn export_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
     }
 
     zip.finish()?;
-    info!("CSV 备份导出完成: {}", path);
+    info!("CSV backup export completed: {}", path);
     Ok(())
 }
 
@@ -968,7 +973,7 @@ pub async fn import_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
     clear_tables(&txn).await?;
     restore_data(&txn, &data).await?;
     txn.commit().await?;
-    info!("CSV 备份导入完成: {}", path);
+    info!("CSV backup import completed: {}", path);
     Ok(())
 }
 
@@ -991,7 +996,7 @@ pub async fn auto_backup(db: &DatabaseConnection, app_data_dir: &Path) -> anyhow
     let path_str = path.to_string_lossy().to_string();
 
     export_sql(db, &path_str).await?;
-    info!("自动备份完成: {}", path_str);
+    info!("Auto backup completed: {}", path_str);
 
     Ok(filename)
 }
@@ -1031,7 +1036,7 @@ pub fn cleanup_old_backups(app_data_dir: &Path, max_count: usize) -> anyhow::Res
     }
 
     if deleted > 0 {
-        info!("已清理 {} 个旧备份文件", deleted);
+        info!("Cleaned up {} old backup files", deleted);
     }
     Ok(deleted)
 }

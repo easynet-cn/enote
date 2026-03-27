@@ -28,7 +28,17 @@ pub enum AppError {
 
     /// 内部错误
     #[error("Internal error: {0}")]
-    Internal(#[from] anyhow::Error),
+    Internal(anyhow::Error),
+}
+
+impl From<anyhow::Error> for AppError {
+    fn from(err: anyhow::Error) -> Self {
+        // 如果 anyhow 内部包裹的是 AppError，则直接提取（支持 service 层抛出 BusinessCode）
+        match err.downcast::<AppError>() {
+            Ok(app_error) => app_error,
+            Err(err) => AppError::Internal(err),
+        }
+    }
 }
 
 /// 错误响应结构，用于序列化到前端

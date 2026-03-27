@@ -1,4 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import { syncApi, profileApi } from '../api/note'
 import type {
@@ -13,6 +14,7 @@ import { showNotification } from '../components/ui/notification'
 import { parseError } from '../utils/errorHandler'
 
 export function useSync() {
+  const { t } = useI18n()
   const loading = ref(false)
   const syncing = ref(false)
   const preview = ref<SyncPreview | null>(null)
@@ -58,10 +60,16 @@ export function useSync() {
       if (result.failedCount > 0) {
         showNotification({
           type: 'warning',
-          message: `同步完成: ${result.successCount} 成功, ${result.failedCount} 失败`,
+          message: t('sync.syncCompleteWithFailures', {
+            success: result.successCount,
+            failed: result.failedCount,
+          }),
         })
       } else {
-        showNotification({ type: 'success', message: `同步完成: ${result.successCount} 条记录` })
+        showNotification({
+          type: 'success',
+          message: t('sync.syncCompleteSuccess', { count: result.successCount }),
+        })
       }
     } catch (e: unknown) {
       showNotification({ type: 'error', message: parseError(e) })
@@ -109,6 +117,7 @@ export function useSync() {
 }
 
 export function useSyncHistory() {
+  const { t } = useI18n()
   const loading = ref(false)
   const logs = ref<SyncLog[]>([])
   const total = ref(0)
@@ -155,7 +164,7 @@ export function useSyncHistory() {
   async function deleteLog(syncLogId: number) {
     try {
       await syncApi.deleteSyncLog(syncLogId)
-      showNotification({ type: 'success', message: '删除成功' })
+      showNotification({ type: 'success', message: t('sync.deleteSuccess') })
       await loadLogs()
     } catch (e: unknown) {
       showNotification({ type: 'error', message: parseError(e) })
@@ -165,7 +174,7 @@ export function useSyncHistory() {
   async function clearAll() {
     try {
       await syncApi.clearSyncLogs()
-      showNotification({ type: 'success', message: '已清空所有同步记录' })
+      showNotification({ type: 'success', message: t('sync.clearAllSuccess') })
       logs.value = []
       total.value = 0
     } catch (e: unknown) {
@@ -176,7 +185,7 @@ export function useSyncHistory() {
   async function exportLog(syncLogId: number, path: string) {
     try {
       await syncApi.exportSyncLog(syncLogId, path)
-      showNotification({ type: 'success', message: '导出成功' })
+      showNotification({ type: 'success', message: t('sync.exportSuccess') })
     } catch (e: unknown) {
       showNotification({ type: 'error', message: parseError(e) })
     }

@@ -28,7 +28,7 @@ pub async fn resolve_note_access(
         .await?;
 
     let Some((note_entity, notebook_opt)) = result else {
-        anyhow::bail!("笔记 ID {} 不存在", note_id);
+        anyhow::bail!("Note ID {} not found", note_id);
     };
 
     // 1. 加密笔记 → 强制 Deny
@@ -191,7 +191,7 @@ pub async fn resolve_notes_access(
 pub async fn check_read(db: &DatabaseConnection, note_id: i64) -> anyhow::Result<()> {
     let perm = resolve_note_access(db, note_id).await?;
     if !perm.can_read() {
-        anyhow::bail!("此笔记不允许 AI 访问 (mcp_access=Deny)");
+        anyhow::bail!("AI access denied for this note (mcp_access=Deny)");
     }
     Ok(())
 }
@@ -201,9 +201,9 @@ pub async fn check_write(db: &DatabaseConnection, note_id: i64) -> anyhow::Resul
     let perm = resolve_note_access(db, note_id).await?;
     if !perm.can_write() {
         if !perm.can_read() {
-            anyhow::bail!("此笔记不允许 AI 访问 (mcp_access=Deny)");
+            anyhow::bail!("AI access denied for this note (mcp_access=Deny)");
         }
-        anyhow::bail!("此笔记为只读，AI 不可修改 (mcp_access=ReadOnly)");
+        anyhow::bail!("This note is read-only for AI (mcp_access=ReadOnly)");
     }
     Ok(())
 }
@@ -222,10 +222,10 @@ pub async fn check_notebook_write(db: &DatabaseConnection, notebook_id: i64) -> 
         let access = McpAccess::from(nb.mcp_access);
         match access {
             McpAccess::Deny => {
-                anyhow::bail!("目标笔记本不允许 AI 访问 (mcp_access=Deny)");
+                anyhow::bail!("AI access denied for target notebook (mcp_access=Deny)");
             }
             McpAccess::ReadOnly => {
-                anyhow::bail!("目标笔记本为只读，AI 不可在此创建笔记 (mcp_access=ReadOnly)");
+                anyhow::bail!("Target notebook is read-only, AI cannot create notes here (mcp_access=ReadOnly)");
             }
             _ => {}
         }

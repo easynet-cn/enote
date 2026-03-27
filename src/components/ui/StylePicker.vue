@@ -115,9 +115,12 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { X, ChevronDown } from 'lucide-vue-next'
-import { presetColors, colorFamilies } from '../../config/colors'
+import { getPresetColors, getColorFamilies } from '../../config/colors'
 
 const { t } = useI18n()
+
+const presetColors = computed(() => getPresetColors(t))
+const colorFamilies = computed(() => getColorFamilies(t))
 
 interface Props {
   modelValue?: string | null
@@ -145,7 +148,7 @@ const dropdownStyle = ref<Record<string, string>>({})
 // 显示值
 const displayValue = computed(() => {
   if (!props.modelValue) return props.placeholder || t('stylePicker.selectStyle')
-  const preset = presetColors.find((c) => c.value === props.modelValue)
+  const preset = presetColors.value.find((c) => c.value === props.modelValue)
   if (preset) return preset.label
   return props.modelValue
 })
@@ -155,8 +158,8 @@ const selectedColorFamily = computed(() => {
   if (!props.modelValue) return null
   // 从值中提取颜色族，如 text-red-500 -> red
   const match = props.modelValue.match(/text-(\w+)-\d+/)
-  if (match && colorFamilies[match[1]]) {
-    return colorFamilies[match[1]]
+  if (match && colorFamilies.value[match[1]]) {
+    return colorFamilies.value[match[1]]
   }
   return null
 })

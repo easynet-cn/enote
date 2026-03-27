@@ -790,21 +790,29 @@ export const iconComponents: Record<string, Component> = {
   Construction,
 }
 
-// 图标分类
-export const iconCategories = [
-  { key: 'all', label: '全部' },
-  { key: 'file', label: '文件' },
-  { key: 'folder', label: '文件夹' },
-  { key: 'book', label: '书籍' },
-  { key: 'tag', label: '标签' },
-  { key: 'edit', label: '编辑' },
-  { key: 'list', label: '列表' },
-  { key: 'time', label: '时间' },
-  { key: 'media', label: '媒体' },
-  { key: 'shape', label: '形状' },
-  { key: 'user', label: '用户' },
-  { key: 'other', label: '其他' },
+// 图标分类 key 列表
+const ICON_CATEGORY_KEYS = [
+  'all',
+  'file',
+  'folder',
+  'book',
+  'tag',
+  'edit',
+  'list',
+  'time',
+  'media',
+  'shape',
+  'user',
+  'other',
 ]
+
+// 获取图标分类（支持 i18n）
+export function getIconCategories(t: (key: string) => string) {
+  return ICON_CATEGORY_KEYS.map((key) => ({
+    key,
+    label: t(`iconCategory.${key}`),
+  }))
+}
 
 // 分类映射
 export const iconCategoryMap: Record<string, string[]> = {

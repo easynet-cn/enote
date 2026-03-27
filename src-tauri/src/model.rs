@@ -763,7 +763,7 @@ impl From<entity::note_history::Model> for NoteHistory {
             old_content: value.old_content,
             new_content: value.new_content,
             extra: serde_json::from_str(&value.extra).unwrap_or_else(|e| {
-                warn!("笔记历史记录 extra 反序列化失败: {}", e);
+                warn!("Failed to deserialize note history extra: {}", e);
                 NoteHistoryExtra::default()
             }),
             operate_type: value.operate_type,
@@ -782,7 +782,7 @@ impl From<&entity::note_history::Model> for NoteHistory {
             old_content: value.old_content.clone(),
             new_content: value.new_content.clone(),
             extra: serde_json::from_str(&value.extra).unwrap_or_else(|e| {
-                warn!("笔记历史记录 extra 反序列化失败: {}", e);
+                warn!("Failed to deserialize note history extra: {}", e);
                 NoteHistoryExtra::default()
             }),
             operate_type: value.operate_type,

@@ -99,7 +99,7 @@ import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { X, ChevronDown, Search } from 'lucide-vue-next'
 import Tooltip from './BaseTooltip.vue'
-import { iconComponents, iconCategories, getIconsByCategory } from './icons'
+import { iconComponents, getIconCategories, getIconsByCategory } from './icons'
 
 const { t } = useI18n()
 
@@ -123,7 +123,7 @@ const emit = defineEmits<{
 }>()
 
 // 分类
-const categories = iconCategories
+const categories = computed(() => getIconCategories(t))
 
 const pickerRef = ref<HTMLElement>()
 const dropdownRef = ref<HTMLElement>()

@@ -19,7 +19,7 @@ pub fn images_dir(app_data_dir: &Path) -> PathBuf {
 fn ensure_images_dir(app_data_dir: &Path) -> Result<PathBuf> {
     let dir = images_dir(app_data_dir);
     if !dir.exists() {
-        std::fs::create_dir_all(&dir).context("创建图片存储目录失败")?;
+        std::fs::create_dir_all(&dir).context("Failed to create images directory")?;
     }
     Ok(dir)
 }
@@ -43,9 +43,9 @@ pub fn save_image(app_data_dir: &Path, base64_data: &str) -> Result<String> {
     let file_path = dir.join(&filename);
 
     // 写入文件
-    std::fs::write(&file_path, data).context("写入图片文件失败")?;
+    std::fs::write(&file_path, data).context("Failed to write image file")?;
 
-    info!("图片已保存: {}", file_path.display());
+    info!("Image saved: {}", file_path.display());
 
     Ok(file_path.to_string_lossy().to_string())
 }
@@ -54,7 +54,7 @@ pub fn save_image(app_data_dir: &Path, base64_data: &str) -> Result<String> {
 pub fn delete_image(path: &str) -> Result<()> {
     let path = Path::new(path);
     if path.exists() {
-        std::fs::remove_file(path).context("删除图片文件失败")?;
+        std::fs::remove_file(path).context("Failed to delete image file")?;
     }
     Ok(())
 }
@@ -65,13 +65,13 @@ fn parse_data_uri(data_uri: &str) -> Result<(String, Vec<u8>)> {
         // data:image/png;base64,iVBOR...
         if let Some((mime_part, base64_part)) = rest.split_once(";base64,") {
             let ext = mime_to_ext(mime_part);
-            let bytes = STANDARD.decode(base64_part).context("Base64 解码失败")?;
+            let bytes = STANDARD.decode(base64_part).context("Failed to decode Base64")?;
             return Ok((ext, bytes));
         }
     }
 
     // 纯 Base64 数据（无 data URI 前缀），默认 png
-    let bytes = STANDARD.decode(data_uri).context("Base64 解码失败")?;
+    let bytes = STANDARD.decode(data_uri).context("Failed to decode Base64")?;
     Ok(("png".to_string(), bytes))
 }
 

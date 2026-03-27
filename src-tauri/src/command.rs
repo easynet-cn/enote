@@ -186,7 +186,7 @@ pub async fn reconnect_profile(
     app_state: tauri::State<'_, Arc<AppState>>,
     profile_id: String,
 ) -> Result<(), AppError> {
-    info!("热切换 Profile: {}", profile_id);
+    info!("Hot-switching profile: {}", profile_id);
 
     // 1. 设置活跃 profile
     service::profile::set_active_profile(&app_state.app_data_dir, &profile_id)
@@ -249,7 +249,7 @@ pub async fn reconnect_profile(
         *cache = None;
     }
 
-    info!("Profile 热切换完成: {}", profile_id);
+    info!("Profile hot-switch completed: {}", profile_id);
     Ok(())
 }
 

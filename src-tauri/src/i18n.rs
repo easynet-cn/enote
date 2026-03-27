@@ -97,9 +97,31 @@ fn zh_cn_messages() -> HashMap<String, String> {
         "SQLite PRAGMA 设置失败".to_string(),
     );
 
+    // 系统托盘
+    messages.insert("tray.show".to_string(), "显示窗口".to_string());
+    messages.insert("tray.quit".to_string(), "退出".to_string());
+
     // 帮助菜单
     messages.insert("help.menuTitle".to_string(), "帮助".to_string());
     messages.insert("help.menuItem".to_string(), "帮助手册".to_string());
+
+    // 同步进度
+    messages.insert(
+        "sync.progress.clearTarget".to_string(),
+        "清空目标数据".to_string(),
+    );
+    messages.insert(
+        "sync.progress.sourceNoteNotFound".to_string(),
+        "源端笔记未找到".to_string(),
+    );
+    messages.insert(
+        "sync.progress.settingsCount".to_string(),
+        "{} 项设置".to_string(),
+    );
+    messages.insert(
+        "sync.progress.settings".to_string(),
+        "设置".to_string(),
+    );
 
     // 通用错误
     messages.insert("error.common.title".to_string(), "错误".to_string());
@@ -224,9 +246,31 @@ fn en_us_messages() -> HashMap<String, String> {
         "Failed to set SQLite PRAGMA".to_string(),
     );
 
+    // System tray
+    messages.insert("tray.show".to_string(), "Show Window".to_string());
+    messages.insert("tray.quit".to_string(), "Quit".to_string());
+
     // Help menu
     messages.insert("help.menuTitle".to_string(), "Help".to_string());
     messages.insert("help.menuItem".to_string(), "Help Manual".to_string());
+
+    // Sync progress
+    messages.insert(
+        "sync.progress.clearTarget".to_string(),
+        "Clear target data".to_string(),
+    );
+    messages.insert(
+        "sync.progress.sourceNoteNotFound".to_string(),
+        "Source note not found".to_string(),
+    );
+    messages.insert(
+        "sync.progress.settingsCount".to_string(),
+        "{} settings".to_string(),
+    );
+    messages.insert(
+        "sync.progress.settings".to_string(),
+        "Settings".to_string(),
+    );
 
     // Common errors
     messages.insert("error.common.title".to_string(), "Error".to_string());

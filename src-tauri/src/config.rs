@@ -59,7 +59,7 @@ impl Configuration {
             // 支持相对路径：相对于当前工作目录解析
             if path.is_relative() {
                 std::env::current_dir()
-                    .context("无法获取当前工作目录")?
+                    .context("Failed to get current directory")?
                     .join(path)
             } else {
                 path
@@ -73,7 +73,7 @@ impl Configuration {
             default_path
         };
 
-        info!("使用配置文件: {:?}", config_file_path);
+        info!("Using config file: {:?}", config_file_path);
 
         let config_path = config_file_path
             .to_str()
@@ -95,18 +95,18 @@ impl Configuration {
         let path = std::path::Path::new(config_path);
         let path = if path.is_relative() {
             std::env::current_dir()
-                .context("无法获取当前工作目录")?
+                .context("Failed to get current directory")?
                 .join(path)
         } else {
             path.to_path_buf()
         };
 
-        let config_str = path.to_str().context("配置文件路径包含无效字符")?;
+        let config_str = path.to_str().context("Config file path contains invalid characters")?;
 
         let config = Config::builder()
             .add_source(config::File::with_name(config_str))
             .build()
-            .context("无法加载配置文件")?;
+            .context("Failed to load configuration file")?;
 
         Ok(Self { config })
     }
@@ -163,8 +163,8 @@ mcp:
         fs::write(config_file_path, default_config)
             .context(t_simple("config.write_file.failed"))?;
 
-        info!("已创建默认配置文件: {:?}", config_file_path);
-        info!("数据库文件: {:?}", db_path);
+        info!("Default config file created: {:?}", config_file_path);
+        info!("Database file: {:?}", db_path);
 
         Ok(())
     }

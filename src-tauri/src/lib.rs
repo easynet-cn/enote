@@ -60,11 +60,11 @@ pub fn run_with_config(config_path: Option<String>) {
                 let handle = app.handle();
 
                 // 获取应用数据目录
-                let app_data_dir = handle.path().app_data_dir().expect("无法获取应用数据目录");
+                let app_data_dir = handle.path().app_data_dir().expect("Failed to get app data directory");
 
                 // 确保目录存在
                 if !app_data_dir.exists() {
-                    std::fs::create_dir_all(&app_data_dir).expect("无法创建应用数据目录");
+                    std::fs::create_dir_all(&app_data_dir).expect("Failed to create app data directory");
                 }
 
                 // 决定启动模式
@@ -73,12 +73,12 @@ pub fn run_with_config(config_path: Option<String>) {
                     setup_normal_mode(app, config_path).await?;
                 } else if cfg!(target_os = "android") || cfg!(target_os = "ios") {
                     // 移动端：自动创建默认 SQLite profile，跳过向导
-                    info!("移动端首次启动，自动创建默认 SQLite profile");
+                    info!("Mobile first launch, auto-creating default SQLite profile");
                     auto_create_mobile_profile(&app_data_dir)?;
                     setup_normal_mode(app, None).await?;
                 } else {
                     // 桌面端设置向导模式：没有任何 profile
-                    info!("未找到 profile 配置，进入设置向导模式");
+                    info!("No profile found, entering setup wizard mode");
                     setup_wizard_mode(app).await?;
                 }
 
@@ -206,7 +206,7 @@ fn auto_create_mobile_profile(
         },
     )?;
 
-    info!("移动端默认 profile 已创建: {}", db_path.display());
+    info!("Mobile default profile created: {}", db_path.display());
     Ok(())
 }
 
@@ -228,7 +228,7 @@ async fn setup_normal_mode(
             let configuration = match config::Configuration::new(handle, config_path.as_deref()) {
                 Ok(config) => config,
                 Err(e) => {
-                    error!("配置加载失败: {:#}", e);
+                    error!("Config load failed: {:#}", e);
                     let error_msg = format!("{}", e);
                     handle
                         .dialog()
@@ -243,7 +243,7 @@ async fn setup_normal_mode(
             let database_connection = match configuration.database_connection().await {
                 Ok(conn) => conn,
                 Err(e) => {
-                    error!("数据库连接失败: {:#}", e);
+                    error!("Database connection failed: {:#}", e);
                     let error_msg = format!("{}", e);
                     handle
                         .dialog()
@@ -261,14 +261,14 @@ async fn setup_normal_mode(
             let index = service::profile::read_index(&app_data_dir)?;
             let profiles = service::profile::list_profiles(&app_data_dir)?;
             info!(
-                "Profile 模式: auto_connect={}, profiles_count={}",
+                "Profile mode: auto_connect={}, profiles_count={}",
                 index.auto_connect,
                 profiles.len()
             );
 
             // 多 Profile + 非自动连接 → 延迟连接，等待用户在前端选择
             if !index.auto_connect && profiles.len() > 1 {
-                info!("多 Profile 且未开启自动连接，等待用户选择");
+                info!("Multiple profiles without auto-connect, waiting for user selection");
                 (
                     config::Configuration::default(),
                     None,
@@ -311,7 +311,7 @@ async fn setup_normal_mode(
                 {
                     Ok(conn) => conn,
                     Err(e) => {
-                        error!("数据库连接失败: {:#}", e);
+                        error!("Database connection failed: {:#}", e);
                         let error_msg = format!("{}", e);
                         handle
                             .dialog()
@@ -351,7 +351,7 @@ async fn setup_normal_mode(
     // 运行数据库迁移（仅在有数据库连接时）
     if let Some(ref db) = database_connection {
         if let Err(e) = migration::Migrator::up(db, None).await {
-            error!("数据库迁移失败: {:#}", e);
+            error!("Database migration failed: {:#}", e);
             let error_msg = format!("{}", e);
             handle
                 .dialog()
@@ -361,7 +361,7 @@ async fn setup_normal_mode(
                 .blocking_show();
             std::process::exit(1);
         }
-        info!("数据库迁移完成");
+        info!("Database migration completed");
     }
 
     let app_state = Arc::new(AppState {
@@ -478,8 +478,8 @@ fn setup_app_menu(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
 /// 设置系统托盘（仅桌面端编译）
 #[cfg(feature = "desktop")]
 fn setup_tray(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-    let show_item = MenuItemBuilder::with_id("show", "显示窗口").build(app)?;
-    let quit_item = MenuItemBuilder::with_id("quit", "退出").build(app)?;
+    let show_item = MenuItemBuilder::with_id("show", &i18n::t_simple("tray.show")).build(app)?;
+    let quit_item = MenuItemBuilder::with_id("quit", &i18n::t_simple("tray.quit")).build(app)?;
     let separator = PredefinedMenuItem::separator(app)?;
     let tray_menu = MenuBuilder::new(app)
         .item(&show_item)

@@ -208,7 +208,7 @@ const SyncResultContent = defineComponent({
               class: 'text-sm text-indigo-600 hover:text-indigo-700',
               onClick: () => toggleTable(expandedTable.value ? '' : 'note'),
             },
-            expandedTable.value ? '收起明细' : t('sync.viewDetails'),
+            expandedTable.value ? t('sync.collapseDetails') : t('sync.viewDetails'),
           ),
           expandedTable.value
             ? h('div', { class: 'space-y-2' }, [

@@ -55,7 +55,7 @@ fn decrypt_content(content: &str, encryption_key: Option<&str>) -> String {
     match encryption_key {
         Some(key) if !key.is_empty() && crypto::is_encrypted(content) => {
             crypto::decrypt(content, key).unwrap_or_else(|e| {
-                tracing::warn!("笔记内容解密失败: {}", e);
+                tracing::warn!("Failed to decrypt note content: {}", e);
                 content.to_string()
             })
         }

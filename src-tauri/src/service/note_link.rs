@@ -77,7 +77,7 @@ pub async fn create_link(
     target_note_id: i64,
 ) -> Result<()> {
     if source_note_id == target_note_id {
-        anyhow::bail!("不能链接到自身");
+        return Err(crate::error::AppError::code("CANNOT_LINK_SELF").into());
     }
 
     // 标准化方向：较小 ID 作为 source
