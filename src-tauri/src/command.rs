@@ -23,9 +23,9 @@ use crate::{
     config::AppState,
     error::AppError,
     model::{
-        Note, NoteHistory, NoteHistorySearchPageParam, NoteLink, NoteSearchPageParam,
-        NoteStatsResult, NoteTemplate, Notebook, OperateSource, PageParam, PageResult, SyncLog,
-        SyncLogDetail, SyncOptions, SyncPreview, Tag,
+        AppLog, AppLogSearchParam, LogFileInfo, Note, NoteHistory, NoteHistorySearchPageParam,
+        NoteLink, NoteSearchPageParam, NoteStatsResult, NoteTemplate, Notebook, OperateSource,
+        PageParam, PageResult, SyncLog, SyncLogDetail, SyncOptions, SyncPreview, Tag,
     },
     service,
 };
@@ -277,6 +277,11 @@ pub async fn export_backup(
             .map_err(AppError::from)?,
         _ => return Err(AppError::code("UNSUPPORTED_EXPORT_FORMAT")),
     }
+    let _ = service::app_log::log_action(
+        &db, "backup", "export",
+        None, None,
+        &format!("Exported backup: format={}, path={}", format, path), None,
+    ).await;
     Ok(())
 }
 
@@ -300,6 +305,11 @@ pub async fn import_backup(
             .map_err(AppError::from)?,
         _ => return Err(AppError::code("UNSUPPORTED_IMPORT_FORMAT")),
     }
+    let _ = service::app_log::log_action(
+        &db, "backup", "import",
+        None, None,
+        &format!("Imported backup: format={}, path={}", format, path), None,
+    ).await;
     Ok(())
 }
 
@@ -327,9 +337,17 @@ pub async fn create_notebook(
 ) -> Result<Option<Notebook>, AppError> {
     notebook.validate().map_err(AppError::from)?;
     let db = require_db(&app_state).await?;
-    service::notebook::create(&db, &notebook)
+    let result = service::notebook::create(&db, &notebook)
         .await
-        .map_err(AppError::from)
+        .map_err(AppError::from)?;
+    if let Some(ref nb) = result {
+        let _ = service::app_log::log_action(
+            &db, "notebook", "create",
+            Some(&nb.id.to_string()), Some(&nb.name),
+            &format!("Created notebook: {}", nb.name), None,
+        ).await;
+    }
+    Ok(result)
 }
 
 /// 根据 ID 删除笔记本
@@ -341,7 +359,13 @@ pub async fn delete_notebook_by_id(
     let db = require_db(&app_state).await?;
     service::notebook::delete_by_id(&db, id)
         .await
-        .map_err(AppError::from)
+        .map_err(AppError::from)?;
+    let _ = service::app_log::log_action(
+        &db, "notebook", "delete",
+        Some(&id.to_string()), None,
+        &format!("Deleted notebook id={}", id), None,
+    ).await;
+    Ok(())
 }
 
 /// 更新笔记本
@@ -352,9 +376,17 @@ pub async fn update_notebook(
 ) -> Result<Option<Notebook>, AppError> {
     notebook.validate().map_err(AppError::from)?;
     let db = require_db(&app_state).await?;
-    service::notebook::update(&db, &notebook)
+    let result = service::notebook::update(&db, &notebook)
         .await
-        .map_err(AppError::from)
+        .map_err(AppError::from)?;
+    if result.is_some() {
+        let _ = service::app_log::log_action(
+            &db, "notebook", "update",
+            Some(&notebook.id.to_string()), Some(&notebook.name),
+            &format!("Updated notebook: {}", notebook.name), None,
+        ).await;
+    }
+    Ok(result)
 }
 
 // ============================================================================
@@ -379,7 +411,15 @@ pub async fn create_tag(
 ) -> Result<Option<Tag>, AppError> {
     tag.validate().map_err(AppError::from)?;
     let db = require_db(&app_state).await?;
-    service::tag::create(&db, &tag).await.map_err(AppError::from)
+    let result = service::tag::create(&db, &tag).await.map_err(AppError::from)?;
+    if let Some(ref t) = result {
+        let _ = service::app_log::log_action(
+            &db, "tag", "create",
+            Some(&t.id.to_string()), Some(&t.name),
+            &format!("Created tag: {}", t.name), None,
+        ).await;
+    }
+    Ok(result)
 }
 
 /// 根据 ID 删除标签
@@ -391,7 +431,13 @@ pub async fn delete_tag_by_id(
     let db = require_db(&app_state).await?;
     service::tag::delete_by_id(&db, id)
         .await
-        .map_err(AppError::from)
+        .map_err(AppError::from)?;
+    let _ = service::app_log::log_action(
+        &db, "tag", "delete",
+        Some(&id.to_string()), None,
+        &format!("Deleted tag id={}", id), None,
+    ).await;
+    Ok(())
 }
 
 /// 更新标签
@@ -402,7 +448,15 @@ pub async fn update_tag(
 ) -> Result<Option<Tag>, AppError> {
     tag.validate().map_err(AppError::from)?;
     let db = require_db(&app_state).await?;
-    service::tag::update(&db, &tag).await.map_err(AppError::from)
+    let result = service::tag::update(&db, &tag).await.map_err(AppError::from)?;
+    if result.is_some() {
+        let _ = service::app_log::log_action(
+            &db, "tag", "update",
+            Some(&tag.id.to_string()), Some(&tag.name),
+            &format!("Updated tag: {}", tag.name), None,
+        ).await;
+    }
+    Ok(result)
 }
 
 // ============================================================================
@@ -418,14 +472,28 @@ pub async fn create_note(
     note.validate().map_err(AppError::from)?;
     let db = require_db(&app_state).await?;
     let enc_key = app_state.encryption_key.read().await;
-    service::note::create_with_key(
+    let is_encrypted = service::app_log::should_skip_content(&note.content);
+    let result = service::note::create_with_key(
         &db,
         &note,
         OperateSource::User,
         enc_key.as_deref(),
     )
     .await
-    .map_err(AppError::from)
+    .map_err(AppError::from)?;
+    if let Some(ref n) = result {
+        let msg = if is_encrypted {
+            format!("Created note: {} [encrypted content]", n.title)
+        } else {
+            format!("Created note: {}", n.title)
+        };
+        let _ = service::app_log::log_action(
+            &db, "note", "create",
+            Some(&n.id.to_string()), Some(&n.title),
+            &msg, None,
+        ).await;
+    }
+    Ok(result)
 }
 
 /// 更新笔记
@@ -437,17 +505,31 @@ pub async fn update_note(
     note.validate().map_err(AppError::from)?;
     let db = require_db(&app_state).await?;
     let enc_key = app_state.encryption_key.read().await;
-    service::note::update_with_key(
+    let is_encrypted = service::app_log::should_skip_content(&note.content);
+    let result = service::note::update_with_key(
         &db,
         &note,
         OperateSource::User,
         enc_key.as_deref(),
     )
     .await
-    .map_err(AppError::from)
+    .map_err(AppError::from)?;
+    if result.is_some() {
+        let msg = if is_encrypted {
+            format!("Updated note: {} [encrypted content]", note.title)
+        } else {
+            format!("Updated note: {}", note.title)
+        };
+        let _ = service::app_log::log_action(
+            &db, "note", "update",
+            Some(&note.id.to_string()), Some(&note.title),
+            &msg, None,
+        ).await;
+    }
+    Ok(result)
 }
 
-/// 根据 ID 删除笔记
+/// 根据 ID 删除笔记（软删除，移入回收站）
 #[tauri::command]
 pub async fn delete_note_by_id(
     app_state: tauri::State<'_, Arc<AppState>>,
@@ -456,7 +538,13 @@ pub async fn delete_note_by_id(
     let db = require_db(&app_state).await?;
     service::note::delete_by_id(&db, id)
         .await
-        .map_err(AppError::from)
+        .map_err(AppError::from)?;
+    let _ = service::app_log::log_action(
+        &db, "note", "delete",
+        Some(&id.to_string()), None,
+        &format!("Moved note id={} to trash", id), None,
+    ).await;
+    Ok(())
 }
 
 /// 分页搜索笔记
@@ -541,6 +629,7 @@ pub async fn save_settings(
     settings: HashMap<String, String>,
 ) -> Result<(), AppError> {
     let db = require_db(&app_state).await?;
+    let keys: Vec<String> = settings.keys().cloned().collect();
     service::settings::save(&db, settings)
         .await
         .map_err(AppError::from)?;
@@ -550,6 +639,12 @@ pub async fn save_settings(
         let mut cache = app_state.settings_cache.write().await;
         *cache = None;
     }
+
+    let _ = service::app_log::log_action(
+        &db, "settings", "update",
+        None, None,
+        &format!("Updated settings: {}", keys.join(", ")), None,
+    ).await;
 
     Ok(())
 }
@@ -583,7 +678,13 @@ pub async fn restore_note(
     let db = require_db(&app_state).await?;
     service::note::restore_by_id(&db, id)
         .await
-        .map_err(AppError::from)
+        .map_err(AppError::from)?;
+    let _ = service::app_log::log_action(
+        &db, "note", "restore",
+        Some(&id.to_string()), None,
+        &format!("Restored note id={} from trash", id), None,
+    ).await;
+    Ok(())
 }
 
 /// 永久删除笔记
@@ -595,14 +696,26 @@ pub async fn permanent_delete_note(
     let db = require_db(&app_state).await?;
     service::note::permanent_delete_by_id(&db, id, OperateSource::User)
         .await
-        .map_err(AppError::from)
+        .map_err(AppError::from)?;
+    let _ = service::app_log::log_action(
+        &db, "note", "permanent_delete",
+        Some(&id.to_string()), None,
+        &format!("Permanently deleted note id={}", id), None,
+    ).await;
+    Ok(())
 }
 
 /// 清空回收站
 #[tauri::command]
 pub async fn empty_trash(app_state: tauri::State<'_, Arc<AppState>>) -> Result<(), AppError> {
     let db = require_db(&app_state).await?;
-    service::note::empty_trash(&db).await.map_err(AppError::from)
+    service::note::empty_trash(&db).await.map_err(AppError::from)?;
+    let _ = service::app_log::log_action(
+        &db, "note", "empty_trash",
+        None, None,
+        "Emptied trash", None,
+    ).await;
+    Ok(())
 }
 
 /// 获取回收站笔记列表
@@ -1036,4 +1149,121 @@ pub async fn read_help_manual(app_handle: tauri::AppHandle, lang: String) -> Res
     std::fs::read_to_string(&resource_path).map_err(|e| {
         AppError::code_with_args("HELP_MANUAL_READ_FAILED", vec![e.to_string()])
     })
+}
+
+// ============================================================================
+// 应用日志相关命令
+// ============================================================================
+
+/// 分页搜索应用日志
+#[tauri::command]
+pub async fn search_page_app_logs(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    mut param: AppLogSearchParam,
+) -> Result<PageResult<AppLog>, AppError> {
+    param.page_param.normalize();
+    let db = require_db(&app_state).await?;
+    service::app_log::search_page(&db, &param)
+        .await
+        .map_err(AppError::from)
+}
+
+/// 删除单条应用日志
+#[tauri::command]
+pub async fn delete_app_log(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    id: i64,
+) -> Result<(), AppError> {
+    let db = require_db(&app_state).await?;
+    service::app_log::delete_by_id(&db, id)
+        .await
+        .map_err(AppError::from)
+}
+
+/// 批量删除应用日志
+#[tauri::command]
+pub async fn delete_batch_app_logs(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    ids: Vec<i64>,
+) -> Result<u64, AppError> {
+    let db = require_db(&app_state).await?;
+    service::app_log::delete_batch(&db, ids)
+        .await
+        .map_err(AppError::from)
+}
+
+/// 清空所有应用日志
+#[tauri::command]
+pub async fn clear_app_logs(
+    app_state: tauri::State<'_, Arc<AppState>>,
+) -> Result<u64, AppError> {
+    let db = require_db(&app_state).await?;
+    service::app_log::clear_all(&db)
+        .await
+        .map_err(AppError::from)
+}
+
+/// 按时间清理应用日志
+#[tauri::command]
+pub async fn cleanup_app_logs_before(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    before: String,
+) -> Result<u64, AppError> {
+    let dt = chrono::NaiveDateTime::parse_from_str(&before, "%Y-%m-%d %H:%M:%S")
+        .map_err(|e| AppError::code_with_args("INVALID_DATE", vec![e.to_string()]))?;
+    let db = require_db(&app_state).await?;
+    service::app_log::delete_before(&db, dt)
+        .await
+        .map_err(AppError::from)
+}
+
+/// 从前端写入日志
+#[tauri::command]
+pub async fn write_frontend_log(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    log: AppLog,
+) -> Result<(), AppError> {
+    let db = require_db(&app_state).await?;
+    service::app_log::log_from_frontend(&db, &log)
+        .await
+        .map_err(AppError::from)
+}
+
+/// 列出日志文件
+#[tauri::command]
+pub async fn list_log_files(
+    app_state: tauri::State<'_, Arc<AppState>>,
+) -> Result<Vec<LogFileInfo>, AppError> {
+    let log_dir = app_state.app_data_dir.join("logs");
+    service::app_log::list_log_files(&log_dir).map_err(AppError::from)
+}
+
+/// 读取日志文件内容
+#[tauri::command]
+pub async fn read_log_file(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    filename: String,
+) -> Result<String, AppError> {
+    let log_dir = app_state.app_data_dir.join("logs");
+    service::app_log::read_log_file(&log_dir, &filename).map_err(AppError::from)
+}
+
+/// 删除日志文件
+#[tauri::command]
+pub async fn delete_log_files(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    filenames: Vec<String>,
+) -> Result<u32, AppError> {
+    let log_dir = app_state.app_data_dir.join("logs");
+    service::app_log::delete_log_files(&log_dir, filenames).map_err(AppError::from)
+}
+
+/// 清理旧日志文件
+#[tauri::command]
+pub async fn cleanup_old_log_files(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    retention_days: u32,
+) -> Result<u32, AppError> {
+    let log_dir = app_state.app_data_dir.join("logs");
+    service::app_log::cleanup_old_log_files(&log_dir, retention_days).map_err(AppError::from)
 }

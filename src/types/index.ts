@@ -342,6 +342,43 @@ export interface SyncProgress {
   recordName: string
 }
 
+// ============================================================================
+// 应用日志相关类型
+// ============================================================================
+
+/** 应用日志 */
+export interface AppLog {
+  id: number
+  level: string
+  module: string
+  action: string
+  targetId: string | null
+  targetName: string | null
+  message: string
+  detail: string | null
+  createTime: string | null
+}
+
+/** 应用日志搜索参数 */
+export interface AppLogSearchParam {
+  pageIndex: number
+  pageSize: number
+  level?: string
+  module?: string
+  action?: string
+  keyword: string
+  startTime?: string | null
+  endTime?: string | null
+}
+
+/** 日志文件信息 */
+export interface LogFileInfo {
+  name: string
+  size: number
+  isError: boolean
+  modifiedTime: string | null
+}
+
 export interface AppState {
   notePageIndex: number
   notePageSize: number

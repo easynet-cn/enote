@@ -430,6 +430,44 @@
         </button>
       </div>
 
+      <!-- 日志管理 -->
+      <div>
+        <h3 class="text-sm font-semibold text-content-secondary mb-3">
+          {{ t('log.title') }}
+        </h3>
+        <div class="space-y-3">
+          <!-- 前端日志级别 -->
+          <div class="flex items-center justify-between">
+            <label class="text-sm text-content-secondary">{{ t('log.frontendLogLevel') }}</label>
+            <select
+              v-model="frontendLogLevel"
+              @change="saveSettings"
+              class="px-3 py-1.5 text-sm border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="debug">DEBUG</option>
+              <option value="info">INFO</option>
+              <option value="warn">WARN</option>
+              <option value="error">ERROR</option>
+              <option value="none">{{ t('settings.lockModeNone') }}</option>
+            </select>
+          </div>
+
+          <!-- 打开日志管理 -->
+          <div class="flex items-center justify-between p-3 bg-surface-dim rounded-lg">
+            <div>
+              <span class="text-sm text-content">{{ t('log.title') }}</span>
+              <p class="text-xs text-content-tertiary mt-0.5">{{ t('log.description') }}</p>
+            </div>
+            <button
+              @click="openLogDialog"
+              class="px-3 py-1.5 text-sm text-indigo-600 hover:bg-indigo-100 rounded-md transition-colors shrink-0"
+            >
+              {{ t('log.openLogManager') }}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- 系统维护 -->
       <div>
         <h3 class="text-sm font-semibold text-content-secondary mb-3">
@@ -480,6 +518,9 @@
 
   <!-- 同步记录管理对话框 -->
   <SyncHistoryDialog v-model="syncHistoryDialogVisible" />
+
+  <!-- 日志管理对话框 -->
+  <LogDialog v-model="logDialogVisible" />
 </template>
 
 <script setup lang="ts">
@@ -488,7 +529,9 @@ import { useI18n } from 'vue-i18n'
 import { Dialog, Button } from './ui'
 import SyncDialog from './SyncDialog.vue'
 import SyncHistoryDialog from './SyncHistoryDialog.vue'
+import LogDialog from './LogDialog.vue'
 import { settingsApi, backupApi, authApi } from '../api/note'
+import { initLogger, setLogLevel } from '../utils/logger'
 import { setLocale, type LocaleType } from '../i18n'
 import { useAppStore } from '../stores/app'
 import { useLockScreen } from '../composables/useLockScreen'
@@ -807,7 +850,10 @@ const saveSettings = async () => {
       lockOnMinimize: lockOnMinimizeEnabled.value ? '1' : '0',
       mcpEnabled: mcpEnabled.value ? '1' : '0',
       mcpEnabledTools: enabledTools,
+      frontendLogLevel: frontendLogLevel.value,
     })
+    // 更新前端日志级别
+    setLogLevel(frontendLogLevel.value)
   } catch {
     showNotification({ type: 'error', message: t('settings.saveFailed') })
   }
@@ -816,6 +862,14 @@ const saveSettings = async () => {
 // 同步对话框
 const syncDialogVisible = ref(false)
 const syncHistoryDialogVisible = ref(false)
+
+// 日志对话框
+const logDialogVisible = ref(false)
+const frontendLogLevel = ref('info')
+
+const openLogDialog = () => {
+  logDialogVisible.value = true
+}
 
 const openHelpManual = async () => {
   visible.value = false
@@ -863,6 +917,13 @@ const loadSettings = async () => {
     lockTimeoutValue.value = settings.lockTimeout || '0'
     lockOnMinimizeEnabled.value = settings.lockOnMinimize === '1'
     hasPassword.value = !!settings.lockPasswordHash
+
+    // 加载前端日志级别
+    if (settings.frontendLogLevel) {
+      frontendLogLevel.value = settings.frontendLogLevel
+      setLogLevel(settings.frontendLogLevel)
+    }
+    initLogger(frontendLogLevel.value)
 
     // 加载 MCP 设置
     mcpEnabled.value = settings.mcpEnabled === '1'

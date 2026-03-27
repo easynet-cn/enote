@@ -20,6 +20,7 @@ use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder};
 use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 use tracing::{error, info};
 use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
+use tracing_subscriber::Layer;
 
 use crate::config::AppState;
 use crate::i18n::{t, t_simple};
@@ -42,10 +43,46 @@ pub fn run() {
 
 /// 桌面端入口（支持配置文件路径参数）
 pub fn run_with_config(config_path: Option<String>) {
-    // 初始化 tracing 日志系统
+    // 初始化 tracing 日志系统（三层：stdout + 全量文件 + error 单独文件）
+    let log_dir = dirs::data_dir()
+        .unwrap_or_else(|| std::path::PathBuf::from("."))
+        .join("net.easycloudcn.enote")
+        .join("logs");
+    let _ = std::fs::create_dir_all(&log_dir);
+
+    // 全量日志文件（按天 rolling）
+    let all_appender = tracing_appender::rolling::daily(&log_dir, "enote.log");
+    let (all_writer, _all_guard) = tracing_appender::non_blocking(all_appender);
+
+    // Error 日志单独文件（按天 rolling）
+    let error_appender = tracing_appender::rolling::daily(&log_dir, "enote-error.log");
+    let (error_writer, _error_guard) = tracing_appender::non_blocking(error_appender);
+
+    // 将 guard 存入静态变量以确保生命周期
+    // 使用 Box::leak 确保 guard 不被 drop（应用退出时 OS 会回收）
+    Box::leak(Box::new(_all_guard));
+    Box::leak(Box::new(_error_guard));
+
+    let env_filter =
+        EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
+
     tracing_subscriber::registry()
-        .with(EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")))
+        .with(env_filter)
+        // stdout 输出（开发调试用）
         .with(fmt::layer())
+        // 全量日志文件
+        .with(
+            fmt::layer()
+                .with_writer(all_writer)
+                .with_ansi(false),
+        )
+        // Error 日志单独文件（仅 ERROR 级别）
+        .with(
+            fmt::layer()
+                .with_writer(error_writer)
+                .with_ansi(false)
+                .with_filter(tracing_subscriber::filter::LevelFilter::ERROR),
+        )
         .init();
 
     tauri::Builder::default()
@@ -169,6 +206,17 @@ pub fn run_with_config(config_path: Option<String>) {
             command::export_sync_log,
             // 帮助手册
             command::read_help_manual,
+            // 应用日志相关命令
+            command::search_page_app_logs,
+            command::delete_app_log,
+            command::delete_batch_app_logs,
+            command::clear_app_logs,
+            command::cleanup_app_logs_before,
+            command::write_frontend_log,
+            command::list_log_files,
+            command::read_log_file,
+            command::delete_log_files,
+            command::cleanup_old_log_files,
         ])
         .run(tauri::generate_context!())
         .expect(&t_simple("error.appStartFailed"));

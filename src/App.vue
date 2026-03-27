@@ -139,6 +139,9 @@
     <!-- 模板对话框 -->
     <TemplateDialog v-model="templateDialogVisible" @use-template="handleUseTemplate" />
 
+    <!-- 日志管理对话框 -->
+    <LogDialog v-model="logDialogVisible" />
+
     <!-- 快捷命令面板 -->
     <CommandPalette v-model="commandPaletteVisible" :commands="paletteCommands" />
 
@@ -169,6 +172,7 @@ import SettingsDialog from './components/SettingsDialog.vue'
 import TrashDialog from './components/TrashDialog.vue'
 import CommandPalette from './components/CommandPalette.vue'
 import TemplateDialog from './components/TemplateDialog.vue'
+import LogDialog from './components/LogDialog.vue'
 import { openHelpInNewWindow } from './utils/multiWindow'
 import SetupWizard from './components/SetupWizard.vue'
 import ProfileSelector from './components/ProfileSelector.vue'
@@ -193,6 +197,7 @@ import {
   Monitor,
   NotebookPen,
   HelpCircle,
+  ScrollText,
 } from 'lucide-vue-next'
 
 const { t } = useI18n()
@@ -306,6 +311,8 @@ const trashDialogVisible = ref(false)
 const templateDialogVisible = ref(false)
 // 命令面板
 const commandPaletteVisible = ref(false)
+// 日志管理对话框
+const logDialogVisible = ref(false)
 // 帮助手册
 async function openHelp() {
   await openHelpInNewWindow()
@@ -644,6 +651,16 @@ const paletteCommands = computed<PaletteCommand[]>(() => [
     category: t('commandPalette.categories.app'),
     shortcut: getBindingText('help-manual'),
     handler: () => openHelp(),
+  },
+  {
+    id: 'open-logs',
+    name: t('log.openLogManager'),
+    icon: markRaw(ScrollText),
+    category: t('commandPalette.categories.app'),
+    handler: () => {
+      settingsDialogVisible.value = false
+      logDialogVisible.value = true
+    },
   },
 ])
 

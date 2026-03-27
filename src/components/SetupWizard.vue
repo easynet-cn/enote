@@ -116,6 +116,7 @@
               type="text"
               :placeholder="t('setup.profileNamePlaceholder')"
               class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              @input="userEdited.name = true"
             />
           </div>
 
@@ -131,6 +132,7 @@
                   type="text"
                   :placeholder="t('setup.dbPathPlaceholder')"
                   class="flex-1 px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  @input="userEdited.path = true"
                 />
                 <button
                   @click="selectDbPathNew"
@@ -162,6 +164,7 @@
                   v-model="form.datasource.host"
                   :placeholder="t('setup.hostPlaceholder')"
                   class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  @input="userEdited.host = true"
                 />
               </div>
               <div>
@@ -184,6 +187,7 @@
                 v-model="form.datasource.database"
                 :placeholder="t('setup.databasePlaceholder')"
                 class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                @input="userEdited.database = true"
               />
             </div>
 
@@ -229,6 +233,7 @@
                     v-model="form.datasource.username"
                     :placeholder="t('setup.usernamePlaceholder')"
                     class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    @input="userEdited.username = true"
                   />
                 </div>
                 <div>
@@ -255,6 +260,7 @@
                   v-model="form.datasource.username"
                   :placeholder="t('setup.usernamePlaceholder')"
                   class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  @input="userEdited.username = true"
                 />
               </div>
 
@@ -358,14 +364,24 @@
 
       <!-- 底部按钮 -->
       <div class="px-8 py-4 border-t border-edge flex justify-between">
-        <button
-          v-if="currentStep > 0 && currentStep < 3"
-          @click="currentStep--"
-          class="px-4 py-2 text-content-secondary hover:text-content transition-colors"
-        >
-          {{ t('setup.prev') }}
-        </button>
-        <div v-else />
+        <div class="flex items-center gap-2">
+          <button
+            v-if="currentStep > 0 && currentStep < 3"
+            @click="currentStep--"
+            class="px-4 py-2 text-content-secondary hover:text-content transition-colors"
+          >
+            {{ t('setup.prev') }}
+          </button>
+          <button
+            v-if="currentStep === 1 && !props.editProfile"
+            @click="resetToDefaults"
+            class="flex items-center gap-1.5 px-3 py-2 text-xs text-content-tertiary hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+            :title="t('setup.resetDefaults')"
+          >
+            <RotateCcw class="w-3.5 h-3.5" />
+            {{ t('setup.resetDefaults') }}
+          </button>
+        </div>
 
         <div class="flex gap-2">
           <button
@@ -402,6 +418,7 @@
 import { ref, computed, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { open, save } from '@tauri-apps/plugin-dialog'
+import { appDataDir, join } from '@tauri-apps/api/path'
 import { profileApi } from '../api/note'
 import { showNotification } from './ui/notification'
 import { parseError } from '../utils/errorHandler'
@@ -419,6 +436,7 @@ import {
   Database,
   Server,
   Languages,
+  RotateCcw,
 } from 'lucide-vue-next'
 
 const emit = defineEmits<{
@@ -532,16 +550,117 @@ const canNext = computed(() => {
   return true
 })
 
-const nextStep = () => {
+/** 各数据库类型的推荐默认值 */
+const dbTypeDefaults: Record<
+  string,
+  {
+    name: string
+    host: string
+    port: number
+    database: string
+    username: string
+  }
+> = {
+  sqlite: {
+    name: t('setup.defaultName.sqlite'),
+    host: '',
+    port: 0,
+    database: '',
+    username: '',
+  },
+  mysql: {
+    name: t('setup.defaultName.mysql'),
+    host: 'localhost',
+    port: 3306,
+    database: 'enote',
+    username: 'root',
+  },
+  postgres: {
+    name: t('setup.defaultName.postgres'),
+    host: 'localhost',
+    port: 5432,
+    database: 'enote',
+    username: 'postgres',
+  },
+}
+
+/** 标记用户是否手动修改过某个字段（修改过则不覆盖） */
+const userEdited = reactive<Record<string, boolean>>({
+  name: !!props.editProfile?.name,
+  path: !!props.editProfile?.datasource?.path,
+  host: !!props.editProfile?.datasource?.host,
+  database: !!props.editProfile?.datasource?.database,
+  username: !!props.editProfile?.datasource?.username,
+})
+
+const nextStep = async () => {
   if (currentStep.value === 0) {
-    // 设置默认端口
-    if (form.datasource.type === 'mysql' && form.datasource.port === 5432) {
-      form.datasource.port = 3306
-    } else if (form.datasource.type === 'postgres' && form.datasource.port === 3306) {
-      form.datasource.port = 5432
+    const defaults = dbTypeDefaults[form.datasource.type]
+    if (defaults) {
+      // 仅在用户未手动修改时填充默认值
+      if (!userEdited.name || !form.name.trim()) {
+        form.name = defaults.name
+        userEdited.name = false
+      }
+      if (form.datasource.type === 'sqlite') {
+        // SQLite 默认路径：应用数据目录/enote.db
+        if (!userEdited.path || !form.datasource.path) {
+          try {
+            const dataDir = await appDataDir()
+            form.datasource.path = await join(dataDir, 'enote.db')
+          } catch {
+            // 获取失败时不填充，用户手动选择
+          }
+        }
+      } else {
+        if (!userEdited.host || !form.datasource.host) {
+          form.datasource.host = defaults.host
+        }
+        form.datasource.port = defaults.port
+        if (!userEdited.database || !form.datasource.database) {
+          form.datasource.database = defaults.database
+        }
+        if (!userEdited.username || !form.datasource.username) {
+          form.datasource.username = defaults.username
+        }
+      }
     }
   }
   currentStep.value++
+}
+
+/** 重置为默认值（强制覆盖所有字段） */
+const resetToDefaults = async () => {
+  const defaults = dbTypeDefaults[form.datasource.type]
+  if (!defaults) return
+
+  form.name = defaults.name
+  if (form.datasource.type === 'sqlite') {
+    try {
+      const dataDir = await appDataDir()
+      form.datasource.path = await join(dataDir, 'enote.db')
+    } catch {
+      form.datasource.path = ''
+    }
+  } else {
+    form.datasource.host = defaults.host
+    form.datasource.port = defaults.port
+    form.datasource.database = defaults.database
+    form.datasource.username = defaults.username
+    form.datasource.authMethod = 'password'
+    form.datasource.ssl.mode = 'disabled'
+    form.datasource.ssl.caCert = ''
+    form.datasource.ssl.clientCert = ''
+    form.datasource.ssl.clientKey = ''
+  }
+  dbPassword.value = ''
+
+  // 重置编辑标记
+  userEdited.name = false
+  userEdited.path = false
+  userEdited.host = false
+  userEdited.database = false
+  userEdited.username = false
 }
 
 /** 新建数据库文件（save 对话框，选择保存位置） */
@@ -553,6 +672,7 @@ const selectDbPathNew = async () => {
   })
   if (path) {
     form.datasource.path = path as string
+    userEdited.path = true
   }
 }
 
@@ -564,6 +684,7 @@ const selectDbPathExisting = async () => {
   })
   if (path) {
     form.datasource.path = path as string
+    userEdited.path = true
   }
 }
 

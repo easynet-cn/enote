@@ -1088,6 +1088,112 @@ pub struct SyncProgress {
 }
 
 // ============================================================================
+// 应用日志相关
+// ============================================================================
+
+/// 应用日志 DTO
+#[serde_as]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct AppLog {
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub id: i64,
+    /// 日志级别：INFO / WARN / ERROR
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub level: String,
+    /// 模块：notebook / note / tag / backup / sync / encrypt / system / frontend
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub module: String,
+    /// 操作：create / update / delete / export / import / encrypt / decrypt / error 等
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub action: String,
+    /// 操作对象 ID（可选）
+    pub target_id: Option<String>,
+    /// 操作对象名称（可选，方便展示）
+    pub target_name: Option<String>,
+    /// 日志描述
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub message: String,
+    /// 详细信息（JSON，可选）
+    pub detail: Option<String>,
+    /// 创建时间
+    #[serde(
+        serialize_with = "serialize_option_dt",
+        deserialize_with = "deserialize_option_dt"
+    )]
+    pub create_time: Option<NaiveDateTime>,
+}
+
+impl From<entity::app_log::Model> for AppLog {
+    fn from(value: entity::app_log::Model) -> Self {
+        Self {
+            id: value.id,
+            level: value.level,
+            module: value.module,
+            action: value.action,
+            target_id: value.target_id,
+            target_name: value.target_name,
+            message: value.message,
+            detail: value.detail,
+            create_time: Some(value.create_time),
+        }
+    }
+}
+
+/// 应用日志搜索参数
+#[serde_as]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct AppLogSearchParam {
+    /// 分页参数
+    #[serde(flatten)]
+    pub page_param: PageParam,
+    /// 按级别筛选
+    pub level: Option<String>,
+    /// 按模块筛选
+    pub module: Option<String>,
+    /// 按操作筛选
+    pub action: Option<String>,
+    /// 模糊搜索 message
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub keyword: String,
+    /// 时间范围 - 开始
+    #[serde(
+        serialize_with = "serialize_option_dt",
+        deserialize_with = "deserialize_option_dt"
+    )]
+    pub start_time: Option<NaiveDateTime>,
+    /// 时间范围 - 结束
+    #[serde(
+        serialize_with = "serialize_option_dt",
+        deserialize_with = "deserialize_option_dt"
+    )]
+    pub end_time: Option<NaiveDateTime>,
+}
+
+/// 日志文件信息
+#[serde_as]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct LogFileInfo {
+    /// 文件名
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub name: String,
+    /// 文件大小（字节）
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub size: u64,
+    /// 是否为 error 日志
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub is_error: bool,
+    /// 修改时间
+    #[serde(
+        serialize_with = "serialize_option_dt",
+        deserialize_with = "deserialize_option_dt"
+    )]
+    pub modified_time: Option<NaiveDateTime>,
+}
+
+// ============================================================================
 // 日期时间序列化工具函数
 // ============================================================================
 

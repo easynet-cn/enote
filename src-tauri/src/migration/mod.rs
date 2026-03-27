@@ -33,6 +33,7 @@ mod m20260317_000001_upgrade_note_fts_tags;
 mod m20260318_000001_add_performance_indexes;
 mod m20260320_000001_create_sync_log_tables;
 mod m20260320_000002_add_query_indexes;
+mod m20260327_000001_create_app_log_table;
 
 /// 数据库迁移器
 ///
@@ -63,6 +64,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20260318_000001_add_performance_indexes::Migration),
             Box::new(m20260320_000001_create_sync_log_tables::Migration),
             Box::new(m20260320_000002_add_query_indexes::Migration),
+            Box::new(m20260327_000001_create_app_log_table::Migration),
         ]
     }
 }
