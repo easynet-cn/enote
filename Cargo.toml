@@ -3,7 +3,7 @@ members = ["src-tauri", "crates/enote-mcp"]
 resolver = "2"
 
 [workspace.package]
-version = "0.11.0"
+version = "0.12.0"
 edition = "2024"
 authors = ["124244236@qq.com"]
 
