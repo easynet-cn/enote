@@ -2,7 +2,7 @@
 
 **Software Name:** ENote Intelligent Note Management System
 
-**Version:** V0.12.0
+**Version:** V1.0.0
 
 **Date:** March 2026
 
@@ -136,4 +136,8 @@
   - [23.3 File Logs](23-logs.md#233-file-logs)
   - [23.4 Frontend Log Level](23-logs.md#234-frontend-log-level)
   - [23.5 Sensitive Data Protection](23-logs.md#235-sensitive-data-protection)
+- [24. Auto Update](24-auto-update.md)
+  - [24.1 Automatic Check on Startup](24-auto-update.md#241-automatic-check-on-startup)
+  - [24.2 Manual Update Check](24-auto-update.md#242-manual-update-check)
+  - [24.3 Download and Install](24-auto-update.md#243-download-and-install)
 - [Appendix A: Changelog](appendix-changelog.md)

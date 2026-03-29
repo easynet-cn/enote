@@ -8,7 +8,7 @@
 //! - 提供应用全局状态
 
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use anyhow::{Context, Result};
@@ -117,7 +117,7 @@ impl Configuration {
     }
 
     /// 创建默认配置文件
-    fn create_default_config(app_data_dir: &PathBuf, config_file_path: &PathBuf) -> Result<()> {
+    fn create_default_config(app_data_dir: &Path, config_file_path: &Path) -> Result<()> {
         // SQLite 数据库文件路径
         let db_path = app_data_dir.join("enote.db");
         let db_url = format!(
@@ -178,12 +178,11 @@ mcp:
             .context(t_simple("config.missing_datasource_url"))?;
 
         // 展开 ~ 为用户主目录
-        if url.contains("~/") {
-            if let Some(home) = dirs::home_dir() {
+        if url.contains("~/")
+            && let Some(home) = dirs::home_dir() {
                 let home_str = home.to_string_lossy();
                 url = url.replace("~", &home_str);
             }
-        }
 
         let is_sqlite = url.starts_with("sqlite:");
 

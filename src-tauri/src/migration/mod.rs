@@ -35,6 +35,7 @@ mod m20260320_000001_create_sync_log_tables;
 mod m20260320_000002_add_query_indexes;
 mod m20260327_000001_create_app_log_table;
 mod m20260328_000001_add_search_composite_indexes;
+mod m20260329_000001_fix_app_log_id_type;
 
 /// 数据库迁移器
 ///
@@ -67,6 +68,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20260320_000002_add_query_indexes::Migration),
             Box::new(m20260327_000001_create_app_log_table::Migration),
             Box::new(m20260328_000001_add_search_composite_indexes::Migration),
+            Box::new(m20260329_000001_fix_app_log_id_type::Migration),
         ]
     }
 }

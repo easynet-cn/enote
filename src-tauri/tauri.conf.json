@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "ENote",
-  "version": "0.12.0",
+  "version": "1.0.0",
   "identifier": "net.easycloudcn.enote",
   "build": {
     "beforeDevCommand": "pnpm run dev",
@@ -38,6 +38,7 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "createUpdaterArtifacts": true,
     "resources": [
       "resources/help/*"
     ]
@@ -45,6 +46,12 @@
   "plugins": {
     "shell": {
       "open": "^https?://"
+    },
+    "updater": {
+      "endpoints": [
+        "https://github.com/easynet-cn/enote/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEUxRjA5REJBRDMyNEYyRTUKUldUbDhpVFR1cDN3NFdKYWZEU2VnNHEvQXlaQy9nU0J0emdsUGtFQzhnaFNlZTY2eE1FaWNEVG4K"
     }
   }
 }

@@ -127,6 +127,7 @@ pub async fn get_preview(
 }
 
 /// 执行同步核心流程
+#[allow(clippy::too_many_arguments)]
 pub async fn sync_to_profile(
     source_db: &DatabaseConnection,
     app_data_dir: &Path,
@@ -410,7 +411,7 @@ pub async fn sync_to_profile(
             .await? as u32;
         let mut global_idx: u32 = 0;
 
-        let total_batches = (count as u64 + SYNC_BATCH_SIZE - 1) / SYNC_BATCH_SIZE;
+        let total_batches = (count as u64).div_ceil(SYNC_BATCH_SIZE);
         for batch_idx in 0..total_batches {
             let source_notes: Vec<entity::note::Model> = entity::note::Entity::find()
                 .offset(batch_idx * SYNC_BATCH_SIZE)
@@ -552,7 +553,7 @@ pub async fn sync_to_profile(
             .await? as u32;
         let mut global_hist_idx: u32 = 0;
 
-        let total_hist_batches = (count as u64 + SYNC_BATCH_SIZE - 1) / SYNC_BATCH_SIZE;
+        let total_hist_batches = (count as u64).div_ceil(SYNC_BATCH_SIZE);
         for batch_idx in 0..total_hist_batches {
             let source_histories: Vec<entity::note_history::Model> =
                 entity::note_history::Entity::find()
@@ -617,7 +618,7 @@ pub async fn sync_to_profile(
                 }
             }
             total += 1;
-            if (i + 1) % 50 == 0 || i + 1 == count as usize {
+            if (i + 1).is_multiple_of(50) || i + 1 == count as usize {
                 emit_progress(
                     app_handle,
                     log_id,
@@ -760,8 +761,7 @@ pub async fn sync_to_profile(
     // ═══════════════════════════════════════
     target_db.close().await?;
 
-    let status = if failed > 0 { "completed" } else { "completed" };
-    sync_log::finish(source_db, log_id, status, total, success, failed, None).await?;
+    sync_log::finish(source_db, log_id, "completed", total, success, failed, None).await?;
 
     info!(
         "Sync completed: total={}, success={}, failed={}",

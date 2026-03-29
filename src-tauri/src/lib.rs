@@ -95,6 +95,8 @@ pub fn run_with_config(config_path: Option<String>) {
         .plugin(tauri_plugin_opener::init()) // 打开外部链接/文件
         .plugin(tauri_plugin_shell::init()) // Shell 命令执行
         .plugin(tauri_plugin_dialog::init()) // 文件对话框
+        .plugin(tauri_plugin_updater::Builder::new().build()) // 自动更新
+        .plugin(tauri_plugin_process::init()) // 进程管理（重启）
         // 应用初始化设置
         .setup(|app| {
             tauri::async_runtime::block_on(async move {
@@ -483,11 +485,15 @@ async fn setup_wizard_mode_state(app: &mut tauri::App) -> Result<(), Box<dyn std
 /// 设置应用菜单栏（仅桌面端编译）
 #[cfg(feature = "desktop")]
 fn setup_app_menu(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-    let help_item = MenuItemBuilder::with_id("help-manual", &t_simple("help.menuItem"))
+    let help_item = MenuItemBuilder::with_id("help-manual", t_simple("help.menuItem"))
+        .build(app)?;
+    let check_update_item = MenuItemBuilder::with_id("check-update", t_simple("help.checkUpdate"))
         .build(app)?;
 
-    let help_menu = SubmenuBuilder::new(app, &t_simple("help.menuTitle"))
+    let help_menu = SubmenuBuilder::new(app, t_simple("help.menuTitle"))
         .item(&help_item)
+        .separator()
+        .item(&check_update_item)
         .build()?;
 
     // macOS 需要应用子菜单（包含隐藏、退出等）
@@ -529,10 +535,18 @@ fn setup_app_menu(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
 
     let handle = app.handle().clone();
     app.on_menu_event(move |_app, event| {
-        if event.id().as_ref() == "help-manual" {
-            if let Some(window) = handle.get_webview_window("main") {
-                let _ = window.emit("menu-help-manual", ());
+        match event.id().as_ref() {
+            "help-manual" => {
+                if let Some(window) = handle.get_webview_window("main") {
+                    let _ = window.emit("menu-help-manual", ());
+                }
             }
+            "check-update" => {
+                if let Some(window) = handle.get_webview_window("main") {
+                    let _ = window.emit("menu-check-update", ());
+                }
+            }
+            _ => {}
         }
     });
 
@@ -542,8 +556,8 @@ fn setup_app_menu(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
 /// 设置系统托盘（仅桌面端编译）
 #[cfg(feature = "desktop")]
 fn setup_tray(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-    let show_item = MenuItemBuilder::with_id("show", &i18n::t_simple("tray.show")).build(app)?;
-    let quit_item = MenuItemBuilder::with_id("quit", &i18n::t_simple("tray.quit")).build(app)?;
+    let show_item = MenuItemBuilder::with_id("show", i18n::t_simple("tray.show")).build(app)?;
+    let quit_item = MenuItemBuilder::with_id("quit", i18n::t_simple("tray.quit")).build(app)?;
     let separator = PredefinedMenuItem::separator(app)?;
     let tray_menu = MenuBuilder::new(app)
         .item(&show_item)

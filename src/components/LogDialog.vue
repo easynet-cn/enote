@@ -238,6 +238,7 @@ import { Trash2 } from 'lucide-vue-next'
 import { Dialog, Pagination } from './ui'
 import { appLogApi } from '../api/appLog'
 import { showNotification } from './ui/notification'
+import { parseError } from '../utils/errorHandler'
 import type { AppLog, AppLogSearchParam, LogFileInfo } from '../types'
 
 const { t } = useI18n()
@@ -290,7 +291,7 @@ async function loadDbLogs() {
     dbLogs.value = result.data
     dbTotal.value = result.total
   } catch (e: unknown) {
-    showNotification({ message: e instanceof Error ? e.message : String(e), type: 'error' })
+    showNotification({ message: parseError(e), type: 'error' })
   } finally {
     dbLoading.value = false
   }
@@ -302,7 +303,7 @@ async function deleteDbLog(id: number) {
     dbLogs.value = dbLogs.value.filter((l) => l.id !== id)
     dbTotal.value--
   } catch (e: unknown) {
-    showNotification({ message: e instanceof Error ? e.message : String(e), type: 'error' })
+    showNotification({ message: parseError(e), type: 'error' })
   }
 }
 
@@ -313,7 +314,7 @@ async function clearDbLogs() {
     dbTotal.value = 0
     showNotification({ message: t('log.clearedCount', { count }), type: 'success' })
   } catch (e: unknown) {
-    showNotification({ message: e instanceof Error ? e.message : String(e), type: 'error' })
+    showNotification({ message: parseError(e), type: 'error' })
   }
 }
 
@@ -326,7 +327,7 @@ async function cleanupDbLogs() {
     showNotification({ message: t('log.clearedCount', { count }), type: 'success' })
     loadDbLogs()
   } catch (e: unknown) {
-    showNotification({ message: e instanceof Error ? e.message : String(e), type: 'error' })
+    showNotification({ message: parseError(e), type: 'error' })
   }
 }
 
@@ -358,7 +359,7 @@ async function loadLogFiles() {
   try {
     logFiles.value = await appLogApi.listLogFiles()
   } catch (e: unknown) {
-    showNotification({ message: e instanceof Error ? e.message : String(e), type: 'error' })
+    showNotification({ message: parseError(e), type: 'error' })
   }
 }
 
@@ -368,7 +369,7 @@ async function selectFile(file: LogFileInfo) {
     fileContent.value = await appLogApi.readLogFile(file.name)
   } catch (e: unknown) {
     fileContent.value = ''
-    showNotification({ message: e instanceof Error ? e.message : String(e), type: 'error' })
+    showNotification({ message: parseError(e), type: 'error' })
   }
 }
 
@@ -381,7 +382,7 @@ async function deleteSelectedFile() {
     loadLogFiles()
     showNotification({ message: t('log.fileDeleted'), type: 'success' })
   } catch (e: unknown) {
-    showNotification({ message: e instanceof Error ? e.message : String(e), type: 'error' })
+    showNotification({ message: parseError(e), type: 'error' })
   }
 }
 
@@ -391,7 +392,7 @@ async function cleanupFilesByDays() {
     showNotification({ message: t('log.clearedCount', { count }), type: 'success' })
     loadLogFiles()
   } catch (e: unknown) {
-    showNotification({ message: e instanceof Error ? e.message : String(e), type: 'error' })
+    showNotification({ message: parseError(e), type: 'error' })
   }
 }
 

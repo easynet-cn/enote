@@ -52,6 +52,7 @@ A cross-platform desktop note-taking application built with Tauri, supporting ri
 - **Multilingual** - Simplified Chinese and English
 - **System Tray** - Minimize to tray
 - **Multi-Window** - Open notes in separate windows
+- **Auto Update** - Automatic update check on startup with one-click install via GitHub Releases
 - **Help System** - Built-in searchable help documentation
 - **Application Logs** - Audit logging with sensitive data sanitization
 - **Cross-platform** - Supports Windows, macOS, and Linux
@@ -97,7 +98,8 @@ enote/
 │   │   ├── ProfileSelector.vue # Profile selector
 │   │   ├── CommandPalette.vue  # Command palette
 │   │   ├── HelpManual.vue      # Help documentation
-│   │   └── LogDialog.vue       # Application logs
+│   │   ├── LogDialog.vue       # Application logs
+│   │   └── UpdateChecker.vue   # Auto update checker
 │   ├── composables/            # Composable functions (11)
 │   ├── extensions/             # Custom TipTap extensions (8)
 │   ├── utils/                  # Utility functions
@@ -111,7 +113,7 @@ enote/
 │       ├── command.rs          # IPC command handlers
 │       ├── service/            # Business logic layer (17 services)
 │       ├── entity/             # Database entities (12)
-│       ├── migration/          # Database migrations (22)
+│       ├── migration/          # Database migrations (23)
 │       ├── config.rs           # Configuration management
 │       ├── error.rs            # Error handling
 │       ├── model.rs            # Data transfer objects

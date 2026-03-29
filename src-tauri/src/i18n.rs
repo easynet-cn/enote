@@ -104,6 +104,7 @@ fn zh_cn_messages() -> HashMap<String, String> {
     // 帮助菜单
     messages.insert("help.menuTitle".to_string(), "帮助".to_string());
     messages.insert("help.menuItem".to_string(), "帮助手册".to_string());
+    messages.insert("help.checkUpdate".to_string(), "检查更新".to_string());
 
     // 同步进度
     messages.insert(
@@ -253,6 +254,7 @@ fn en_us_messages() -> HashMap<String, String> {
     // Help menu
     messages.insert("help.menuTitle".to_string(), "Help".to_string());
     messages.insert("help.menuItem".to_string(), "Help Manual".to_string());
+    messages.insert("help.checkUpdate".to_string(), "Check for Updates".to_string());
 
     // Sync progress
     messages.insert(
@@ -328,7 +330,7 @@ fn en_us_messages() -> HashMap<String, String> {
 fn get_language_pack(locale: &str) -> HashMap<String, String> {
     match locale {
         "zh-CN" => zh_cn_messages(),
-        "en-US" | _ => en_us_messages(),
+        _ => en_us_messages(),
     }
 }
 

@@ -2,6 +2,14 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| V1.0.0 | March 2026 | Auto Update and PostgreSQL Compatibility Fix |
+| | | - Auto Update: Automatic new version check on startup with download progress and one-click install/restart |
+| | | - Manual Update Check: Available from Help menu and Command Palette |
+| | | - Update Signature Verification: Based on Tauri Updater plugin with digital signature verification |
+| | | - GitHub Releases Distribution: Three-platform builds via GitHub Actions |
+| | | - PostgreSQL Compatibility Fix: All table primary keys unified to BIGINT, fixing int4/int8 type mismatch |
+| | | - Log Error Handling Enhancement: Diagnostic info logged via tracing when log writes fail |
+| | | - Clippy Warnings Cleared: All 36 Clippy warnings fixed |
 | V0.12.0 | March 2026 | Help System and Application Logs |
 | | | - Help System: Built-in searchable user manual with table of contents navigation and multilingual support |
 | | | - Application Logs: Database operation logs and file system logs with filtering, search, and cleanup |
@@ -92,4 +100,4 @@
 
 ---
 
-*This manual is based on ENote Intelligent Note Management System V0.12.0. Please refer to the actual software for any feature updates.*
+*This manual is based on ENote Intelligent Note Management System V1.0.0. Please refer to the actual software for any feature updates.*

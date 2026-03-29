@@ -3,7 +3,7 @@ members = ["src-tauri", "crates/enote-mcp"]
 resolver = "2"
 
 [workspace.package]
-version = "0.12.0"
+version = "1.0.0"
 edition = "2024"
 authors = ["124244236@qq.com"]
 
@@ -15,6 +15,8 @@ tauri-plugin-fs = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-shell = "2"
 tauri-plugin-dialog = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
 
 # Serde
 serde = { version = "1", features = ["derive"] }

@@ -80,13 +80,7 @@ fn apply_keyword_filter<E: EntityTrait>(
     if is_sqlite {
         let fts_keyword = keyword
             .replace('"', "\"\"")
-            .replace('*', "")
-            .replace('(', "")
-            .replace(')', "")
-            .replace('{', "")
-            .replace('}', "")
-            .replace('^', "")
-            .replace(':', "");
+            .replace(['*', '(', ')', '{', '}', '^', ':'], "");
         let fts_query = format!("\"{}\"", fts_keyword);
         // 使用 BM25 排序：标题权重 10，内容权重 1，标签权重 5
         let fts_condition = Expr::cust_with_values(
@@ -156,7 +150,7 @@ async fn fetch_note_tags<C: ConnectionTrait>(db: &C, note_id: i64) -> anyhow::Re
         .all(db)
         .await?
         .into_iter()
-        .filter_map(|(_, tag_opt)| tag_opt.map(|t| Tag::from(t)))
+        .filter_map(|(_, tag_opt)| tag_opt.map(Tag::from))
         .collect())
 }
 
@@ -269,15 +263,14 @@ pub async fn create_with_key(
     let mut notebook_id = 0_i64;
     let mut notebook_name = String::default();
 
-    if note.notebook_id > 0 {
-        if let Some(notebook) = entity::notebook::Entity::find_by_id(note.notebook_id)
+    if note.notebook_id > 0
+        && let Some(notebook) = entity::notebook::Entity::find_by_id(note.notebook_id)
             .one(&txn)
             .await?
         {
             notebook_id = notebook.id;
             notebook_name = notebook.name;
         }
-    }
 
     let extra = serde_json::to_string(&NoteHistoryExtra {
         notebook_id,
@@ -432,7 +425,7 @@ pub async fn find_deleted_with_key(
     let total_pages = if total == 0 {
         0
     } else {
-        ((total as u64 + page_size - 1) / page_size) as i64
+        (total as u64).div_ceil(page_size) as i64
     };
 
     let mut notes: Vec<Note> = query
@@ -597,15 +590,14 @@ pub async fn update_with_key(
             let mut notebook_id = 0_i64;
             let mut notebook_name = String::default();
 
-            if note.notebook_id > 0 {
-                if let Some(notebook) = entity::notebook::Entity::find_by_id(note.notebook_id)
+            if note.notebook_id > 0
+                && let Some(notebook) = entity::notebook::Entity::find_by_id(note.notebook_id)
                     .one(&txn)
                     .await?
                 {
                     notebook_id = notebook.id;
                     notebook_name = notebook.name;
                 }
-            }
 
             let extra = serde_json::to_string(&NoteHistoryExtra {
                 notebook_id,

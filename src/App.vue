@@ -147,6 +147,9 @@
 
     <!-- 锁屏 -->
     <LockScreen :visible="isLocked" @unlocked="unlock" />
+
+    <!-- 自动更新检查 -->
+    <UpdateChecker ref="updateCheckerRef" />
   </div>
 </template>
 
@@ -191,6 +194,7 @@ import {
   NotebookPen,
   HelpCircle,
   ScrollText,
+  RefreshCw,
 } from 'lucide-vue-next'
 
 // 对话框组件懒加载 —— 仅在用户打开时才加载，减少首屏 JS 体积
@@ -202,6 +206,7 @@ const CommandPalette = defineAsyncComponent(() => import('./components/CommandPa
 const TemplateDialog = defineAsyncComponent(() => import('./components/TemplateDialog.vue'))
 const LogDialog = defineAsyncComponent(() => import('./components/LogDialog.vue'))
 const LockScreen = defineAsyncComponent(() => import('./components/LockScreen.vue'))
+const UpdateChecker = defineAsyncComponent(() => import('./components/UpdateChecker.vue'))
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -316,6 +321,8 @@ const templateDialogVisible = ref(false)
 const commandPaletteVisible = ref(false)
 // 日志管理对话框
 const logDialogVisible = ref(false)
+// 自动更新
+const updateCheckerRef = ref<InstanceType<typeof UpdateChecker> | null>(null)
 // 帮助手册
 async function openHelp() {
   await openHelpInNewWindow()
@@ -665,6 +672,15 @@ const paletteCommands = computed<PaletteCommand[]>(() => [
       logDialogVisible.value = true
     },
   },
+  {
+    id: 'check-for-updates',
+    name: t('commandPalette.commands.checkForUpdates'),
+    icon: markRaw(RefreshCw),
+    category: t('commandPalette.categories.app'),
+    handler: () => {
+      updateCheckerRef.value?.checkForUpdates()
+    },
+  },
 ])
 
 // 关闭窗口拦截：未保存时提示确认
@@ -763,8 +779,9 @@ const enterMainMode = async () => {
     })
   }
 
-  // 监听菜单栏帮助手册事件
+  // 监听菜单栏事件
   listen('menu-help-manual', () => openHelp())
+  listen('menu-check-update', () => updateCheckerRef.value?.checkForUpdates())
 
   // 启动自动备份
   startAutoBackup()

@@ -435,6 +435,7 @@ export default {
       newFromTemplate: 'New from Template',
       saveAsTemplate: 'Save as Template',
       viewHelp: 'View Help Manual',
+      checkForUpdates: 'Check for Updates',
     },
   },
 
@@ -1123,5 +1124,25 @@ export default {
     noNotesFound: 'No note files (.html, .md) found in ZIP',
     parseFailed: 'Failed to parse {filepath}: {error}',
     unknownError: 'Unknown error',
+  },
+
+  // Auto Update
+  updater: {
+    checking: 'Checking for updates...',
+    newVersion: 'New Version Available',
+    newVersionAvailable: 'Version {version} is now available',
+    releaseNotes: 'Release Notes',
+    downloading: 'Downloading update...',
+    downloadProgress: 'Download progress: {percent}%',
+    installing: 'Installing update...',
+    updateNow: 'Update Now',
+    later: 'Later',
+    upToDate: 'You are up to date',
+    checkFailed: 'Failed to check for updates',
+    downloadFailed: 'Failed to download update',
+    restartRequired: 'Update downloaded. Restart to complete installation',
+    restartNow: 'Restart Now',
+    currentVersion: 'Current version: {version}',
+    checkForUpdates: 'Check for Updates',
   },
 } as const

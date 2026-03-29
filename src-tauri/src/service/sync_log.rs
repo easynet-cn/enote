@@ -115,6 +115,7 @@ pub async fn finish(
 }
 
 /// 添加同步明细记录
+#[allow(clippy::too_many_arguments)]
 pub async fn add_detail(
     db: &DatabaseConnection,
     sync_log_id: i64,
@@ -178,16 +179,14 @@ pub async fn search_detail_page(
     let mut query = entity::sync_log_detail::Entity::find()
         .filter(entity::sync_log_detail::Column::SyncLogId.eq(sync_log_id));
 
-    if let Some(tn) = table_name {
-        if !tn.is_empty() {
+    if let Some(tn) = table_name
+        && !tn.is_empty() {
             query = query.filter(entity::sync_log_detail::Column::TableName.eq(tn));
         }
-    }
-    if let Some(st) = status {
-        if !st.is_empty() {
+    if let Some(st) = status
+        && !st.is_empty() {
             query = query.filter(entity::sync_log_detail::Column::Status.eq(st));
         }
-    }
 
     let total = query.clone().count(db).await? as i64;
 

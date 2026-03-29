@@ -52,6 +52,7 @@
 - **多语言** - 支持中文简体和英文
 - **系统托盘** - 最小化到托盘运行
 - **多窗口** - 支持在新窗口中打开笔记
+- **自动更新** - 启动时自动检查新版本，一键下载安装，基于 GitHub Releases 分发
 - **帮助系统** - 内置可搜索的帮助文档
 - **应用日志** - 审计日志，自动脱敏敏感数据
 - **跨平台** - 支持 Windows、macOS 和 Linux
@@ -97,7 +98,8 @@ enote/
 │   │   ├── ProfileSelector.vue # 配置选择器
 │   │   ├── CommandPalette.vue  # 命令面板
 │   │   ├── HelpManual.vue      # 帮助文档
-│   │   └── LogDialog.vue       # 应用日志
+│   │   ├── LogDialog.vue       # 应用日志
+│   │   └── UpdateChecker.vue   # 自动更新检查
 │   ├── composables/            # 组合式函数（11 个）
 │   ├── extensions/             # TipTap 自定义扩展（8 个）
 │   ├── utils/                  # 工具函数
@@ -111,7 +113,7 @@ enote/
 │       ├── command.rs          # IPC 命令处理
 │       ├── service/            # 业务逻辑层（17 个服务）
 │       ├── entity/             # 数据库实体（12 个）
-│       ├── migration/          # 数据库迁移（22 个）
+│       ├── migration/          # 数据库迁移（23 个）
 │       ├── config.rs           # 配置管理
 │       ├── error.rs            # 错误处理
 │       ├── model.rs            # 数据传输对象

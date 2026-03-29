@@ -431,6 +431,7 @@ export default {
       newFromTemplate: '从模板新建',
       saveAsTemplate: '存为模板',
       viewHelp: '查看帮助手册',
+      checkForUpdates: '检查更新',
     },
   },
 
@@ -1118,5 +1119,25 @@ export default {
     noNotesFound: 'ZIP 文件中没有找到笔记文件 (.html, .md)',
     parseFailed: '解析 {filepath} 失败: {error}',
     unknownError: '未知错误',
+  },
+
+  // 自动更新
+  updater: {
+    checking: '正在检查更新...',
+    newVersion: '发现新版本',
+    newVersionAvailable: '新版本 {version} 已发布',
+    releaseNotes: '更新说明',
+    downloading: '正在下载更新...',
+    downloadProgress: '下载进度: {percent}%',
+    installing: '正在安装更新...',
+    updateNow: '立即更新',
+    later: '稍后提醒',
+    upToDate: '当前已是最新版本',
+    checkFailed: '检查更新失败',
+    downloadFailed: '下载更新失败',
+    restartRequired: '更新已下载，重启应用以完成安装',
+    restartNow: '立即重启',
+    currentVersion: '当前版本: {version}',
+    checkForUpdates: '检查更新',
   },
 } as const

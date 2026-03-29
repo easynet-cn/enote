@@ -25,6 +25,8 @@
     "dialog:allow-save",
     "dialog:allow-open",
     "core:tray:default",
-    "core:tray:allow-set-icon"
+    "core:tray:allow-set-icon",
+    "updater:default",
+    "process:default"
   ]
 }

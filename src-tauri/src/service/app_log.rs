@@ -92,7 +92,8 @@ pub fn sanitize_message(message: &str) -> String {
 
 /// 记录一条应用日志
 ///
-/// 会自动对 message 和 detail 进行脱敏处理
+/// 会自动对 message 和 detail 进行脱敏处理。
+/// 写入失败不会向调用方传播错误，仅通过 tracing 记录。
 pub async fn log_action(
     db: &DatabaseConnection,
     module: &str,
@@ -105,7 +106,7 @@ pub async fn log_action(
     let now = Local::now().naive_local();
 
     let sanitized_message = sanitize_message(message);
-    let sanitized_detail = detail.map(|d| sanitize_message(d));
+    let sanitized_detail = detail.map(sanitize_message);
 
     let active_model = entity::app_log::ActiveModel {
         id: NotSet,
@@ -119,7 +120,10 @@ pub async fn log_action(
         create_time: Set(now),
     };
 
-    active_model.insert(db).await?;
+    if let Err(e) = active_model.insert(db).await {
+        warn!("Failed to write app log [module={}, action={}]: {:#}", module, action, e);
+        return Err(e.into());
+    }
     Ok(())
 }
 
@@ -136,7 +140,7 @@ pub async fn log_error(
     let now = Local::now().naive_local();
 
     let sanitized_message = sanitize_message(message);
-    let sanitized_detail = detail.map(|d| sanitize_message(d));
+    let sanitized_detail = detail.map(sanitize_message);
 
     let active_model = entity::app_log::ActiveModel {
         id: NotSet,
@@ -150,7 +154,10 @@ pub async fn log_error(
         create_time: Set(now),
     };
 
-    active_model.insert(db).await?;
+    if let Err(e) = active_model.insert(db).await {
+        warn!("Failed to write app error log [module={}, action={}]: {:#}", module, action, e);
+        return Err(e.into());
+    }
     Ok(())
 }
 
@@ -194,11 +201,14 @@ pub async fn log_from_frontend(
         target_id: Set(log.target_id.clone()),
         target_name: Set(log.target_name.clone()),
         message: Set(sanitize_message(&log.message)),
-        detail: Set(log.detail.as_deref().map(|d| sanitize_message(d))),
+        detail: Set(log.detail.as_deref().map(sanitize_message)),
         create_time: Set(now),
     };
 
-    active_model.insert(db).await?;
+    if let Err(e) = active_model.insert(db).await {
+        warn!("Failed to write frontend log [module={}, action={}]: {:#}", log.module, log.action, e);
+        return Err(e.into());
+    }
     Ok(())
 }
 
@@ -210,25 +220,22 @@ pub async fn search_page(
     let mut query = entity::app_log::Entity::find();
 
     // 按级别筛选
-    if let Some(ref level) = param.level {
-        if !level.is_empty() {
+    if let Some(ref level) = param.level
+        && !level.is_empty() {
             query = query.filter(entity::app_log::Column::Level.eq(level.as_str()));
         }
-    }
 
     // 按模块筛选
-    if let Some(ref module) = param.module {
-        if !module.is_empty() {
+    if let Some(ref module) = param.module
+        && !module.is_empty() {
             query = query.filter(entity::app_log::Column::Module.eq(module.as_str()));
         }
-    }
 
     // 按操作筛选
-    if let Some(ref action) = param.action {
-        if !action.is_empty() {
+    if let Some(ref action) = param.action
+        && !action.is_empty() {
             query = query.filter(entity::app_log::Column::Action.eq(action.as_str()));
         }
-    }
 
     // 关键词模糊搜索
     if !param.keyword.is_empty() {
@@ -457,22 +464,18 @@ pub fn cleanup_old_log_files(log_dir: &Path, retention_days: u32) -> anyhow::Res
                 continue;
             }
 
-            if let Ok(metadata) = entry.metadata() {
-                if let Ok(modified) = metadata.modified() {
+            if let Ok(metadata) = entry.metadata()
+                && let Ok(modified) = metadata.modified() {
                     let duration = modified
                         .duration_since(std::time::UNIX_EPOCH)
                         .unwrap_or_default();
                     if let Some(dt) =
                         chrono::DateTime::from_timestamp(duration.as_secs() as i64, 0)
-                    {
-                        if dt.naive_local() < cutoff_time {
-                            if std::fs::remove_file(&path).is_ok() {
+                        && dt.naive_local() < cutoff_time
+                            && std::fs::remove_file(&path).is_ok() {
                                 deleted += 1;
                             }
-                        }
-                    }
                 }
-            }
         }
     }
 

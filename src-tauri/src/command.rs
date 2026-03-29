@@ -95,18 +95,16 @@ pub async fn save_profile_config(
         .map_err(AppError::from)?;
 
     // 保存数据库密码到 Keychain
-    if let Some(password) = db_password {
-        if !password.is_empty() {
+    if let Some(password) = db_password
+        && !password.is_empty() {
             service::keychain::set_db_password(&profile_id, &password).map_err(AppError::from)?;
         }
-    }
 
     // 保存加密密钥到 Keychain
-    if let Some(key) = encryption_key {
-        if !key.is_empty() {
+    if let Some(key) = encryption_key
+        && !key.is_empty() {
             service::keychain::set_encryption_key(&profile_id, &key).map_err(AppError::from)?;
         }
-    }
 
     Ok(())
 }
@@ -991,7 +989,7 @@ pub async fn get_sync_preview(
     service::sync::get_preview(
         &db,
         &app_state.app_data_dir,
-        &*profile_id,
+        &profile_id,
         &target_profile_id,
         target_db_password.as_deref(),
     )
@@ -1022,7 +1020,7 @@ pub async fn start_sync(
     service::sync::sync_to_profile(
         &db,
         &app_state.app_data_dir,
-        &*profile_id,
+        &profile_id,
         &options,
         target_db_password.as_deref(),
         enc_key.as_deref(),
