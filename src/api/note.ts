@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core'
+import { invokeWithRetry } from '../utils/invokeWithRetry'
 
 import {
   ContentType,
@@ -99,8 +100,10 @@ export const settingsApi = {
 }
 
 export const trashApi = {
-  async findDeletedNotes(): Promise<Note[]> {
-    return await invoke('find_deleted_notes')
+  async findDeletedNotes(pageIndex: number = 1, pageSize: number = 50): Promise<PageResult<Note>> {
+    return await invokeWithRetry('find_deleted_notes', {
+      pageParam: { pageIndex, pageSize },
+    })
   },
 
   async restoreNote(id: number): Promise<void> {
@@ -150,7 +153,7 @@ export const backupApi = {
 
 export const templateApi = {
   async findAll(): Promise<NoteTemplate[]> {
-    return await invoke('find_all_templates')
+    return await invokeWithRetry('find_all_templates')
   },
   async create(template: NoteTemplate): Promise<NoteTemplate> {
     return await invoke('create_template', { template })
@@ -209,7 +212,7 @@ export const noteLinkApi = {
 
 export const noteApi = {
   async getNotebooks(): Promise<Notebook[]> {
-    return await invoke('find_all_notebooks')
+    return await invokeWithRetry('find_all_notebooks')
   },
 
   async createNotebook(notebook: Notebook): Promise<Notebook> {
@@ -292,15 +295,15 @@ export const noteApi = {
   },
 
   async searchPageNotes(searchParam: NoteSearchPageParam): Promise<PageResult<Note>> {
-    return await invoke('search_page_notes', { searchParam })
+    return await invokeWithRetry('search_page_notes', { searchParam })
   },
 
   async noteStats(searchParam: NoteSearchPageParam): Promise<NoteStatsResult> {
-    return await invoke('note_stats', { searchParam })
+    return await invokeWithRetry('note_stats', { searchParam })
   },
 
   async getTags(): Promise<Tag[]> {
-    return await invoke('find_all_tags')
+    return await invokeWithRetry('find_all_tags')
   },
 
   async createTag(tag: Tag): Promise<Tag> {
@@ -318,7 +321,7 @@ export const noteApi = {
   async searchPageNoteHistories(
     searchParam: NoteHistorySearchPageParam,
   ): Promise<PageResult<NoteHistory>> {
-    return await invoke('search_page_note_histories', { searchParam })
+    return await invokeWithRetry('search_page_note_histories', { searchParam })
   },
 }
 

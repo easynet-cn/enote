@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build",
+    "build": "node scripts/merge-manual.mjs && vue-tsc --noEmit && vite build",
+    "merge-manual": "node scripts/merge-manual.mjs",
     "preview": "vite preview",
     "format": "prettier --write src/",
     "lint": "eslint src/",

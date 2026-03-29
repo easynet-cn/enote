@@ -9,7 +9,7 @@
 //! - 注册命令处理器
 //! - 启动应用程序
 
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use sea_orm_migration::MigratorTrait;
 use tauri::{Emitter, Manager};
@@ -24,6 +24,12 @@ use tracing_subscriber::Layer;
 
 use crate::config::AppState;
 use crate::i18n::{t, t_simple};
+
+/// 静态存储 tracing guards，避免 Box::leak 内存泄漏
+static TRACING_GUARDS: OnceLock<(
+    tracing_appender::non_blocking::WorkerGuard,
+    tracing_appender::non_blocking::WorkerGuard,
+)> = OnceLock::new();
 
 // 模块声明
 mod command; // Tauri 命令处理器
@@ -58,10 +64,8 @@ pub fn run_with_config(config_path: Option<String>) {
     let error_appender = tracing_appender::rolling::daily(&log_dir, "enote-error.log");
     let (error_writer, _error_guard) = tracing_appender::non_blocking(error_appender);
 
-    // 将 guard 存入静态变量以确保生命周期
-    // 使用 Box::leak 确保 guard 不被 drop（应用退出时 OS 会回收）
-    Box::leak(Box::new(_all_guard));
-    Box::leak(Box::new(_error_guard));
+    // 将 guard 存入静态变量以确保生命周期（优于 Box::leak，程序退出时会正常 flush）
+    let _ = TRACING_GUARDS.set((_all_guard, _error_guard));
 
     let env_filter =
         EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
@@ -97,11 +101,19 @@ pub fn run_with_config(config_path: Option<String>) {
                 let handle = app.handle();
 
                 // 获取应用数据目录
-                let app_data_dir = handle.path().app_data_dir().expect("Failed to get app data directory");
+                let app_data_dir = handle.path().app_data_dir()
+                    .map_err(|e| {
+                        error!("Failed to get app data directory: {:#}", e);
+                        e
+                    })?;
 
                 // 确保目录存在
                 if !app_data_dir.exists() {
-                    std::fs::create_dir_all(&app_data_dir).expect("Failed to create app data directory");
+                    std::fs::create_dir_all(&app_data_dir)
+                        .map_err(|e| {
+                            error!("Failed to create app data directory: {:#}", e);
+                            e
+                        })?;
                 }
 
                 // 决定启动模式
@@ -219,7 +231,11 @@ pub fn run_with_config(config_path: Option<String>) {
             command::cleanup_old_log_files,
         ])
         .run(tauri::generate_context!())
-        .expect(&t_simple("error.appStartFailed"));
+        .unwrap_or_else(|e| {
+            error!("Application start failed: {:#}", e);
+            eprintln!("{}: {}", t_simple("error.appStartFailed"), e);
+            std::process::exit(1);
+        });
 }
 
 /// 移动端首次启动时自动创建默认 SQLite profile
@@ -535,8 +551,14 @@ fn setup_tray(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .item(&quit_item)
         .build()?;
 
+    let tray_icon = app.default_window_icon().cloned()
+        .ok_or_else(|| {
+            error!("Default window icon not found for tray");
+            Box::<dyn std::error::Error>::from("Default window icon not found")
+        })?;
+
     TrayIconBuilder::new()
-        .icon(app.default_window_icon().cloned().unwrap())
+        .icon(tray_icon)
         .tooltip("ENote")
         .menu(&tray_menu)
         .on_menu_event(|app_handle, event| match event.id().as_ref() {

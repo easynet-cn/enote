@@ -5,8 +5,8 @@
 </template>
 
 <script setup lang="ts">
-import { watch, onBeforeUnmount } from 'vue'
-import { useEditor, EditorContent } from '@tiptap/vue-3'
+import { watch, onBeforeUnmount, onMounted, shallowRef } from 'vue'
+import { Editor, EditorContent } from '@tiptap/vue-3'
 import { getRichTextExtensions } from '../config/editorExtensions'
 
 interface Props {
@@ -20,16 +20,21 @@ const props = withDefaults(defineProps<Props>(), {
   showToolbar: false,
 })
 
-// TipTap 编辑器实例 - 只读模式（使用精简扩展）
-const editor = useEditor({
-  extensions: getRichTextExtensions(),
-  content: props.modelValue || '',
-  editable: props.editable,
-  editorProps: {
-    attributes: {
-      class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none',
+// 使用 shallowRef 手动管理编辑器实例（异步初始化）
+const editor = shallowRef<Editor | undefined>(undefined)
+
+onMounted(async () => {
+  const extensions = await getRichTextExtensions()
+  editor.value = new Editor({
+    extensions,
+    content: props.modelValue || '',
+    editable: props.editable,
+    editorProps: {
+      attributes: {
+        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none',
+      },
     },
-  },
+  })
 })
 
 // 监听内容变化

@@ -64,23 +64,56 @@ export default defineConfig(async () => ({
     minify: 'esbuild',
     // Increase warning limit since Tauri apps load locally
     chunkSizeWarningLimit: 1000,
+    // 生成稳定的 chunk 文件名，避免缓存导致白屏
     rollupOptions: {
       output: {
+        // 使用内容哈希确保文件名与内容一致
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash][extname]',
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('@tiptap') || id.includes('prosemirror') || id.includes('tiptap-markdown')) {
+            // TipTap 编辑器核心（最大 chunk）
+            if (
+              id.includes('@tiptap') ||
+              id.includes('prosemirror') ||
+              id.includes('tiptap-markdown')
+            ) {
               return 'vendor-editor'
             }
-            if (id.includes('lowlight') || id.includes('highlight.js') || id.includes('katex')) {
+            // 代码高亮（按需加载，不在首屏）
+            if (id.includes('lowlight') || id.includes('highlight.js')) {
               return 'vendor-highlight'
             }
+            // KaTeX 数学公式（按需加载）
+            if (id.includes('katex')) {
+              return 'vendor-katex'
+            }
+            // 图标库
             if (id.includes('lucide-vue-next')) {
               return 'vendor-icons'
+            }
+            // Vue 生态核心（稳定，缓存友好）
+            if (
+              id.includes('vue') ||
+              id.includes('pinia') ||
+              id.includes('vue-i18n') ||
+              id.includes('@vueuse')
+            ) {
+              return 'vendor-vue'
+            }
+            // Tauri API 层
+            if (id.includes('@tauri-apps')) {
+              return 'vendor-tauri'
             }
           }
         },
       },
     },
+    // 启用 CSS 代码分割
+    cssCodeSplit: true,
+    // 启用 source map 便于调试白屏问题（release 可关闭）
+    sourcemap: !!host,
   },
 
   // Vite options tailored for Tauri development

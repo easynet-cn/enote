@@ -1,8 +1,8 @@
-# enote Intelligent Note Management System User Manual
+# ENote Intelligent Note Management System User Manual
 
-**Software Name:** enote Intelligent Note Management System
+**Software Name:** ENote Intelligent Note Management System
 
-**Version:** V0.10.0
+**Version:** V0.12.0
 
 **Date:** March 2026
 
@@ -10,31 +10,31 @@
 
 ## Table of Contents
 
-- [1. Introduction](#1-introduction)
+- 1. Introduction
   - [1.1 Purpose](#11-purpose)
   - [1.2 Software Overview](#12-software-overview)
   - [1.3 System Requirements](#13-system-requirements)
-- [2. Installation and Uninstallation](#2-installation-and-uninstallation)
+- 2. Installation and Uninstallation
   - [2.1 Installation Guide](#21-installation-guide)
   - [2.2 Uninstallation Guide](#22-uninstallation-guide)
-- [3. Feature Overview](#3-feature-overview)
+- 3. Feature Overview
   - [3.1 Feature Structure](#31-feature-structure)
   - [3.2 Interface Layout](#32-interface-layout)
-- [4. Notebook Management](#4-notebook-management)
+- 4. Notebook Management
   - [4.1 View Notebook List](#41-view-notebook-list)
   - [4.2 Create a Notebook](#42-create-a-notebook)
   - [4.3 Edit a Notebook](#43-edit-a-notebook)
   - [4.4 Delete a Notebook](#44-delete-a-notebook)
   - [4.5 Filter by Notebook](#45-filter-by-notebook)
   - [4.6 Drag-and-Drop Notebook Sorting](#46-drag-and-drop-notebook-sorting)
-- [5. Tag Management](#5-tag-management)
+- 5. Tag Management
   - [5.1 View Tag List](#51-view-tag-list)
   - [5.2 Create a Tag](#52-create-a-tag)
   - [5.3 Edit a Tag](#53-edit-a-tag)
   - [5.4 Delete a Tag](#54-delete-a-tag)
   - [5.5 Filter by Tag](#55-filter-by-tag)
   - [5.6 Drag-and-Drop Tag Sorting](#56-drag-and-drop-tag-sorting)
-- [6. Note Management](#6-note-management)
+- 6. Note Management
   - [6.1 Note List](#61-note-list)
   - [6.2 Create a Note](#62-create-a-note)
   - [6.3 Edit a Note](#63-edit-a-note)
@@ -46,7 +46,7 @@
   - [6.9 Note Encryption](#69-note-encryption)
   - [6.10 Linked Notes (Bidirectional Links)](#610-linked-notes-bidirectional-links)
   - [6.11 Open Note in New Window](#611-open-note-in-new-window)
-- [7. Rich Text Editor](#7-rich-text-editor)
+- 7. Rich Text Editor
   - [7.1 Text Styles](#71-text-styles)
   - [7.2 Headings and Fonts](#72-headings-and-fonts)
   - [7.3 Text Alignment](#73-text-alignment)
@@ -65,32 +65,32 @@
   - [7.16 Image Lazy Loading](#716-image-lazy-loading)
   - [7.17 Smart Paste](#717-smart-paste)
   - [7.18 Local Image Storage](#718-local-image-storage)
-- [8. Markdown Editor](#8-markdown-editor)
+- 8. Markdown Editor
   - [8.1 Source Code Editing Mode](#81-source-code-editing-mode)
   - [8.2 Preview Mode](#82-preview-mode)
   - [8.3 Split-Screen Mode](#83-split-screen-mode)
-- [9. Note History](#9-note-history)
+- 9. Note History
   - [9.1 View History List](#91-view-history-list)
   - [9.2 View History Content Comparison](#92-view-history-content-comparison)
-- [10. Note Templates](#10-note-templates)
+- 10. Note Templates
   - [10.1 Manage Templates](#101-manage-templates)
   - [10.2 Create a Note from Template](#102-create-a-note-from-template)
   - [10.3 Save a Note as Template](#103-save-a-note-as-template)
-- [11. Export](#11-export)
+- 11. Export
   - [11.1 Export as Word Document](#111-export-as-word-document)
   - [11.2 Export as Markdown](#112-export-as-markdown)
   - [11.3 Export as Evernote Format](#113-export-as-evernote-format)
   - [11.4 Export as JSON](#114-export-as-json)
   - [11.5 Export as XML](#115-export-as-xml)
-- [12. Import](#12-import)
+- 12. Import
   - [12.1 Import from Evernote](#121-import-from-evernote)
   - [12.2 Import from Youdao Notes](#122-import-from-youdao-notes)
   - [12.3 Import from Notion](#123-import-from-notion)
-- [13. Data Backup and Restore](#13-data-backup-and-restore)
+- 13. Data Backup and Restore
   - [13.1 Export Backup](#131-export-backup)
   - [13.2 Import and Restore](#132-import-and-restore)
   - [13.3 Automatic Backup](#133-automatic-backup)
-- [14. Application Settings](#14-application-settings)
+- 14. Application Settings
   - [14.1 Theme Settings](#141-theme-settings)
   - [14.2 Language Settings](#142-language-settings)
   - [14.3 Layout Mode Settings](#143-layout-mode-settings)
@@ -100,17 +100,17 @@
   - [14.7 MCP Settings](#147-mcp-settings)
   - [14.8 Profile Management](#148-profile-management)
   - [14.9 System Maintenance (Cross-Profile Sync)](#149-system-maintenance-cross-profile-sync)
-- [15. Command Palette](#15-command-palette)
-- [16. System Tray](#16-system-tray)
-- [17. Keyboard Shortcuts](#17-keyboard-shortcuts)
-- [18. Status Bar Information](#18-status-bar-information)
-- [19. Application Startup and Initialization](#19-application-startup-and-initialization)
+- 15. Command Palette
+- 16. System Tray
+- 17. Keyboard Shortcuts
+- 18. Status Bar Information
+- 19. Application Startup and Initialization
   - [19.1 Command-Line Parameters](#191-command-line-parameters)
   - [19.2 First Launch (Setup Wizard)](#192-first-launch-setup-wizard)
   - [19.3 Multi-Profile Selection](#193-multi-profile-selection)
   - [19.4 Startup Error Handling](#194-startup-error-handling)
   - [19.5 Subsequent Launches](#195-subsequent-launches)
-- [20. MCP (AI Tool Integration)](#20-mcp-ai-tool-integration)
+- 20. MCP (AI Tool Integration)
   - [20.1 Feature Overview](#201-feature-overview)
   - [20.2 Configuration and Activation](#202-configuration-and-activation)
   - [20.3 Available Tools](#203-available-tools)
@@ -120,7 +120,7 @@
     - [20.4.3 Permission Resolution Rules](#2043-permission-resolution-rules)
     - [20.4.4 Setting AI Access Permissions](#2044-setting-ai-access-permissions)
   - [20.5 Operation Source Tracking](#205-operation-source-tracking)
-- [21. Data Storage and Configuration](#21-data-storage-and-configuration)
+- 21. Data Storage and Configuration
   - [21.1 Local Data Storage](#211-local-data-storage)
   - [21.2 Configuration File](#212-configuration-file)
   - [21.3 Configuration Options](#213-configuration-options)
@@ -129,7 +129,14 @@
   - [21.6 Content Encryption and Key Management](#216-content-encryption-and-key-management)
   - [21.7 SSL/TLS Certificate Authentication](#217-ssltls-certificate-authentication)
   - [21.8 History Version Protection](#218-history-version-protection)
-- [Appendix A: Changelog](#appendix-a-changelog)
+- 22. Help System
+- 23. Application Logs
+  - [23.1 Opening Log Management](#231-opening-log-management)
+  - [23.2 Database Logs](#232-database-logs)
+  - [23.3 File Logs](#233-file-logs)
+  - [23.4 Frontend Log Level](#234-frontend-log-level)
+  - [23.5 Sensitive Data Protection](#235-sensitive-data-protection)
+- Appendix A: Changelog
 
 ---
 
@@ -137,11 +144,11 @@
 
 ### 1.1 Purpose
 
-This manual provides a detailed introduction to the features and operations of the enote Intelligent Note Management System, helping users quickly understand and master the software, fully leverage its note management capabilities, and improve the efficiency of daily information recording and knowledge management.
+This manual provides a detailed introduction to the features and operations of the ENote Intelligent Note Management System, helping users quickly understand and master the software, fully leverage its note management capabilities, and improve the efficiency of daily information recording and knowledge management.
 
 ### 1.2 Software Overview
 
-enote Intelligent Note Management System is a cross-platform desktop note-taking application that provides users with efficient and convenient note creation, editing, management, and retrieval capabilities. The software supports both rich text and Markdown editing modes, and features notebook categorization, tag system, full-text search, history version tracking, multi-format import/export, note encryption, bidirectional links, template system, automatic backup, and other core functions to meet all personal knowledge management and information recording needs.
+ENote Intelligent Note Management System is a cross-platform desktop note-taking application that provides users with efficient and convenient note creation, editing, management, and retrieval capabilities. The software supports both rich text and Markdown editing modes, and features notebook categorization, tag system, full-text search, history version tracking, multi-format import/export, note encryption, bidirectional links, template system, automatic backup, and other core functions to meet all personal knowledge management and information recording needs.
 
 The software adopts a front-end/back-end separation architecture. The front end is built with the Vue 3 framework and TypeScript, while the back end uses Rust and the Tauri 2.x framework. The data storage layer uses the SeaORM object-relational mapping framework, with default support for SQLite and compatibility with MySQL and PostgreSQL databases. This architecture ensures high performance, low resource usage, and cross-platform compatibility.
 
@@ -175,14 +182,14 @@ The software adopts a front-end/back-end separation architecture. The front end 
 3. Read and accept the software license agreement.
 4. Choose the installation directory (default: C:\Program Files\enote).
 5. Click the "Install" button and wait for the installation to complete.
-6. After installation, find the enote icon on the desktop or in the Start menu, and double-click to launch.
+6. After installation, find the ENote icon on the desktop or in the Start menu, and double-click to launch.
 
 **macOS:**
 
 1. Obtain the installer file (.dmg format).
 2. Double-click the .dmg file to mount the disk image.
-3. Drag the enote application icon to the "Applications" folder.
-4. Find enote in "Applications" and double-click to launch.
+3. Drag the ENote application icon to the "Applications" folder.
+4. Find ENote in "Applications" and double-click to launch.
 5. On first launch, if the system prompts a security confirmation, go to "System Preferences > Security & Privacy" to allow it to run.
 
 **Linux:**
@@ -193,9 +200,9 @@ The software adopts a front-end/back-end separation architecture. The front end 
 
 ### 2.2 Uninstallation Guide
 
-**Windows:** Find enote in "Control Panel > Programs and Features" and click "Uninstall".
+**Windows:** Find ENote in "Control Panel > Programs and Features" and click "Uninstall".
 
-**macOS:** Drag enote from "Applications" to the Trash.
+**macOS:** Drag ENote from "Applications" to the Trash.
 
 **Linux:** Debian/Ubuntu: Uninstall using `sudo apt remove enote`.
 
@@ -206,7 +213,7 @@ The software adopts a front-end/back-end separation architecture. The front end 
 ### 3.1 Feature Structure
 
 ```
-enote Intelligent Note Management System
+ENote Intelligent Note Management System
 ├── Notebook Management
 │   ├── Create Notebook
 │   ├── Edit Notebook
@@ -303,7 +310,7 @@ enote Intelligent Note Management System
 
 ### 3.2 Interface Layout
 
-enote uses a responsive three-column layout that automatically adapts to different screen sizes:
+ENote uses a responsive three-column layout that automatically adapts to different screen sizes:
 
 #### Desktop Mode (width > 1024px)
 
@@ -329,7 +336,7 @@ Single-view fullscreen switching: the note list and editor are each displayed in
 
 ## 4. Notebook Management
 
-Notebooks are the basic organizational unit for notes in enote. Each note belongs to one notebook, and users can categorize and manage notes through notebooks.
+Notebooks are the basic organizational unit for notes in ENote. Each note belongs to one notebook, and users can categorize and manage notes through notebooks.
 
 ### 4.1 View Notebook List
 
@@ -353,7 +360,7 @@ In the upper section of the sidebar, the notebook list is displayed under the "N
    - **AI Access Permission:** Set the access level for AI tools accessing notes in this notebook via the MCP protocol (optional). Available values include "Inherit" (default), "Read-Write", "Read-Only", and "Deny". See [20.4 Access Control](#204-access-control) for details.
 4. Click "OK" to complete creation.
 
-> **Tip:** Notebooks with an AI access permission other than "Inherit" will display a shield icon (🛡) in the sidebar list for quick identification.
+> **Tip:** Notebooks with an AI access permission other than "Inherit" will display a shield icon in the sidebar list for quick identification.
 
 ### 4.3 Edit a Notebook
 
@@ -408,7 +415,7 @@ Below the notebook list in the sidebar, the tag list is displayed under the "TAG
    - **AI Access Permission:** Set the access level for AI tools accessing notes with this tag (optional). Available values include "Inherit" (default), "Read-Write", "Read-Only", and "Deny". See [20.4 Access Control](#204-access-control) for details.
 4. Click "OK" to complete creation.
 
-> **Tip:** Tags with an AI access permission other than "Inherit" will display a shield icon (🛡) in the sidebar list for quick identification.
+> **Tip:** Tags with an AI access permission other than "Inherit" will display a shield icon in the sidebar list for quick identification.
 
 ### 5.3 Edit a Tag
 
@@ -551,7 +558,7 @@ Pinned notes are placed before all unpinned notes in the list. Multiple pinned n
 
 ### 6.9 Note Encryption
 
-enote supports AES-256-GCM encryption for note content to protect sensitive information.
+ENote supports AES-256-GCM encryption for note content to protect sensitive information.
 
 **Encrypt a Note:**
 
@@ -574,7 +581,7 @@ enote supports AES-256-GCM encryption for note content to protect sensitive info
 
 ### 6.10 Linked Notes (Bidirectional Links)
 
-enote supports establishing bidirectional link relationships between notes, making it easy to build a knowledge network.
+ENote supports establishing bidirectional link relationships between notes, making it easy to build a knowledge network.
 
 **View Linked Notes:**
 
@@ -594,7 +601,7 @@ Hover over a linked note and click the "x" button that appears on the right side
 
 ### 6.11 Open Note in New Window
 
-enote supports opening notes in independent windows, making it convenient to view or compare multiple notes simultaneously.
+ENote supports opening notes in independent windows, making it convenient to view or compare multiple notes simultaneously.
 
 **How to Use:** Through the command palette or the "Open in New Window" option in the toolbar, open the current note in an independent application window. The new window can be independently resized and repositioned and has full editing capabilities.
 
@@ -602,7 +609,7 @@ enote supports opening notes in independent windows, making it convenient to vie
 
 ## 7. Rich Text Editor
 
-enote integrates a feature-rich WYSIWYG (What You See Is What You Get) rich text editor. The toolbar is located at the top of the editor, and when there are too many toolbar buttons, horizontal scrolling is supported with scroll indicator arrows on both sides.
+ENote integrates a feature-rich WYSIWYG (What You See Is What You Get) rich text editor. The toolbar is located at the top of the editor, and when there are too many toolbar buttons, horizontal scrolling is supported with scroll indicator arrows on both sides.
 
 ### 7.1 Text Styles
 
@@ -798,7 +805,7 @@ Split-screen mode features:
 
 ## 9. Note History
 
-enote automatically records the history of every modification and deletion operation on notes, supporting version tracking and content comparison.
+ENote automatically records the history of every modification and deletion operation on notes, supporting version tracking and content comparison.
 
 ### 9.1 View History List
 
@@ -837,7 +844,7 @@ Both sides are rendered in rich text format for intuitive comparison of the diff
 
 ## 10. Note Templates
 
-enote provides a note template feature that allows users to create and manage commonly used note templates for quickly generating new notes with preset content structures.
+ENote provides a note template feature that allows users to create and manage commonly used note templates for quickly generating new notes with preset content structures.
 
 ### 10.1 Manage Templates
 
@@ -879,7 +886,7 @@ While editing a note, click the "Save as Template" button (template icon) in the
 
 ## 11. Export
 
-enote supports exporting notes to multiple formats to meet different use cases and data migration needs.
+ENote supports exporting notes to multiple formats to meet different use cases and data migration needs.
 
 **Steps:**
 
@@ -920,7 +927,7 @@ Exports the note as .xml format. The data structure is identical to JSON export 
 
 ## 12. Import
 
-enote supports importing data from multiple mainstream note platforms, helping users conveniently migrate existing notes.
+ENote supports importing data from multiple mainstream note platforms, helping users conveniently migrate existing notes.
 
 Click the "Import Notes" icon button (import icon, tooltip shown on hover) at the bottom of the sidebar to launch the import wizard, which consists of four steps.
 
@@ -958,7 +965,7 @@ Click the "Import Notes" icon button (import icon, tooltip shown on hover) at th
 
 ## 13. Data Backup and Restore
 
-enote provides comprehensive data backup and restore capabilities, supporting both manual export and automatic scheduled backup to ensure data safety.
+ENote provides comprehensive data backup and restore capabilities, supporting both manual export and automatic scheduled backup to ensure data safety.
 
 Click the "Data Backup" icon button (database icon) at the bottom of the sidebar to open the data backup dialog. The dialog contains two tabs: "Export Backup" and "Import & Restore".
 
@@ -991,7 +998,7 @@ Click the "Data Backup" icon button (database icon) at the bottom of the sidebar
 
 ### 13.3 Automatic Backup
 
-enote supports automatic scheduled backup, which creates database backups automatically at set intervals in the background without manual intervention.
+ENote supports automatic scheduled backup, which creates database backups automatically at set intervals in the background without manual intervention.
 
 **How It Works:**
 
@@ -1000,7 +1007,7 @@ enote supports automatic scheduled backup, which creates database backups automa
 - The system automatically cleans up old backups based on the configured retention count to avoid excessive disk space usage.
 - When the application starts, it automatically checks whether a backup is needed (whether the time since the last backup exceeds the configured interval).
 
-**Configuration:** Configure in the "Automatic Backup" area of the "Settings" dialog. See [14.3 Automatic Backup Settings](#143-automatic-backup-settings) for details.
+**Configuration:** Configure in the "Automatic Backup" area of the "Settings" dialog. See [14.5 Automatic Backup Settings](#145-automatic-backup-settings) for details.
 
 ---
 
@@ -1010,7 +1017,7 @@ Click the "Settings" icon button at the bottom of the sidebar to open the settin
 
 ### 14.1 Theme Settings
 
-enote supports three theme modes:
+ENote supports three theme modes:
 
 - **Light Mode:** A classic white background interface, suitable for daytime use.
 - **Dark Mode:** A dark background interface that reduces eye strain, suitable for nighttime or low-light environments.
@@ -1020,13 +1027,13 @@ In the "Appearance" area of the settings dialog, click the corresponding theme b
 
 ### 14.2 Language Settings
 
-enote supports two interface languages: Simplified Chinese (zh-CN) and English (en-US).
+ENote supports two interface languages: Simplified Chinese (zh-CN) and English (en-US).
 
 In the "Appearance" area of the settings dialog, click the corresponding language button to switch. After switching, all interface text is updated immediately without requiring an application restart. The language preference is saved automatically and applied on the next launch.
 
 ### 14.3 Layout Mode Settings
 
-enote supports automatic layout adaptation based on window width, or manual layout mode selection:
+ENote supports automatic layout adaptation based on window width, or manual layout mode selection:
 
 | Mode | Description |
 |------|-------------|
@@ -1070,7 +1077,7 @@ After enabling automatic backup, the system automatically performs backups at th
 
 ### 14.6 Security Settings (Lock Screen)
 
-enote provides a lock screen security feature that can automatically lock the interface when the application starts or after a period of inactivity, requiring a password to continue using the application and preventing unauthorized access.
+ENote provides a lock screen security feature that can automatically lock the interface when the application starts or after a period of inactivity, requiring a password to continue using the application and preventing unauthorized access.
 
 **Default State:** The lock screen feature is disabled by default. Users can enable it manually as needed.
 
@@ -1117,7 +1124,7 @@ After enabling the master switch, expand the individual tool switch list to prec
 
 > **Note:** MCP settings control global and tool-level access permissions for AI tools. After disabling a tool, AI clients will not be able to see or call that tool. Notes created or modified through AI tools are marked with the "AI Tool" source in the history records, making it easy to distinguish between human operations and AI operations.
 >
-> In addition to global and tool-level control, enote also supports more fine-grained **data-level access control** -- you can set AI access permissions (Inherit / Read-Write / Read-Only / Deny) separately on notebooks, tags, and individual notes. See [20.4 Access Control](#204-access-control) for details.
+> In addition to global and tool-level control, ENote also supports more fine-grained **data-level access control** -- you can set AI access permissions (Inherit / Read-Write / Read-Only / Deny) separately on notebooks, tags, and individual notes. See [20.4 Access Control](#204-access-control) for details.
 
 ### 14.8 Profile Management
 
@@ -1128,7 +1135,7 @@ In the Settings dialog, the **Profile Management** section provides the followin
   - Select an existing database configuration and connect
   - Click "New Profile" to enter the Setup Wizard and create a new database configuration
   - Edit or delete existing configurations
-  - Click the ✕ button in the upper right to close the selection page and return to the main interface
+  - Click the close button in the upper right to close the selection page and return to the main interface
 
 ### 14.9 System Maintenance (Cross-Profile Sync)
 
@@ -1136,7 +1143,7 @@ At the bottom of the Settings dialog, the "System Maintenance" section provides 
 
 #### 14.9.1 Cross-Profile Sync
 
-Synchronize data from the current profile to another profile, supporting cross-database synchronization (SQLite ↔ MySQL ↔ PostgreSQL).
+Synchronize data from the current profile to another profile, supporting cross-database synchronization (SQLite <-> MySQL <-> PostgreSQL).
 
 **Steps:**
 
@@ -1167,7 +1174,7 @@ Synchronize data from the current profile to another profile, supporting cross-d
 
 **Key Behaviors:**
 
-- **Encryption Handling:** If the source and target have different encryption configurations, the system automatically handles the conversion — decrypts from source, re-encrypts to target, ensuring data consistency.
+- **Encryption Handling:** If the source and target have different encryption configurations, the system automatically handles the conversion -- decrypts from source, re-encrypts to target, ensuring data consistency.
 - **History Records:** Notes are synced through the service layer. The target automatically generates history records with the operation source marked as "Sync".
 - **Foreign Key Mapping:** Notebook and tag IDs are reassigned in the target database. Note associations with notebooks and tags are automatically corrected.
 
@@ -1181,11 +1188,11 @@ Click "View Details" in the "System Maintenance" section to open the sync histor
 
 | Field | Description |
 |-------|-------------|
-| Source → Target | Source and target profile names |
+| Source -> Target | Source and target profile names |
 | Status | Completed / Failed |
 | Success/Failed Count | Number of successful and failed records |
 | Sync Mode | Append / Overwrite |
-| Database Types | e.g., sqlite → mysql |
+| Database Types | e.g., sqlite -> mysql |
 | Time | Time when the sync was executed |
 
 **Actions:**
@@ -1199,7 +1206,7 @@ Click "View Details" in the "System Maintenance" section to open the sync histor
 
 ## 15. Command Palette
 
-enote provides a command palette feature similar to VS Code for quickly executing various operations via the keyboard.
+ENote provides a command palette feature similar to VS Code for quickly executing various operations via the keyboard.
 
 **How to Open:** Press the Ctrl+P (Cmd+P on macOS) shortcut to open the command palette.
 
@@ -1235,12 +1242,12 @@ Commands are displayed grouped by category for quick reference. Shortcut text di
 
 ## 16. System Tray
 
-enote supports minimizing to the system tray, allowing the application to continue running in the background after the window is closed.
+ENote supports minimizing to the system tray, allowing the application to continue running in the background after the window is closed.
 
 **Basic Behavior:**
 
 - **Close Window:** When clicking the window close button, the window is hidden to the system tray rather than exiting the application. If there are unsaved changes, a confirmation dialog will appear first.
-- **Tray Icon:** While the application is running, an enote icon is displayed in the system notification area (taskbar tray area).
+- **Tray Icon:** While the application is running, an ENote icon is displayed in the system notification area (taskbar tray area).
 - **Click Tray Icon:** Single-click the tray icon to quickly toggle the window between shown and hidden states.
 
 **Tray Right-Click Menu:**
@@ -1256,7 +1263,7 @@ enote supports minimizing to the system tray, allowing the application to contin
 
 ## 17. Keyboard Shortcuts
 
-enote provides the following keyboard shortcuts to improve operational efficiency:
+ENote provides the following keyboard shortcuts to improve operational efficiency:
 
 | Shortcut | Function | Customizable |
 |----------|----------|-------------|
@@ -1268,10 +1275,10 @@ enote provides the following keyboard shortcuts to improve operational efficienc
 | Ctrl/Cmd + P | Open command palette | Yes |
 | Ctrl/Cmd + L | Lock the application (requires lock screen to be enabled) | Yes |
 | Ctrl/Cmd + Shift + M | Cycle through layout modes | Yes |
-| Tab | Increase indent (in editor) | — |
-| Shift + Tab | Decrease indent (in editor) | — |
-| Arrow Keys ↑/↓ | Move focus up/down in note list / Select command in command palette | — |
-| Enter/Space | Select the focused item in note list / Execute the command in command palette | — |
+| Tab | Increase indent (in editor) | -- |
+| Shift + Tab | Decrease indent (in editor) | -- |
+| Arrow Keys Up/Down | Move focus up/down in note list / Select command in command palette | -- |
+| Enter/Space | Select the focused item in note list / Execute the command in command palette | -- |
 
 > **Note:** On macOS, the Ctrl key corresponds to the Cmd key. Shortcuts marked as "Customizable" can be remapped in Settings. See [14.4 Shortcut Settings](#144-shortcut-settings).
 
@@ -1292,7 +1299,7 @@ The status bar at the bottom of the editor displays the following real-time info
 
 ### 19.1 Command-Line Parameters
 
-enote supports specifying the configuration file path through command-line parameters, useful for development debugging or multi-environment deployment scenarios:
+ENote supports specifying the configuration file path through command-line parameters, useful for development debugging or multi-environment deployment scenarios:
 
 ```bash
 # Launch with a custom configuration file (legacy mode)
@@ -1306,7 +1313,7 @@ enote -c /path/to/application.yml
 
 ### 19.2 First Launch (Setup Wizard)
 
-On the first launch of enote, the system detects that no Profile configuration exists and automatically displays the **Setup Wizard** to guide the user through database connection configuration.
+On the first launch of ENote, the system detects that no Profile configuration exists and automatically displays the **Setup Wizard** to guide the user through database connection configuration.
 
 The Setup Wizard includes the following steps:
 
@@ -1340,9 +1347,9 @@ You can click the "Test Connection" button to verify the configuration.
 
 After confirming the configuration, the system automatically saves the configuration file and keys, connects to the database, performs initialization, then restarts the application to enter the main interface.
 
-> **Language Switching:** The Setup Wizard provides a language switch button (🌐 icon) in the upper right corner. Click to toggle between Chinese and English, convenient for non-Chinese users on first use.
+> **Language Switching:** The Setup Wizard provides a language switch button in the upper right corner. Click to toggle between Chinese and English, convenient for non-Chinese users on first use.
 
-> **Window Close:** On first launch, the Setup Wizard is a mandatory step and does not provide a skip or cancel button. To exit, simply close the window (click the title bar ✕ button), and the application will exit immediately.
+> **Window Close:** On first launch, the Setup Wizard is a mandatory step and does not provide a skip or cancel button. To exit, simply close the window (click the title bar close button), and the application will exit immediately.
 
 ### 19.3 Multi-Profile Selection
 
@@ -1357,7 +1364,7 @@ When multiple Profile configurations exist, a **Profile Selection Page** is disp
 
 When only one configuration exists, or when auto-connect is enabled, the selection page is skipped and the application starts directly.
 
-> **Close Behavior:** The profile selection page on first launch does not have a close button (a configuration must be selected). The profile selection page accessed from the main interface via Settings provides a ✕ close button to return to the main interface and continue using the current configuration.
+> **Close Behavior:** The profile selection page on first launch does not have a close button (a configuration must be selected). The profile selection page accessed from the main interface via Settings provides a close button to return to the main interface and continue using the current configuration.
 
 ### 19.4 Startup Error Handling
 
@@ -1379,7 +1386,7 @@ On non-first launches, the system automatically detects and performs database st
 
 ### 20.1 Feature Overview
 
-MCP (Model Context Protocol) is an open protocol proposed by Anthropic that allows AI assistants to interact with external tools and data sources. enote includes a built-in MCP Server that enables AI clients such as Claude Desktop, Claude Code, and Cursor to directly read and write note data.
+MCP (Model Context Protocol) is an open protocol proposed by Anthropic that allows AI assistants to interact with external tools and data sources. ENote includes a built-in MCP Server that enables AI clients such as Claude Desktop, Claude Code, and Cursor to directly read and write note data.
 
 Through MCP integration, AI assistants can:
 
@@ -1432,7 +1439,7 @@ The configuration for Claude Code is similar; configure the MCP Server in `.clau
 
 **Step 4: Fine-Grained Control in Settings Panel**
 
-In enote's settings panel (Section 14.5), enable the MCP master switch and turn on/off individual tools as needed.
+In ENote's settings panel (Section 14.5), enable the MCP master switch and turn on/off individual tools as needed.
 
 ### 20.3 Available Tools
 
@@ -1455,19 +1462,19 @@ The MCP Server provides the following 10 tools:
 
 ### 20.4 Access Control
 
-enote's MCP access control uses a three-layer architecture, providing coarse-to-fine access control from global to data level.
+ENote's MCP access control uses a three-layer architecture, providing coarse-to-fine access control from global to data level.
 
 #### 20.4.1 Three-Layer Access Control Architecture
 
 ```
-AI Request → ① Global MCP Switch → ② Tool-Level Switch → ③ Data-Level Access Control
-              (Settings Panel)       (Settings Panel)       (mcp_access field)
+AI Request -> (1) Global MCP Switch -> (2) Tool-Level Switch -> (3) Data-Level Access Control
+              (Settings Panel)         (Settings Panel)         (mcp_access field)
 ```
 
 | Layer | Scope | Configuration Location |
 |-------|-------|----------------------|
-| **Layer 1: Global Switch** | Controls whether MCP is enabled; all AI tools are unavailable when off | Settings → MCP → Enable MCP |
-| **Layer 2: Tool-Level Switch** | Controls whether each MCP tool (e.g., search, create, update) is available | Settings → MCP → Individual tool switches |
+| **Layer 1: Global Switch** | Controls whether MCP is enabled; all AI tools are unavailable when off | Settings -> MCP -> Enable MCP |
+| **Layer 2: Tool-Level Switch** | Controls whether each MCP tool (e.g., search, create, update) is available | Settings -> MCP -> Individual tool switches |
 | **Layer 3: Data-Level Access Control** | Controls AI read/write permissions for specific notebooks/tags/notes | Notebook/Tag edit dialog, Note settings dialog |
 
 The three layers complement each other without conflict. Global and tool-level controls determine "whether you can use this tool", while data-level control determines "whether you can access this data".
@@ -1495,7 +1502,7 @@ Notebooks, tags, and notes each have an "AI Access Permission" (`mcp_access`) fi
 
 For a note, the effective permission is resolved by the following priority from highest to lowest:
 
-1. **Encrypted Note → Forced Deny:** Encrypted notes are always denied AI access and cannot be overridden.
+1. **Encrypted Note -> Forced Deny:** Encrypted notes are always denied AI access and cannot be overridden.
 2. **Note's Own Setting:** If the note's AI access permission is not "Inherit", the note's own setting is used. Note-level settings can **relax** or **tighten** upper-level restrictions.
 3. **Tag Settings:** If the note is associated with multiple tags, the **most restrictive** permission among all non-"Inherit" tags is used.
 4. **Notebook Settings:** If all of the above are "Inherit", the notebook's setting is used. If both tags and notebook have non-"Inherit" settings, the more restrictive of the two is used.
@@ -1530,14 +1537,14 @@ For a note, the effective permission is resolved by the following priority from 
 
 **Notebook Level:**
 
-1. Select the notebook in the sidebar and click Menu → Edit.
+1. Select the notebook in the sidebar and click Menu -> Edit.
 2. Find the "AI Access Permission" dropdown at the bottom of the edit dialog.
 3. Select the desired permission level and click Save.
 4. All notes in this notebook that do not have individual permission settings will inherit this setting.
 
 **Tag Level:**
 
-1. Select the tag in the sidebar and click Menu → Edit.
+1. Select the tag in the sidebar and click Menu -> Edit.
 2. Find the "AI Access Permission" dropdown at the bottom of the edit dialog.
 3. Select the desired permission level and click Save.
 4. All notes with this tag that do not have individual permission settings will be affected by this setting.
@@ -1549,7 +1556,7 @@ For a note, the effective permission is resolved by the following priority from 
 3. Select the desired permission level and click Save.
 4. Note-level explicit settings override notebook and tag settings.
 
-> **Tip:** In the sidebar, notebooks and tags with an AI access permission other than "Inherit" display a shield icon (🛡), making it easy to quickly identify which items have AI access control enabled.
+> **Tip:** In the sidebar, notebooks and tags with an AI access permission other than "Inherit" display a shield icon, making it easy to quickly identify which items have AI access control enabled.
 
 ### 20.5 Operation Source Tracking
 
@@ -1557,7 +1564,7 @@ The note history records include an "Operation Source" field that distinguishes 
 
 | Source | Description |
 |--------|-------------|
-| **User Operation** | Operations performed through the enote interface |
+| **User Operation** | Operations performed through the ENote interface |
 | **AI Tool** | Operations initiated by an AI client through the MCP protocol |
 
 In the history table, the operation source is displayed alongside the operation type (Create / Modify / Delete), making it easy for users to identify which modifications were made by AI, facilitating auditing and rollback.
@@ -1657,7 +1664,7 @@ The following are configuration options under the `mcp` node:
 
 ### 21.4 Database Configuration Examples
 
-enote supports three databases, switchable by modifying `datasource.url`. In addition to the default SQLite, MySQL and PostgreSQL are also supported to meet advanced users' data management needs.
+ENote supports three databases, switchable by modifying `datasource.url`. In addition to the default SQLite, MySQL and PostgreSQL are also supported to meet advanced users' data management needs.
 
 **SQLite (Default):**
 
@@ -1707,7 +1714,7 @@ datasource:
 
 ### 21.5 Profile Configuration Management
 
-enote uses a Profile system to manage multiple database configurations. Profile files are stored in the `profiles/` subdirectory of the application data directory.
+ENote uses a Profile system to manage multiple database configurations. Profile files are stored in the `profiles/` subdirectory of the application data directory.
 
 **Index file `profiles.yml`:**
 
@@ -1817,10 +1824,124 @@ The system automatically records the history version of every modification and d
 
 ---
 
+## 22. Help System
+
+ENote includes a built-in help system that provides searchable user documentation.
+
+### 22.1 Opening the Help Manual
+
+**How to Access:**
+
+- **Settings Dialog:** Click "Settings" → In the "Help Manual" section, click the "View Manual" button.
+- **New Window:** Click the "Open in New Window" button to view the manual in a separate window.
+
+### 22.2 Manual Features
+
+**Search:**
+- The search bar at the top supports real-time search. Matching text is highlighted in yellow.
+- Non-matching content is automatically hidden during search and restored when the search is cleared.
+
+**Table of Contents Navigation:**
+- The left panel displays a three-level table of contents (H1/H2/H3) with hierarchical indentation.
+- Click any entry to smoothly scroll to the corresponding section.
+- The currently visible section is highlighted in the table of contents.
+
+**Content Display:**
+- The right panel displays rendered Markdown content, supporting tables, code blocks, images, and other formatting.
+- A "Back to Top" button appears after scrolling more than 300 pixels.
+
+**Multilingual Support:**
+- Manual content automatically loads the version matching the current language setting (Chinese/English).
+- Manual content refreshes automatically when the language is switched.
+
+---
+
+## 23. Application Logs
+
+ENote provides comprehensive log management with two types: database operation logs and file system logs, facilitating troubleshooting and operation auditing.
+
+### 23.1 Opening Log Management
+
+In the "Log Management" section of the Settings dialog, click "Open Log Manager" to open the log management dialog. The dialog contains two tabs: "Database Logs" and "File Logs".
+
+### 23.2 Database Logs
+
+Database logs record various operations within the application, including note CRUD, tag and notebook operations, backup/sync, encryption operations, and more.
+
+**Log Fields:**
+
+| Field | Description |
+|-------|-------------|
+| Time | When the operation occurred |
+| Level | DEBUG, INFO, WARN, ERROR |
+| Module | Module of the operation (notebook, note, tag, backup, sync, settings, encrypt, system, frontend) |
+| Action | Specific action performed |
+| Message | Operation description |
+
+**Filtering and Search:**
+- **Level Filter:** Filter by log level (All/INFO/WARN/ERROR).
+- **Module Filter:** Filter by module.
+- **Keyword Search:** Fuzzy search within message content.
+
+**Management Actions:**
+- **Delete Single:** Click the delete button on the right side of a log entry to remove it.
+- **Clear All:** Remove all database logs.
+- **Cleanup Old Logs:** Delete logs older than 30 days.
+
+Log levels are color-coded: ERROR (red), WARN (yellow), INFO (blue), DEBUG (gray). The list supports paginated browsing with 50 items per page.
+
+### 23.3 File Logs
+
+File logs record system-level application runtime logs, stored in the `logs/` subdirectory of the application data directory.
+
+**File List:**
+- The left panel lists all log files (`enote*.log`), showing file size and modification time.
+- Error log files are highlighted in red.
+
+**Log Viewing:**
+- After selecting a file, the right panel displays the file content.
+- Supports searching within file content, with matching text highlighted in yellow.
+- ERROR-level lines are automatically highlighted in red.
+
+**Management Actions:**
+- **Delete File:** Delete the selected log file.
+- **Cleanup Old Files:** Delete log files older than 30 days.
+- **Refresh:** Reload the file list.
+
+### 23.4 Frontend Log Level
+
+In the "Log Management" section of the Settings dialog, you can set the frontend log level:
+
+| Level | Description |
+|-------|-------------|
+| DEBUG | Record all debug information |
+| INFO | Record general information (default) |
+| WARN | Record warnings and errors only |
+| ERROR | Record errors only |
+| NONE | Do not record frontend logs |
+
+### 23.5 Sensitive Data Protection
+
+The logging system automatically sanitizes sensitive information:
+
+- **Password-related fields:** Content containing keywords like "password", "key", "secret", "token" is automatically masked (first 2 characters + **** + last 2 characters).
+- **Encrypted note content:** Content of encrypted notes is not recorded in logs.
+
+---
+
 ## Appendix A: Changelog
 
 | Version | Date | Changes |
 |---------|------|---------|
+| V0.12.0 | March 2026 | Help System and Application Logs |
+| | | - Help System: Built-in searchable user manual with table of contents navigation and multilingual support |
+| | | - Application Logs: Database operation logs and file system logs with filtering, search, and cleanup |
+| | | - Sensitive Data Protection: Automatic log sanitization of passwords, keys, and other sensitive information |
+| | | - Frontend Logging Integration: Configurable frontend log level with async non-blocking recording |
+| | | - Performance Index Optimization: New composite search indexes for improved query performance |
+| V0.11.0 | March 2026 | Internationalization and Help Infrastructure |
+| | | - Complete internationalization: Backend error messages and prompts fully support Chinese and English |
+| | | - Help infrastructure: Resource file loading and manual rendering framework |
 | V0.10.0 | March 2026 | Responsive Layout and Shortcut Customization |
 | | | - Responsive Layout: Auto-adapts to Desktop (three-column), Tablet (two-column + sidebar overlay), Mobile (single-view fullscreen switching) |
 | | | - Layout Mode Settings: Manual layout mode selection (Auto/Desktop/Tablet/Mobile), persisted to settings |
@@ -1836,7 +1957,7 @@ The system automatically records the history version of every modification and d
 | | | - Responsive Status Bar: Line/column info hidden on small screens, character count only |
 | V0.9.0 | March 2026 | Cross-Profile Sync and System Optimization |
 | | | - Cross-Profile Sync: Sync data to other profiles with Append/Overwrite modes |
-| | | - Cross-Database Sync: SQLite ↔ MySQL ↔ PostgreSQL in any direction, automatic encryption conversion |
+| | | - Cross-Database Sync: SQLite <-> MySQL <-> PostgreSQL in any direction, automatic encryption conversion |
 | | | - Sync History Management: Automatic per-record logging for each sync, with view/export/delete support |
 | | | - Pre-Sync Auto Backup: SQL/Excel/CSV formats, both source and target backed up |
 | | | - Streaming Backup Export: Large dataset export uses batched streaming to prevent OOM |
@@ -1902,4 +2023,4 @@ The system automatically records the history version of every modification and d
 
 ---
 
-*This manual is based on enote Intelligent Note Management System V0.10.0. Please refer to the actual software for any feature updates.*
+*This manual is based on ENote Intelligent Note Management System V0.12.0. Please refer to the actual software for any feature updates.*

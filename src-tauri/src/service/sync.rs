@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::path::Path;
 
 use chrono::Local;
-use sea_orm::{DatabaseConnection, EntityTrait, PaginatorTrait, TransactionTrait};
+use sea_orm::{DatabaseConnection, EntityTrait, PaginatorTrait, QuerySelect, TransactionTrait};
 use tauri::{AppHandle, Emitter};
 use tracing::info;
 
@@ -401,13 +401,26 @@ pub async fn sync_to_profile(
     }
 
     // 4c. 同步笔记（核心：通过 service 层保证加密 + 历史一致性）
-    if options.scope.notes {
-        // 获取所有笔记（含已删除的，完整同步）
-        let source_notes: Vec<entity::note::Model> =
-            entity::note::Entity::find().all(source_db).await?;
-        let count = source_notes.len() as u32;
+    // 同步批量大小（防止大量数据一次性占用过多内存）
+    const SYNC_BATCH_SIZE: u64 = 200;
 
-        for (i, src_note) in source_notes.iter().enumerate() {
+    if options.scope.notes {
+        let count = entity::note::Entity::find()
+            .count(source_db)
+            .await? as u32;
+        let mut global_idx: u32 = 0;
+
+        let total_batches = (count as u64 + SYNC_BATCH_SIZE - 1) / SYNC_BATCH_SIZE;
+        for batch_idx in 0..total_batches {
+            let source_notes: Vec<entity::note::Model> = entity::note::Entity::find()
+                .offset(batch_idx * SYNC_BATCH_SIZE)
+                .limit(SYNC_BATCH_SIZE)
+                .all(source_db)
+                .await?;
+
+        for src_note in source_notes.iter() {
+            let i = global_idx;
+            global_idx += 1;
             let source_id = src_note.id;
             let synced_at = Local::now().naive_local();
 
@@ -523,21 +536,34 @@ pub async fn sync_to_profile(
                 log_id,
                 "sync",
                 "note",
-                i as u32 + 1,
+                i + 1,
                 count,
                 &src_note.title,
             );
         }
+        } // end batch loop
     }
 
     // 4d. 同步笔记历史（可选：由于 create_with_key 已自动生成了同步的历史记录，
     //     这里同步的是源端的原始历史记录）
     if options.scope.note_histories {
-        let source_histories: Vec<entity::note_history::Model> =
-            entity::note_history::Entity::find().all(source_db).await?;
-        let count = source_histories.len() as u32;
+        let count = entity::note_history::Entity::find()
+            .count(source_db)
+            .await? as u32;
+        let mut global_hist_idx: u32 = 0;
 
-        for (i, h) in source_histories.iter().enumerate() {
+        let total_hist_batches = (count as u64 + SYNC_BATCH_SIZE - 1) / SYNC_BATCH_SIZE;
+        for batch_idx in 0..total_hist_batches {
+            let source_histories: Vec<entity::note_history::Model> =
+                entity::note_history::Entity::find()
+                    .offset(batch_idx * SYNC_BATCH_SIZE)
+                    .limit(SYNC_BATCH_SIZE)
+                    .all(source_db)
+                    .await?;
+
+        for h in source_histories.iter() {
+            let i = global_hist_idx as usize;
+            global_hist_idx += 1;
             let source_id = h.id;
             let synced_at = Local::now().naive_local();
             let note_id = id_maps.note.get(&h.note_id).copied().unwrap_or(h.note_id);
@@ -603,6 +629,7 @@ pub async fn sync_to_profile(
                 );
             }
         }
+        } // end history batch loop
     }
 
     // 4e. 同步模板

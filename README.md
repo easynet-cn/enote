@@ -1,252 +1,256 @@
-# eNote
+# ENote
 
-[English](README.en.md) | 中文
+English | [中文](README.zh-CN.md)
 
-一个基于 Tauri 的跨平台桌面笔记应用，支持富文本编辑和 Markdown 模式。
+A cross-platform desktop note-taking application built with Tauri, supporting rich text editing and Markdown mode.
 
-## 功能特性
+## Features
 
-### 编辑器
-- **富文本编辑** - 基于 TipTap 的所见即所得编辑器，支持多种格式
-- **Markdown 模式** - 可切换为 Markdown 纯文本编辑模式，支持分屏预览
-- **查找替换** - 编辑器内全局查找与替换
-- **数学公式** - KaTeX 数学公式渲染
-- **代码高亮** - 基于 lowlight 的代码块语法高亮
-- **目录大纲** - 自动生成文档目录结构
-- **拖拽排版** - 拖拽手柄调整内容块顺序
-- **智能粘贴** - 上下文感知的粘贴格式处理
-- **图片懒加载** - 图片延迟加载优化性能
+### Editor
+- **Rich Text Editing** - WYSIWYG editor powered by TipTap with various formatting options
+- **Markdown Mode** - Switch to Markdown editing with split-screen preview
+- **Find & Replace** - Global find and replace within the editor
+- **Math Formulas** - KaTeX math formula rendering
+- **Code Highlighting** - Syntax highlighting for code blocks via lowlight
+- **Table of Contents** - Auto-generated document outline
+- **Drag & Drop** - Drag handles for reordering content blocks
+- **Smart Paste** - Context-aware paste formatting
+- **Lazy Image Loading** - Deferred image loading for performance
 
-### 笔记管理
-- **笔记本管理** - 按笔记本分类组织笔记，拖拽排序
-- **标签系统** - 灵活的标签管理，支持多标签筛选
-- **笔记置顶** - 重要笔记置顶显示
-- **历史版本** - 自动保存笔记历史，支持来源追踪（用户/同步/导入）
-- **全文搜索** - FTS5 全文搜索，支持中文子串匹配
-- **笔记模板** - 模板管理，快速创建笔记
-- **双向链接** - 笔记间建立关联引用
-- **回收站** - 软删除，支持恢复已删除笔记
-- **命令面板** - Ctrl+P 快速执行操作
-- **自定义快捷键** - 可配置的键盘快捷键
+### Note Management
+- **Notebook Management** - Organize notes by notebooks with drag-and-drop sorting
+- **Tag System** - Flexible tag management with multi-tag filtering
+- **Note Pinning** - Pin important notes to top
+- **Version History** - Automatic note history with source tracking (user/sync/import)
+- **Full-text Search** - FTS5 full-text search with Chinese substring matching
+- **Note Templates** - Template management for quick note creation
+- **Bidirectional Links** - Cross-reference notes with linked notes panel
+- **Recycle Bin** - Soft delete with recovery support
+- **Command Palette** - Ctrl+P for quick operations
+- **Custom Shortcuts** - Configurable keyboard shortcuts
 
-### 安全与加密
-- **内容加密** - AES-256-GCM 透明加密笔记内容，密钥安全存储在系统钥匙串
-- **笔记加密** - 单篇笔记密码保护
-- **锁屏安全** - 密码保护（Argon2id）、超时锁定、最小化锁定
-- **钥匙串集成** - 密码和密钥存储在 OS 钥匙串（macOS Keychain / Windows Credential Store / Linux Secret Service）
+### Security & Encryption
+- **Content Encryption** - AES-256-GCM transparent note content encryption, keys stored in OS keychain
+- **Note Encryption** - Per-note password protection
+- **Lock Screen** - Password protection (Argon2id), timeout lock, minimize lock
+- **Keychain Integration** - Passwords and keys stored in OS keychain (macOS Keychain / Windows Credential Store / Linux Secret Service)
 
-### 数据管理
-- **多配置管理** - 支持多个数据库配置（Profile），启动时选择或自动连接
-- **设置向导** - 首次启动引导配置数据库，支持 SQLite/MySQL/PostgreSQL
-- **SSL/TLS 认证** - MySQL/PostgreSQL 支持证书登录
-- **数据备份** - SQL/Excel/CSV 导出导入，自动定时备份
-- **导入导出** - 支持印象笔记、有道笔记、Notion 导入，Word/Markdown/JSON/XML 导出
-- **数据同步** - 同步基础设施，支持同步日志和详细追踪
-- **图片本地存储** - 图片保存到本地，通过 Tauri asset 协议访问
+### Data Management
+- **Multi-Profile Management** - Multiple database profiles with startup selection or auto-connect
+- **Setup Wizard** - First-launch guided database configuration for SQLite/MySQL/PostgreSQL
+- **SSL/TLS Authentication** - MySQL/PostgreSQL support certificate-based login
+- **Data Backup** - SQL/Excel/CSV export/import with scheduled auto-backup
+- **Import/Export** - Import from Evernote, Youdao Notes, Notion; Export to Word/Markdown/JSON/XML
+- **Data Sync** - Synchronization infrastructure with sync logs and detailed tracking
+- **Local Image Storage** - Images saved locally, served via Tauri asset protocol
 
-### AI 集成
-- **MCP 集成** - AI 工具通过 MCP 协议操作笔记，三层访问控制（笔记/标签/笔记本级别）
+### AI Integration
+- **MCP Integration** - AI tools operate notes via MCP protocol with three-layer access control (note/tag/notebook level)
 
-### 界面与体验
-- **深色模式** - 浅色/深色/跟随系统主题切换
-- **多语言** - 支持中文简体和英文
-- **系统托盘** - 最小化到托盘运行
-- **多窗口** - 支持在新窗口中打开笔记
-- **跨平台** - 支持 Windows、macOS 和 Linux
+### Interface & Experience
+- **Dark Mode** - Light/Dark/System theme switching
+- **Multilingual** - Simplified Chinese and English
+- **System Tray** - Minimize to tray
+- **Multi-Window** - Open notes in separate windows
+- **Help System** - Built-in searchable help documentation
+- **Application Logs** - Audit logging with sensitive data sanitization
+- **Cross-platform** - Supports Windows, macOS, and Linux
 
-## 技术栈
+## Tech Stack
 
-### 前端
-- **Vue 3** - 使用 Composition API 和 `<script setup>` 语法
-- **TypeScript** - 类型安全的开发体验
-- **Vite** - 快速的开发构建工具
-- **Tailwind CSS v4** - 原子化 CSS 框架
-- **TipTap** - 可扩展的富文本编辑器（8 个自定义扩展）
-- **Pinia** - 状态管理
-- **Vue I18n** - 国际化
-- **Lucide Icons** - 图标库
+### Frontend
+- **Vue 3** - Using Composition API with `<script setup>` syntax
+- **TypeScript** - Type-safe development experience
+- **Vite** - Fast development build tool
+- **Tailwind CSS v4** - Utility-first CSS framework
+- **TipTap** - Extensible rich text editor (8 custom extensions)
+- **Pinia** - State management
+- **Vue I18n** - Internationalization
+- **Lucide Icons** - Icon library
 
-### 后端
-- **Rust**（Edition 2024）- 高性能系统编程语言
-- **Tauri 2.x** - 轻量级跨平台桌面应用框架
-- **SeaORM** - 异步 ORM 框架
-- **SQLite/MySQL/PostgreSQL** - 多数据库支持
-- **aes-gcm** - AES-256-GCM 加密
-- **argon2** - 密码哈希
-- **keyring** - 系统钥匙串集成
-- **rmcp** - MCP 协议服务器
+### Backend
+- **Rust** (Edition 2024) - High-performance systems programming language
+- **Tauri 2.x** - Lightweight cross-platform desktop application framework
+- **SeaORM** - Async ORM framework
+- **SQLite/MySQL/PostgreSQL** - Multiple database support
+- **aes-gcm** - AES-256-GCM encryption
+- **argon2** - Password hashing
+- **keyring** - OS keychain integration
+- **rmcp** - MCP protocol server
 
-## 项目结构
+## Project Structure
 
 ```
 enote/
-├── src/                        # 前端源码
-│   ├── api/                    # Tauri IPC 调用封装
-│   ├── components/             # Vue 组件（58+ 组件）
-│   │   ├── toolbar/            # 编辑器工具栏组件（13 个）
-│   │   ├── ui/                 # 通用 UI 组件库（17 个）
-│   │   ├── Editor.vue          # 编辑器容器
-│   │   ├── TipTapEditor.vue    # TipTap 富文本编辑器
-│   │   ├── MarkdownSplitEditor.vue  # Markdown 分屏编辑器
-│   │   ├── AppSidebar.vue      # 侧边栏（笔记本/标签）
-│   │   ├── NoteList.vue        # 笔记列表
-│   │   ├── LockScreen.vue      # 锁屏界面
-│   │   ├── SetupWizard.vue     # 设置向导
-│   │   ├── ProfileSelector.vue # 配置选择器
-│   │   └── CommandPalette.vue  # 命令面板
-│   ├── composables/            # 组合式函数（11 个）
-│   ├── extensions/             # TipTap 自定义扩展（8 个）
-│   ├── utils/                  # 工具函数
-│   │   └── import/             # 导入解析器（印象笔记/有道/Notion）
-│   ├── stores/                 # Pinia 状态管理
-│   ├── i18n/                   # 国际化（中/英）
-│   ├── types/                  # TypeScript 类型定义
-│   └── App.vue                 # 应用根组件
-├── src-tauri/                  # Tauri 后端源码
+├── src/                        # Frontend source code
+│   ├── api/                    # Tauri IPC call wrappers
+│   ├── components/             # Vue components (60+)
+│   │   ├── toolbar/            # Editor toolbar components (17)
+│   │   ├── ui/                 # Common UI component library (16)
+│   │   ├── NoteEditor.vue      # Editor container
+│   │   ├── TipTapEditor.vue    # TipTap rich text editor
+│   │   ├── MarkdownSplitEditor.vue  # Markdown split-screen editor
+│   │   ├── AppSidebar.vue      # Sidebar (notebooks/tags)
+│   │   ├── NoteList.vue        # Note list
+│   │   ├── LockScreen.vue      # Lock screen
+│   │   ├── SetupWizard.vue     # Setup wizard
+│   │   ├── ProfileSelector.vue # Profile selector
+│   │   ├── CommandPalette.vue  # Command palette
+│   │   ├── HelpManual.vue      # Help documentation
+│   │   └── LogDialog.vue       # Application logs
+│   ├── composables/            # Composable functions (11)
+│   ├── extensions/             # Custom TipTap extensions (8)
+│   ├── utils/                  # Utility functions
+│   │   └── import/             # Import parsers (Evernote/Youdao/Notion)
+│   ├── stores/                 # Pinia state management
+│   ├── i18n/                   # Internationalization (zh-CN/en-US)
+│   ├── types/                  # TypeScript type definitions
+│   └── App.vue                 # Application root component
+├── src-tauri/                  # Tauri backend source code
 │   └── src/
-│       ├── command.rs          # IPC 命令处理
-│       ├── service/            # 业务逻辑层（17 个服务）
-│       ├── entity/             # 数据库实体（12 个）
-│       ├── migration/          # 数据库迁移（21 个）
-│       ├── config.rs           # 配置管理
-│       ├── error.rs            # 错误处理
-│       ├── model.rs            # 数据传输对象
-│       └── i18n.rs             # 后端国际化
+│       ├── command.rs          # IPC command handlers
+│       ├── service/            # Business logic layer (17 services)
+│       ├── entity/             # Database entities (12)
+│       ├── migration/          # Database migrations (22)
+│       ├── config.rs           # Configuration management
+│       ├── error.rs            # Error handling
+│       ├── model.rs            # Data transfer objects
+│       └── i18n.rs             # Backend internationalization
 ├── crates/
-│   └── enote-mcp/              # MCP 服务器（独立二进制）
-└── doc/                        # 文档和配置示例
+│   └── enote-mcp/              # MCP server (standalone binary)
+└── doc/                        # Documentation and config examples
 ```
 
-## UI 组件库
+## UI Component Library
 
-项目包含一套自定义的 UI 组件：
+The project includes a custom UI component library:
 
-- **BaseButton** - 按钮组件，支持多种类型和状态
-- **BaseInput** - 输入框组件
-- **BaseSelect** - 下拉选择组件
-- **BaseDialog** - 对话框组件
-- **BaseDropdown** - 下拉菜单组件
-- **BasePagination** - 分页组件
-- **BaseTooltip** - 提示框组件
-- **BaseSkeleton** - 骨架屏加载组件
-- **ColorPicker** - 颜色选择器
-- **IconPicker** - 图标选择器
-- **StylePicker** - 样式选择器
-- **ConfirmDialog** - 确认对话框
-- **ShortcutRecorder** - 快捷键录制器
-- **Notification** - 通知提示
+- **BaseButton** - Button component with multiple types and states
+- **BaseInput** - Input field component
+- **BaseSelect** - Dropdown select component
+- **BaseDialog** - Dialog/modal component
+- **BaseDropdown** - Dropdown menu component
+- **BasePagination** - Pagination component
+- **BaseTooltip** - Tooltip component
+- **BaseSkeleton** - Skeleton loading component
+- **ColorPicker** - Color picker
+- **IconPicker** - Icon picker
+- **StylePicker** - Style picker
+- **ConfirmDialog** - Confirmation dialog
+- **ShortcutRecorder** - Keyboard shortcut recorder
+- **Notification** - Toast notifications
 
-## 开发指南
+## Development Guide
 
-### 环境要求
+### Requirements
 
 - Node.js 18+
 - pnpm 10+
-- Rust 1.85+（Edition 2024）
+- Rust 1.85+ (Edition 2024)
 - Tauri CLI
 
-### 安装依赖
+### Install Dependencies
 
 ```bash
-# 安装前端依赖
+# Install frontend dependencies
 pnpm install
 
-# 安装 Tauri CLI（如未安装）
+# Install Tauri CLI (if not installed)
 cargo install tauri-cli
 ```
 
-### 开发模式
+### Development Mode
 
 ```bash
-# 启动开发服务器（前端 + Tauri）
+# Start development server (frontend + Tauri)
 pnpm tauri dev
 
-# 仅启动前端开发服务器（端口 1420）
+# Start frontend development server only (port 1420)
 pnpm dev
 ```
 
-### 构建发布
+### Build for Production
 
 ```bash
-# 构建生产版本
+# Build production version
 pnpm build
 
-# 生成应用图标
+# Generate app icons
 pnpm tauri:icon
 ```
 
-### 代码格式化与检查
+### Code Formatting & Linting
 
 ```bash
-# 格式化代码
+# Format code
 pnpm format
 
-# ESLint 检查
+# ESLint check
 pnpm lint
 
-# ESLint 自动修复
+# ESLint auto-fix
 pnpm lint:fix
 
-# 运行测试
+# Run tests
 pnpm test
 ```
 
-## 数据库配置
+## Database Configuration
 
-支持 SQLite（默认）、MySQL 和 PostgreSQL。
+Supports SQLite (default), MySQL, and PostgreSQL.
 
-**首次启动**时，设置向导将引导您完成数据库连接配置：
+On **first launch**, the Setup Wizard guides you through database connection configuration:
 
-- **SQLite** - 本地文件数据库，开箱即用，无需安装额外服务
-- **MySQL** - 支持密码登录和 SSL 证书认证
-- **PostgreSQL** - 支持密码登录和 SSL 证书认证
+- **SQLite** - Local file database, ready to use out of the box
+- **MySQL** - Supports password login and SSL certificate authentication
+- **PostgreSQL** - Supports password login and SSL certificate authentication
 
-配置以 Profile 形式管理，支持多个数据库配置随时切换。数据库密码和加密密钥安全存储在操作系统钥匙串中（macOS Keychain / Windows Credential Store / Linux Secret Service），不保存在配置文件里。
+Configurations are managed as Profiles, supporting multiple database setups that can be switched at any time. Database passwords and encryption keys are securely stored in the OS keychain (macOS Keychain / Windows Credential Store / Linux Secret Service), never in configuration files.
 
-也可通过命令行参数使用传统配置文件：
+You can also use a traditional configuration file via command-line:
 
 ```bash
 enote --config /path/to/application.yml
 ```
 
-配置文件示例参见 `doc/application.yml`、`doc/application-mysql.yml`、`doc/application-posgres.yml`。
+See `doc/application.yml`, `doc/application-mysql.yml`, `doc/application-posgres.yml` for examples.
 
-## MCP 集成
+## MCP Integration
 
-eNote 内置 MCP（Model Context Protocol）服务器，允许 AI 工具通过标准化协议操作笔记。
+ENote includes a built-in MCP (Model Context Protocol) server, allowing AI tools to operate on notes through a standardized protocol.
 
-### 三层访问控制
+### Three-Layer Access Control
 
-| 层级 | 范围 | 说明 |
-|------|------|------|
-| 笔记级别 | 单篇笔记 | 最高优先级 |
-| 标签级别 | 按标签 | 多标签取最严格 |
-| 笔记本级别 | 按笔记本 | 最低优先级 |
+| Layer | Scope | Description |
+|-------|-------|-------------|
+| Note level | Per note | Highest priority |
+| Tag level | By tag | Strictest wins when multiple tags |
+| Notebook level | By notebook | Lowest priority |
 
-### 访问权限
+### Access Permissions
 
-- **继承** - 从上层继承（默认）
-- **读写** - AI 可读可写
-- **只读** - AI 仅可读取
-- **拒绝** - 完全禁止 AI 访问
-- 加密笔记始终强制拒绝 AI 访问
+- **Inherit** - Inherit from parent level (default)
+- **ReadWrite** - AI can read and write
+- **ReadOnly** - AI can only read
+- **Deny** - AI access completely blocked
+- Encrypted notes always force-deny AI access
 
-## 贡献指南
+## Contributing
 
-1. Fork 本仓库
-2. 创建功能分支 (`git checkout -b feature/your-feature`)
-3. 提交更改 (`git commit -m 'Add some feature'`)
-4. 推送到分支 (`git push origin feature/your-feature`)
-5. 创建 Pull Request
+1. Fork this repository
+2. Create a feature branch (`git checkout -b feature/your-feature`)
+3. Commit your changes (`git commit -m 'Add some feature'`)
+4. Push to the branch (`git push origin feature/your-feature`)
+5. Create a Pull Request
 
-## 许可证
+## License
 
 MIT License
 
-## 相关链接
+## Related Links
 
-- [Tauri 官方文档](https://tauri.app)
-- [Vue 3 文档](https://vuejs.org)
-- [TipTap 文档](https://tiptap.dev)
-- [Tailwind CSS 文档](https://tailwindcss.com)
-- [SeaORM 文档](https://www.sea-ql.org/SeaORM)
+- [Tauri Documentation](https://tauri.app)
+- [Vue 3 Documentation](https://vuejs.org)
+- [TipTap Documentation](https://tiptap.dev)
+- [Tailwind CSS Documentation](https://tailwindcss.com)
+- [SeaORM Documentation](https://www.sea-ql.org/SeaORM)

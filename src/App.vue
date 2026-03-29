@@ -151,7 +151,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, markRaw } from 'vue'
+import { ref, computed, onMounted, onUnmounted, markRaw, defineAsyncComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { listen } from '@tauri-apps/api/event'
@@ -166,20 +166,13 @@ import { useAppStore } from './stores/app'
 import AppSidebar from './components/AppSidebar.vue'
 import NoteList from './components/NoteList.vue'
 import NoteEditor from './components/NoteEditor.vue'
-import ImportDialog from './components/ImportDialog.vue'
-import BackupDialog from './components/BackupDialog.vue'
-import SettingsDialog from './components/SettingsDialog.vue'
-import TrashDialog from './components/TrashDialog.vue'
-import CommandPalette from './components/CommandPalette.vue'
-import TemplateDialog from './components/TemplateDialog.vue'
-import LogDialog from './components/LogDialog.vue'
 import { openHelpInNewWindow } from './utils/multiWindow'
-import SetupWizard from './components/SetupWizard.vue'
-import ProfileSelector from './components/ProfileSelector.vue'
+// 启动模式组件懒加载 —— 仅在特定启动模式下才需要
+const SetupWizard = defineAsyncComponent(() => import('./components/SetupWizard.vue'))
+const ProfileSelector = defineAsyncComponent(() => import('./components/ProfileSelector.vue'))
 import { showNotification } from './components/ui/notification'
 import { parseError } from './utils/errorHandler'
 import { usePlatform } from './composables/usePlatform'
-import LockScreen from './components/LockScreen.vue'
 import type { PaletteCommand } from './components/CommandPalette.vue'
 import {
   Plus,
@@ -199,6 +192,16 @@ import {
   HelpCircle,
   ScrollText,
 } from 'lucide-vue-next'
+
+// 对话框组件懒加载 —— 仅在用户打开时才加载，减少首屏 JS 体积
+const ImportDialog = defineAsyncComponent(() => import('./components/ImportDialog.vue'))
+const BackupDialog = defineAsyncComponent(() => import('./components/BackupDialog.vue'))
+const SettingsDialog = defineAsyncComponent(() => import('./components/SettingsDialog.vue'))
+const TrashDialog = defineAsyncComponent(() => import('./components/TrashDialog.vue'))
+const CommandPalette = defineAsyncComponent(() => import('./components/CommandPalette.vue'))
+const TemplateDialog = defineAsyncComponent(() => import('./components/TemplateDialog.vue'))
+const LogDialog = defineAsyncComponent(() => import('./components/LogDialog.vue'))
+const LockScreen = defineAsyncComponent(() => import('./components/LockScreen.vue'))
 
 const { t } = useI18n()
 const appStore = useAppStore()

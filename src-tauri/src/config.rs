@@ -251,7 +251,9 @@ pub async fn database_connection_from_profile(
     let url = profile::build_database_url(profile_config, db_password);
 
     let is_sqlite = url.starts_with("sqlite:");
-    let default_max = if is_sqlite { 5 } else { 20 };
+    // SQLite 使用 WAL 模式允许并发读，提高到 10 连接
+    // MySQL/PostgreSQL 默认 20 连接
+    let default_max = if is_sqlite { 10 } else { 20 };
 
     let mut opt = ConnectOptions::new(url);
     opt.max_connections(default_max)
@@ -284,6 +286,14 @@ impl Configuration {
             "PRAGMA journal_mode=WAL",
             "PRAGMA synchronous=NORMAL",
             "PRAGMA journal_size_limit=67108864",
+            // 内存映射 I/O（256MB），加速大数据库读取
+            "PRAGMA mmap_size=268435456",
+            // 页缓存大小（负值表示 KB，-16000 ≈ 16MB）
+            "PRAGMA cache_size=-16000",
+            // 临时表存储在内存中
+            "PRAGMA temp_store=MEMORY",
+            // 启用外键约束
+            "PRAGMA foreign_keys=ON",
         ] {
             db.execute(Statement::from_string(backend, pragma.to_string()))
                 .await

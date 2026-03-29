@@ -19,9 +19,6 @@ import Subscript from '@tiptap/extension-subscript'
 import Superscript from '@tiptap/extension-superscript'
 import Placeholder from '@tiptap/extension-placeholder'
 import CharacterCount from '@tiptap/extension-character-count'
-import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
-import Mathematics from '@tiptap/extension-mathematics'
-import { common, createLowlight } from 'lowlight'
 import {
   FontSize,
   Indent,
@@ -30,48 +27,79 @@ import {
   TableOfContents,
   PasteHandler,
 } from '../extensions'
-import 'katex/dist/katex.min.css'
 
-// 创建带有常用语言的 lowlight 实例
-const lowlight = createLowlight(common)
+// ============================================================================
+// 重型依赖延迟加载（lowlight ~100KB, KaTeX ~200KB）
+// 首次调用 getRichTextExtensions/getMarkdownExtensions 时异步初始化
+// ============================================================================
+
+let _lowlightInstance: unknown = null
+let _codeBlockLowlightExt: AnyExtension | null = null
+let _mathematicsExt: AnyExtension | null = null
+let _heavyDepsLoaded = false
 
 /**
- * 基础扩展 - 所有编辑器都需要的核心扩展
+ * 异步加载重型扩展（代码高亮 + 数学公式）
+ * 仅在首次创建编辑器时触发，后续使用缓存
  */
-export const coreExtensions: AnyExtension[] = [
-  StarterKit.configure({
-    codeBlock: false, // 禁用默认代码块，使用带高亮的版本
-  }),
-  TextAlign.configure({
-    types: ['heading', 'paragraph'],
-  }),
-  TextStyle,
-  Link.configure({
-    openOnClick: false,
-    HTMLAttributes: {
-      class: 'text-blue-500 underline cursor-pointer',
-    },
-  }),
-  // 代码块高亮
-  CodeBlockLowlight.configure({
-    lowlight,
+async function loadHeavyExtensions(): Promise<void> {
+  if (_heavyDepsLoaded) return
+
+  const [lowlightModule, codeBlockModule, mathModule] = await Promise.all([
+    import('lowlight'),
+    import('@tiptap/extension-code-block-lowlight'),
+    import('@tiptap/extension-mathematics'),
+  ])
+
+  // KaTeX CSS
+  await import('katex/dist/katex.min.css')
+
+  _lowlightInstance = lowlightModule.createLowlight(lowlightModule.common)
+  _codeBlockLowlightExt = codeBlockModule.default.configure({
+    lowlight: _lowlightInstance,
     defaultLanguage: 'plaintext',
-  }),
-  // Placeholder is configured dynamically via getRichTextExtensions/getMarkdownExtensions
-  // 字符统计
-  CharacterCount,
-  // 拖拽手柄
-  DragHandle,
-  // 目录生成
-  TableOfContents,
-  // 粘贴优化（清理网页格式、截图粘贴）
-  PasteHandler,
-]
+  })
+  _mathematicsExt = mathModule.default
+
+  _heavyDepsLoaded = true
+}
+
+/**
+ * 构建基础扩展（不含重型依赖）
+ */
+function buildCoreExtensions(): AnyExtension[] {
+  const extensions: AnyExtension[] = [
+    StarterKit.configure({
+      codeBlock: false, // 禁用默认代码块，使用带高亮的版本
+    }),
+    TextAlign.configure({
+      types: ['heading', 'paragraph'],
+    }),
+    TextStyle,
+    Link.configure({
+      openOnClick: false,
+      HTMLAttributes: {
+        class: 'text-blue-500 underline cursor-pointer',
+      },
+    }),
+    CharacterCount,
+    DragHandle,
+    TableOfContents,
+    PasteHandler,
+  ]
+
+  // 代码块高亮（延迟加载后可用）
+  if (_codeBlockLowlightExt) {
+    extensions.push(_codeBlockLowlightExt)
+  }
+
+  return extensions
+}
 
 /**
  * 格式化扩展 - 文本格式相关
  */
-export const formattingExtensions: AnyExtension[] = [
+const formattingExtensions: AnyExtension[] = [
   Color,
   Highlight.configure({ multicolor: true }),
   Underline,
@@ -84,27 +112,34 @@ export const formattingExtensions: AnyExtension[] = [
 ]
 
 /**
- * 媒体扩展 - 图片、表格、数学公式等
+ * 构建媒体扩展（含延迟加载的数学公式）
  */
-export const mediaExtensions: AnyExtension[] = [
-  Image.configure({
-    inline: true,
-    allowBase64: true,
-  }),
-  Table.configure({
-    resizable: true,
-  }),
-  TableRow,
-  TableCell,
-  TableHeader,
-  // 数学公式 (KaTeX)
-  Mathematics,
-]
+function buildMediaExtensions(): AnyExtension[] {
+  const extensions: AnyExtension[] = [
+    Image.configure({
+      inline: true,
+      allowBase64: true,
+    }),
+    Table.configure({
+      resizable: true,
+    }),
+    TableRow,
+    TableCell,
+    TableHeader,
+  ]
+
+  // 数学公式 (KaTeX)（延迟加载后可用）
+  if (_mathematicsExt) {
+    extensions.push(_mathematicsExt)
+  }
+
+  return extensions
+}
 
 /**
  * 任务列表扩展
  */
-export const taskExtensions: AnyExtension[] = [
+const taskExtensions: AnyExtension[] = [
   TaskList,
   TaskItem.configure({
     nested: true,
@@ -114,7 +149,7 @@ export const taskExtensions: AnyExtension[] = [
 /**
  * Markdown 扩展
  */
-export const markdownExtension = Markdown.configure({
+const markdownExtension = Markdown.configure({
   html: true,
   tightLists: true,
   tightListClass: 'tight',
@@ -138,17 +173,19 @@ function buildPlaceholder(placeholder?: string): AnyExtension {
 }
 
 /**
- * 获取富文本编辑器扩展
+ * 获取富文本编辑器扩展（异步 - 首次调用时加载重型依赖）
  */
-export function getRichTextExtensions(placeholder?: string): AnyExtension[] {
+export async function getRichTextExtensions(placeholder?: string): Promise<AnyExtension[]> {
+  await loadHeavyExtensions()
+
   if (!placeholder && _richTextExtensionsCache) {
     return _richTextExtensionsCache
   }
   const extensions = [
-    ...coreExtensions,
+    ...buildCoreExtensions(),
     buildPlaceholder(placeholder),
     ...formattingExtensions,
-    ...mediaExtensions,
+    ...buildMediaExtensions(),
     ...taskExtensions,
   ]
   if (!placeholder) {
@@ -158,17 +195,19 @@ export function getRichTextExtensions(placeholder?: string): AnyExtension[] {
 }
 
 /**
- * 获取 Markdown 编辑器扩展
+ * 获取 Markdown 编辑器扩展（异步 - 首次调用时加载重型依赖）
  */
-export function getMarkdownExtensions(placeholder?: string): AnyExtension[] {
+export async function getMarkdownExtensions(placeholder?: string): Promise<AnyExtension[]> {
+  await loadHeavyExtensions()
+
   if (!placeholder && _markdownExtensionsCache) {
     return _markdownExtensionsCache
   }
   const extensions = [
-    ...coreExtensions,
+    ...buildCoreExtensions(),
     buildPlaceholder(placeholder),
     ...formattingExtensions,
-    ...mediaExtensions,
+    ...buildMediaExtensions(),
     ...taskExtensions,
     markdownExtension,
   ]

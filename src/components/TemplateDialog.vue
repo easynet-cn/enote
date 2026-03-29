@@ -308,15 +308,15 @@ const loadTemplates = async () => {
   }
 }
 
-const createTemplateEditor = (content: string, contentType: number = 0) => {
+const createTemplateEditor = async (content: string, contentType: number = 0) => {
   if (templateEditor.value) {
     templateEditor.value.destroy()
   }
   const placeholder = t('template.editorPlaceholder')
   const extensions =
     contentType === ContentType.Markdown
-      ? getMarkdownExtensions(placeholder)
-      : getRichTextExtensions(placeholder)
+      ? await getMarkdownExtensions(placeholder)
+      : await getRichTextExtensions(placeholder)
 
   templateEditor.value = new Editor({
     extensions,

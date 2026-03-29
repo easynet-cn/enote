@@ -275,19 +275,17 @@ pub async fn create_with_key(
             .await?
         {
             notebook_id = notebook.id;
-            notebook_name = notebook.name.clone();
+            notebook_name = notebook.name;
         }
     }
 
-    let note_history_extra = NoteHistoryExtra {
+    let extra = serde_json::to_string(&NoteHistoryExtra {
         notebook_id,
-        notebook_name: notebook_name.clone(),
+        notebook_name,
         content_type: note.content_type,
         title: note.title.clone(),
         tags: note.tags.clone(),
-    };
-
-    let extra = serde_json::to_string(&note_history_extra)?;
+    })?;
 
     entity::note_history::ActiveModel {
         id: NotSet,
@@ -407,19 +405,39 @@ pub async fn empty_trash(db: &DatabaseConnection) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// 获取回收站中的笔记列表
-pub async fn find_deleted(db: &DatabaseConnection) -> anyhow::Result<Vec<Note>> {
-    find_deleted_with_key(db, None).await
+/// 获取回收站中的笔记列表（分页）
+pub async fn find_deleted(
+    db: &DatabaseConnection,
+    page_param: &crate::model::PageParam,
+) -> anyhow::Result<PageResult<Note>> {
+    find_deleted_with_key(db, page_param, None).await
 }
 
-/// 获取回收站中的笔记列表（支持解密）
+/// 获取回收站中的笔记列表（分页 + 支持解密）
 pub async fn find_deleted_with_key(
     db: &DatabaseConnection,
+    page_param: &crate::model::PageParam,
     encryption_key: Option<&str>,
-) -> anyhow::Result<Vec<Note>> {
-    let mut notes: Vec<Note> = entity::note::Entity::find()
+) -> anyhow::Result<PageResult<Note>> {
+    use sea_orm::PaginatorTrait;
+
+    let page_index = page_param.page_index.max(1) as u64;
+    let page_size = page_param.page_size.clamp(1, 200) as u64;
+
+    let query = entity::note::Entity::find()
         .filter(entity::note::Column::DeletedAt.is_not_null())
-        .order_by_desc(entity::note::Column::UpdateTime)
+        .order_by_desc(entity::note::Column::UpdateTime);
+
+    let total = query.clone().count(db).await? as i64;
+    let total_pages = if total == 0 {
+        0
+    } else {
+        ((total as u64 + page_size - 1) / page_size) as i64
+    };
+
+    let mut notes: Vec<Note> = query
+        .offset((page_index - 1) * page_size)
+        .limit(page_size)
         .all(db)
         .await?
         .into_iter()
@@ -431,7 +449,11 @@ pub async fn find_deleted_with_key(
         decrypt_note(note, encryption_key);
     }
 
-    Ok(notes)
+    Ok(PageResult {
+        total,
+        total_pages,
+        data: notes,
+    })
 }
 
 /// 切换笔记置顶状态
@@ -581,19 +603,17 @@ pub async fn update_with_key(
                     .await?
                 {
                     notebook_id = notebook.id;
-                    notebook_name = notebook.name.clone();
+                    notebook_name = notebook.name;
                 }
             }
 
-            let note_history_extra = NoteHistoryExtra {
+            let extra = serde_json::to_string(&NoteHistoryExtra {
                 notebook_id,
-                notebook_name: notebook_name.clone(),
+                notebook_name,
                 content_type: old_content_type,
                 title: old_title,
                 tags: old_tags,
-            };
-
-            let extra = serde_json::to_string(&note_history_extra)?;
+            })?;
 
             entity::note_history::ActiveModel {
                 id: NotSet,

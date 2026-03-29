@@ -718,14 +718,15 @@ pub async fn empty_trash(app_state: tauri::State<'_, Arc<AppState>>) -> Result<(
     Ok(())
 }
 
-/// 获取回收站笔记列表
+/// 获取回收站笔记列表（分页）
 #[tauri::command]
 pub async fn find_deleted_notes(
     app_state: tauri::State<'_, Arc<AppState>>,
-) -> Result<Vec<Note>, AppError> {
+    page_param: PageParam,
+) -> Result<PageResult<Note>, AppError> {
     let db = require_db(&app_state).await?;
     let enc_key = app_state.encryption_key.read().await;
-    service::note::find_deleted_with_key(&db, enc_key.as_deref())
+    service::note::find_deleted_with_key(&db, &page_param, enc_key.as_deref())
         .await
         .map_err(AppError::from)
 }

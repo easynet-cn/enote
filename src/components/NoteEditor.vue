@@ -296,7 +296,7 @@ const editor = shallowRef<Editor | undefined>(undefined)
 let editorCreateRequestId = 0
 
 // 创建编辑器实例
-const createEditor = (contentType: ContentType, content: string) => {
+const createEditor = async (contentType: ContentType, content: string) => {
   const requestId = ++editorCreateRequestId
 
   // 销毁旧编辑器
@@ -309,7 +309,12 @@ const createEditor = (contentType: ContentType, content: string) => {
 
   // 根据内容类型选择扩展：Markdown 模式使用 Markdown 扩展，富文本模式不使用
   const extensions =
-    contentType === ContentType.Markdown ? getMarkdownExtensions() : getRichTextExtensions()
+    contentType === ContentType.Markdown
+      ? await getMarkdownExtensions()
+      : await getRichTextExtensions()
+
+  // 异步加载后再次检查竞态
+  if (requestId !== editorCreateRequestId) return
 
   editor.value = new Editor({
     extensions,
