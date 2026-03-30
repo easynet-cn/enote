@@ -2,7 +2,14 @@ import { defineStore } from 'pinia'
 import { ref, computed, toRaw } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ContentType } from '../types'
-import type { ShowNotebook, ShowTag, ShowNote, NoteHistory, NoteSearchPageParam } from '../types'
+import type {
+  ShowNotebook,
+  ShowTag,
+  ShowNote,
+  NoteHistory,
+  NoteSearchPageParam,
+  NotebookTreeNode,
+} from '../types'
 import { DEFAULT_NOTE_PAGE_SIZE, DEFAULT_HISTORY_PAGE_SIZE } from '../config/constants'
 
 export const useAppStore = defineStore('app', () => {
@@ -36,6 +43,9 @@ export const useAppStore = defineStore('app', () => {
   // 历史记录
   const histories = ref<NoteHistory[]>([])
 
+  // 笔记本展开状态
+  const expandedNotebooks = ref<Set<string>>(new Set())
+
   // 搜索关键词
   const query = ref<string>('')
 
@@ -49,6 +59,10 @@ export const useAppStore = defineStore('app', () => {
   const editMode = ref<boolean>(false)
   const loading = ref<boolean>(false)
   const notesLoading = ref<boolean>(false)
+
+  // 多选模式
+  const isSelectMode = ref<boolean>(false)
+  const selectedNotes = ref<Set<string>>(new Set())
 
   // 笔记分页（通过 computed 代理 noteSearchPageParam，避免双重状态）
   const notePageIndex = computed({
@@ -64,6 +78,18 @@ export const useAppStore = defineStore('app', () => {
     },
   })
   const noteTotal = ref<number>(0)
+  const noteSortField = computed({
+    get: () => noteSearchPageParam.value.sortField,
+    set: (v: string) => {
+      noteSearchPageParam.value.sortField = v
+    },
+  })
+  const noteSortOrder = computed({
+    get: () => noteSearchPageParam.value.sortOrder,
+    set: (v: string) => {
+      noteSearchPageParam.value.sortOrder = v
+    },
+  })
 
   // 搜索参数
   const noteSearchPageParam = ref<NoteSearchPageParam>({
@@ -72,6 +98,9 @@ export const useAppStore = defineStore('app', () => {
     notebookId: 0,
     tagId: 0,
     keyword: '',
+    sortField: 'update_time',
+    sortOrder: 'desc',
+    isStarred: false,
   })
 
   // 历史分页
@@ -85,6 +114,44 @@ export const useAppStore = defineStore('app', () => {
   const notebooks = computed<ShowNotebook[]>(() => {
     return Array.from(notebooksMap.value.values())
   })
+
+  // 笔记本树形结构（不含 id='0' 的虚拟"全部"项）
+  const notebookTree = computed<NotebookTreeNode[]>(() => {
+    const allNotebooks = Array.from(notebooksMap.value.values()).filter((n) => n.id !== '0')
+    const expanded = expandedNotebooks.value
+
+    const buildChildren = (parentId: number): NotebookTreeNode[] => {
+      return allNotebooks
+        .filter((n) => (n.parentId ?? 0) === parentId)
+        .sort((a, b) => (b.sortOrder ?? 0) - (a.sortOrder ?? 0))
+        .map((n) => ({
+          ...n,
+          expanded: expanded.has(n.id),
+          children: buildChildren(Number(n.id)),
+        }))
+    }
+
+    return buildChildren(0)
+  })
+
+  // 切换笔记本展开/折叠
+  const toggleNotebookExpand = (id: string) => {
+    const newSet = new Set(expandedNotebooks.value)
+    if (newSet.has(id)) {
+      newSet.delete(id)
+    } else {
+      newSet.add(id)
+    }
+    expandedNotebooks.value = newSet
+  }
+
+  // 初始化时展开所有根笔记本
+  const initExpandedNotebooks = () => {
+    const rootIds = Array.from(notebooksMap.value.values())
+      .filter((n) => n.id !== '0' && (!n.parentId || n.parentId === 0))
+      .map((n) => n.id)
+    expandedNotebooks.value = new Set(rootIds)
+  }
 
   const tags = computed<ShowTag[]>(() => {
     return Array.from(tagsMap.value.values())
@@ -118,11 +185,17 @@ export const useAppStore = defineStore('app', () => {
   // ==================== Actions ====================
   // 设置笔记本列表
   const setNotebooks = (items: ShowNotebook[]) => {
+    const isFirstLoad = notebooksMap.value.size <= 1
     notebooksMap.value.clear()
     notebooksMap.value.set('0', defaultNotebook.value)
 
     for (const item of items) {
       notebooksMap.value.set(item.id, item)
+    }
+
+    // 首次加载时展开根笔记本
+    if (isFirstLoad) {
+      initExpandedNotebooks()
     }
   }
 
@@ -238,6 +311,7 @@ export const useAppStore = defineStore('app', () => {
       content: '',
       contentType,
       isPinned: 0,
+      isStarred: 0,
       tags: [],
       createTime: timeStr,
       updateTime: timeStr,
@@ -261,6 +335,37 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
+  // 多选模式操作
+  const toggleSelectMode = () => {
+    isSelectMode.value = !isSelectMode.value
+    if (!isSelectMode.value) {
+      selectedNotes.value = new Set()
+    }
+  }
+
+  const toggleNoteSelection = (noteId: string) => {
+    const newSet = new Set(selectedNotes.value)
+    if (newSet.has(noteId)) {
+      newSet.delete(noteId)
+    } else {
+      newSet.add(noteId)
+    }
+    selectedNotes.value = newSet
+  }
+
+  const selectAllNotes = () => {
+    const newSet = new Set<string>()
+    for (const id of notesMap.value.keys()) {
+      newSet.add(id)
+    }
+    selectedNotes.value = newSet
+  }
+
+  const clearSelection = () => {
+    selectedNotes.value = new Set()
+    isSelectMode.value = false
+  }
+
   // 重置搜索参数
   const resetSearchParam = () => {
     noteSearchPageParam.value = {
@@ -269,6 +374,9 @@ export const useAppStore = defineStore('app', () => {
       notebookId: 0,
       tagId: 0,
       keyword: '',
+      sortField: 'update_time',
+      sortOrder: 'desc',
+      isStarred: false,
     }
   }
 
@@ -293,6 +401,8 @@ export const useAppStore = defineStore('app', () => {
     notePageIndex,
     notePageSize,
     noteTotal,
+    noteSortField,
+    noteSortOrder,
     noteSearchPageParam,
     historyPageIndex,
     historyPageSize,
@@ -304,6 +414,10 @@ export const useAppStore = defineStore('app', () => {
     isDirty,
 
     // Actions - 笔记本
+    notebookTree,
+    expandedNotebooks,
+    toggleNotebookExpand,
+    initExpandedNotebooks,
     setNotebooks,
     updateNotebook,
     removeNotebook,
@@ -328,6 +442,14 @@ export const useAppStore = defineStore('app', () => {
     startEdit,
     cancelEdit,
     resetSearchParam,
+
+    // Actions - 多选
+    isSelectMode,
+    selectedNotes,
+    toggleSelectMode,
+    toggleNoteSelection,
+    selectAllNotes,
+    clearSelection,
 
     // Actions - 国际化
     updateDefaultItems,

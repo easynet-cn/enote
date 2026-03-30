@@ -12,10 +12,13 @@ A cross-platform desktop note-taking application built with Tauri, supporting ri
 - **Find & Replace** - Global find and replace within the editor
 - **Math Formulas** - KaTeX math formula rendering
 - **Code Highlighting** - Syntax highlighting for code blocks via lowlight
+- **Code Block Language Selector** - Quick language selection dropdown for syntax highlighting (25+ languages)
 - **Table of Contents** - Auto-generated document outline
 - **Drag & Drop** - Drag handles for reordering content blocks
 - **Smart Paste** - Context-aware paste formatting
 - **Lazy Image Loading** - Deferred image loading for performance
+- **Print Support** - Print notes directly via system print dialog
+- **Editor Font Size** - Configurable editor font size (12-20px) in settings
 
 ### Note Management
 - **Notebook Management** - Organize notes by notebooks with drag-and-drop sorting
@@ -28,6 +31,12 @@ A cross-platform desktop note-taking application built with Tauri, supporting ri
 - **Recycle Bin** - Soft delete with recovery support
 - **Command Palette** - Ctrl+P for quick operations
 - **Custom Shortcuts** - Configurable keyboard shortcuts
+- **Note Sorting** - Sort notes by title, creation time, or update time (ascending/descending)
+- **Batch Operations** - Multi-select notes for batch move, delete operations
+- **Note Starring** - Star/favorite notes for quick identification
+- **File Attachments** - Attach files (PDF, documents, etc.) to notes with local storage
+- **Notebook Hierarchy** - Nested notebook tree with expand/collapse
+- **Profile Editing** - Edit existing database profile configurations
 
 ### Security & Encryption
 - **Content Encryption** - AES-256-GCM transparent note content encryption, keys stored in OS keychain
@@ -40,7 +49,9 @@ A cross-platform desktop note-taking application built with Tauri, supporting ri
 - **Setup Wizard** - First-launch guided database configuration for SQLite/MySQL/PostgreSQL
 - **SSL/TLS Authentication** - MySQL/PostgreSQL support certificate-based login
 - **Data Backup** - SQL/Excel/CSV export/import with scheduled auto-backup
-- **Import/Export** - Import from Evernote, Youdao Notes, Notion; Export to Word/Markdown/JSON/XML
+- **Import/Export** - Import from Evernote, Youdao Notes, Notion; Export to PDF/HTML/Word/Markdown/JSON/XML
+- **PDF Export** - Export notes as PDF via print dialog
+- **HTML Export** - Export as standalone HTML files with embedded styles and dark mode support
 - **Data Sync** - Synchronization infrastructure with sync logs and detailed tracking
 - **Local Image Storage** - Images saved locally, served via Tauri asset protocol
 
@@ -85,7 +96,7 @@ A cross-platform desktop note-taking application built with Tauri, supporting ri
 enote/
 ├── src/                        # Frontend source code
 │   ├── api/                    # Tauri IPC call wrappers
-│   ├── components/             # Vue components (60+)
+│   ├── components/             # Vue components (70+)
 │   │   ├── toolbar/            # Editor toolbar components (17)
 │   │   ├── ui/                 # Common UI component library (16)
 │   │   ├── NoteEditor.vue      # Editor container
@@ -111,9 +122,9 @@ enote/
 ├── src-tauri/                  # Tauri backend source code
 │   └── src/
 │       ├── command.rs          # IPC command handlers
-│       ├── service/            # Business logic layer (17 services)
-│       ├── entity/             # Database entities (12)
-│       ├── migration/          # Database migrations (23)
+│       ├── service/            # Business logic layer (18 services)
+│       ├── entity/             # Database entities (13)
+│       ├── migration/          # Database migrations (25)
 │       ├── config.rs           # Configuration management
 │       ├── error.rs            # Error handling
 │       ├── model.rs            # Data transfer objects

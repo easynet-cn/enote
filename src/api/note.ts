@@ -4,6 +4,7 @@ import { invokeWithRetry } from '../utils/invokeWithRetry'
 import {
   ContentType,
   Note,
+  NoteAttachment,
   Notebook,
   NoteHistory,
   NoteHistorySearchPageParam,
@@ -210,6 +211,29 @@ export const noteLinkApi = {
   },
 }
 
+export const attachmentApi = {
+  async saveAttachment(
+    noteId: number,
+    fileName: string,
+    fileData: number[],
+    mimeType: string,
+  ): Promise<NoteAttachment> {
+    return await invoke('save_attachment', { noteId, fileName, fileData, mimeType })
+  },
+
+  async findAttachments(noteId: number): Promise<NoteAttachment[]> {
+    return await invoke('find_attachments', { noteId })
+  },
+
+  async deleteAttachment(id: number): Promise<void> {
+    return await invoke('delete_attachment', { id })
+  },
+
+  async openAttachment(filePath: string): Promise<void> {
+    return await invoke('open_attachment', { filePath })
+  },
+}
+
 export const noteApi = {
   async getNotebooks(): Promise<Notebook[]> {
     return await invokeWithRetry('find_all_notebooks')
@@ -243,6 +267,7 @@ export const noteApi = {
         content,
         contentType,
         isPinned: 0,
+        isStarred: 0,
         mcpAccess: mcpAccess ?? 0,
         tags,
         createTime: null,
@@ -269,6 +294,7 @@ export const noteApi = {
         content,
         contentType,
         isPinned: 0,
+        isStarred: 0,
         mcpAccess: mcpAccess ?? 0,
         tags,
         createTime: null,
@@ -284,6 +310,10 @@ export const noteApi = {
 
   async toggleNotePin(id: number): Promise<Note> {
     return await invoke('toggle_note_pin', { id })
+  },
+
+  async toggleNoteStar(id: number): Promise<Note> {
+    return await invoke('toggle_note_star', { id })
   },
 
   async reorderNotebooks(orders: [number, number][]): Promise<void> {
@@ -316,6 +346,14 @@ export const noteApi = {
 
   async deleteTag(id: number): Promise<void> {
     return await invoke('delete_tag_by_id', { id })
+  },
+
+  async batchMoveNotes(noteIds: number[], notebookId: number): Promise<void> {
+    return await invoke('batch_move_notes', { noteIds, notebookId })
+  },
+
+  async batchDeleteNotes(noteIds: number[]): Promise<void> {
+    return await invoke('batch_delete_notes', { noteIds })
   },
 
   async searchPageNoteHistories(

@@ -42,6 +42,8 @@ pub struct Model {
     pub content_type: i32,
     /// 是否置顶：0 = 否，1 = 是
     pub is_pinned: i32,
+    /// 是否收藏/星标：0 = 否，1 = 是
+    pub is_starred: i32,
     /// MCP 访问控制：0=继承, 1=读写, 2=只读, 3=禁止
     pub mcp_access: i32,
     pub create_time: DateTime,

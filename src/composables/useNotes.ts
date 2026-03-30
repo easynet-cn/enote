@@ -42,6 +42,7 @@ export function useNotes() {
 
   // 刷新所有数据
   const refreshAllData = async () => {
+    noteHistory.clearHistoryCache()
     await Promise.all([
       notebookManager.getNotebooks(),
       tagManager.getTags(),
@@ -88,11 +89,13 @@ export function useNotes() {
   // 包装的保存笔记方法
   const saveNote = async () => {
     await noteEditor.saveNote(noteSearch.refreshNotes)
+    noteHistory.clearHistoryCache()
   }
 
   // 包装的删除笔记方法
   const deleteNote = async () => {
     await noteEditor.deleteNote(noteSearch.refreshNotes)
+    noteHistory.clearHistoryCache()
   }
 
   // 包装的搜索查询更新方法

@@ -4,8 +4,12 @@
       <!-- 标题 + 操作按钮 -->
       <div class="px-8 pt-8 pb-4 flex items-start justify-between">
         <div>
-          <h1 class="text-2xl font-bold text-content">{{ t('setup.title') }}</h1>
-          <p class="text-sm text-content-secondary mt-1">{{ t('setup.subtitle') }}</p>
+          <h1 class="text-2xl font-bold text-content">
+            {{ props.editProfile ? t('setup.editTitle') : t('setup.title') }}
+          </h1>
+          <p class="text-sm text-content-secondary mt-1">
+            {{ props.editProfile ? t('setup.editSubtitle') : t('setup.subtitle') }}
+          </p>
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
           <!-- 返回配置列表 -->

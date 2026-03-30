@@ -3,6 +3,7 @@
 #![allow(unused_imports)]
 
 pub use super::note::Entity as Note;
+pub use super::note_attachment::Entity as NoteAttachment;
 pub use super::note_history::Entity as NoteHistory;
 pub use super::note_link::Entity as NoteLink;
 pub use super::note_tags::Entity as NoteTags;

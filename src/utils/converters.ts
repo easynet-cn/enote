@@ -98,6 +98,7 @@ export const noteToShowNote = (note: Note): ShowNote => ({
   content: note.content,
   contentType: note.contentType,
   isPinned: note.isPinned ?? 0,
+  isStarred: note.isStarred ?? 0,
   mcpAccess: note.mcpAccess,
   tags: tagsToShowTags(note.tags),
   createTime: note.createTime,

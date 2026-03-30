@@ -1,5 +1,5 @@
 <template>
-  <div class="flex-1 h-full flex flex-col overflow-hidden bg-surface shadow-sm">
+  <div class="flex-1 h-full flex flex-col overflow-hidden bg-surface shadow-sm relative">
     <main
       class="flex-1 flex flex-col min-h-0 overflow-hidden editor-main"
       role="main"
@@ -25,32 +25,35 @@
           @delete="handleDelete"
           @settings="handleSettings"
           @export="handleExport"
+          @print="handlePrint"
           @history="handleHistory"
           @save-as-template="emit('saveAsTemplate')"
         />
       </div>
 
       <!-- 标题输入区域 -->
-      <div v-if="activeNote" class="flex items-center mt-4 mb-2">
-        <button
-          v-if="props.layout === 'mobile'"
-          @click="emit('back')"
-          class="p-1.5 -ml-1.5 mr-1 text-content-secondary hover:text-content hover:bg-surface-dim rounded-lg transition-colors shrink-0"
-          :aria-label="t('common.close')"
-        >
-          <ArrowLeft class="w-5 h-5" />
-        </button>
-        <div class="flex-1">
-          <input
-            ref="titleInput"
-            :value="activeNote.title"
-            @input="$emit('updateNoteTitle', ($event.target as HTMLInputElement).value)"
-            :placeholder="t('editor.noteTitlePlaceholder')"
-            :readonly="!editMode"
-            :aria-label="t('editor.noteTitle')"
-            class="w-full text-xl font-bold border-0 outline-none bg-transparent focus:ring-0"
-            :class="{ 'cursor-default': !editMode }"
-          />
+      <div v-if="activeNote" class="title-area">
+        <div class="flex items-center">
+          <button
+            v-if="props.layout === 'mobile'"
+            @click="emit('back')"
+            class="p-1.5 -ml-1.5 mr-1 text-content-secondary hover:text-content hover:bg-surface-dim rounded-lg transition-colors shrink-0"
+            :aria-label="t('common.close')"
+          >
+            <ArrowLeft class="w-5 h-5" />
+          </button>
+          <div class="flex-1">
+            <input
+              ref="titleInput"
+              :value="activeNote.title"
+              @input="$emit('updateNoteTitle', ($event.target as HTMLInputElement).value)"
+              :placeholder="t('editor.noteTitlePlaceholder')"
+              :readonly="!editMode"
+              :aria-label="t('editor.noteTitle')"
+              class="w-full text-xl font-bold border-0 outline-none bg-transparent focus:ring-0"
+              :class="{ 'cursor-default': !editMode }"
+            />
+          </div>
         </div>
       </div>
 
@@ -128,6 +131,63 @@
       </div>
     </main>
 
+    <!-- 右侧悬浮抽屉 -->
+    <Transition name="drawer-right">
+      <div
+        v-if="(showAttachmentPanel || showLinkPanel) && activeNote && !isNewNote"
+        class="editor-drawer-overlay"
+      >
+        <!-- 点击遮罩区域关闭 -->
+        <div class="drawer-backdrop" @click="closeDrawer" />
+        <!-- 抽屉面板 -->
+        <aside class="editor-drawer">
+          <!-- 标题栏 -->
+          <div class="drawer-header">
+            <div class="flex items-center gap-2">
+              <button
+                class="drawer-tab"
+                :class="{ active: showAttachmentPanel }"
+                @click="
+                  showAttachmentPanel = true
+                  showLinkPanel = false
+                "
+              >
+                <Paperclip class="w-3.5 h-3.5" />
+                {{ t('attachment.title') }}
+              </button>
+              <button
+                class="drawer-tab"
+                :class="{ active: showLinkPanel }"
+                @click="
+                  showLinkPanel = true
+                  showAttachmentPanel = false
+                "
+              >
+                <Link2 class="w-3.5 h-3.5" />
+                {{ t('noteLink.title') }}
+              </button>
+            </div>
+            <button
+              class="p-1 rounded-md text-content-tertiary hover:text-content hover:bg-surface-dim transition-colors"
+              @click="closeDrawer"
+              :title="t('common.close')"
+            >
+              <XIcon class="w-4 h-4" />
+            </button>
+          </div>
+          <!-- 内容 -->
+          <div class="drawer-body">
+            <AttachmentPanel v-if="showAttachmentPanel" :note-id="Number(activeNote.id)" />
+            <NoteLinkPanel
+              v-if="showLinkPanel"
+              :note-id="Number(activeNote.id)"
+              @navigate-to-note="(id: number) => $emit('navigateToNote', id)"
+            />
+          </div>
+        </aside>
+      </div>
+    </Transition>
+
     <!-- 设置弹窗 -->
     <EditorSettingsDialog
       v-model="settingDialog"
@@ -164,20 +224,27 @@
       @confirm="confirmDeleteNote"
     />
 
-    <!-- 关联笔记面板 -->
-    <NoteLinkPanel
-      v-if="activeNote && !isNewNote"
-      :note-id="Number(activeNote.id)"
-      @navigate-to-note="(id: number) => $emit('navigateToNote', id)"
-    />
-
     <!-- 底部状态栏 -->
-    <EditorStatusBar v-if="activeNote && editor" :editor="editor" />
+    <EditorStatusBar
+      v-if="activeNote && editor"
+      :editor="editor"
+      :show-panel-buttons="!!activeNote && !isNewNote"
+      :attachment-active="showAttachmentPanel"
+      :link-active="showLinkPanel"
+      @toggle-attachment="
+        showAttachmentPanel = !showAttachmentPanel
+        showLinkPanel = false
+      "
+      @toggle-link="
+        showLinkPanel = !showLinkPanel
+        showAttachmentPanel = false
+      "
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { watch, onBeforeUnmount, ref, computed, shallowRef } from 'vue'
+import { watch, onBeforeUnmount, onMounted, ref, computed, shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Editor, EditorContent } from '@tiptap/vue-3'
 import { getMarkdownExtensions, getRichTextExtensions } from '../config/editorExtensions'
@@ -185,7 +252,7 @@ import TiptapToolbar from './TiptapToolbar.vue'
 import EditorSettingsDialog from './EditorSettingsDialog.vue'
 import ExportDialog from './ExportDialog.vue'
 import { ConfirmDialog } from './ui'
-import { ArrowLeft } from 'lucide-vue-next'
+import { ArrowLeft, Paperclip, Link2, X as XIcon } from 'lucide-vue-next'
 import { ContentType, McpAccess, MarkdownLayout } from '../types'
 import type { NoteHistory, ShowNote, ShowNotebook, ShowTag } from '../types'
 import type { LayoutMode } from '../composables/usePlatform'
@@ -203,7 +270,9 @@ import NoteHistoryDialog from './NoteHistoryDialog.vue'
 import TableOfContents from './TableOfContents.vue'
 import EditorStatusBar from './EditorStatusBar.vue'
 import NoteLinkPanel from './NoteLinkPanel.vue'
+import AttachmentPanel from './AttachmentPanel.vue'
 import type { TocItem } from '../extensions'
+import { exportAsPdf } from '../utils/export'
 
 interface Props {
   notebooks: ShowNotebook[]
@@ -376,6 +445,8 @@ watch(
       sourceMode.value = false
       markdownLayout.value = MarkdownLayout.None
       splitRatio.value = 50
+      // 关闭抽屉面板
+      closeDrawer()
     }
   },
 )
@@ -391,11 +462,12 @@ watch(
       editModeFocusTimer = setTimeout(() => {
         editModeFocusTimer = null
         if (isNewNote.value) {
-          // 新建笔记：焦点在标题
+          // 新建笔记：焦点在标题开头
           titleInput.value?.focus()
+          titleInput.value?.setSelectionRange(0, 0)
         } else {
-          // 编辑笔记：焦点在内容
-          editor.value?.commands.focus()
+          // 编辑笔记：焦点在内容开头
+          editor.value?.commands.focus('start')
         }
       }, 100)
     } else {
@@ -403,6 +475,24 @@ watch(
     }
   },
 )
+
+// 抽屉面板状态
+const showAttachmentPanel = ref(false)
+const showLinkPanel = ref(false)
+
+const closeDrawer = () => {
+  showAttachmentPanel.value = false
+  showLinkPanel.value = false
+}
+
+// ESC 关闭抽屉
+const handleDrawerEsc = (e: KeyboardEvent) => {
+  if (e.key === 'Escape' && (showAttachmentPanel.value || showLinkPanel.value)) {
+    closeDrawer()
+  }
+}
+onMounted(() => window.addEventListener('keydown', handleDrawerEsc))
+onBeforeUnmount(() => window.removeEventListener('keydown', handleDrawerEsc))
 
 // 目录
 const tocVisible = ref(false)
@@ -466,6 +556,16 @@ const handleSettings = () => {
 
 const handleExport = () => {
   exportDialog.value = true
+}
+
+const handlePrint = () => {
+  if (!props.activeNote || !editor.value) return
+  const title = props.activeNote.title || t('export.untitledNote')
+  const content =
+    props.activeNote.contentType === ContentType.Markdown
+      ? editor.value.getHTML()
+      : props.activeNote.content
+  exportAsPdf(title, content)
 }
 
 const handleHistory = () => {
@@ -661,6 +761,13 @@ const handlePreviewScroll = throttle(() => syncScroll('preview'), SCROLL_SYNC_TH
 <style scoped>
 .editor-main {
   padding: 1rem 1rem 0.5rem;
+}
+
+.title-area {
+  padding-top: 1rem;
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.25rem;
+  border-bottom: 1px solid var(--color-border);
 }
 
 @media (min-width: 640px) {
@@ -984,5 +1091,89 @@ const handlePreviewScroll = throttle(() => syncScroll('preview'), SCROLL_SYNC_TH
   to {
     opacity: 1;
   }
+}
+
+/* 右侧悬浮抽屉 */
+.editor-drawer-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+}
+
+.drawer-backdrop {
+  flex: 1;
+  min-width: 0;
+}
+
+.editor-drawer {
+  width: 400px;
+  max-width: 80%;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg, #fff);
+  box-shadow:
+    -8px 0 24px rgba(0, 0, 0, 0.12),
+    -2px 0 8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.drawer-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  font-size: 13px;
+  border-radius: 6px;
+  color: var(--color-text-secondary);
+  transition: all 0.15s;
+  cursor: pointer;
+}
+
+.drawer-tab:hover {
+  background: var(--color-surface-dim, #f1f5f9);
+  color: var(--color-text);
+}
+
+.drawer-tab.active {
+  background: var(--color-primary-lighter, #eef2ff);
+  color: var(--color-primary, #4f46e5);
+  font-weight: 500;
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+/* drawer-right 过渡 */
+.drawer-right-enter-active,
+.drawer-right-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.drawer-right-enter-active .editor-drawer,
+.drawer-right-leave-active .editor-drawer {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.drawer-right-enter-from,
+.drawer-right-leave-to {
+  opacity: 0;
+}
+
+.drawer-right-enter-from .editor-drawer,
+.drawer-right-leave-to .editor-drawer {
+  transform: translateX(100%);
 }
 </style>

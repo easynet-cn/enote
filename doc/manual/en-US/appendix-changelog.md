@@ -2,6 +2,40 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| V1.1.0 | March 2026 | New Features, Performance Optimization, and UX Enhancement |
+| | | **New Features:** |
+| | | - Note Sorting: Sort by title, creation time, or update time with ascending/descending toggle |
+| | | - Batch Operations: Multi-select notes for batch move to notebook and batch delete |
+| | | - Note Starring: Star/favorite notes for quick identification |
+| | | - File Attachments: Attach files to notes with local storage, drag-and-drop upload, and system file opener |
+| | | - Notebook Hierarchy: Nested notebook tree with expand/collapse, parent notebook selection in edit dialog |
+| | | - Code Block Language Selector: Quick language dropdown for syntax highlighting (25+ languages) |
+| | | - PDF Export: Export notes as PDF via system print dialog |
+| | | - HTML Export: Standalone HTML files with embedded styles, responsive design, and dark mode support |
+| | | - Print Support: Direct print from toolbar and command palette |
+| | | - Editor Font Size Setting: Configurable font size (12-20px) in appearance settings |
+| | | - Profile Editing: Edit existing database profile configurations without recreating |
+| | | **Performance Optimization:** |
+| | | - Trash Empty: Single transaction for batch deletion with individual history preservation |
+| | | - Settings Cache Write-Through: Merge updates into cache instead of invalidating |
+| | | - Reorder Transactions: Notebook/tag reorder operations wrapped in single transaction |
+| | | - Sync History Dedup: Skip duplicate history generation during cross-profile sync |
+| | | - History Cache: LRU cache (30s TTL) for note history pagination |
+| | | - Auto Backup Hot Reload: Backup timer resets when interval settings change |
+| | | **UX Enhancement:** |
+| | | - Editor Error Boundary: Graceful error recovery instead of white screen on editor crash |
+| | | - Title/Content Separator: Visual divider between note title and content area |
+| | | - Editor Focus: Auto-focus to title start (new note) or content start (existing note) on edit |
+| | | - Sidebar Layout: Notebooks and tags each occupy 50% height with independent scrolling |
+| | | - Floating Drawer Panel: Attachments and linked notes in right-side slide-in drawer with shadow overlay |
+| | | - SettingsDialog Split: Refactored into 5 modular sub-components |
+| | | **Security:** |
+| | | - Decryption Failure Protection: Returns placeholder text instead of leaking ciphertext |
+| | | - DB URL Sanitization: Database connection string passwords automatically masked in logs |
+| | | - Sanitization Tests: 8 new unit tests for log sanitization functions |
+| | | **i18n:** |
+| | | - Complete i18n audit: Fixed hardcoded strings in toolbar, tree items, and help components |
+| | | - Added missing tooltips on all icon-only buttons |
 | V1.0.0 | March 2026 | Auto Update and PostgreSQL Compatibility Fix |
 | | | - Auto Update: Automatic new version check on startup with download progress and one-click install/restart |
 | | | - Manual Update Check: Available from Help menu and Command Palette |
@@ -100,4 +134,4 @@
 
 ---
 
-*This manual is based on ENote Intelligent Note Management System V1.0.0. Please refer to the actual software for any feature updates.*
+*This manual is based on ENote Intelligent Note Management System V1.1.0. Please refer to the actual software for any feature updates.*

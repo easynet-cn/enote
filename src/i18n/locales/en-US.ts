@@ -19,7 +19,9 @@ export default {
     yes: 'Yes',
     no: 'No',
     close: 'Close',
+    clear: 'Clear',
     retry: 'Retry',
+    errorBoundaryMessage: 'Something went wrong. Please retry.',
     apply: 'Apply',
     reset: 'Reset',
     export: 'Export',
@@ -81,6 +83,8 @@ export default {
       descriptionPlaceholder: 'Enter description',
       sortOrderLabel: 'Sort Order',
       sortOrderPlaceholder: 'Enter sort order',
+      parentLabel: 'Parent Notebook',
+      noParent: 'None (Top Level)',
       createTitle: 'Add Notebook',
       editTitle: 'Edit Notebook',
     },
@@ -108,6 +112,7 @@ export default {
       message: 'Are you sure you want to delete this tag? This action cannot be undone.',
       confirmText: 'Delete',
     },
+    recentEdits: 'Recent Edits',
   },
 
   // Notebook
@@ -131,6 +136,19 @@ export default {
     noTitle: 'No Title',
     noContent: 'No Content',
     updateTime: 'Update Time',
+    sortBy: 'Sort',
+    sortUpdateTime: 'Updated',
+    sortCreateTime: 'Created',
+    sortTitle: 'Title',
+    sortAsc: 'Ascending',
+    sortDesc: 'Descending',
+    selectMode: 'Select',
+    selectedCount: '{count} selected',
+    selectAll: 'Select All',
+    batchMove: 'Move to...',
+    batchDelete: 'Batch Delete',
+    batchDeleteConfirm: 'Delete {count} selected notes?',
+    cancelSelect: 'Cancel',
   },
 
   // Editor
@@ -216,6 +234,8 @@ export default {
       quote: 'Quote',
       codeBlock: 'Code block',
       inlineCode: 'Inline code',
+      codeLanguage: 'Code language',
+      plainText: 'Plain Text',
       link: 'Link',
       unlink: 'Unlink',
       image: 'Image',
@@ -244,6 +264,9 @@ export default {
       history: 'History',
       delete: 'Delete',
       saveAsTemplate: 'Save as Template',
+      print: 'Print',
+      scrollLeft: 'Scroll left',
+      scrollRight: 'Scroll right',
     },
     editorDialog: {
       title: 'Note title',
@@ -356,6 +379,8 @@ export default {
     markdownDesc: 'Export as .md format',
     evernoteDesc: 'Export as .enex format, importable to Evernote',
     jsonDesc: 'Export as JSON data format',
+    pdfDesc: 'Save as PDF via print dialog',
+    htmlDesc: 'Export as standalone HTML file',
     xmlDesc: 'Export as XML data format',
     noTitle: 'Untitled',
     createTime: 'Created',
@@ -436,6 +461,7 @@ export default {
       saveAsTemplate: 'Save as Template',
       viewHelp: 'View Help Manual',
       checkForUpdates: 'Check for Updates',
+      printNote: 'Print Note',
     },
   },
 
@@ -705,6 +731,7 @@ export default {
     shortcutsConflict: 'Conflicts with "{name}"',
     shortcutsResetAllConfirm: 'Reset all shortcuts to default?',
     shortcutsResetAllDone: 'All shortcuts have been reset',
+    editorFontSize: 'Editor Font Size',
     autoSave: 'Auto Save',
     autoSaveEnabled: 'Enable auto save',
     saved: 'Settings saved',
@@ -815,6 +842,14 @@ export default {
     pinned: 'Pinned',
   },
 
+  // Note starring
+  star: {
+    starred: 'Starred',
+    toggleStar: 'Toggle Star',
+    star: 'Star',
+    unstar: 'Unstar',
+  },
+
   // Template
   template: {
     title: 'Template Manager',
@@ -831,6 +866,21 @@ export default {
     back: 'Back',
     editorPlaceholder: 'Edit template content here...',
     saveSuccess: 'Template saved',
+  },
+
+  // Attachments
+  attachment: {
+    title: 'Attachments',
+    add: 'Add Attachment',
+    delete: 'Delete Attachment',
+    deleteConfirm: 'Delete this attachment?',
+    open: 'Open',
+    empty: 'No attachments',
+    fileSizeKB: '{size} KB',
+    fileSizeMB: '{size} MB',
+    uploadFailed: 'Failed to upload attachment',
+    fileTooLarge: 'File size exceeds 50 MB limit',
+    count: '{count} attachments',
   },
 
   // Multi-window
@@ -885,7 +935,9 @@ export default {
 
   setup: {
     title: 'Initial Setup',
+    editTitle: 'Edit Database Configuration',
     subtitle: 'Configure your note database connection',
+    editSubtitle: 'Modify database connection settings for an existing profile',
     step: {
       dbType: 'Database Type',
       connection: 'Connection',

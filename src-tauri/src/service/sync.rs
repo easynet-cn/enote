@@ -1,7 +1,8 @@
 //! 跨 Profile 同步服务
 //!
 //! 通过 service 层读取源端数据、写入目标数据库，确保业务逻辑一致性。
-//! 加密内容自动解密后重新加密，笔记创建自动生成历史记录。
+//! 加密内容自动解密后重新加密。
+//! 笔记创建使用 `create_for_sync` 跳过历史生成，原始历史记录单独同步，避免重复。
 
 use std::collections::HashMap;
 use std::path::Path;
@@ -15,7 +16,7 @@ use crate::{
     config::database_connection_from_profile,
     i18n::t,
     entity,
-    model::{DataStats, OperateSource, SyncLog, SyncMode, SyncOptions, SyncPreview, SyncProgress},
+    model::{DataStats, SyncLog, SyncMode, SyncOptions, SyncPreview, SyncProgress},
     service::{backup, note, note_template, notebook, profile, settings, sync_log, tag},
 };
 
@@ -446,15 +447,15 @@ pub async fn sync_to_profile(
                         .unwrap_or(tag_item.id);
                 }
 
-                // 保持原始的删除状态和置顶状态
+                // 保持原始的删除状态、置顶状态和收藏状态
                 let original_deleted_at = src_note.deleted_at;
                 let original_is_pinned = src_note.is_pinned;
+                let original_is_starred = src_note.is_starred;
 
-                // 通过 service 层写入目标（自动加密 + 自动生成 history）
-                match note::create_with_key(
+                // 通过 service 层写入目标（自动加密，跳过历史生成——原始历史会单独同步）
+                match note::create_for_sync(
                     &target_db,
                     &n,
-                    OperateSource::Sync,
                     target_encryption_key,
                 )
                 .await
@@ -462,8 +463,8 @@ pub async fn sync_to_profile(
                     Ok(Some(created)) => {
                         id_maps.note.insert(source_id, created.id);
 
-                        // 恢复原始状态（create_with_key 会重置 is_pinned=0 和 deleted_at=None）
-                        if original_deleted_at.is_some() || original_is_pinned != 0 {
+                        // 恢复原始状态（create_with_key 会重置 is_pinned=0, is_starred=0 和 deleted_at=None）
+                        if original_deleted_at.is_some() || original_is_pinned != 0 || original_is_starred != 0 {
                             use sea_orm::{ActiveModelTrait, ActiveValue::Set, IntoActiveModel};
                             if let Some(entity) = entity::note::Entity::find_by_id(created.id)
                                 .one(&target_db)
@@ -475,6 +476,9 @@ pub async fn sync_to_profile(
                                 }
                                 if original_is_pinned != 0 {
                                     am.is_pinned = Set(original_is_pinned);
+                                }
+                                if original_is_starred != 0 {
+                                    am.is_starred = Set(original_is_starred);
                                 }
                                 am.update(&target_db).await?;
                             }

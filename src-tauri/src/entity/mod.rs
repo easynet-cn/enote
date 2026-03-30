@@ -4,6 +4,7 @@ pub mod prelude;
 
 pub mod app_log;
 pub mod note;
+pub mod note_attachment;
 pub mod note_history;
 pub mod note_link;
 pub mod note_tags;

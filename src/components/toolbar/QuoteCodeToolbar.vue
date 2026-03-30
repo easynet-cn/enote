@@ -28,6 +28,8 @@
         <Code class="w-4 h-4" />
       </ToolbarButton>
     </div>
+
+    <CodeBlockSelect :editor="editor" :edit-mode="editMode" />
   </div>
 </template>
 
@@ -36,6 +38,7 @@ import { useI18n } from 'vue-i18n'
 import type { Editor } from '@tiptap/vue-3'
 import { ToolbarButton } from '.'
 import { Quote, Code2, Code } from 'lucide-vue-next'
+import CodeBlockSelect from './CodeBlockSelect.vue'
 
 defineProps<{
   editor: Editor | null
@@ -44,3 +47,9 @@ defineProps<{
 
 const { t } = useI18n()
 </script>
+
+<style scoped>
+.toolbar-section {
+  gap: 0.375rem;
+}
+</style>

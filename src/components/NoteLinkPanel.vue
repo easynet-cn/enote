@@ -1,5 +1,5 @@
 <template>
-  <div class="border-t border-edge">
+  <div>
     <!-- Header -->
     <button
       @click="expanded = !expanded"
@@ -94,7 +94,7 @@ defineEmits<{
   'navigate-to-note': [noteId: number]
 }>()
 
-const expanded = ref(false)
+const expanded = ref(true)
 const links = ref<NoteLink[]>([])
 const showSearch = ref(false)
 const searchKeyword = ref('')

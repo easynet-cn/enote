@@ -3,6 +3,7 @@
 /* 基础样式 */
 .ProseMirror {
   outline: none;
+  font-size: var(--editor-font-size, 14px);
   line-height: 1.6;
 }
 

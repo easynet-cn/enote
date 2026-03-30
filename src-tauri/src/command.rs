@@ -23,9 +23,10 @@ use crate::{
     config::AppState,
     error::AppError,
     model::{
-        AppLog, AppLogSearchParam, LogFileInfo, Note, NoteHistory, NoteHistorySearchPageParam,
-        NoteLink, NoteSearchPageParam, NoteStatsResult, NoteTemplate, Notebook, OperateSource,
-        PageParam, PageResult, SyncLog, SyncLogDetail, SyncOptions, SyncPreview, Tag,
+        AppLog, AppLogSearchParam, LogFileInfo, Note, NoteAttachment, NoteHistory,
+        NoteHistorySearchPageParam, NoteLink, NoteSearchPageParam, NoteStatsResult, NoteTemplate,
+        Notebook, OperateSource, PageParam, PageResult, SyncLog, SyncLogDetail, SyncOptions,
+        SyncPreview, Tag,
     },
     service,
 };
@@ -571,6 +572,31 @@ pub async fn note_stats(
         .map_err(AppError::from)
 }
 
+/// 批量移动笔记到指定笔记本
+#[tauri::command]
+pub async fn batch_move_notes(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    note_ids: Vec<i64>,
+    notebook_id: i64,
+) -> Result<(), AppError> {
+    let db = require_db(&app_state).await?;
+    service::note::batch_move(&db, &note_ids, notebook_id)
+        .await
+        .map_err(AppError::from)
+}
+
+/// 批量软删除笔记
+#[tauri::command]
+pub async fn batch_delete_notes(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    note_ids: Vec<i64>,
+) -> Result<(), AppError> {
+    let db = require_db(&app_state).await?;
+    service::note::batch_delete(&db, &note_ids)
+        .await
+        .map_err(AppError::from)
+}
+
 // ============================================================================
 // 历史记录相关命令
 // ============================================================================
@@ -620,7 +646,7 @@ pub async fn get_all_settings(
     Ok(settings)
 }
 
-/// 保存设置（同时失效缓存）
+/// 保存设置（写穿缓存）
 #[tauri::command]
 pub async fn save_settings(
     app_state: tauri::State<'_, Arc<AppState>>,
@@ -628,14 +654,18 @@ pub async fn save_settings(
 ) -> Result<(), AppError> {
     let db = require_db(&app_state).await?;
     let keys: Vec<String> = settings.keys().cloned().collect();
-    service::settings::save(&db, settings)
+    service::settings::save(&db, settings.clone())
         .await
         .map_err(AppError::from)?;
 
-    // 失效缓存
+    // 写穿缓存：将保存的 key-value 合并到已有缓存中，避免下次读取时重查 DB
     {
         let mut cache = app_state.settings_cache.write().await;
-        *cache = None;
+        if let Some(ref mut cached) = *cache {
+            for (k, v) in settings {
+                cached.insert(k, v);
+            }
+        }
     }
 
     let _ = service::app_log::log_action(
@@ -650,6 +680,18 @@ pub async fn save_settings(
 // ============================================================================
 // 笔记置顶命令
 // ============================================================================
+
+/// 切换笔记收藏/星标状态
+#[tauri::command]
+pub async fn toggle_note_star(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    id: i64,
+) -> Result<Option<Note>, AppError> {
+    let db = require_db(&app_state).await?;
+    service::note::toggle_star(&db, id)
+        .await
+        .map_err(AppError::from)
+}
 
 /// 切换笔记置顶状态
 #[tauri::command]
@@ -1265,4 +1307,74 @@ pub async fn cleanup_old_log_files(
 ) -> Result<u32, AppError> {
     let log_dir = app_state.app_data_dir.join("logs");
     service::app_log::cleanup_old_log_files(&log_dir, retention_days).map_err(AppError::from)
+}
+
+// ============================================================================
+// 附件相关命令
+// ============================================================================
+
+/// 保存附件
+#[tauri::command]
+pub async fn save_attachment(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    note_id: i64,
+    file_name: String,
+    file_data: Vec<u8>,
+    mime_type: String,
+) -> Result<NoteAttachment, AppError> {
+    let db = require_db(&app_state).await?;
+    service::attachment::save_attachment(
+        &db,
+        &app_state.app_data_dir,
+        note_id,
+        &file_name,
+        &file_data,
+        &mime_type,
+    )
+    .await
+    .map_err(AppError::from)
+}
+
+/// 查询笔记附件列表
+#[tauri::command]
+pub async fn find_attachments(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    note_id: i64,
+) -> Result<Vec<NoteAttachment>, AppError> {
+    let db = require_db(&app_state).await?;
+    service::attachment::find_by_note_id(&db, note_id)
+        .await
+        .map_err(AppError::from)
+}
+
+/// 删除附件
+#[tauri::command]
+pub async fn delete_attachment(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    id: i64,
+) -> Result<(), AppError> {
+    let db = require_db(&app_state).await?;
+    service::attachment::delete_by_id(&db, &app_state.app_data_dir, id)
+        .await
+        .map_err(AppError::from)
+}
+
+/// 使用系统默认程序打开附件
+#[tauri::command]
+pub async fn open_attachment(
+    app_handle: tauri::AppHandle,
+    app_state: tauri::State<'_, Arc<AppState>>,
+    file_path: String,
+) -> Result<(), AppError> {
+    use tauri_plugin_opener::OpenerExt;
+
+    let full_path = app_state
+        .app_data_dir
+        .join("attachments")
+        .join(&file_path);
+    let path_str = full_path.to_string_lossy().to_string();
+    app_handle
+        .opener()
+        .open_path(&path_str, None::<&str>)
+        .map_err(|e| AppError::Internal(anyhow::anyhow!("{}", e)))
 }

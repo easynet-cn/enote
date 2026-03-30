@@ -413,6 +413,9 @@ pub struct Note {
     /// 是否置顶：0 = 否，1 = 是
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub is_pinned: i32,
+    /// 是否收藏/星标：0 = 否，1 = 是
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub is_starred: i32,
     /// MCP 访问控制：0=继承, 1=读写, 2=只读, 3=禁止
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub mcp_access: i32,
@@ -468,6 +471,7 @@ impl From<entity::note::Model> for Note {
             content: value.content,
             content_type: value.content_type,
             is_pinned: value.is_pinned,
+            is_starred: value.is_starred,
             mcp_access: value.mcp_access,
             create_time: Some(value.create_time),
             update_time: Some(value.update_time),
@@ -487,6 +491,7 @@ impl From<&entity::note::Model> for Note {
             content: value.content.clone(),
             content_type: value.content_type,
             is_pinned: value.is_pinned,
+            is_starred: value.is_starred,
             mcp_access: value.mcp_access,
             create_time: Some(value.create_time),
             update_time: Some(value.update_time),
@@ -506,6 +511,7 @@ impl From<Note> for entity::note::ActiveModel {
             content: Set(note.content),
             content_type: Set(note.content_type),
             is_pinned: Set(note.is_pinned),
+            is_starred: Set(note.is_starred),
             mcp_access: Set(note.mcp_access),
             create_time: Set(note.create_time.unwrap_or_default()),
             update_time: Set(note.update_time.unwrap_or_default()),
@@ -524,6 +530,7 @@ impl From<&Note> for entity::note::ActiveModel {
             content: Set(note.content.clone()),
             content_type: Set(note.content_type),
             is_pinned: Set(note.is_pinned),
+            is_starred: Set(note.is_starred),
             mcp_access: Set(note.mcp_access),
             create_time: Set(note.create_time.unwrap_or_default()),
             update_time: Set(note.update_time.unwrap_or_default()),
@@ -654,6 +661,15 @@ pub struct NoteSearchPageParam {
     /// 搜索关键词（搜索标题和内容）
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub keyword: String,
+    /// 排序字段：title, create_time, update_time（默认 update_time）
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub sort_field: String,
+    /// 排序方向：asc, desc（默认 desc）
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub sort_order: String,
+    /// 仅显示收藏/星标笔记
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub is_starred: bool,
 }
 
 impl NoteSearchPageParam {
@@ -873,6 +889,41 @@ impl From<entity::note_template::Model> for NoteTemplate {
             sort_order: value.sort_order,
             create_time: Some(value.create_time),
             update_time: Some(value.update_time),
+        }
+    }
+}
+
+// ============================================================================
+// 笔记附件相关
+// ============================================================================
+
+/// 笔记附件数据传输对象
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NoteAttachment {
+    pub id: i64,
+    pub note_id: i64,
+    pub file_name: String,
+    pub file_path: String,
+    pub file_size: i64,
+    pub mime_type: String,
+    #[serde(
+        serialize_with = "serialize_option_dt",
+        deserialize_with = "deserialize_option_dt"
+    )]
+    pub create_time: Option<NaiveDateTime>,
+}
+
+impl From<entity::note_attachment::Model> for NoteAttachment {
+    fn from(value: entity::note_attachment::Model) -> Self {
+        Self {
+            id: value.id,
+            note_id: value.note_id,
+            file_name: value.file_name,
+            file_path: value.file_path,
+            file_size: value.file_size,
+            mime_type: value.mime_type,
+            create_time: Some(value.create_time),
         }
     }
 }

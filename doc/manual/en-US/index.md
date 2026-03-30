@@ -2,7 +2,7 @@
 
 **Software Name:** ENote Intelligent Note Management System
 
-**Version:** V1.0.0
+**Version:** V1.1.0
 
 **Date:** March 2026
 
@@ -27,6 +27,7 @@
   - [4.4 Delete a Notebook](04-notebook.md#44-delete-a-notebook)
   - [4.5 Filter by Notebook](04-notebook.md#45-filter-by-notebook)
   - [4.6 Drag-and-Drop Notebook Sorting](04-notebook.md#46-drag-and-drop-notebook-sorting)
+  - [4.7 Notebook Hierarchy](04-notebook.md#47-notebook-hierarchy)
 - [5. Tag Management](05-tag.md)
   - [5.1 View Tag List](05-tag.md#51-view-tag-list)
   - [5.2 Create a Tag](05-tag.md#52-create-a-tag)
@@ -46,6 +47,10 @@
   - [6.9 Note Encryption](06-note.md#69-note-encryption)
   - [6.10 Linked Notes (Bidirectional Links)](06-note.md#610-linked-notes-bidirectional-links)
   - [6.11 Open Note in New Window](06-note.md#611-open-note-in-new-window)
+  - [6.12 Note Sorting](06-note.md#612-note-sorting)
+  - [6.13 Batch Operations](06-note.md#613-batch-operations)
+  - [6.14 Note Starring](06-note.md#614-note-starring)
+  - [6.15 File Attachments](06-note.md#615-file-attachments)
 - [7. Rich Text Editor](07-rich-editor.md)
   - [7.1 Text Styles](07-rich-editor.md#71-text-styles)
   - [7.2 Headings and Fonts](07-rich-editor.md#72-headings-and-fonts)
@@ -82,6 +87,8 @@
   - [11.3 Export as Evernote Format](11-export.md#113-export-as-evernote-format)
   - [11.4 Export as JSON](11-export.md#114-export-as-json)
   - [11.5 Export as XML](11-export.md#115-export-as-xml)
+  - [11.6 Export as PDF](11-export.md#116-export-as-pdf)
+  - [11.7 Export as HTML](11-export.md#117-export-as-html)
 - [12. Import](12-import.md)
   - [12.1 Import from Evernote](12-import.md#121-import-from-evernote)
   - [12.2 Import from Youdao Notes](12-import.md#122-import-from-youdao-notes)
@@ -100,6 +107,8 @@
   - [14.7 MCP Settings](14-settings.md#147-mcp-settings)
   - [14.8 Profile Management](14-settings.md#148-profile-management)
   - [14.9 System Maintenance (Cross-Profile Sync)](14-settings.md#149-system-maintenance-cross-profile-sync)
+  - [14.10 Editor Font Size](14-settings.md#1410-editor-font-size)
+  - [14.11 Profile Editing](14-settings.md#1411-profile-editing)
 - [15. Command Palette](15-command-palette.md)
 - [16. System Tray](16-system-tray.md)
 - [17. Keyboard Shortcuts](17-shortcuts.md)

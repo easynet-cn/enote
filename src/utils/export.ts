@@ -8,7 +8,7 @@ import i18n from '../i18n'
 
 const t = i18n.global.t
 
-export type ExportFormat = 'json' | 'xml' | 'word' | 'enex' | 'markdown'
+export type ExportFormat = 'json' | 'xml' | 'word' | 'enex' | 'markdown' | 'pdf' | 'html'
 
 interface ExportOptions {
   note: ShowNote
@@ -261,6 +261,233 @@ function exportToMarkdown(note: ShowNote): string {
 }
 
 /**
+ * HTML 特殊字符转义
+ */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+/**
+ * 导出为 PDF（通过浏览器打印对话框）
+ */
+export async function exportAsPdf(title: string, content: string): Promise<void> {
+  const printWindow = window.open('', '_blank', 'width=800,height=600')
+  if (!printWindow) return
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${escapeHtml(title)}</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Microsoft YaHei', sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      color: #1a1a1a;
+      line-height: 1.6;
+    }
+    h1 { font-size: 24px; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1px solid #eee; }
+    h2 { font-size: 20px; }
+    h3 { font-size: 17px; }
+    img { max-width: 100%; height: auto; }
+    pre { background: #f5f5f5; padding: 12px; border-radius: 6px; overflow-x: auto; }
+    code { background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
+    pre code { background: none; padding: 0; }
+    blockquote { border-left: 3px solid #ddd; margin-left: 0; padding-left: 16px; color: #666; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background: #f5f5f5; }
+    ul[data-type="taskList"] { list-style: none; padding-left: 0; }
+    ul[data-type="taskList"] li { display: flex; align-items: flex-start; gap: 8px; }
+    @media print {
+      body { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <h1>${escapeHtml(title)}</h1>
+  ${content}
+</body>
+</html>`
+
+  printWindow.document.write(html)
+  printWindow.document.close()
+
+  // Wait for images to load then print
+  printWindow.onload = () => {
+    printWindow.print()
+    printWindow.close()
+  }
+  // Fallback if onload doesn't fire
+  setTimeout(() => {
+    try {
+      printWindow.print()
+      printWindow.close()
+    } catch {
+      // Window may already be closed
+    }
+  }, 1000)
+}
+
+/**
+ * 导出为独立 HTML 文件
+ */
+function exportToStandaloneHtml(note: ShowNote): string {
+  const htmlContent = getHtmlContent(note)
+  const title = escapeHtml(note.title || t('export.noTitle'))
+  const tags = note.tags?.map((t) => t.name).join(', ') || ''
+
+  return `<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${title}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+      color: #1a1a2e;
+      line-height: 1.8;
+      background: #ffffff;
+    }
+    h1.note-title {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: #1a1a2e;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 0.75rem;
+    }
+    .note-meta {
+      font-size: 0.8rem;
+      color: #64748b;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .note-meta .tag {
+      display: inline-block;
+      background: #e0e7ff;
+      color: #4338ca;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 0.75rem;
+      margin-right: 4px;
+    }
+    .note-content h1 { font-size: 1.75rem; font-weight: 700; margin: 1.5rem 0 0.75rem; color: #1e293b; }
+    .note-content h2 { font-size: 1.5rem; font-weight: 600; margin: 1.25rem 0 0.625rem; color: #1e293b; }
+    .note-content h3 { font-size: 1.25rem; font-weight: 600; margin: 1rem 0 0.5rem; color: #334155; }
+    .note-content h4 { font-size: 1.125rem; font-weight: 600; margin: 0.875rem 0 0.5rem; color: #334155; }
+    .note-content p { margin-bottom: 0.75rem; }
+    .note-content a { color: #4f46e5; text-decoration: underline; }
+    .note-content a:hover { color: #3730a3; }
+    .note-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 1rem 0; }
+    .note-content ul, .note-content ol { padding-left: 1.5rem; margin-bottom: 0.75rem; }
+    .note-content li { margin-bottom: 0.25rem; }
+    .note-content blockquote {
+      border-left: 4px solid #4f46e5;
+      padding: 0.5rem 1rem;
+      margin: 1rem 0;
+      background: #f8fafc;
+      color: #475569;
+      font-style: italic;
+      border-radius: 0 8px 8px 0;
+    }
+    .note-content code {
+      background: #f1f5f9;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-family: 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 0.9em;
+      color: #e11d48;
+    }
+    .note-content pre {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 1rem 0;
+      line-height: 1.6;
+    }
+    .note-content pre code {
+      background: none;
+      color: inherit;
+      padding: 0;
+      font-size: 0.875rem;
+    }
+    .note-content table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+    .note-content th, .note-content td { border: 1px solid #e2e8f0; padding: 0.5rem 0.75rem; text-align: left; }
+    .note-content th { background: #f8fafc; font-weight: 600; }
+    .note-content hr { border: none; border-top: 1px solid #e2e8f0; margin: 1.5rem 0; }
+    .note-content mark { background: #fef08a; padding: 0.1rem 0.2rem; border-radius: 2px; }
+    .note-content ul[data-type="taskList"] { list-style: none; padding-left: 0; }
+    .note-content ul[data-type="taskList"] li { display: flex; align-items: flex-start; gap: 0.5rem; }
+    .note-content ul[data-type="taskList"] li[data-checked="true"] > div { text-decoration: line-through; color: #94a3b8; }
+    .note-footer {
+      margin-top: 3rem;
+      padding-top: 1rem;
+      border-top: 1px solid #e2e8f0;
+      font-size: 0.75rem;
+      color: #94a3b8;
+      text-align: center;
+    }
+    @media (prefers-color-scheme: dark) {
+      body { background: #0f172a; color: #e2e8f0; }
+      h1.note-title { color: #f1f5f9; border-bottom-color: #334155; }
+      .note-meta { color: #94a3b8; border-bottom-color: #1e293b; }
+      .note-meta .tag { background: #312e81; color: #a5b4fc; }
+      .note-content h1, .note-content h2 { color: #f1f5f9; }
+      .note-content h3, .note-content h4 { color: #cbd5e1; }
+      .note-content a { color: #818cf8; }
+      .note-content a:hover { color: #a5b4fc; }
+      .note-content blockquote { background: #1e293b; color: #94a3b8; border-left-color: #818cf8; }
+      .note-content code { background: #1e293b; color: #fb7185; }
+      .note-content pre { background: #0f172a; border: 1px solid #334155; }
+      .note-content th { background: #1e293b; }
+      .note-content th, .note-content td { border-color: #334155; }
+      .note-content hr { border-top-color: #334155; }
+      .note-content mark { background: #854d0e; color: #fef08a; }
+      .note-footer { border-top-color: #334155; color: #475569; }
+    }
+    @media print {
+      body { padding: 0; max-width: 100%; }
+      .note-footer { display: none; }
+    }
+    @media (max-width: 600px) {
+      body { padding: 1rem; }
+      h1.note-title { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <h1 class="note-title">${title}</h1>
+  <div class="note-meta">
+    <div>${t('export.createTime')}: ${note.createTime || ''} &nbsp;&middot;&nbsp; ${t('export.updateTime')}: ${note.updateTime || ''}</div>
+    ${tags ? `<div style="margin-top:4px">${t('export.tags')}: ${note.tags?.map((tag) => `<span class="tag">${escapeHtml(tag.name)}</span>`).join(' ') || ''}</div>` : ''}
+  </div>
+  <div class="note-content">
+    ${htmlContent}
+  </div>
+  <div class="note-footer">
+    Exported from eNote
+  </div>
+</body>
+</html>`
+}
+
+/**
  * 获取文件扩展名
  */
 function getFileExtension(format: ExportFormat): string {
@@ -275,6 +502,10 @@ function getFileExtension(format: ExportFormat): string {
       return 'enex'
     case 'markdown':
       return 'md'
+    case 'pdf':
+      return 'pdf'
+    case 'html':
+      return 'html'
   }
 }
 
@@ -293,6 +524,10 @@ function getFileFilters(format: ExportFormat) {
       return [{ name: t('export.evernote'), extensions: ['enex'] }]
     case 'markdown':
       return [{ name: 'Markdown', extensions: ['md'] }]
+    case 'pdf':
+      return [{ name: 'PDF', extensions: ['pdf'] }]
+    case 'html':
+      return [{ name: 'HTML', extensions: ['html'] }]
   }
 }
 
@@ -301,6 +536,13 @@ function getFileFilters(format: ExportFormat) {
  */
 export async function exportNote(options: ExportOptions): Promise<boolean> {
   const { note, format } = options
+
+  // PDF 使用浏览器打印对话框，不走文件保存流程
+  if (format === 'pdf') {
+    const htmlContent = getHtmlContent(note)
+    await exportAsPdf(note.title || t('export.untitledNote'), htmlContent)
+    return true
+  }
 
   // 生成文件内容
   let content: string
@@ -319,6 +561,9 @@ export async function exportNote(options: ExportOptions): Promise<boolean> {
       break
     case 'markdown':
       content = exportToMarkdown(note)
+      break
+    case 'html':
+      content = exportToStandaloneHtml(note)
       break
   }
 
@@ -346,6 +591,8 @@ export async function exportNote(options: ExportOptions): Promise<boolean> {
  */
 export function getExportFormats(): { value: ExportFormat; label: string; description: string }[] {
   return [
+    { value: 'pdf', label: 'PDF', description: t('export.pdfDesc') },
+    { value: 'html', label: 'HTML', description: t('export.htmlDesc') },
     { value: 'word', label: t('export.wordDoc'), description: t('export.wordDocDesc') },
     { value: 'markdown', label: 'Markdown', description: t('export.markdownDesc') },
     { value: 'enex', label: t('export.evernote'), description: t('export.evernoteDesc') },

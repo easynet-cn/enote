@@ -28,6 +28,12 @@ export const SEARCH_CACHE_MAX_SIZE = 50
 /** 搜索结果缓存有效期（毫秒） */
 export const SEARCH_CACHE_TTL = 5000
 
+/** 历史记录缓存最大条目数 */
+export const HISTORY_CACHE_MAX_SIZE = 20
+
+/** 历史记录缓存有效期（毫秒） */
+export const HISTORY_CACHE_TTL = 30000
+
 // ============= 防抖/节流延迟 =============
 
 /** 搜索防抖延迟（毫秒） */

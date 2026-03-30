@@ -30,19 +30,16 @@
     </button>
 
     <!-- 新建笔记按钮 -->
-    <div class="p-4 flex justify-center">
-      <Button
+    <div :class="collapsed ? 'py-3 flex justify-center' : 'p-4 flex justify-center'">
+      <button
         v-if="collapsed"
-        type="primary"
-        circle
         @click="$emit('createNewNote')"
         :aria-label="t('editor.newNote')"
         :title="t('editor.newNote')"
+        class="w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-sm"
       >
-        <template #icon>
-          <Plus class="w-5 h-5" aria-hidden="true" />
-        </template>
-      </Button>
+        <Plus class="w-4 h-4" aria-hidden="true" />
+      </button>
       <Button
         v-else
         type="primary"
@@ -58,8 +55,9 @@
     </div>
 
     <template v-if="!collapsed">
-      <div class="p-4 border-b border-edge">
-        <div class="flex justify-between items-center mb-3">
+      <!-- 笔记本区块：flex-1 独立滚动 -->
+      <div class="flex-1 min-h-0 flex flex-col border-b border-edge">
+        <div class="flex justify-between items-center px-4 pt-4 pb-2 shrink-0">
           <h2 class="text-sm font-semibold text-content-secondary uppercase tracking-wider">
             {{ t('sidebar.notebooks') }}
           </h2>
@@ -90,55 +88,52 @@
           </Dropdown>
         </div>
 
-        <ul ref="notebookListRef" role="listbox" :aria-label="t('sidebar.notebooks')">
+        <ul
+          ref="notebookListRef"
+          role="listbox"
+          :aria-label="t('sidebar.notebooks')"
+          class="flex-1 overflow-y-auto px-4 pb-2"
+        >
+          <!-- "全部" 虚拟项 -->
           <li
-            v-for="notebook in notebooks"
-            :key="notebook.id"
-            :data-id="notebook.id"
-            v-memo="[
-              notebook.id,
-              notebook.name,
-              notebook.icon,
-              notebook.count,
-              notebook.mcpAccess,
-              activeNotebook === notebook.id,
-            ]"
+            v-if="notebooks.length > 0"
+            :data-id="notebooks[0].id"
             role="option"
-            :aria-selected="activeNotebook === notebook.id"
+            :aria-selected="activeNotebook === notebooks[0].id"
             class="sidebar-item"
-            :class="{ active: activeNotebook === notebook.id }"
-            @click="$emit('setActiveNotebook', notebook.id)"
-            @keydown.enter="$emit('setActiveNotebook', notebook.id)"
+            :class="{ active: activeNotebook === notebooks[0].id }"
+            @click="$emit('setActiveNotebook', notebooks[0].id)"
+            @keydown.enter="$emit('setActiveNotebook', notebooks[0].id)"
             tabindex="0"
           >
             <div class="flex items-center">
               <component
-                v-if="notebook.icon && iconComponents[notebook.icon]"
-                :is="iconComponents[notebook.icon]"
+                v-if="notebooks[0].icon && iconComponents[notebooks[0].icon]"
+                :is="iconComponents[notebooks[0].icon]"
                 class="w-4 h-4 mr-3 text-content-secondary"
                 aria-hidden="true"
               />
-              <span v-else-if="notebook.cls" :class="['mr-3', notebook.cls]" aria-hidden="true"
-                >●</span
-              >
-              <span class="flex-1">{{ notebook.name }}</span>
-              <Shield
-                v-if="notebook.mcpAccess && notebook.mcpAccess > 0"
-                class="w-3 h-3 mr-1 text-content-tertiary"
-                :title="t('settings.mcpAccess')"
-              />
-              <span
-                class="text-xs text-content-tertiary"
-                :aria-label="`${t('sidebar.notesCount')}: ${notebook.count}`"
-                >{{ notebook.count }}</span
-              >
+              <span class="flex-1">{{ notebooks[0].name }}</span>
+              <span class="text-xs text-content-tertiary">{{ notebooks[0].count }}</span>
             </div>
           </li>
+
+          <!-- 笔记本树 -->
+          <NotebookTreeItem
+            v-for="node in store.notebookTree"
+            :key="node.id"
+            :node="node"
+            :active-notebook="activeNotebook"
+            :depth="0"
+            @select="$emit('setActiveNotebook', $event)"
+            @toggle="handleNotebookToggle"
+          />
         </ul>
       </div>
 
-      <div class="p-4 flex-1 overflow-y-auto">
-        <div class="flex justify-between items-center mb-3">
+      <!-- 标签区块：flex-1 独立滚动 -->
+      <div class="flex-1 min-h-0 flex flex-col">
+        <div class="flex justify-between items-center px-4 pt-4 pb-2 shrink-0">
           <h2 class="text-sm font-semibold text-content-secondary uppercase tracking-wider">
             {{ t('sidebar.tags') }}
           </h2>
@@ -161,7 +156,12 @@
           </Dropdown>
         </div>
 
-        <ul ref="tagListRef" class="space-y-1" role="listbox" :aria-label="t('sidebar.tags')">
+        <ul
+          ref="tagListRef"
+          class="space-y-1 flex-1 overflow-y-auto px-4 pb-2"
+          role="listbox"
+          :aria-label="t('sidebar.tags')"
+        >
           <li
             v-for="tag in tags"
             :key="tag.id"
@@ -257,6 +257,23 @@
             :placeholder="t('sidebar.notebookForm.namePlaceholder')"
             class="w-full px-3 py-2 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
+        </div>
+        <div>
+          <label
+            for="notebook-parent"
+            class="block text-sm font-medium text-content-secondary mb-1"
+            >{{ t('sidebar.notebookForm.parentLabel') }}</label
+          >
+          <select
+            id="notebook-parent"
+            v-model.number="notebookForm.parentId"
+            class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          >
+            <option :value="0">{{ t('sidebar.notebookForm.noParent') }}</option>
+            <option v-for="nb in parentNotebookOptions" :key="nb.id" :value="Number(nb.id)">
+              {{ nb.name }}
+            </option>
+          </select>
         </div>
         <div>
           <label
@@ -449,14 +466,17 @@ import {
   ConfirmDialog,
   Tooltip,
 } from './ui'
+import NotebookTreeItem from './NotebookTreeItem.vue'
 import { iconComponents } from './ui/icons'
 import type { ShowNotebook, ShowTag } from '../types'
 import { McpAccess } from '../types'
+import { useAppStore } from '../stores/app'
 import { computed, reactive, ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Sortable from 'sortablejs'
 
 const { t } = useI18n()
+const store = useAppStore()
 
 const notebookListRef = ref<HTMLElement>()
 const tagListRef = ref<HTMLElement>()
@@ -465,6 +485,7 @@ let tagSortable: Sortable | null = null
 
 interface NotebookForm {
   id: string
+  parentId: number
   name: string
   description: string
   icon: string
@@ -484,6 +505,7 @@ interface TagForm {
 
 const notebookForm = reactive<NotebookForm>({
   id: '',
+  parentId: 0,
   name: '',
   description: '',
   icon: '',
@@ -518,6 +540,7 @@ const props = defineProps<{
   tags: ShowTag[]
   activeNotebook: string
   activeTag: string
+  activeNote: string | null
   collapsed: boolean
   mobile?: boolean
   overlay?: boolean
@@ -542,6 +565,32 @@ const emit = defineEmits<{
   'close-overlay': []
 }>()
 
+// 父笔记本选项（排除自身和自身的子孙，避免循环）
+const parentNotebookOptions = computed(() => {
+  const editingId = notebookForm.id
+  const allNotebooks = props.notebooks.filter((n) => n.id !== '0')
+
+  // 收集当前笔记本的所有后代 ID
+  const descendantIds = new Set<string>()
+  if (editingId) {
+    const collectDescendants = (parentId: string) => {
+      for (const n of allNotebooks) {
+        if (String(n.parentId ?? 0) === parentId) {
+          descendantIds.add(n.id)
+          collectDescendants(n.id)
+        }
+      }
+    }
+    collectDescendants(editingId)
+  }
+
+  return allNotebooks.filter((n) => n.id !== editingId && !descendantIds.has(n.id))
+})
+
+const handleNotebookToggle = (id: string) => {
+  store.toggleNotebookExpand(id)
+}
+
 const showNotebookEditAndDelete = computed(() => {
   return props.notebooks.length > 0 && props.activeNotebook !== '' && props.activeNotebook !== '0'
 })
@@ -556,6 +605,7 @@ const submitNotebookForm = () => {
 
   emit('saveNotebook', {
     id: notebookForm.id,
+    parentId: notebookForm.parentId,
     name: notebookForm.name,
     description: notebookForm.description,
     icon: notebookForm.icon,
@@ -596,6 +646,7 @@ const closeTagDialog = () => {
 
 const resetNotebookForm = () => {
   notebookForm.id = ''
+  notebookForm.parentId = 0
   notebookForm.name = ''
   notebookForm.description = ''
   notebookForm.icon = ''
@@ -616,6 +667,7 @@ const handleNotebookCommand = (command: string) => {
 
     if (notebook) {
       notebookForm.id = notebook.id ?? ''
+      notebookForm.parentId = notebook.parentId ?? 0
       notebookForm.name = notebook.name ?? ''
       notebookForm.description = notebook.description ?? ''
       notebookForm.icon = notebook.icon ?? ''
@@ -747,3 +799,21 @@ onMounted(() => {
 
 onUnmounted(destroySortable)
 </script>
+
+<style scoped>
+/* 折叠/展开过渡 */
+.collapse-enter-active,
+.collapse-leave-active {
+  transition:
+    max-height 0.2s ease,
+    opacity 0.2s ease;
+  overflow: hidden;
+  max-height: 500px;
+}
+
+.collapse-enter-from,
+.collapse-leave-to {
+  max-height: 0;
+  opacity: 0;
+}
+</style>

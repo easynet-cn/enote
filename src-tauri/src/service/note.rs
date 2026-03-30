@@ -33,7 +33,7 @@ use sea_orm::{
     ActiveModelTrait,
     ActiveValue::{NotSet, Set},
     ColumnTrait, Condition, ConnectionTrait, DatabaseBackend, DatabaseConnection, EntityTrait,
-    IntoActiveModel, QueryFilter, QueryOrder, QuerySelect, Select, TransactionTrait,
+    IntoActiveModel, Order, QueryFilter, QueryOrder, QuerySelect, Select, TransactionTrait,
     prelude::Expr,
     sea_query::{Asterisk, Query},
 };
@@ -51,12 +51,14 @@ fn encrypt_content(content: &str, encryption_key: Option<&str>) -> anyhow::Resul
 }
 
 /// 解密内容（如果内容已加密且提供了密钥）
+///
+/// 解密失败时返回占位文本，避免将加密密文泄漏给前端
 fn decrypt_content(content: &str, encryption_key: Option<&str>) -> String {
     match encryption_key {
         Some(key) if !key.is_empty() && crypto::is_encrypted(content) => {
             crypto::decrypt(content, key).unwrap_or_else(|e| {
                 tracing::warn!("Failed to decrypt note content: {}", e);
-                content.to_string()
+                "[内容无法解密]".to_string()
             })
         }
         _ => content.to_string(),
@@ -134,6 +136,9 @@ fn apply_search_filters<E: EntityTrait>(
             .from(entity::note_tags::Entity)
             .to_owned();
         b = b.filter(Condition::any().add(entity::note::Column::Id.in_subquery(sub_query)));
+    }
+    if search_param.is_starred {
+        b = b.filter(entity::note::Column::IsStarred.eq(1));
     }
     if !search_param.keyword.is_empty() {
         b = apply_keyword_filter(b, search_param.keyword.as_str(), is_sqlite);
@@ -234,6 +239,7 @@ pub async fn create_with_key(
 
     active_model.id = NotSet;
     active_model.is_pinned = Set(0);
+    active_model.is_starred = Set(0);
     active_model.content = Set(encrypted_content);
     active_model.create_time = Set(now);
     active_model.update_time = Set(now);
@@ -299,6 +305,56 @@ pub async fn create_with_key(
     find_by_id_with_key(db, entity.id, encryption_key).await
 }
 
+/// 创建笔记（跳过历史记录生成，专用于同步场景）
+///
+/// 同步时原始历史记录会单独同步，此函数避免生成重复的 Create 历史。
+pub async fn create_for_sync(
+    db: &DatabaseConnection,
+    note: &Note,
+    encryption_key: Option<&str>,
+) -> anyhow::Result<Option<Note>> {
+    let txn = db.begin().await?;
+
+    let now = Local::now().naive_local();
+
+    let encrypted_content = encrypt_content(&note.content, encryption_key)?;
+
+    let mut active_model: entity::note::ActiveModel = note.into();
+
+    active_model.id = NotSet;
+    active_model.is_pinned = Set(0);
+    active_model.is_starred = Set(0);
+    active_model.content = Set(encrypted_content);
+    active_model.create_time = Set(now);
+    active_model.update_time = Set(now);
+    active_model.deleted_at = Set(None);
+
+    let entity = active_model.insert(&txn).await?;
+
+    if !note.tags.is_empty() {
+        let note_tags = note
+            .tags
+            .iter()
+            .map(|e| entity::note_tags::ActiveModel {
+                id: NotSet,
+                note_id: Set(entity.id),
+                tag_id: Set(e.id),
+                sort_order: Set(e.sort_order),
+                create_time: Set(now),
+                update_time: Set(now),
+            })
+            .collect::<Vec<entity::note_tags::ActiveModel>>();
+
+        entity::note_tags::Entity::insert_many(note_tags)
+            .exec(&txn)
+            .await?;
+    }
+
+    txn.commit().await?;
+
+    find_by_id_with_key(db, entity.id, encryption_key).await
+}
+
 /// 软删除笔记（移入回收站）
 ///
 /// 设置 deleted_at 时间戳，不会真正删除数据
@@ -325,21 +381,21 @@ pub async fn restore_by_id(db: &DatabaseConnection, id: i64) -> anyhow::Result<(
     Ok(())
 }
 
-/// 永久删除笔记（从回收站中彻底删除）
-pub async fn permanent_delete_by_id(
-    db: &DatabaseConnection,
+/// 在给定连接上执行单条笔记的永久删除（含历史记录生成）
+///
+/// 这是内部函数，调用方负责事务管理。
+async fn permanent_delete_one<C: ConnectionTrait>(
+    db: &C,
     id: i64,
     source: OperateSource,
 ) -> anyhow::Result<()> {
-    let txn = db.begin().await?;
-
     let result = entity::note::Entity::find_by_id(id)
         .find_also_related(entity::notebook::Entity)
-        .one(&txn)
+        .one(db)
         .await?;
 
     if let Some((entity, notebook_opt)) = result {
-        let tags = fetch_note_tags(&txn, id).await?;
+        let tags = fetch_note_tags(db, id).await?;
 
         let (notebook_id, notebook_name) = match notebook_opt {
             Some(notebook) => (notebook.id, notebook.name.clone()),
@@ -369,32 +425,51 @@ pub async fn permanent_delete_by_id(
             operate_time: Set(now),
             create_time: Set(now),
         }
-        .insert(&txn)
+        .insert(db)
         .await?;
 
         entity::note_tags::Entity::delete_many()
             .filter(entity::note_tags::Column::NoteId.eq(id))
-            .exec(&txn)
+            .exec(db)
             .await?;
-        entity::note::Entity::delete_by_id(id).exec(&txn).await?;
-
-        txn.commit().await?;
+        entity::note::Entity::delete_by_id(id).exec(db).await?;
     }
 
     Ok(())
 }
 
+/// 永久删除笔记（从回收站中彻底删除）
+pub async fn permanent_delete_by_id(
+    db: &DatabaseConnection,
+    id: i64,
+    source: OperateSource,
+) -> anyhow::Result<()> {
+    let txn = db.begin().await?;
+    permanent_delete_one(&txn, id, source).await?;
+    txn.commit().await?;
+    Ok(())
+}
+
 /// 清空回收站（永久删除所有软删除的笔记）
+///
+/// 在单个事务中批量删除，每条笔记仍会生成对应的历史记录
 pub async fn empty_trash(db: &DatabaseConnection) -> anyhow::Result<()> {
     let deleted_notes = entity::note::Entity::find()
         .filter(entity::note::Column::DeletedAt.is_not_null())
         .all(db)
         .await?;
 
-    for note in deleted_notes {
-        permanent_delete_by_id(db, note.id, OperateSource::User).await?;
+    if deleted_notes.is_empty() {
+        return Ok(());
     }
 
+    let txn = db.begin().await?;
+
+    for note in deleted_notes {
+        permanent_delete_one(&txn, note.id, OperateSource::User).await?;
+    }
+
+    txn.commit().await?;
     Ok(())
 }
 
@@ -447,6 +522,19 @@ pub async fn find_deleted_with_key(
         total_pages,
         data: notes,
     })
+}
+
+/// 切换笔记收藏/星标状态
+pub async fn toggle_star(db: &DatabaseConnection, id: i64) -> anyhow::Result<Option<Note>> {
+    if let Some(entity) = entity::note::Entity::find_by_id(id).one(db).await? {
+        let now = Local::now().naive_local();
+        let new_starred = if entity.is_starred == 1 { 0 } else { 1 };
+        let mut active_model: entity::note::ActiveModel = entity.into_active_model();
+        active_model.is_starred = Set(new_starred);
+        active_model.update_time = Set(now);
+        active_model.update(db).await?;
+    }
+    find_by_id(db, id).await
 }
 
 /// 切换笔记置顶状态
@@ -684,11 +772,22 @@ pub async fn search_page_with_key(
         let start = search_param.page_param.start() as u64;
         let page_size = search_param.page_param.page_size as u64;
 
+        let order = if search_param.sort_order == "asc" {
+            Order::Asc
+        } else {
+            Order::Desc
+        };
+        let sort_col = match search_param.sort_field.as_str() {
+            "title" => entity::note::Column::Title,
+            "create_time" => entity::note::Column::CreateTime,
+            _ => entity::note::Column::UpdateTime,
+        };
+
         let mut notes: Vec<Note> = query_builder
             .offset(start)
             .limit(page_size)
             .order_by_desc(entity::note::Column::IsPinned)
-            .order_by_desc(entity::note::Column::UpdateTime)
+            .order_by(sort_col, order.clone())
             .order_by_desc(entity::note::Column::Id)
             .all(db)
             .await?
@@ -779,6 +878,52 @@ pub async fn search_page_with_key(
     }
 
     Ok(PageResult::default())
+}
+
+/// 批量移动笔记到指定笔记本
+pub async fn batch_move(
+    db: &DatabaseConnection,
+    note_ids: &[i64],
+    notebook_id: i64,
+) -> anyhow::Result<()> {
+    if note_ids.is_empty() {
+        return Ok(());
+    }
+    let now = Local::now().naive_local();
+    let txn = db.begin().await?;
+    entity::note::Entity::update_many()
+        .col_expr(entity::note::Column::NotebookId, Expr::value(notebook_id))
+        .col_expr(entity::note::Column::UpdateTime, Expr::value(now))
+        .filter(entity::note::Column::Id.is_in(note_ids.to_vec()))
+        .filter(entity::note::Column::DeletedAt.is_null())
+        .exec(&txn)
+        .await?;
+    txn.commit().await?;
+    Ok(())
+}
+
+/// 批量软删除笔记
+pub async fn batch_delete(
+    db: &DatabaseConnection,
+    note_ids: &[i64],
+) -> anyhow::Result<()> {
+    if note_ids.is_empty() {
+        return Ok(());
+    }
+    let now = Local::now().naive_local();
+    let txn = db.begin().await?;
+    entity::note::Entity::update_many()
+        .col_expr(
+            entity::note::Column::DeletedAt,
+            Expr::value(Some(now)),
+        )
+        .col_expr(entity::note::Column::UpdateTime, Expr::value(now))
+        .filter(entity::note::Column::Id.is_in(note_ids.to_vec()))
+        .filter(entity::note::Column::DeletedAt.is_null())
+        .exec(&txn)
+        .await?;
+    txn.commit().await?;
+    Ok(())
 }
 
 pub async fn stats(

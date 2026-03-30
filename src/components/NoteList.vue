@@ -45,24 +45,109 @@
           </div>
         </div>
 
-        <div class="relative">
-          <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-content-tertiary" />
-          <input
-            v-model="query"
-            type="text"
-            :placeholder="t('noteList.searchPlaceholder')"
-            :aria-label="t('noteList.searchPlaceholder')"
-            class="w-full pl-9 pr-8 py-2.5 bg-surface-alt border border-edge-light rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all"
-            @keyup.enter="$emit('updateSearchQuery')"
-          />
+        <div class="flex items-center gap-2">
+          <div class="relative flex-1">
+            <Search
+              class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-content-tertiary"
+            />
+            <input
+              v-model="query"
+              type="text"
+              :placeholder="t('noteList.searchPlaceholder')"
+              :aria-label="t('noteList.searchPlaceholder')"
+              class="w-full pl-9 pr-8 py-2.5 bg-surface-alt border border-edge-light rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all"
+              @keyup.enter="$emit('updateSearchQuery')"
+            />
+            <button
+              v-if="query"
+              @click="handlerQueryChange"
+              :aria-label="t('noteList.clearSearch')"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-content-tertiary hover:text-content-secondary"
+            >
+              <X class="w-4 h-4" />
+            </button>
+          </div>
+
+          <!-- 多选按钮 -->
           <button
-            v-if="query"
-            @click="handlerQueryChange"
-            :aria-label="t('noteList.clearSearch')"
-            class="absolute right-3 top-1/2 -translate-y-1/2 text-content-tertiary hover:text-content-secondary"
+            @click="toggleSelectMode"
+            class="p-2.5 bg-surface-alt border border-edge-light rounded-xl hover:bg-surface-dim transition-colors"
+            :class="{
+              'text-indigo-600 border-indigo-500/50': appStore.isSelectMode,
+              'text-content-tertiary': !appStore.isSelectMode,
+            }"
+            :aria-label="t('noteList.selectMode')"
+            :title="t('noteList.selectMode')"
           >
-            <X class="w-4 h-4" />
+            <CheckSquare class="w-4 h-4" />
           </button>
+
+          <!-- 排序按钮 -->
+          <Dropdown ref="sortDropdownRef">
+            <template #trigger>
+              <button
+                class="p-2.5 bg-surface-alt border border-edge-light rounded-xl hover:bg-surface-dim transition-colors"
+                :class="{
+                  'text-indigo-600 border-indigo-500/50': isCustomSort,
+                  'text-content-tertiary': !isCustomSort,
+                }"
+                :aria-label="t('noteList.sortBy')"
+                :title="t('noteList.sortBy')"
+              >
+                <ArrowUpDown class="w-4 h-4" />
+              </button>
+            </template>
+
+            <div
+              class="px-2 py-1.5 text-xs font-medium text-content-tertiary uppercase tracking-wide"
+            >
+              {{ t('noteList.sortBy') }}
+            </div>
+            <DropdownItem @click="handleSortChange('update_time')">
+              <template #icon>
+                <Check
+                  v-if="appStore.noteSortField === 'update_time'"
+                  class="w-4 h-4 text-indigo-600"
+                />
+                <span v-else class="w-4 h-4" />
+              </template>
+              {{ t('noteList.sortUpdateTime') }}
+            </DropdownItem>
+            <DropdownItem @click="handleSortChange('create_time')">
+              <template #icon>
+                <Check
+                  v-if="appStore.noteSortField === 'create_time'"
+                  class="w-4 h-4 text-indigo-600"
+                />
+                <span v-else class="w-4 h-4" />
+              </template>
+              {{ t('noteList.sortCreateTime') }}
+            </DropdownItem>
+            <DropdownItem @click="handleSortChange('title')">
+              <template #icon>
+                <Check v-if="appStore.noteSortField === 'title'" class="w-4 h-4 text-indigo-600" />
+                <span v-else class="w-4 h-4" />
+              </template>
+              {{ t('noteList.sortTitle') }}
+            </DropdownItem>
+
+            <div class="my-1 border-t border-edge"></div>
+
+            <DropdownItem @click="handleOrderChange('desc')">
+              <template #icon>
+                <Check v-if="appStore.noteSortOrder === 'desc'" class="w-4 h-4 text-indigo-600" />
+                <span v-else class="w-4 h-4" />
+              </template>
+              {{ t('noteList.sortDesc') }}
+            </DropdownItem>
+            <DropdownItem @click="handleOrderChange('asc')">
+              <template #icon>
+                <Check v-if="appStore.noteSortOrder === 'asc'" class="w-4 h-4 text-indigo-600" />
+                <span v-else class="w-4 h-4" />
+              </template>
+              {{ t('noteList.sortAsc') }}
+            </DropdownItem>
+          </Dropdown>
         </div>
       </div>
 
@@ -92,23 +177,52 @@
             v-for="(note, index) in notes"
             ref="noteItemRef"
             :key="note.id"
-            v-memo="[note.id, note.title, note.updateTime, note.isPinned, activeNote === note.id]"
+            v-memo="[
+              note.id,
+              note.title,
+              note.updateTime,
+              note.isPinned,
+              note.isStarred,
+              activeNote === note.id,
+              appStore.isSelectMode,
+              appStore.selectedNotes.has(note.id),
+            ]"
             role="option"
             :aria-selected="activeNote === note.id"
             tabindex="0"
             class="note-item group"
-            :class="{ active: activeNote === note.id }"
-            @click="$emit('setActiveNote', note.id)"
-            @keydown.enter="$emit('setActiveNote', note.id)"
-            @keydown.space.prevent="$emit('setActiveNote', note.id)"
+            :class="{
+              active: activeNote === note.id && !appStore.isSelectMode,
+              selected: appStore.isSelectMode && appStore.selectedNotes.has(note.id),
+            }"
+            @click="handleNoteClick(note.id)"
+            @keydown.enter="handleNoteClick(note.id)"
+            @keydown.space.prevent="handleNoteClick(note.id)"
             @keydown.up.prevent="focusPreviousNote(index)"
             @keydown.down.prevent="focusNextNote(index)"
           >
-            <div class="flex items-center gap-1 mb-1">
+            <div class="flex items-center gap-2 mb-1">
+              <!-- 多选复选框 -->
+              <button
+                v-if="appStore.isSelectMode"
+                class="shrink-0 flex items-center justify-center"
+                @click.stop="appStore.toggleNoteSelection(note.id)"
+              >
+                <CheckSquare
+                  v-if="appStore.selectedNotes.has(note.id)"
+                  class="w-4 h-4 text-indigo-600"
+                />
+                <Square v-else class="w-4 h-4 text-content-tertiary" />
+              </button>
               <Pin
                 v-if="note.isPinned"
                 class="w-3.5 h-3.5 text-indigo-500 shrink-0"
                 :aria-label="t('pin.pinned')"
+              />
+              <Star
+                v-if="note.isStarred"
+                class="w-3.5 h-3.5 text-amber-500 shrink-0 fill-amber-500"
+                :aria-label="t('star.starred')"
               />
               <div class="font-semibold text-content truncate">
                 {{ note.title || t('noteList.noTitle') }}
@@ -120,6 +234,23 @@
             <div class="flex justify-between items-center text-xs text-content-tertiary">
               <span class="truncate mr-2">{{ note.notebookName }}</span>
               <div class="flex items-center gap-2 shrink-0">
+                <Tooltip
+                  :content="note.isStarred ? t('star.unstar') : t('star.star')"
+                  placement="top"
+                >
+                  <button
+                    class="star-btn opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-surface-dim"
+                    :class="{ '!opacity-100': note.isStarred }"
+                    @click.stop="$emit('toggleStar', note.id)"
+                  >
+                    <Star
+                      class="w-3 h-3"
+                      :class="
+                        note.isStarred ? 'text-amber-500 fill-amber-500' : 'text-content-tertiary'
+                      "
+                    />
+                  </button>
+                </Tooltip>
                 <Tooltip :content="note.isPinned ? t('pin.unpin') : t('pin.pin')" placement="top">
                   <button
                     class="pin-btn opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-surface-dim"
@@ -141,8 +272,64 @@
         </TransitionGroup>
       </div>
 
+      <!-- 批量操作栏 -->
       <div
-        v-if="notes.length > 0"
+        v-if="appStore.isSelectMode && appStore.selectedNotes.size > 0"
+        class="sticky bottom-0 bg-surface border-t border-edge px-3 py-2 flex items-center justify-between gap-2 z-10"
+      >
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-content-secondary whitespace-nowrap">
+            {{ t('noteList.selectedCount', { count: appStore.selectedNotes.size }) }}
+          </span>
+          <button
+            @click="appStore.selectAllNotes()"
+            class="text-xs text-indigo-600 hover:text-indigo-700 whitespace-nowrap"
+          >
+            {{ t('noteList.selectAll') }}
+          </button>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <!-- 移动到笔记本 -->
+          <Dropdown ref="batchMoveDropdownRef">
+            <template #trigger>
+              <button
+                class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium bg-surface-alt border border-edge-light rounded-lg hover:bg-surface-dim transition-colors text-content-secondary"
+              >
+                <Move class="w-3.5 h-3.5" />
+                {{ t('noteList.batchMove') }}
+              </button>
+            </template>
+            <DropdownItem
+              v-for="nb in moveTargetNotebooks"
+              :key="nb.id"
+              @click="handleBatchMove(nb.id)"
+            >
+              {{ nb.name }}
+            </DropdownItem>
+          </Dropdown>
+
+          <!-- 批量删除 -->
+          <button
+            @click="handleBatchDelete"
+            class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium bg-red-50 border border-red-200 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+          >
+            <Trash2 class="w-3.5 h-3.5" />
+            {{ t('noteList.batchDelete') }}
+          </button>
+
+          <!-- 取消 -->
+          <button
+            @click="appStore.clearSelection()"
+            class="px-2.5 py-1.5 text-xs font-medium text-content-tertiary hover:text-content-secondary transition-colors"
+          >
+            {{ t('noteList.cancelSelect') }}
+          </button>
+        </div>
+      </div>
+
+      <!-- 分页 -->
+      <div
+        v-else-if="notes.length > 0"
         class="sticky bottom-0 bg-surface border-t border-edge h-12 px-4 flex items-center justify-center"
       >
         <Pagination
@@ -160,10 +347,28 @@
 <script setup lang="ts">
 import { computed, ref, onUnmounted, useTemplateRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Search, X, FileText, ChevronLeft, ChevronRight, Pin, Menu } from 'lucide-vue-next'
-import { Pagination, Tooltip } from './ui'
+import {
+  Search,
+  X,
+  FileText,
+  ChevronLeft,
+  ChevronRight,
+  Pin,
+  Star,
+  Menu,
+  ArrowUpDown,
+  Check,
+  CheckSquare,
+  Square,
+  Move,
+  Trash2,
+} from 'lucide-vue-next'
+import { Pagination, Tooltip, Dropdown, DropdownItem } from './ui'
 import NoteListSkeleton from './NoteListSkeleton.vue'
 import { stripHtml, truncateText, markdownToHtml } from '../utils'
+import { parseId } from '../utils/validation'
+import { noteApi } from '../api/note'
+import { showNotification } from './ui/notification'
 import { LRUCache } from '../utils/lruCache'
 import { throttle } from '../utils/debounce'
 import { ContentType, type ShowNotebook, type ShowNote } from '../types'
@@ -230,6 +435,7 @@ const emit = defineEmits<{
   'toggle-collapse': []
   'update:width': [width: number]
   togglePin: [id: string]
+  toggleStar: [id: string]
   'open-sidebar': []
 }>()
 
@@ -319,6 +525,70 @@ const handlerQueryChange = () => {
   emit('updateSearchQuery')
 }
 
+// 排序相关
+const sortDropdownRef = ref<InstanceType<typeof Dropdown> | null>(null)
+
+const isCustomSort = computed(() => {
+  return appStore.noteSortField !== 'update_time' || appStore.noteSortOrder !== 'desc'
+})
+
+const handleSortChange = (field: string) => {
+  appStore.noteSortField = field
+  sortDropdownRef.value?.close()
+  emit('updateSearchQuery')
+}
+
+const handleOrderChange = (order: string) => {
+  appStore.noteSortOrder = order
+  sortDropdownRef.value?.close()
+  emit('updateSearchQuery')
+}
+
+// 多选模式
+const toggleSelectMode = () => {
+  appStore.toggleSelectMode()
+}
+
+const handleNoteClick = (noteId: string) => {
+  if (appStore.isSelectMode) {
+    appStore.toggleNoteSelection(noteId)
+  } else {
+    emit('setActiveNote', noteId)
+  }
+}
+
+// 移动目标笔记本（排除 "全部"）
+const moveTargetNotebooks = computed(() => {
+  return props.notebooks.filter((nb) => nb.id !== '0')
+})
+
+const batchMoveDropdownRef = ref<InstanceType<typeof Dropdown> | null>(null)
+
+const handleBatchMove = async (notebookId: string) => {
+  const ids = Array.from(appStore.selectedNotes).map((id) => parseId(id))
+  try {
+    await noteApi.batchMoveNotes(ids, parseId(notebookId))
+    appStore.clearSelection()
+    emit('updateSearchQuery')
+  } catch (error) {
+    showNotification({ type: 'error', message: String(error) })
+  }
+  batchMoveDropdownRef.value?.close()
+}
+
+const handleBatchDelete = async () => {
+  const count = appStore.selectedNotes.size
+  if (!confirm(t('noteList.batchDeleteConfirm', { count }))) return
+  const ids = Array.from(appStore.selectedNotes).map((id) => parseId(id))
+  try {
+    await noteApi.batchDeleteNotes(ids)
+    appStore.clearSelection()
+    emit('updateSearchQuery')
+  } catch (error) {
+    showNotification({ type: 'error', message: String(error) })
+  }
+}
+
 // 笔记列表项 refs
 const noteItemRefs = useTemplateRef<HTMLElement[]>('noteItemRef')
 
@@ -366,6 +636,12 @@ const focusNextNote = (currentIndex: number) => {
   list-style: none;
   margin: 0;
   padding: 0;
+}
+
+/* 笔记项选中样式（多选模式） */
+.note-item.selected {
+  background-color: var(--color-primary-lighter, #eef2ff);
+  border-left: 3px solid var(--color-primary, #4f46e5);
 }
 
 /* 笔记项聚焦样式 */

@@ -19,7 +19,9 @@ export default {
     yes: '是',
     no: '否',
     close: '关闭',
+    clear: '清除',
     retry: '重试',
+    errorBoundaryMessage: '组件出现异常，请重试',
     apply: '应用',
     reset: '重置',
     export: '导出',
@@ -79,6 +81,8 @@ export default {
       descriptionPlaceholder: '请输入描述',
       sortOrderLabel: '排序',
       sortOrderPlaceholder: '请输入排序序号',
+      parentLabel: '上级笔记本',
+      noParent: '无（顶级笔记本）',
       createTitle: '添加笔记本',
       editTitle: '编辑笔记本',
     },
@@ -105,6 +109,7 @@ export default {
       message: '确定要删除这个标签吗？此操作不可恢复。',
       confirmText: '删除',
     },
+    recentEdits: '最近编辑',
   },
 
   // 笔记本
@@ -128,6 +133,19 @@ export default {
     noTitle: '无标题',
     noContent: '无内容',
     updateTime: '更新时间',
+    sortBy: '排序',
+    sortUpdateTime: '更新时间',
+    sortCreateTime: '创建时间',
+    sortTitle: '标题',
+    sortAsc: '升序',
+    sortDesc: '降序',
+    selectMode: '多选',
+    selectedCount: '已选 {count} 项',
+    selectAll: '全选',
+    batchMove: '移动到...',
+    batchDelete: '批量删除',
+    batchDeleteConfirm: '确定要删除选中的 {count} 条笔记吗？',
+    cancelSelect: '取消',
   },
 
   // 编辑器
@@ -213,6 +231,8 @@ export default {
       quote: '引用',
       codeBlock: '代码块',
       inlineCode: '行内代码',
+      codeLanguage: '代码语言',
+      plainText: '纯文本',
       link: '链接',
       unlink: '取消链接',
       image: '图片',
@@ -241,6 +261,9 @@ export default {
       history: '历史记录',
       delete: '删除',
       saveAsTemplate: '存为模板',
+      print: '打印',
+      scrollLeft: '向左滚动',
+      scrollRight: '向右滚动',
     },
     editorDialog: {
       title: '笔记标题',
@@ -352,6 +375,8 @@ export default {
     markdownDesc: '导出为 .md 格式',
     evernoteDesc: '导出为 .enex 格式，可导入印象笔记',
     jsonDesc: '导出为 JSON 数据格式',
+    pdfDesc: '通过打印对话框保存为 PDF',
+    htmlDesc: '导出为独立 HTML 文件',
     xmlDesc: '导出为 XML 数据格式',
     noTitle: '无标题',
     createTime: '创建时间',
@@ -432,6 +457,7 @@ export default {
       saveAsTemplate: '存为模板',
       viewHelp: '查看帮助手册',
       checkForUpdates: '检查更新',
+      printNote: '打印笔记',
     },
   },
 
@@ -701,6 +727,7 @@ export default {
     shortcutsConflict: '与「{name}」冲突',
     shortcutsResetAllConfirm: '确定重置所有快捷键为默认值？',
     shortcutsResetAllDone: '已重置所有快捷键',
+    editorFontSize: '编辑器字体大小',
     autoSave: '自动保存',
     autoSaveEnabled: '启用自动保存',
     saved: '设置已保存',
@@ -809,6 +836,14 @@ export default {
     pinned: '已置顶',
   },
 
+  // 笔记收藏/星标
+  star: {
+    starred: '收藏',
+    toggleStar: '收藏/取消收藏',
+    star: '收藏',
+    unstar: '取消收藏',
+  },
+
   // 模板
   template: {
     title: '模板管理',
@@ -825,6 +860,21 @@ export default {
     back: '返回',
     editorPlaceholder: '在此编辑模板内容...',
     saveSuccess: '模板保存成功',
+  },
+
+  // 附件
+  attachment: {
+    title: '附件',
+    add: '添加附件',
+    delete: '删除附件',
+    deleteConfirm: '确定要删除此附件吗？',
+    open: '打开',
+    empty: '暂无附件',
+    fileSizeKB: '{size} KB',
+    fileSizeMB: '{size} MB',
+    uploadFailed: '附件上传失败',
+    fileTooLarge: '文件大小超过 50 MB 限制',
+    count: '{count} 个附件',
   },
 
   // 多窗口
@@ -877,7 +927,9 @@ export default {
 
   setup: {
     title: '初始化设置',
+    editTitle: '编辑数据库配置',
     subtitle: '配置您的笔记数据库连接',
+    editSubtitle: '修改现有配置的数据库连接设置',
     step: {
       dbType: '数据库类型',
       connection: '连接配置',

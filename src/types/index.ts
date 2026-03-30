@@ -33,6 +33,11 @@ export interface ShowNotebook {
   updateTime?: string | null
 }
 
+export interface NotebookTreeNode extends ShowNotebook {
+  children: NotebookTreeNode[]
+  expanded: boolean
+}
+
 export interface Tag {
   id: number
   name: string
@@ -96,6 +101,8 @@ export interface Note {
   contentType: ContentType
   /** 是否置顶：0 = 否，1 = 是 */
   isPinned: number
+  /** 是否收藏/星标：0 = 否，1 = 是 */
+  isStarred: number
   /** MCP 访问控制：0=继承, 1=读写, 2=只读, 3=禁止 */
   mcpAccess?: McpAccess
   tags: Tag[]
@@ -115,6 +122,8 @@ export interface ShowNote {
   contentType: ContentType
   /** 是否置顶 */
   isPinned: number
+  /** 是否收藏/星标 */
+  isStarred: number
   /** MCP 访问控制 */
   mcpAccess?: McpAccess
   tags: ShowTag[]
@@ -132,6 +141,7 @@ export interface PartialShowNote {
   content: string
   contentType?: ContentType
   isPinned?: number
+  isStarred?: number
   mcpAccess?: McpAccess
   tags?: ShowTag[]
   createTime?: string | null
@@ -172,6 +182,9 @@ export interface NoteSearchPageParam {
   notebookId: number
   tagId: number
   keyword: string
+  sortField: string
+  sortOrder: string
+  isStarred?: boolean
 }
 
 export interface NoteHistorySearchPageParam {
@@ -196,6 +209,20 @@ export interface NoteTemplate {
   sortOrder: number
   createTime: string | null
   updateTime: string | null
+}
+
+// ============================================================================
+// 笔记附件相关类型
+// ============================================================================
+
+export interface NoteAttachment {
+  id: number
+  noteId: number
+  fileName: string
+  filePath: string
+  fileSize: number
+  mimeType: string
+  createTime: string | null
 }
 
 // ============================================================================

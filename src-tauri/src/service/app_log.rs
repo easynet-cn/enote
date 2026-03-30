@@ -43,12 +43,49 @@ pub fn should_skip_content(content: &str) -> bool {
     crypto::is_encrypted(content)
 }
 
+/// 脱敏数据库连接字符串中的密码
+///
+/// 匹配 `://user:password@host` 格式，将密码部分替换为 ****
+/// 使用最后一个 `@`（在路径 `/` 之前）作为凭据分隔符，正确处理密码中含 `@` 的情况
+fn sanitize_db_url(message: &str) -> String {
+    let mut result = message.to_string();
+    for prefix in ["mysql://", "postgres://", "postgresql://", "sqlite://"] {
+        if let Some(proto_pos) = result.find(prefix) {
+            let after_proto = proto_pos + prefix.len();
+            let rest = &result[after_proto..];
+
+            // 确定 authority 部分的范围（到第一个 / 或字符串结尾）
+            let authority_end = rest.find('/').unwrap_or(rest.len());
+            let authority = &rest[..authority_end];
+
+            // 使用最后一个 @ 作为凭据与主机的分隔符
+            if let Some(at_in_auth) = authority.rfind('@') {
+                let credentials = &authority[..at_in_auth];
+                // 查找 user:password 中的第一个 :
+                if let Some(colon) = credentials.find(':') {
+                    let pwd_start = after_proto + colon + 1;
+                    let pwd_end = after_proto + at_in_auth;
+                    if pwd_end > pwd_start {
+                        result = format!(
+                            "{}****{}",
+                            &result[..pwd_start],
+                            &result[pwd_end..]
+                        );
+                    }
+                }
+            }
+        }
+    }
+    result
+}
+
 /// 脱敏日志消息中可能存在的敏感信息
 ///
-/// 对 password、key、secret、token 等关键词后的值进行掩码
+/// 对 password、key、secret、token 等关键词后的值进行掩码，
+/// 同时脱敏数据库连接字符串中的密码
 pub fn sanitize_message(message: &str) -> String {
     let sensitive_patterns = ["password", "密码", "key", "密钥", "secret", "token"];
-    let mut result = message.to_string();
+    let mut result = sanitize_db_url(message);
 
     for pattern in &sensitive_patterns {
         // 查找 pattern=xxx 或 pattern: xxx 或 pattern xxx 形式
@@ -480,4 +517,64 @@ pub fn cleanup_old_log_files(log_dir: &Path, retention_days: u32) -> anyhow::Res
     }
 
     Ok(deleted)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sanitize_value_short() {
+        assert_eq!(sanitize_value("ab"), "****");
+        assert_eq!(sanitize_value("abcd"), "****");
+    }
+
+    #[test]
+    fn sanitize_value_long() {
+        assert_eq!(sanitize_value("password123"), "pa****23");
+    }
+
+    #[test]
+    fn sanitize_db_url_mysql() {
+        let input = "mysql://root:secret123@localhost:3306/enote";
+        let result = sanitize_db_url(input);
+        assert_eq!(result, "mysql://root:****@localhost:3306/enote");
+        assert!(!result.contains("secret123"));
+    }
+
+    #[test]
+    fn sanitize_db_url_postgres() {
+        let input = "postgres://admin:p@ssw0rd@db.example.com/enote";
+        let result = sanitize_db_url(input);
+        assert_eq!(result, "postgres://admin:****@db.example.com/enote");
+    }
+
+    #[test]
+    fn sanitize_db_url_no_password() {
+        let input = "sqlite:///path/to/db.sqlite";
+        let result = sanitize_db_url(input);
+        assert_eq!(result, input);
+    }
+
+    #[test]
+    fn sanitize_message_with_password_keyword() {
+        let input = "Connection failed, password=abc123 retrying";
+        let result = sanitize_message(input);
+        assert!(!result.contains("abc123"));
+    }
+
+    #[test]
+    fn sanitize_message_with_db_url() {
+        let input = "Connecting to mysql://user:mypass@host/db";
+        let result = sanitize_message(input);
+        assert!(!result.contains("mypass"));
+        assert!(result.contains("****"));
+    }
+
+    #[test]
+    fn sanitize_message_no_sensitive() {
+        let input = "Normal log message, nothing special";
+        let result = sanitize_message(input);
+        assert_eq!(result, input);
+    }
 }

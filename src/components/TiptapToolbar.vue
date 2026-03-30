@@ -29,7 +29,7 @@
           class="h-8 px-3 text-sm rounded-lg flex items-center font-medium"
           :class="isMarkdownMode ? 'bg-slate-800 text-white' : 'bg-indigo-50 text-indigo-700'"
         >
-          {{ isMarkdownMode ? 'Markdown' : t('editor.contentType.richText') }}
+          {{ isMarkdownMode ? t('editor.contentType.markdown') : t('editor.contentType.richText') }}
         </span>
       </div>
     </div>
@@ -40,7 +40,7 @@
       @click="scrollLeftFn"
       :disabled="!canScrollLeft"
       :class="{ hidden: !canScrollLeft }"
-      aria-label="Scroll left"
+      :aria-label="t('editor.toolbarTooltip.scrollLeft')"
     >
       <ChevronLeft class="w-5 h-5" />
     </button>
@@ -159,7 +159,7 @@
       @click="scrollRightFn"
       :disabled="!canScrollRight"
       :class="{ hidden: !canScrollRight }"
-      aria-label="Scroll right"
+      :aria-label="t('editor.toolbarTooltip.scrollRight')"
     >
       <ChevronRight class="w-5 h-5" />
     </button>
@@ -175,6 +175,7 @@
         @settings="emit('settings')"
         @history="emit('history')"
         @export="emit('export')"
+        @print="emit('print')"
         @save-as-template="emit('saveAsTemplate')"
       />
     </div>
@@ -254,6 +255,7 @@ const emit = defineEmits<{
   settings: []
   history: []
   export: []
+  print: []
   saveAsTemplate: []
 }>()
 

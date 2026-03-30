@@ -167,6 +167,9 @@ pub fn run_with_config(config_path: Option<String>) {
             command::delete_note_by_id,
             command::search_page_notes,
             command::note_stats,
+            // 批量操作相关命令
+            command::batch_move_notes,
+            command::batch_delete_notes,
             // 历史记录相关命令
             command::search_page_note_histories,
             // 数据备份相关命令
@@ -177,6 +180,8 @@ pub fn run_with_config(config_path: Option<String>) {
             command::save_settings,
             // 笔记置顶
             command::toggle_note_pin,
+            // 笔记收藏/星标
+            command::toggle_note_star,
             // 回收站相关命令
             command::restore_note,
             command::permanent_delete_note,
@@ -231,6 +236,11 @@ pub fn run_with_config(config_path: Option<String>) {
             command::read_log_file,
             command::delete_log_files,
             command::cleanup_old_log_files,
+            // 附件相关命令
+            command::save_attachment,
+            command::find_attachments,
+            command::delete_attachment,
+            command::open_attachment,
         ])
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| {

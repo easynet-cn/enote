@@ -2,224 +2,26 @@
   <Dialog v-model="visible" :title="t('settings.title')" :width="520">
     <div class="space-y-6">
       <!-- 外观设置 -->
-      <div>
-        <h3 class="text-sm font-semibold text-content-secondary mb-3">
-          {{ t('settings.appearance') }}
-        </h3>
-        <div class="space-y-4">
-          <!-- 主题 -->
-          <div class="flex items-center justify-between">
-            <label class="text-sm text-content-secondary">{{ t('settings.theme') }}</label>
-            <div class="flex gap-1 bg-surface-dim rounded-lg p-1">
-              <button
-                v-for="option in themeOptions"
-                :key="option.value"
-                @click="setTheme(option.value)"
-                class="px-3 py-1.5 text-sm rounded-md transition-colors"
-                :class="
-                  currentTheme === option.value
-                    ? 'bg-surface text-indigo-600 shadow-sm'
-                    : 'text-content-secondary hover:text-content'
-                "
-              >
-                {{ option.label }}
-              </button>
-            </div>
-          </div>
-
-          <!-- 语言 -->
-          <div class="flex items-center justify-between">
-            <label class="text-sm text-content-secondary">{{ t('settings.language') }}</label>
-            <div class="flex gap-1 bg-surface-dim rounded-lg p-1">
-              <button
-                @click="switchLocale('zh-CN')"
-                class="px-3 py-1.5 text-sm rounded-md transition-colors"
-                :class="
-                  currentLocale === 'zh-CN'
-                    ? 'bg-surface text-indigo-600 shadow-sm'
-                    : 'text-content-secondary hover:text-content'
-                "
-              >
-                {{ t('settings.languageZh') }}
-              </button>
-              <button
-                @click="switchLocale('en-US')"
-                class="px-3 py-1.5 text-sm rounded-md transition-colors"
-                :class="
-                  currentLocale === 'en-US'
-                    ? 'bg-surface text-indigo-600 shadow-sm'
-                    : 'text-content-secondary hover:text-content'
-                "
-              >
-                {{ t('settings.languageEn') }}
-              </button>
-            </div>
-          </div>
-
-          <!-- 布局模式 -->
-          <div class="flex items-center justify-between">
-            <label class="text-sm text-content-secondary">{{ t('settings.layoutMode') }}</label>
-            <div class="flex gap-1 bg-surface-dim rounded-lg p-1">
-              <button
-                v-for="option in layoutModeOptions"
-                :key="option.value"
-                @click="setLayoutMode(option.value)"
-                class="px-3 py-1.5 text-sm rounded-md transition-colors"
-                :class="
-                  currentLayoutMode === option.value
-                    ? 'bg-surface text-indigo-600 shadow-sm'
-                    : 'text-content-secondary hover:text-content'
-                "
-              >
-                {{ option.label }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <SettingsAppearance
+        ref="appearanceRef"
+        v-model:theme="currentTheme"
+        v-model:layout-mode="currentLayoutMode"
+        v-model:editor-font-size="editorFontSize"
+        @save="saveSettings"
+      />
 
       <!-- 快捷键设置 -->
-      <div>
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="text-sm font-semibold text-content-secondary">
-            {{ t('settings.shortcutsTitle') }}
-          </h3>
-          <button
-            @click="handleResetAllShortcuts"
-            class="text-xs text-content-tertiary hover:text-indigo-600 transition-colors"
-          >
-            {{ t('settings.shortcutsResetAll') }}
-          </button>
-        </div>
-        <div class="space-y-2">
-          <div
-            v-for="def in shortcutDefs"
-            :key="def.id"
-            class="flex items-center justify-between py-1.5"
-          >
-            <label class="text-sm text-content-secondary flex-1 min-w-0 truncate mr-3">
-              {{ t(def.descriptionKey) }}
-            </label>
-            <div class="flex items-center gap-2 shrink-0">
-              <!-- 系统级快捷键：只读显示 -->
-              <template v-if="def.system">
-                <span
-                  class="inline-flex items-center h-8 px-3 text-xs font-mono border border-edge rounded-md bg-surface-dim text-content-secondary"
-                >
-                  {{ bindingToText(def.defaultBinding) }}
-                </span>
-                <span class="text-xs text-content-tertiary w-10 text-center">{{
-                  t('settings.shortcutsSystem')
-                }}</span>
-              </template>
-              <!-- 可自定义快捷键 -->
-              <template v-else>
-                <div class="flex flex-col items-end gap-0.5">
-                  <ShortcutRecorder
-                    :model-value="shortcutBindings[def.id]"
-                    :customized="shortcutCustomized[def.id]"
-                    :conflict-name="shortcutConflicts[def.id]"
-                    @record="(b: KeyBinding) => handleShortcutRecord(def.id, b)"
-                  />
-                  <span v-if="shortcutConflicts[def.id]" class="text-xs text-red-500">
-                    {{ t('settings.shortcutsConflict', { name: shortcutConflicts[def.id] }) }}
-                  </span>
-                </div>
-                <button
-                  v-if="shortcutCustomized[def.id]"
-                  @click="handleResetShortcut(def.id)"
-                  class="text-xs text-content-tertiary hover:text-indigo-600 transition-colors w-10 text-center"
-                >
-                  {{ t('settings.shortcutsReset') }}
-                </button>
-                <span v-else class="w-10" />
-              </template>
-            </div>
-          </div>
-        </div>
-      </div>
+      <SettingsShortcuts />
 
       <!-- 自动备份设置 -->
-      <div>
-        <h3 class="text-sm font-semibold text-content-secondary mb-3">
-          {{ t('settings.autoBackup') }}
-        </h3>
-        <div class="space-y-4">
-          <!-- 启用自动备份 -->
-          <div class="flex items-center justify-between">
-            <label class="text-sm text-content-secondary">{{
-              t('settings.autoBackupEnabled')
-            }}</label>
-            <button
-              @click="toggleAutoBackup"
-              class="relative w-10 h-5 rounded-full transition-colors"
-              :class="autoBackupEnabled ? 'bg-indigo-600' : 'bg-slate-300'"
-            >
-              <span
-                class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform shadow-sm"
-                :class="autoBackupEnabled ? 'translate-x-5' : ''"
-              />
-            </button>
-          </div>
-
-          <!-- 备份间隔 -->
-          <div v-if="autoBackupEnabled" class="flex items-center justify-between">
-            <label class="text-sm text-content-secondary">{{
-              t('settings.autoBackupInterval')
-            }}</label>
-            <select
-              v-model="autoBackupInterval"
-              @change="saveSettings"
-              class="px-3 py-1.5 text-sm border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="1">
-                1 {{ t('settings.autoBackupIntervalHours', { n: '' }).trim() }}
-              </option>
-              <option value="4">
-                4 {{ t('settings.autoBackupIntervalHours', { n: '' }).trim() }}
-              </option>
-              <option value="8">
-                8 {{ t('settings.autoBackupIntervalHours', { n: '' }).trim() }}
-              </option>
-              <option value="24">
-                24 {{ t('settings.autoBackupIntervalHours', { n: '' }).trim() }}
-              </option>
-            </select>
-          </div>
-
-          <!-- 保留份数 -->
-          <div v-if="autoBackupEnabled" class="flex items-center justify-between">
-            <label class="text-sm text-content-secondary">{{
-              t('settings.autoBackupRetention')
-            }}</label>
-            <select
-              v-model="autoBackupRetention"
-              @change="saveSettings"
-              class="px-3 py-1.5 text-sm border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="5">{{ t('settings.autoBackupRetentionCount', { n: 5 }) }}</option>
-              <option value="10">{{ t('settings.autoBackupRetentionCount', { n: 10 }) }}</option>
-              <option value="20">{{ t('settings.autoBackupRetentionCount', { n: 20 }) }}</option>
-              <option value="50">{{ t('settings.autoBackupRetentionCount', { n: 50 }) }}</option>
-            </select>
-          </div>
-
-          <!-- 立即备份 + 上次备份 -->
-          <div class="flex items-center justify-between">
-            <span class="text-xs text-content-tertiary">
-              {{ t('settings.lastBackup') }}:
-              {{ lastBackupName || t('settings.never') }}
-            </span>
-            <button
-              @click="doBackupNow"
-              :disabled="backingUp"
-              class="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
-            >
-              {{ backingUp ? '...' : t('settings.backupNow') }}
-            </button>
-          </div>
-        </div>
-      </div>
+      <SettingsBackup
+        ref="backupRef"
+        v-model:enabled="autoBackupEnabled"
+        v-model:interval="autoBackupInterval"
+        v-model:retention="autoBackupRetention"
+        @save="saveSettings"
+        @backup-settings-changed="emit('backupSettingsChanged')"
+      />
 
       <!-- 配置管理 -->
       <div>
@@ -238,184 +40,21 @@
       </div>
 
       <!-- 安全设置 -->
-      <div>
-        <h3 class="text-sm font-semibold text-content-secondary mb-3">
-          {{ t('settings.security') }}
-        </h3>
-        <div class="space-y-4">
-          <!-- 锁屏方式 -->
-          <div class="flex items-center justify-between">
-            <label class="text-sm text-content-secondary">{{ t('settings.lockMode') }}</label>
-            <div class="flex gap-1 bg-surface-dim rounded-lg p-1">
-              <button
-                v-for="option in lockModeOptions"
-                :key="option.value"
-                @click="setLockMode(option.value)"
-                class="px-3 py-1.5 text-sm rounded-md transition-colors"
-                :class="
-                  currentLockMode === option.value
-                    ? 'bg-surface text-indigo-600 shadow-sm'
-                    : 'text-content-secondary hover:text-content'
-                "
-              >
-                {{ option.label }}
-              </button>
-            </div>
-          </div>
-
-          <!-- 设置/修改密码 -->
-          <div v-if="currentLockMode === 'password'">
-            <!-- 密码表单 -->
-            <div v-if="showPasswordForm" class="space-y-3 p-3 bg-surface-dim rounded-lg">
-              <div v-if="hasPassword">
-                <label class="block text-xs text-content-tertiary mb-1">{{
-                  t('settings.currentPassword')
-                }}</label>
-                <input
-                  v-model="passwordForm.current"
-                  type="password"
-                  class="w-full px-3 py-2 text-sm border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-              <div>
-                <label class="block text-xs text-content-tertiary mb-1">{{
-                  t('settings.newPassword')
-                }}</label>
-                <input
-                  v-model="passwordForm.newPwd"
-                  type="password"
-                  class="w-full px-3 py-2 text-sm border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-              <div>
-                <label class="block text-xs text-content-tertiary mb-1">{{
-                  t('settings.confirmPassword')
-                }}</label>
-                <input
-                  v-model="passwordForm.confirm"
-                  type="password"
-                  class="w-full px-3 py-2 text-sm border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-              <p v-if="passwordError" class="text-xs text-red-500">{{ passwordError }}</p>
-              <div class="flex justify-end gap-2">
-                <button
-                  @click="showPasswordForm = false"
-                  class="px-3 py-1.5 text-sm text-content-secondary hover:text-content rounded-md"
-                >
-                  {{ t('common.cancel') }}
-                </button>
-                <button
-                  @click="handleSavePassword"
-                  :disabled="savingPassword"
-                  class="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
-                >
-                  {{ t('common.save') }}
-                </button>
-              </div>
-            </div>
-
-            <!-- 密码操作按钮 -->
-            <div v-else class="flex items-center justify-between">
-              <span class="text-sm text-content-secondary">
-                {{ hasPassword ? t('settings.passwordSet') : '' }}
-              </span>
-              <div class="flex gap-2">
-                <button
-                  @click="showPasswordForm = true"
-                  class="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                >
-                  {{ hasPassword ? t('settings.changePassword') : t('settings.setPassword') }}
-                </button>
-                <button
-                  v-if="hasPassword"
-                  @click="handleRemovePassword"
-                  class="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                >
-                  {{ t('settings.removePassword') }}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- 自动锁定 -->
-          <div v-if="currentLockMode !== 'none'" class="flex items-center justify-between">
-            <label class="text-sm text-content-secondary">{{ t('settings.lockTimeout') }}</label>
-            <select
-              v-model="lockTimeoutValue"
-              @change="saveSettings"
-              class="px-3 py-1.5 text-sm border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="0">{{ t('settings.lockTimeoutNone') }}</option>
-              <option value="5">{{ t('settings.lockTimeoutMinutes', { n: 5 }) }}</option>
-              <option value="15">{{ t('settings.lockTimeoutMinutes', { n: 15 }) }}</option>
-              <option value="30">{{ t('settings.lockTimeoutMinutes', { n: 30 }) }}</option>
-            </select>
-          </div>
-
-          <!-- 最小化时锁定 -->
-          <div v-if="currentLockMode !== 'none'" class="flex items-center justify-between">
-            <label class="text-sm text-content-secondary">{{ t('settings.lockOnMinimize') }}</label>
-            <button
-              @click="toggleLockOnMinimize"
-              class="relative w-10 h-5 rounded-full transition-colors"
-              :class="lockOnMinimizeEnabled ? 'bg-indigo-600' : 'bg-slate-300'"
-            >
-              <span
-                class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform shadow-sm"
-                :class="lockOnMinimizeEnabled ? 'translate-x-5' : ''"
-              />
-            </button>
-          </div>
-        </div>
-      </div>
+      <SettingsSecurity
+        ref="securityRef"
+        v-model:lock-mode="currentLockMode"
+        v-model:lock-timeout="lockTimeoutValue"
+        v-model:lock-on-minimize="lockOnMinimizeEnabled"
+        @save="saveSettings"
+      />
 
       <!-- MCP 设置 -->
-      <div>
-        <h3 class="text-sm font-semibold text-content-secondary mb-3">
-          {{ t('settings.mcp') }}
-        </h3>
-        <div class="space-y-3">
-          <!-- MCP 总开关 -->
-          <div class="flex items-center justify-between">
-            <div>
-              <label class="text-sm text-content-secondary">{{ t('settings.mcpEnabled') }}</label>
-              <p class="text-xs text-content-tertiary mt-0.5">{{ t('settings.mcpEnabledDesc') }}</p>
-            </div>
-            <button
-              @click="toggleMcpEnabled"
-              class="relative w-10 h-5 rounded-full transition-colors"
-              :class="mcpEnabled ? 'bg-indigo-600' : 'bg-slate-300'"
-            >
-              <span
-                class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform shadow-sm"
-                :class="mcpEnabled ? 'translate-x-5' : ''"
-              />
-            </button>
-          </div>
+      <SettingsMcp
+        v-model:enabled="mcpEnabled"
+        v-model:tool-enabled="mcpToolEnabled"
+        @save="saveSettings"
+      />
 
-          <!-- 各工具开关 -->
-          <div v-if="mcpEnabled" class="space-y-2 pl-2 border-l-2 border-edge ml-1">
-            <div
-              v-for="tool in mcpTools"
-              :key="tool.key"
-              class="flex items-center justify-between py-1"
-            >
-              <label class="text-sm text-content-secondary">{{ tool.label }}</label>
-              <button
-                @click="toggleMcpTool(tool.key)"
-                class="relative w-9 h-[18px] rounded-full transition-colors"
-                :class="mcpToolEnabled[tool.key] ? 'bg-indigo-600' : 'bg-slate-300'"
-              >
-                <span
-                  class="absolute top-0.5 left-0.5 w-3.5 h-3.5 bg-white rounded-full transition-transform shadow-sm"
-                  :class="mcpToolEnabled[tool.key] ? 'translate-x-[18px]' : ''"
-                />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
       <!-- 帮助手册 -->
       <div class="flex items-center justify-between p-3 bg-surface-dim rounded-lg">
         <div>
@@ -459,7 +98,7 @@
               <p class="text-xs text-content-tertiary mt-0.5">{{ t('log.description') }}</p>
             </div>
             <button
-              @click="openLogDialog"
+              @click="logDialogVisible = true"
               class="px-3 py-1.5 text-sm text-indigo-600 hover:bg-indigo-100 rounded-md transition-colors shrink-0"
             >
               {{ t('log.openLogManager') }}
@@ -481,7 +120,7 @@
               <p class="text-xs text-content-tertiary mt-0.5">{{ t('settings.syncDesc') }}</p>
             </div>
             <button
-              @click="openSyncDialog"
+              @click="syncDialogVisible = true"
               class="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors shrink-0"
             >
               {{ t('sync.startSync') }}
@@ -496,7 +135,7 @@
               </p>
             </div>
             <button
-              @click="openSyncHistoryDialog"
+              @click="syncHistoryDialogVisible = true"
               class="px-3 py-1.5 text-sm text-indigo-600 hover:bg-indigo-100 rounded-md transition-colors shrink-0"
             >
               {{ t('sync.viewDetails') }}
@@ -524,21 +163,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Dialog, Button } from './ui'
 import SyncDialog from './SyncDialog.vue'
 import SyncHistoryDialog from './SyncHistoryDialog.vue'
 import LogDialog from './LogDialog.vue'
-import { settingsApi, backupApi, authApi } from '../api/note'
+import SettingsAppearance from './settings/SettingsAppearance.vue'
+import SettingsShortcuts from './settings/SettingsShortcuts.vue'
+import SettingsBackup from './settings/SettingsBackup.vue'
+import SettingsSecurity from './settings/SettingsSecurity.vue'
+import SettingsMcp from './settings/SettingsMcp.vue'
+import { settingsApi } from '../api/note'
 import { initLogger, setLogLevel } from '../utils/logger'
 import { setLocale, type LocaleType } from '../i18n'
 import { useAppStore } from '../stores/app'
-import { useLockScreen } from '../composables/useLockScreen'
 import { usePlatform, type LayoutMode } from '../composables/usePlatform'
-import { useShortcutSettings } from '../composables/useShortcutSettings'
-import { SHORTCUT_DEFS, bindingToText, type KeyBinding } from '../config/shortcuts'
-import ShortcutRecorder from './ui/ShortcutRecorder.vue'
 import { showNotification } from './ui/notification'
 
 const { t, locale } = useI18n()
@@ -547,32 +187,35 @@ const { setLayoutOverride } = usePlatform()
 
 const emit = defineEmits<{
   (e: 'switchProfile'): void
+  (e: 'backupSettingsChanged'): void
 }>()
 
 const visible = defineModel<boolean>({ default: false })
 
-const currentTheme = ref<string>('light')
-const currentLocale = computed(() => locale.value as LocaleType)
+// 子组件 refs
+const appearanceRef = ref<InstanceType<typeof SettingsAppearance>>()
+const backupRef = ref<InstanceType<typeof SettingsBackup>>()
+const securityRef = ref<InstanceType<typeof SettingsSecurity>>()
 
-// 自动备份状态
+// ============================================================================
+// 全局设置状态（由子组件通过 v-model 双向绑定）
+// ============================================================================
+
+const currentTheme = ref('light')
+const currentLayoutMode = ref<LayoutMode | 'auto'>('auto')
+const editorFontSize = ref('14')
+
+// 自动备份
 const autoBackupEnabled = ref(false)
 const autoBackupInterval = ref('24')
 const autoBackupRetention = ref('10')
-const lastBackupName = ref('')
-const backingUp = ref(false)
 
-// 安全设置状态
-const { lockMode, lockOnMinimize } = useLockScreen()
+// 安全
 const currentLockMode = ref<'none' | 'password' | 'biometric'>('none')
 const lockTimeoutValue = ref('0')
 const lockOnMinimizeEnabled = ref(false)
-const hasPassword = ref(false)
-const showPasswordForm = ref(false)
-const passwordError = ref('')
-const savingPassword = ref(false)
-const passwordForm = ref({ current: '', newPwd: '', confirm: '' })
 
-// MCP 设置状态
+// MCP
 const mcpEnabled = ref(false)
 const mcpToolEnabled = ref<Record<string, boolean>>({
   search_notes: true,
@@ -587,252 +230,20 @@ const mcpToolEnabled = ref<Record<string, boolean>>({
   note_stats: true,
 })
 
-const mcpTools = computed(() => [
-  { key: 'search_notes', label: t('settings.mcpToolSearch') },
-  { key: 'get_note', label: t('settings.mcpToolGetNote') },
-  { key: 'create_note', label: t('settings.mcpToolCreateNote') },
-  { key: 'update_note', label: t('settings.mcpToolUpdateNote') },
-  { key: 'delete_note', label: t('settings.mcpToolDeleteNote') },
-  { key: 'list_notebooks', label: t('settings.mcpToolListNotebooks') },
-  { key: 'create_notebook', label: t('settings.mcpToolCreateNotebook') },
-  { key: 'list_tags', label: t('settings.mcpToolListTags') },
-  { key: 'create_tag', label: t('settings.mcpToolCreateTag') },
-  { key: 'note_stats', label: t('settings.mcpToolNoteStats') },
-])
+// 日志
+const frontendLogLevel = ref('info')
 
-const toggleMcpEnabled = () => {
-  mcpEnabled.value = !mcpEnabled.value
-  saveSettings()
-}
-
-const toggleMcpTool = (key: string) => {
-  mcpToolEnabled.value[key] = !mcpToolEnabled.value[key]
-  saveSettings()
-}
-
-const lockModeOptions = computed(() => [
-  { value: 'none' as const, label: t('settings.lockModeNone') },
-  { value: 'password' as const, label: t('settings.lockModePassword') },
-])
-
-const themeOptions = computed(() => [
-  { value: 'light', label: t('settings.themeLight') },
-  { value: 'dark', label: t('settings.themeDark') },
-  { value: 'system', label: t('settings.themeSystem') },
-])
-
-// 布局模式
-const currentLayoutMode = ref<LayoutMode | 'auto'>('auto')
-
-const layoutModeOptions = computed(() => [
-  { value: 'auto' as const, label: t('settings.layoutAuto') },
-  { value: 'desktop' as LayoutMode | 'auto', label: t('settings.layoutDesktop') },
-  { value: 'tablet' as LayoutMode | 'auto', label: t('settings.layoutTablet') },
-  { value: 'mobile' as LayoutMode | 'auto', label: t('settings.layoutMobile') },
-])
-
-const setLayoutMode = async (mode: LayoutMode | 'auto') => {
-  currentLayoutMode.value = mode
-  setLayoutOverride(mode)
-  await saveSettings()
-}
+// 子对话框
+const syncDialogVisible = ref(false)
+const syncHistoryDialogVisible = ref(false)
+const logDialogVisible = ref(false)
 
 // ============================================================================
-// 快捷键设置
+// 统一保存（所有子组件 @save 事件的处理器）
 // ============================================================================
-
-const {
-  getBinding,
-  setBinding: setShortcutBinding,
-  resetBinding: resetShortcutBinding,
-  resetAll: resetAllShortcuts,
-  isCustomized: isShortcutCustomized,
-  checkConflict: checkShortcutConflict,
-  save: saveShortcuts,
-} = useShortcutSettings()
-
-const shortcutDefs = SHORTCUT_DEFS
-
-// 冲突状态
-const shortcutConflicts = ref<Record<string, string>>({})
-
-// 响应式绑定和自定义状态
-const shortcutBindings = computed(() => {
-  const result: Record<string, KeyBinding> = {}
-  for (const def of SHORTCUT_DEFS) {
-    result[def.id] = getBinding(def.id)
-  }
-  return result
-})
-
-const shortcutCustomized = computed(() => {
-  const result: Record<string, boolean> = {}
-  for (const def of SHORTCUT_DEFS) {
-    result[def.id] = isShortcutCustomized(def.id)
-  }
-  return result
-})
-
-const handleShortcutRecord = async (id: string, binding: KeyBinding) => {
-  // 清除冲突提示
-  const conflicts = { ...shortcutConflicts.value }
-  delete conflicts[id]
-
-  // 检测冲突
-  const conflict = checkShortcutConflict(id, binding)
-  if (conflict) {
-    conflicts[id] = t(conflict.descriptionKey)
-    shortcutConflicts.value = conflicts
-    return
-  }
-
-  shortcutConflicts.value = conflicts
-  setShortcutBinding(id, binding)
-  await saveShortcuts()
-}
-
-const handleResetShortcut = async (id: string) => {
-  const conflicts = { ...shortcutConflicts.value }
-  delete conflicts[id]
-  shortcutConflicts.value = conflicts
-  resetShortcutBinding(id)
-  await saveShortcuts()
-}
-
-const handleResetAllShortcuts = async () => {
-  shortcutConflicts.value = {}
-  resetAllShortcuts()
-  await saveShortcuts()
-  showNotification({ type: 'success', message: t('settings.shortcutsResetAllDone') })
-}
-
-const applyTheme = (theme: string) => {
-  const root = document.documentElement
-  if (theme === 'system') {
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    root.setAttribute('data-theme', prefersDark ? 'dark' : 'light')
-  } else {
-    root.setAttribute('data-theme', theme)
-  }
-}
-
-const setTheme = async (theme: string) => {
-  currentTheme.value = theme
-  applyTheme(theme)
-  await saveSettings()
-}
-
-const switchLocale = async (newLocale: LocaleType) => {
-  setLocale(newLocale)
-  appStore.updateDefaultItems()
-  await saveSettings()
-}
-
-const toggleAutoBackup = () => {
-  autoBackupEnabled.value = !autoBackupEnabled.value
-  saveSettings()
-}
-
-const doBackupNow = async () => {
-  backingUp.value = true
-  try {
-    const filename = await backupApi.autoBackup()
-    lastBackupName.value = filename
-    // 清理旧备份
-    await backupApi.cleanupOldBackups(parseInt(autoBackupRetention.value))
-    showNotification({ type: 'success', message: t('settings.backupSuccess', { name: filename }) })
-  } catch {
-    showNotification({ type: 'error', message: t('settings.backupFailed') })
-  } finally {
-    backingUp.value = false
-  }
-}
-
-const setLockMode = async (mode: 'none' | 'password' | 'biometric') => {
-  if (mode === 'password' && !hasPassword.value) {
-    // Switch to password mode but need to set a password first
-    currentLockMode.value = 'password'
-    showPasswordForm.value = true
-    // Save mode first so UI reflects, password required to actually lock
-    lockMode.value = mode
-    await saveSettings()
-    return
-  }
-  if (mode === 'none' && hasPassword.value) {
-    await authApi.clearLockPassword()
-    hasPassword.value = false
-  }
-  currentLockMode.value = mode
-  lockMode.value = mode
-  showPasswordForm.value = false
-  await saveSettings()
-}
-
-const handleSavePassword = async () => {
-  passwordError.value = ''
-
-  if (hasPassword.value && !passwordForm.value.current) {
-    passwordError.value = t('settings.currentPassword')
-    return
-  }
-  if (passwordForm.value.newPwd.length < 4) {
-    passwordError.value = t('settings.passwordTooShort')
-    return
-  }
-  if (passwordForm.value.newPwd !== passwordForm.value.confirm) {
-    passwordError.value = t('settings.passwordMismatch')
-    return
-  }
-
-  savingPassword.value = true
-  try {
-    // Verify current password if changing
-    if (hasPassword.value) {
-      const valid = await authApi.verifyLockPassword(passwordForm.value.current)
-      if (!valid) {
-        passwordError.value = t('settings.passwordIncorrect')
-        savingPassword.value = false
-        return
-      }
-    }
-
-    await authApi.setLockPassword(passwordForm.value.newPwd)
-    hasPassword.value = true
-    showPasswordForm.value = false
-    passwordForm.value = { current: '', newPwd: '', confirm: '' }
-    showNotification({
-      type: 'success',
-      message: t(hasPassword.value ? 'settings.passwordChanged' : 'settings.passwordSet'),
-    })
-  } catch {
-    showNotification({ type: 'error', message: t('settings.saveFailed') })
-  } finally {
-    savingPassword.value = false
-  }
-}
-
-const handleRemovePassword = async () => {
-  try {
-    await authApi.clearLockPassword()
-    hasPassword.value = false
-    currentLockMode.value = 'none'
-    lockMode.value = 'none'
-    await saveSettings()
-    showNotification({ type: 'success', message: t('settings.passwordRemoved') })
-  } catch {
-    showNotification({ type: 'error', message: t('settings.saveFailed') })
-  }
-}
-
-const toggleLockOnMinimize = () => {
-  lockOnMinimizeEnabled.value = !lockOnMinimizeEnabled.value
-  lockOnMinimize.value = lockOnMinimizeEnabled.value
-  saveSettings()
-}
 
 const saveSettings = async () => {
   try {
-    // MCP 工具权限序列化为逗号分隔的已启用工具列表
     const enabledTools = Object.entries(mcpToolEnabled.value)
       .filter(([, v]) => v)
       .map(([k]) => k)
@@ -842,6 +253,7 @@ const saveSettings = async () => {
       theme: currentTheme.value,
       locale: locale.value,
       layoutMode: currentLayoutMode.value,
+      editorFontSize: editorFontSize.value,
       autoBackupEnabled: autoBackupEnabled.value ? '1' : '0',
       autoBackupInterval: autoBackupInterval.value,
       autoBackupRetention: autoBackupRetention.value,
@@ -852,23 +264,19 @@ const saveSettings = async () => {
       mcpEnabledTools: enabledTools,
       frontendLogLevel: frontendLogLevel.value,
     })
-    // 更新前端日志级别
     setLogLevel(frontendLogLevel.value)
   } catch {
     showNotification({ type: 'error', message: t('settings.saveFailed') })
   }
 }
 
-// 同步对话框
-const syncDialogVisible = ref(false)
-const syncHistoryDialogVisible = ref(false)
+// ============================================================================
+// 操作处理
+// ============================================================================
 
-// 日志对话框
-const logDialogVisible = ref(false)
-const frontendLogLevel = ref('info')
-
-const openLogDialog = () => {
-  logDialogVisible.value = true
+const switchProfile = () => {
+  visible.value = false
+  emit('switchProfile')
 }
 
 const openHelpManual = async () => {
@@ -877,55 +285,49 @@ const openHelpManual = async () => {
   await openHelpInNewWindow()
 }
 
-const openSyncDialog = () => {
-  syncDialogVisible.value = true
-}
-
-const openSyncHistoryDialog = () => {
-  syncHistoryDialogVisible.value = true
-}
-
-const switchProfile = () => {
-  visible.value = false
-  emit('switchProfile')
-}
+// ============================================================================
+// 初始化加载
+// ============================================================================
 
 const loadSettings = async () => {
   try {
     const settings = await settingsApi.getAll()
     if (settings.theme) {
       currentTheme.value = settings.theme
-      applyTheme(settings.theme)
+      appearanceRef.value?.applyTheme(settings.theme)
     }
     if (settings.locale) {
       setLocale(settings.locale as LocaleType)
       appStore.updateDefaultItems()
     }
-    // 加载布局模式
     if (settings.layoutMode) {
       const mode = settings.layoutMode as LayoutMode | 'auto'
       currentLayoutMode.value = mode
       setLayoutOverride(mode)
+    }
+    if (settings.editorFontSize) {
+      editorFontSize.value = settings.editorFontSize
+      document.documentElement.style.setProperty(
+        '--editor-font-size',
+        `${settings.editorFontSize}px`,
+      )
     }
 
     autoBackupEnabled.value = settings.autoBackupEnabled === '1'
     if (settings.autoBackupInterval) autoBackupInterval.value = settings.autoBackupInterval
     if (settings.autoBackupRetention) autoBackupRetention.value = settings.autoBackupRetention
 
-    // 加载安全设置
     currentLockMode.value = (settings.lockMode as 'none' | 'password' | 'biometric') || 'none'
     lockTimeoutValue.value = settings.lockTimeout || '0'
     lockOnMinimizeEnabled.value = settings.lockOnMinimize === '1'
-    hasPassword.value = !!settings.lockPasswordHash
+    securityRef.value?.initHasPassword(!!settings.lockPasswordHash)
 
-    // 加载前端日志级别
     if (settings.frontendLogLevel) {
       frontendLogLevel.value = settings.frontendLogLevel
       setLogLevel(settings.frontendLogLevel)
     }
     initLogger(frontendLogLevel.value)
 
-    // 加载 MCP 设置
     mcpEnabled.value = settings.mcpEnabled === '1'
     if (settings.mcpEnabledTools !== undefined) {
       const enabledSet = new Set(settings.mcpEnabledTools.split(',').filter(Boolean))
@@ -934,27 +336,11 @@ const loadSettings = async () => {
       }
     }
 
-    // 加载最近备份文件名
-    try {
-      const backups = await backupApi.listAutoBackups()
-      if (backups.length > 0) {
-        lastBackupName.value = backups[0][0]
-      }
-    } catch {
-      // 忽略
-    }
+    backupRef.value?.loadLastBackup()
   } catch {
     // 使用默认设置
   }
 }
-
-// 监听系统主题变化
-const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-mediaQuery.addEventListener('change', () => {
-  if (currentTheme.value === 'system') {
-    applyTheme('system')
-  }
-})
 
 onMounted(loadSettings)
 </script>

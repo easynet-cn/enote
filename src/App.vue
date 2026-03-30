@@ -12,15 +12,22 @@
   <SetupWizard
     v-if="appMode === 'setup'"
     :show-back="hasExistingProfiles"
+    :edit-profile="editProfileData"
     @complete="onSetupComplete"
-    @back="appMode = 'select'"
+    @back="
+      editProfileData = undefined
+      appMode = 'select'
+    "
   />
 
   <!-- Profile 选择模式 -->
   <ProfileSelector
     v-else-if="appMode === 'select'"
     :show-close="canCloseSelector"
-    @create="appMode = 'setup'"
+    @create="
+      editProfileData = undefined
+      appMode = 'setup'
+    "
     @edit="onEditProfile"
     @connected="onSetupComplete"
     @close="returnToMain"
@@ -42,6 +49,7 @@
         :tags="tags"
         :active-notebook="activeNotebook"
         :active-tag="activeTag"
+        :active-note="activeNote"
         :collapsed="isDesktopLayout ? sidebarCollapsed : false"
         @set-active-notebook="handleSelectNotebook"
         @set-active-tag="handleSelectTag"
@@ -83,40 +91,44 @@
         @current-change="handleNoteCurrentChange"
         @toggle-collapse="handleNoteListToggle"
         @toggle-pin="handleTogglePin"
+        @toggle-star="handleToggleStar"
         @open-sidebar="openSidebar"
       />
     </div>
 
     <!-- 编辑器组件 -->
     <div :class="editorContainerClass">
-      <NoteEditor
-        v-model:history-data="histories"
-        v-model:current-page="historyPageIndex"
-        v-model:page-size="historyPageSize"
-        v-model:total="historyTotal"
-        :notebooks="notebooks"
-        :tags="tags"
-        :active-note="activeNoteData"
-        :edit-mode="editMode"
-        :history-loading="historyLoading"
-        :mobile="isMobileLayout"
-        :layout="layout"
-        @save-note="saveNote"
-        @cancel-edit="cancelEdit"
-        @delete-note="deleteNote"
-        @toggle-edit-mode="editMode = !editMode"
-        @update-note-title="updateNoteTitle"
-        @update-note-content="updateNoteContent"
-        @update-note-content-type="updateNoteContentType"
-        @update-note-setting="
-          (notebookId, tagIds, mcpAccess) => updateNoteSetting(notebookId, tagIds, tags, mcpAccess)
-        "
-        @open="openHistoryDialog"
-        @size-change="handleNoteHistorySizeChange"
-        @current-change="handleNoteHistoryCurrentChange"
-        @save-as-template="handleSaveAsTemplate"
-        @back="handleEditorBack"
-      />
+      <ErrorBoundary>
+        <NoteEditor
+          v-model:history-data="histories"
+          v-model:current-page="historyPageIndex"
+          v-model:page-size="historyPageSize"
+          v-model:total="historyTotal"
+          :notebooks="notebooks"
+          :tags="tags"
+          :active-note="activeNoteData"
+          :edit-mode="editMode"
+          :history-loading="historyLoading"
+          :mobile="isMobileLayout"
+          :layout="layout"
+          @save-note="saveNote"
+          @cancel-edit="cancelEdit"
+          @delete-note="deleteNote"
+          @toggle-edit-mode="editMode = !editMode"
+          @update-note-title="updateNoteTitle"
+          @update-note-content="updateNoteContent"
+          @update-note-content-type="updateNoteContentType"
+          @update-note-setting="
+            (notebookId, tagIds, mcpAccess) =>
+              updateNoteSetting(notebookId, tagIds, tags, mcpAccess)
+          "
+          @open="openHistoryDialog"
+          @size-change="handleNoteHistorySizeChange"
+          @current-change="handleNoteHistoryCurrentChange"
+          @save-as-template="handleSaveAsTemplate"
+          @back="handleEditorBack"
+        />
+      </ErrorBoundary>
     </div>
 
     <!-- 导入对话框 -->
@@ -131,7 +143,11 @@
     <BackupDialog v-model="backupDialogVisible" @imported="refreshAllData" />
 
     <!-- 设置对话框 -->
-    <SettingsDialog v-model="settingsDialogVisible" @switch-profile="switchToProfileSelector" />
+    <SettingsDialog
+      v-model="settingsDialogVisible"
+      @switch-profile="switchToProfileSelector"
+      @backup-settings-changed="restartAutoBackup"
+    />
 
     <!-- 回收站对话框 -->
     <TrashDialog v-model="trashDialogVisible" @restored="refreshAllData" />
@@ -169,14 +185,17 @@ import { useAppStore } from './stores/app'
 import AppSidebar from './components/AppSidebar.vue'
 import NoteList from './components/NoteList.vue'
 import NoteEditor from './components/NoteEditor.vue'
+import ErrorBoundary from './components/ui/ErrorBoundary.vue'
 import { openHelpInNewWindow } from './utils/multiWindow'
 // 启动模式组件懒加载 —— 仅在特定启动模式下才需要
 const SetupWizard = defineAsyncComponent(() => import('./components/SetupWizard.vue'))
 const ProfileSelector = defineAsyncComponent(() => import('./components/ProfileSelector.vue'))
 import { showNotification } from './components/ui/notification'
 import { parseError } from './utils/errorHandler'
+import { exportAsPdf } from './utils/export'
 import { usePlatform } from './composables/usePlatform'
 import type { PaletteCommand } from './components/CommandPalette.vue'
+import type { ProfileConfig } from './types'
 import {
   Plus,
   Save,
@@ -195,6 +214,7 @@ import {
   HelpCircle,
   ScrollText,
   RefreshCw,
+  Printer as PrinterIcon,
 } from 'lucide-vue-next'
 
 // 对话框组件懒加载 —— 仅在用户打开时才加载，减少首屏 JS 体积
@@ -277,6 +297,7 @@ const appMode = ref<'loading' | 'setup' | 'select' | 'main'>('loading')
 const hasExistingProfiles = ref(false)
 
 const onSetupComplete = async () => {
+  editProfileData.value = undefined
   // 热重连后进入主界面（不再依赖进程重启）
   await enterMainMode()
 }
@@ -294,10 +315,16 @@ const returnToMain = async () => {
   await enterMainMode()
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const onEditProfile = async (_profileId: string) => {
-  // TODO: 编辑已有 profile
-  appMode.value = 'setup'
+const editProfileData = ref<(ProfileConfig & { id: string }) | undefined>(undefined)
+
+const onEditProfile = async (profileId: string) => {
+  try {
+    const config = await profileApi.getProfile(profileId)
+    editProfileData.value = { ...config, id: profileId }
+    appMode.value = 'setup'
+  } catch (e: unknown) {
+    showNotification({ type: 'error', message: parseError(e) })
+  }
 }
 
 // 锁屏
@@ -406,6 +433,20 @@ const handleReorderTags = async (orders: [string, number][]) => {
 const handleTogglePin = async (noteId: string) => {
   try {
     const updatedNote = await noteApi.toggleNotePin(Number(noteId))
+    if (updatedNote) {
+      appStore.updateNote(noteToShowNote(updatedNote))
+      // 刷新列表以更新排序
+      await refreshAllData()
+    }
+  } catch (e: unknown) {
+    showNotification({ type: 'error', message: parseError(e) })
+  }
+}
+
+// 切换笔记收藏/星标
+const handleToggleStar = async (noteId: string) => {
+  try {
+    const updatedNote = await noteApi.toggleNoteStar(Number(noteId))
     if (updatedNote) {
       appStore.updateNote(noteToShowNote(updatedNote))
       // 刷新列表以更新排序
@@ -647,6 +688,18 @@ const paletteCommands = computed<PaletteCommand[]>(() => [
     },
   },
   {
+    id: 'print-note',
+    name: t('commandPalette.commands.printNote'),
+    icon: markRaw(PrinterIcon),
+    category: t('commandPalette.categories.notes'),
+    handler: () => {
+      if (activeNoteData.value) {
+        const title = activeNoteData.value.title || t('export.untitledNote')
+        exportAsPdf(title, activeNoteData.value.content || '')
+      }
+    },
+  },
+  {
     id: 'switch-layout',
     name: t('shortcuts.switchLayout'),
     icon: markRaw(Monitor),
@@ -687,6 +740,22 @@ const paletteCommands = computed<PaletteCommand[]>(() => [
 // 自动备份定时器
 let autoBackupTimer: ReturnType<typeof setTimeout> | ReturnType<typeof setInterval> | null = null
 let autoBackupErrorNotified = false
+
+// 停止当前自动备份定时器
+const stopAutoBackup = () => {
+  if (autoBackupTimer) {
+    clearTimeout(autoBackupTimer as ReturnType<typeof setTimeout>)
+    clearInterval(autoBackupTimer as ReturnType<typeof setInterval>)
+    autoBackupTimer = null
+  }
+}
+
+// 重启自动备份（设置变更后调用）
+const restartAutoBackup = () => {
+  stopAutoBackup()
+  autoBackupErrorNotified = false
+  startAutoBackup()
+}
 
 const startAutoBackup = async () => {
   try {

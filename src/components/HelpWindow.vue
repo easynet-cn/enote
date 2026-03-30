@@ -11,7 +11,13 @@
           :placeholder="t('help.searchPlaceholder')"
           class="help-search-input"
         />
-        <button v-if="searchQuery" class="help-search-clear" @click="searchQuery = ''">
+        <button
+          v-if="searchQuery"
+          class="help-search-clear"
+          @click="searchQuery = ''"
+          :title="t('common.clear')"
+          :aria-label="t('common.clear')"
+        >
           <X class="w-3.5 h-3.5" />
         </button>
       </div>

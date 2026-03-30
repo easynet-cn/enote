@@ -13,7 +13,9 @@
           <input type="radio" :value="format.value" v-model="selectedFormat" class="sr-only" />
           <div class="flex items-center gap-3">
             <div class="format-icon">
-              <FileText v-if="format.value === 'word'" class="w-5 h-5" />
+              <Printer v-if="format.value === 'pdf'" class="w-5 h-5" />
+              <Globe v-else-if="format.value === 'html'" class="w-5 h-5" />
+              <FileText v-else-if="format.value === 'word'" class="w-5 h-5" />
               <FileJson v-else-if="format.value === 'json'" class="w-5 h-5" />
               <FileCode v-else class="w-5 h-5" />
             </div>
@@ -46,7 +48,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { FileText, FileJson, FileCode, Check, Download } from 'lucide-vue-next'
+import { FileText, FileJson, FileCode, Printer, Globe, Check, Download } from 'lucide-vue-next'
 import { Dialog, Button } from './ui'
 import { showNotification } from './ui/notification'
 import { exportNote, getExportFormats, type ExportFormat } from '../utils/export'
@@ -61,7 +63,7 @@ interface Props {
 const props = defineProps<Props>()
 
 const visible = defineModel<boolean>({ default: false })
-const selectedFormat = ref<ExportFormat>('word')
+const selectedFormat = ref<ExportFormat>('pdf')
 const exporting = ref(false)
 const formats = getExportFormats()
 

@@ -47,6 +47,17 @@
       </button>
     </Tooltip>
 
+    <!-- 打印按钮 -->
+    <Tooltip :content="t('editor.toolbarTooltip.print')" placement="bottom">
+      <button
+        class="action-btn action-btn-ghost"
+        @click="emit('print')"
+        :aria-label="t('editor.toolbarTooltip.print')"
+      >
+        <Printer class="w-4 h-4" />
+      </button>
+    </Tooltip>
+
     <!-- 导出按钮 -->
     <Tooltip :content="t('editor.toolbarTooltip.export')" placement="bottom">
       <button
@@ -105,6 +116,7 @@ import {
   History,
   Trash2,
   LayoutTemplate,
+  Printer,
 } from 'lucide-vue-next'
 
 const { t } = useI18n()
@@ -121,6 +133,7 @@ const emit = defineEmits<{
   settings: []
   history: []
   export: []
+  print: []
   saveAsTemplate: []
 }>()
 </script>

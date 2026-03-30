@@ -73,6 +73,7 @@ describe('converters utils', () => {
       content: '<p>Hello World</p>',
       contentType: ContentType.Html,
       isPinned: 0,
+      isStarred: 0,
       tags: [
         {
           id: 1,

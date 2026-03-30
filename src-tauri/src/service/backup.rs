@@ -108,6 +108,7 @@ async fn restore_data(txn: &impl ConnectionTrait, data: &BackupData) -> anyhow::
                 content: Set(m.content.clone()),
                 content_type: Set(m.content_type),
                 is_pinned: Set(m.is_pinned),
+                is_starred: Set(m.is_starred),
                 mcp_access: Set(m.mcp_access),
                 create_time: Set(m.create_time),
                 update_time: Set(m.update_time),
@@ -600,6 +601,11 @@ pub async fn import_excel(db: &DatabaseConnection, path: &str) -> anyhow::Result
                 } else {
                     0
                 },
+                is_starred: if row.len() > 8 {
+                    cell_i64(&row[8]) as i32
+                } else {
+                    0
+                },
                 mcp_access: 0,
                 create_time: cell_dt(&row[5])?,
                 update_time: cell_dt(&row[6])?,
@@ -913,6 +919,11 @@ pub async fn import_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
                 content_type: r[4].parse()?,
                 is_pinned: if r.len() > 7 {
                     r[7].parse().unwrap_or(0)
+                } else {
+                    0
+                },
+                is_starred: if r.len() > 8 {
+                    r[8].parse().unwrap_or(0)
                 } else {
                     0
                 },

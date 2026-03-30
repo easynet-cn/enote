@@ -2,7 +2,7 @@
 
 **Software Name:** ENote Intelligent Note Management System
 
-**Version:** V0.12.0
+**Version:** V1.1.0
 
 **Date:** March 2026
 
@@ -27,6 +27,7 @@
   - [4.4 Delete a Notebook](#44-delete-a-notebook)
   - [4.5 Filter by Notebook](#45-filter-by-notebook)
   - [4.6 Drag-and-Drop Notebook Sorting](#46-drag-and-drop-notebook-sorting)
+  - [4.7 Notebook Hierarchy](#47-notebook-hierarchy)
 - 5. Tag Management
   - [5.1 View Tag List](#51-view-tag-list)
   - [5.2 Create a Tag](#52-create-a-tag)
@@ -46,6 +47,10 @@
   - [6.9 Note Encryption](#69-note-encryption)
   - [6.10 Linked Notes (Bidirectional Links)](#610-linked-notes-bidirectional-links)
   - [6.11 Open Note in New Window](#611-open-note-in-new-window)
+  - [6.12 Note Sorting](#612-note-sorting)
+  - [6.13 Batch Operations](#613-batch-operations)
+  - [6.14 Note Starring](#614-note-starring)
+  - [6.15 File Attachments](#615-file-attachments)
 - 7. Rich Text Editor
   - [7.1 Text Styles](#71-text-styles)
   - [7.2 Headings and Fonts](#72-headings-and-fonts)
@@ -82,6 +87,8 @@
   - [11.3 Export as Evernote Format](#113-export-as-evernote-format)
   - [11.4 Export as JSON](#114-export-as-json)
   - [11.5 Export as XML](#115-export-as-xml)
+  - [11.6 Export as PDF](#116-export-as-pdf)
+  - [11.7 Export as HTML](#117-export-as-html)
 - 12. Import
   - [12.1 Import from Evernote](#121-import-from-evernote)
   - [12.2 Import from Youdao Notes](#122-import-from-youdao-notes)
@@ -100,6 +107,8 @@
   - [14.7 MCP Settings](#147-mcp-settings)
   - [14.8 Profile Management](#148-profile-management)
   - [14.9 System Maintenance (Cross-Profile Sync)](#149-system-maintenance-cross-profile-sync)
+  - [14.10 Editor Font Size](#1410-editor-font-size)
+  - [14.11 Profile Editing](#1411-profile-editing)
 - 15. Command Palette
 - 16. System Tray
 - 17. Keyboard Shortcuts
@@ -136,6 +145,10 @@
   - [23.3 File Logs](#233-file-logs)
   - [23.4 Frontend Log Level](#234-frontend-log-level)
   - [23.5 Sensitive Data Protection](#235-sensitive-data-protection)
+- 24. Auto Update
+  - [24.1 Automatic Check on Startup](#241-automatic-check-on-startup)
+  - [24.2 Manual Update Check](#242-manual-update-check)
+  - [24.3 Download and Install](#243-download-and-install)
 - Appendix A: Changelog
 
 ---
@@ -1929,10 +1942,95 @@ The logging system automatically sanitizes sensitive information:
 
 ---
 
+## 24. Auto Update
+
+ENote supports in-app automatic updates, distributing new versions via GitHub Releases. Update packages are verified with digital signatures to ensure security.
+
+### 24.1 Automatic Check on Startup
+
+The application automatically checks for new versions in the background after startup:
+
+- Silent check 3 seconds after launch, without affecting normal usage
+- No notification if already on the latest version
+- An update dialog appears if a new version is found
+- Check results are recorded in the activity log (module: `updater`)
+
+### 24.2 Manual Update Check
+
+In addition to automatic checking, you can manually trigger an update check:
+
+- **Menu Bar**: Click Help → Check for Updates
+- **Command Palette**: Press `Ctrl+P` (macOS: `Cmd+P`), search for "Check for Updates"
+
+When checking manually:
+- If already up to date, a "You are up to date" notification appears
+- If the check fails (e.g., network issues), an error notification appears
+
+### 24.3 Download and Install
+
+When a new version is found, the update dialog displays:
+
+- Current version number and new version number
+- Release Notes
+- **Update Now** and **Later** options
+
+After clicking "Update Now":
+
+1. A download progress bar is displayed
+2. The update is installed automatically after download
+3. A restart prompt appears after installation
+4. The application restarts automatically and loads the new version
+
+> **Note**: Do not close the application during the download. If the download fails, you can try again later.
+
+---
+
 ## Appendix A: Changelog
 
 | Version | Date | Changes |
 |---------|------|---------|
+| V1.1.0 | March 2026 | New Features, Performance Optimization, and UX Enhancement |
+| | | **New Features:** |
+| | | - Note Sorting: Sort by title, creation time, or update time with ascending/descending toggle |
+| | | - Batch Operations: Multi-select notes for batch move to notebook and batch delete |
+| | | - Note Starring: Star/favorite notes for quick identification |
+| | | - File Attachments: Attach files to notes with local storage, drag-and-drop upload, and system file opener |
+| | | - Notebook Hierarchy: Nested notebook tree with expand/collapse, parent notebook selection in edit dialog |
+| | | - Code Block Language Selector: Quick language dropdown for syntax highlighting (25+ languages) |
+| | | - PDF Export: Export notes as PDF via system print dialog |
+| | | - HTML Export: Standalone HTML files with embedded styles, responsive design, and dark mode support |
+| | | - Print Support: Direct print from toolbar and command palette |
+| | | - Editor Font Size Setting: Configurable font size (12-20px) in appearance settings |
+| | | - Profile Editing: Edit existing database profile configurations without recreating |
+| | | **Performance Optimization:** |
+| | | - Trash Empty: Single transaction for batch deletion with individual history preservation |
+| | | - Settings Cache Write-Through: Merge updates into cache instead of invalidating |
+| | | - Reorder Transactions: Notebook/tag reorder operations wrapped in single transaction |
+| | | - Sync History Dedup: Skip duplicate history generation during cross-profile sync |
+| | | - History Cache: LRU cache (30s TTL) for note history pagination |
+| | | - Auto Backup Hot Reload: Backup timer resets when interval settings change |
+| | | **UX Enhancement:** |
+| | | - Editor Error Boundary: Graceful error recovery instead of white screen on editor crash |
+| | | - Title/Content Separator: Visual divider between note title and content area |
+| | | - Editor Focus: Auto-focus to title start (new note) or content start (existing note) on edit |
+| | | - Sidebar Layout: Notebooks and tags each occupy 50% height with independent scrolling |
+| | | - Floating Drawer Panel: Attachments and linked notes in right-side slide-in drawer with shadow overlay |
+| | | - SettingsDialog Split: Refactored into 5 modular sub-components |
+| | | **Security:** |
+| | | - Decryption Failure Protection: Returns placeholder text instead of leaking ciphertext |
+| | | - DB URL Sanitization: Database connection string passwords automatically masked in logs |
+| | | - Sanitization Tests: 8 new unit tests for log sanitization functions |
+| | | **i18n:** |
+| | | - Complete i18n audit: Fixed hardcoded strings in toolbar, tree items, and help components |
+| | | - Added missing tooltips on all icon-only buttons |
+| V1.0.0 | March 2026 | Auto Update and PostgreSQL Compatibility Fix |
+| | | - Auto Update: Automatic new version check on startup with download progress and one-click install/restart |
+| | | - Manual Update Check: Available from Help menu and Command Palette |
+| | | - Update Signature Verification: Based on Tauri Updater plugin with digital signature verification |
+| | | - GitHub Releases Distribution: Three-platform builds via GitHub Actions |
+| | | - PostgreSQL Compatibility Fix: All table primary keys unified to BIGINT, fixing int4/int8 type mismatch |
+| | | - Log Error Handling Enhancement: Diagnostic info logged via tracing when log writes fail |
+| | | - Clippy Warnings Cleared: All 36 Clippy warnings fixed |
 | V0.12.0 | March 2026 | Help System and Application Logs |
 | | | - Help System: Built-in searchable user manual with table of contents navigation and multilingual support |
 | | | - Application Logs: Database operation logs and file system logs with filtering, search, and cleanup |
@@ -2023,4 +2121,4 @@ The logging system automatically sanitizes sensitive information:
 
 ---
 
-*This manual is based on ENote Intelligent Note Management System V0.12.0. Please refer to the actual software for any feature updates.*
+*This manual is based on ENote Intelligent Note Management System V1.1.0. Please refer to the actual software for any feature updates.*

@@ -20,7 +20,7 @@ const searchCache = new LRUCache<string, SearchCacheEntry>(SEARCH_CACHE_MAX_SIZE
 
 // 生成缓存 key
 const getSearchCacheKey = (param: NoteSearchPageParam): string => {
-  return `${param.pageIndex}-${param.pageSize}-${param.notebookId}-${param.tagId}-${param.keyword}`
+  return `${param.pageIndex}-${param.pageSize}-${param.notebookId}-${param.tagId}-${param.keyword}-${param.sortField}-${param.sortOrder}`
 }
 
 export function useNoteSearch() {
