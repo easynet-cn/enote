@@ -14,20 +14,14 @@
     :show-back="hasExistingProfiles"
     :edit-profile="editProfileData"
     @complete="onSetupComplete"
-    @back="
-      editProfileData = undefined
-      appMode = 'select'
-    "
+    @back="onSetupBack"
   />
 
   <!-- Profile 选择模式 -->
   <ProfileSelector
     v-else-if="appMode === 'select'"
     :show-close="canCloseSelector"
-    @create="
-      editProfileData = undefined
-      appMode = 'setup'
-    "
+    @create="onCreateProfile"
     @edit="onEditProfile"
     @connected="onSetupComplete"
     @close="returnToMain"
@@ -295,6 +289,16 @@ const editorContainerClass = computed(() => {
 // 应用模式：'loading' | 'setup' | 'select' | 'main'
 const appMode = ref<'loading' | 'setup' | 'select' | 'main'>('loading')
 const hasExistingProfiles = ref(false)
+
+const onSetupBack = () => {
+  editProfileData.value = undefined
+  appMode.value = 'select'
+}
+
+const onCreateProfile = () => {
+  editProfileData.value = undefined
+  appMode.value = 'setup'
+}
 
 const onSetupComplete = async () => {
   editProfileData.value = undefined

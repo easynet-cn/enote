@@ -147,22 +147,12 @@
               <button
                 class="drawer-tab"
                 :class="{ active: showAttachmentPanel }"
-                @click="
-                  showAttachmentPanel = true
-                  showLinkPanel = false
-                "
+                @click="switchToAttachment"
               >
                 <Paperclip class="w-3.5 h-3.5" />
                 {{ t('attachment.title') }}
               </button>
-              <button
-                class="drawer-tab"
-                :class="{ active: showLinkPanel }"
-                @click="
-                  showLinkPanel = true
-                  showAttachmentPanel = false
-                "
-              >
+              <button class="drawer-tab" :class="{ active: showLinkPanel }" @click="switchToLink">
                 <Link2 class="w-3.5 h-3.5" />
                 {{ t('noteLink.title') }}
               </button>
@@ -231,14 +221,8 @@
       :show-panel-buttons="!!activeNote && !isNewNote"
       :attachment-active="showAttachmentPanel"
       :link-active="showLinkPanel"
-      @toggle-attachment="
-        showAttachmentPanel = !showAttachmentPanel
-        showLinkPanel = false
-      "
-      @toggle-link="
-        showLinkPanel = !showLinkPanel
-        showAttachmentPanel = false
-      "
+      @toggle-attachment="toggleAttachment"
+      @toggle-link="toggleLink"
     />
   </div>
 </template>
@@ -479,6 +463,26 @@ watch(
 // 抽屉面板状态
 const showAttachmentPanel = ref(false)
 const showLinkPanel = ref(false)
+
+const switchToAttachment = () => {
+  showAttachmentPanel.value = true
+  showLinkPanel.value = false
+}
+
+const switchToLink = () => {
+  showLinkPanel.value = true
+  showAttachmentPanel.value = false
+}
+
+const toggleAttachment = () => {
+  showAttachmentPanel.value = !showAttachmentPanel.value
+  showLinkPanel.value = false
+}
+
+const toggleLink = () => {
+  showLinkPanel.value = !showLinkPanel.value
+  showAttachmentPanel.value = false
+}
 
 const closeDrawer = () => {
   showAttachmentPanel.value = false
