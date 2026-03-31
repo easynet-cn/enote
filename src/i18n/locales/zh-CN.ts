@@ -495,6 +495,8 @@ export default {
     created: '创建成功',
     networkError: '网络错误，请稍后重试',
     serverError: '服务器错误',
+    showDetail: '查看详情',
+    hideDetail: '收起详情',
   },
 
   // 后端错误码

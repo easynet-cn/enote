@@ -272,14 +272,12 @@
                 <label class="block text-sm font-medium text-content-secondary mb-1">
                   {{ t('setup.sslMode') }}
                 </label>
-                <select
+                <AppSelect
                   v-model="form.datasource.ssl.mode"
-                  class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option v-for="opt in sslModeOptions" :key="opt.value" :value="opt.value">
-                    {{ opt.label }}
-                  </option>
-                </select>
+                  :options="sslModeSelectOptions"
+                  size="md"
+                  class="w-full"
+                />
               </div>
 
               <div class="space-y-2">
@@ -425,7 +423,9 @@ import { open, save } from '@tauri-apps/plugin-dialog'
 import { appDataDir, join } from '@tauri-apps/api/path'
 import { profileApi } from '../api/note'
 import { showNotification } from './ui/notification'
-import { parseError } from '../utils/errorHandler'
+import { AppSelect } from './ui'
+import type { AppSelectOption } from './ui'
+import { parseError, parseErrorToAppError } from '../utils/errorHandler'
 import { availableLocales, setLocale, getCurrentLocale } from '../i18n'
 import type { LocaleType } from '../i18n'
 import type { ProfileConfig } from '../types'
@@ -543,6 +543,8 @@ const sslModeOptions = computed(() => {
   }
   return base
 })
+
+const sslModeSelectOptions = computed<AppSelectOption[]>(() => sslModeOptions.value)
 
 const canNext = computed(() => {
   if (currentStep.value === 0) return true
@@ -710,7 +712,12 @@ const testConn = async () => {
     await profileApi.testConnection(form, dbPassword.value || undefined)
     showNotification({ type: 'success', message: t('setup.testSuccess') })
   } catch (e: unknown) {
-    showNotification({ type: 'error', message: `${t('setup.testFailed')}: ${parseError(e)}` })
+    const appError = parseErrorToAppError(e)
+    showNotification({
+      type: 'error',
+      message: `${t('setup.testFailed')}: ${appError.message}`,
+      detail: appError.details,
+    })
   } finally {
     testing.value = false
   }

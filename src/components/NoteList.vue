@@ -368,7 +368,7 @@ import NoteListSkeleton from './NoteListSkeleton.vue'
 import { stripHtml, truncateText, markdownToHtml } from '../utils'
 import { parseId } from '../utils/validation'
 import { noteApi } from '../api/note'
-import { showNotification } from './ui/notification'
+import { showError } from '../utils/errorHandler'
 import { LRUCache } from '../utils/lruCache'
 import { throttle } from '../utils/debounce'
 import { ContentType, type ShowNotebook, type ShowNote } from '../types'
@@ -571,7 +571,7 @@ const handleBatchMove = async (notebookId: string) => {
     appStore.clearSelection()
     emit('updateSearchQuery')
   } catch (error) {
-    showNotification({ type: 'error', message: String(error) })
+    showError(error)
   }
   batchMoveDropdownRef.value?.close()
 }
@@ -585,7 +585,7 @@ const handleBatchDelete = async () => {
     appStore.clearSelection()
     emit('updateSearchQuery')
   } catch (error) {
-    showNotification({ type: 'error', message: String(error) })
+    showError(error)
   }
 }
 

@@ -11,7 +11,7 @@ import type {
   ProfileSummary,
 } from '../types'
 import { showNotification } from '../components/ui/notification'
-import { parseError } from '../utils/errorHandler'
+import { showError } from '../utils/errorHandler'
 
 export function useSync() {
   const { t } = useI18n()
@@ -29,7 +29,7 @@ export function useSync() {
       const all = await profileApi.listProfiles()
       profiles.value = all.filter((p) => !p.isActive)
     } catch (e: unknown) {
-      showNotification({ type: 'error', message: parseError(e) })
+      showError(e)
     }
   }
 
@@ -38,7 +38,7 @@ export function useSync() {
     try {
       preview.value = await syncApi.getPreview(targetProfileId, targetDbPassword)
     } catch (e: unknown) {
-      showNotification({ type: 'error', message: parseError(e) })
+      showError(e)
       preview.value = null
     } finally {
       loading.value = false
@@ -72,7 +72,7 @@ export function useSync() {
         })
       }
     } catch (e: unknown) {
-      showNotification({ type: 'error', message: parseError(e) })
+      showError(e)
     } finally {
       syncing.value = false
     }
@@ -136,7 +136,7 @@ export function useSyncHistory() {
       logs.value = result.data
       total.value = result.total
     } catch (e: unknown) {
-      showNotification({ type: 'error', message: parseError(e) })
+      showError(e)
     } finally {
       loading.value = false
     }
@@ -155,7 +155,7 @@ export function useSyncHistory() {
       details.value = result.data
       detailTotal.value = result.total
     } catch (e: unknown) {
-      showNotification({ type: 'error', message: parseError(e) })
+      showError(e)
     } finally {
       loading.value = false
     }
@@ -167,7 +167,7 @@ export function useSyncHistory() {
       showNotification({ type: 'success', message: t('sync.deleteSuccess') })
       await loadLogs()
     } catch (e: unknown) {
-      showNotification({ type: 'error', message: parseError(e) })
+      showError(e)
     }
   }
 
@@ -178,7 +178,7 @@ export function useSyncHistory() {
       logs.value = []
       total.value = 0
     } catch (e: unknown) {
-      showNotification({ type: 'error', message: parseError(e) })
+      showError(e)
     }
   }
 
@@ -187,7 +187,7 @@ export function useSyncHistory() {
       await syncApi.exportSyncLog(syncLogId, path)
       showNotification({ type: 'success', message: t('sync.exportSuccess') })
     } catch (e: unknown) {
-      showNotification({ type: 'error', message: parseError(e) })
+      showError(e)
     }
   }
 

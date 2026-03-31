@@ -184,11 +184,11 @@ export const parseError = (error: unknown): string => {
  * 显示错误通知
  */
 export const showError = (error: unknown, fallbackMessage?: string): void => {
-  const message = fallbackMessage || parseError(error)
+  const appError = parseErrorToAppError(error)
   showNotification({
-    message,
+    message: fallbackMessage || appError.message,
+    detail: appError.details,
     type: 'error',
-    duration: 5000,
   })
 }
 

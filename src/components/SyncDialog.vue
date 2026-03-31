@@ -21,16 +21,14 @@
           <label class="text-xs font-medium text-content-secondary mb-1 block">{{
             t('sync.target')
           }}</label>
-          <select
+          <AppSelect
             v-model="targetProfileId"
+            :options="profileSelectOptions"
+            :placeholder="t('sync.selectTarget')"
+            size="md"
+            class="w-full"
             @change="handleTargetChange"
-            class="w-full px-3 py-2 text-sm border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            <option value="">{{ t('sync.selectTarget') }}</option>
-            <option v-for="p in profiles" :key="p.id" :value="p.id">
-              {{ p.name }} ({{ p.dbType }})
-            </option>
-          </select>
+          />
         </div>
       </div>
 
@@ -127,15 +125,12 @@
             <input type="checkbox" v-model="autoBackup" />
             {{ t('sync.autoBackup') }}
           </label>
-          <select
+          <AppSelect
             v-if="autoBackup"
             v-model="backupFormat"
-            class="px-2 py-1 text-sm border border-edge rounded bg-surface text-content"
-          >
-            <option value="sql">SQL</option>
-            <option value="excel">Excel</option>
-            <option value="csv">CSV</option>
-          </select>
+            :options="backupFormatOptions"
+            size="sm"
+          />
         </div>
       </div>
 
@@ -219,7 +214,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Dialog, Button } from './ui'
+import { Dialog, Button, AppSelect } from './ui'
+import type { AppSelectOption } from './ui'
 import SyncResultDialog from './SyncResultDialog.vue'
 import { useSync } from '../composables/useSync'
 import { profileApi } from '../api/note'
@@ -265,6 +261,19 @@ const scope = ref<SyncScope>({
 })
 const autoBackup = ref(true)
 const backupFormat = ref('sql')
+
+const profileSelectOptions = computed<AppSelectOption[]>(() =>
+  profiles.value.map((p) => ({
+    label: `${p.name} (${p.dbType})`,
+    value: p.id,
+  })),
+)
+
+const backupFormatOptions: AppSelectOption[] = [
+  { label: 'SQL', value: 'sql' },
+  { label: 'Excel', value: 'excel' },
+  { label: 'CSV', value: 'csv' },
+]
 
 const currentProfileName = ref('')
 

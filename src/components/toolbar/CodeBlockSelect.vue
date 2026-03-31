@@ -1,16 +1,14 @@
 <template>
   <div v-if="isInCodeBlock" class="toolbar-section">
     <Tooltip :content="t('editor.toolbarTooltip.codeLanguage')" placement="bottom">
-      <select
-        :value="currentLanguage"
-        @change="setLanguage(($event.target as HTMLSelectElement).value)"
+      <AppSelect
+        :modelValue="currentLanguage"
+        @update:modelValue="setLanguage(String($event))"
+        :options="languages"
         :disabled="!editMode"
+        size="sm"
         class="code-lang-select"
-      >
-        <option v-for="lang in languages" :key="lang.value" :value="lang.value">
-          {{ lang.label }}
-        </option>
-      </select>
+      />
     </Tooltip>
   </div>
 </template>
@@ -19,7 +17,7 @@
 import { ref, watch, onBeforeUnmount, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Editor } from '@tiptap/vue-3'
-import { Tooltip } from '../ui'
+import { Tooltip, AppSelect } from '../ui'
 
 const props = defineProps<{
   editor: Editor | null
@@ -104,31 +102,6 @@ const languages = computed(() => [
 
 <style scoped>
 .code-lang-select {
-  height: 32px;
-  padding: 0 0.5rem;
-  font-size: 0.8125rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background-color: var(--color-bg-primary);
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  outline: none;
-  transition: all var(--transition-fast) var(--ease-default);
   max-width: 130px;
-}
-
-.code-lang-select:hover:not(:disabled) {
-  border-color: var(--color-primary);
-  color: var(--color-text-primary);
-}
-
-.code-lang-select:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px var(--color-primary-light);
-}
-
-.code-lang-select:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 </style>

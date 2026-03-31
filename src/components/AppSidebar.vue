@@ -264,16 +264,12 @@
             class="block text-sm font-medium text-content-secondary mb-1"
             >{{ t('sidebar.notebookForm.parentLabel') }}</label
           >
-          <select
-            id="notebook-parent"
-            v-model.number="notebookForm.parentId"
-            class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-          >
-            <option :value="0">{{ t('sidebar.notebookForm.noParent') }}</option>
-            <option v-for="nb in parentNotebookOptions" :key="nb.id" :value="Number(nb.id)">
-              {{ nb.name }}
-            </option>
-          </select>
+          <AppSelect
+            v-model="notebookForm.parentId"
+            :options="parentNotebookSelectOptions"
+            size="md"
+            class="w-full"
+          />
         </div>
         <div>
           <label
@@ -320,16 +316,12 @@
             class="block text-sm font-medium text-content-secondary mb-1"
             >{{ t('settings.mcpAccess') }}</label
           >
-          <select
-            id="notebook-mcp-access"
-            v-model.number="notebookForm.mcpAccess"
-            class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-          >
-            <option :value="0">{{ t('settings.mcpAccessInherit') }}</option>
-            <option :value="1">{{ t('settings.mcpAccessReadWrite') }}</option>
-            <option :value="2">{{ t('settings.mcpAccessReadOnly') }}</option>
-            <option :value="3">{{ t('settings.mcpAccessDeny') }}</option>
-          </select>
+          <AppSelect
+            v-model="notebookForm.mcpAccess"
+            :options="mcpAccessOptions"
+            size="md"
+            class="w-full"
+          />
         </div>
       </div>
     </form>
@@ -399,16 +391,12 @@
             class="block text-sm font-medium text-content-secondary mb-1"
             >{{ t('settings.mcpAccess') }}</label
           >
-          <select
-            id="tag-mcp-access"
-            v-model.number="tagForm.mcpAccess"
-            class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-          >
-            <option :value="0">{{ t('settings.mcpAccessInherit') }}</option>
-            <option :value="1">{{ t('settings.mcpAccessReadWrite') }}</option>
-            <option :value="2">{{ t('settings.mcpAccessReadOnly') }}</option>
-            <option :value="3">{{ t('settings.mcpAccessDeny') }}</option>
-          </select>
+          <AppSelect
+            v-model="tagForm.mcpAccess"
+            :options="mcpAccessOptions"
+            size="md"
+            class="w-full"
+          />
         </div>
       </div>
     </form>
@@ -465,7 +453,9 @@ import {
   DropdownItem,
   ConfirmDialog,
   Tooltip,
+  AppSelect,
 } from './ui'
+import type { AppSelectOption } from './ui'
 import NotebookTreeItem from './NotebookTreeItem.vue'
 import { iconComponents } from './ui/icons'
 import type { ShowNotebook, ShowTag } from '../types'
@@ -586,6 +576,21 @@ const parentNotebookOptions = computed(() => {
 
   return allNotebooks.filter((n) => n.id !== editingId && !descendantIds.has(n.id))
 })
+
+const parentNotebookSelectOptions = computed<AppSelectOption[]>(() => [
+  { label: t('sidebar.notebookForm.noParent'), value: 0 },
+  ...parentNotebookOptions.value.map((nb) => ({
+    label: nb.name || '',
+    value: Number(nb.id),
+  })),
+])
+
+const mcpAccessOptions = computed<AppSelectOption[]>(() => [
+  { label: t('settings.mcpAccessInherit'), value: 0 },
+  { label: t('settings.mcpAccessReadWrite'), value: 1 },
+  { label: t('settings.mcpAccessReadOnly'), value: 2 },
+  { label: t('settings.mcpAccessDeny'), value: 3 },
+])
 
 const handleNotebookToggle = (id: string) => {
   store.toggleNotebookExpand(id)

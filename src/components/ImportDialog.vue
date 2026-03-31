@@ -47,14 +47,12 @@
     <div v-else-if="step === 3" class="space-y-4">
       <p class="text-sm text-content-secondary">{{ t('import.selectNotebook') }}:</p>
 
-      <select
+      <AppSelect
         v-model="targetNotebookId"
-        class="w-full h-10 px-3 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-      >
-        <option v-for="nb in availableNotebooks" :key="nb.id" :value="nb.id">
-          {{ nb.name }}
-        </option>
-      </select>
+        :options="notebookSelectOptions"
+        size="md"
+        class="w-full"
+      />
 
       <div class="flex items-center gap-2 text-sm text-content-secondary">
         <input id="createTags" v-model="createTags" type="checkbox" class="rounded" />
@@ -147,7 +145,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Dialog, Button } from './ui'
+import { Dialog, Button, AppSelect } from './ui'
+import type { AppSelectOption } from './ui'
 import {
   FileText,
   FileArchive,
@@ -233,6 +232,13 @@ const availableNotebooks = computed(() => {
   // 过滤掉 "全部" 虚拟笔记本
   return props.notebooks.filter((nb) => nb.id !== '0')
 })
+
+const notebookSelectOptions = computed<AppSelectOption[]>(() =>
+  availableNotebooks.value.map((nb) => ({
+    label: nb.name || '',
+    value: nb.id,
+  })),
+)
 
 const progressPercent = computed(() => {
   if (progress.value.total === 0) return 0

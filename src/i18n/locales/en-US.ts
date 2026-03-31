@@ -499,6 +499,8 @@ export default {
     created: 'Created successfully',
     networkError: 'Network error, please try again later',
     serverError: 'Server error',
+    showDetail: 'Show details',
+    hideDetail: 'Hide details',
   },
 
   // Backend Error Codes

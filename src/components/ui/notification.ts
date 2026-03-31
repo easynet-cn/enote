@@ -1,6 +1,9 @@
+import i18n from '../../i18n'
+
 interface NotificationOptions {
   title?: string
   message: string
+  detail?: string
   type?: 'success' | 'error' | 'warning' | 'info'
   duration?: number
 }
@@ -16,7 +19,7 @@ function ensureContainer() {
   if (!containerEl) {
     containerEl = document.createElement('div')
     containerEl.id = 'notification-container'
-    containerEl.className = 'fixed top-4 right-4 z-50 flex flex-col gap-2'
+    containerEl.className = 'fixed top-4 right-4 z-[9999] flex flex-col gap-2'
     containerEl.setAttribute('aria-live', 'polite')
     document.body.appendChild(containerEl)
   }
@@ -66,7 +69,7 @@ function createNotificationElement(
 ): { el: HTMLDivElement; close: () => void } {
   const el = document.createElement('div')
   el.className = `
-    flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg
+    flex ${options.detail ? 'items-start' : 'items-center'} gap-3 px-4 py-3 rounded-lg shadow-lg
     bg-surface border border-edge
     transform transition-all duration-300 ease-out
     translate-x-0 opacity-100
@@ -92,6 +95,30 @@ function createNotificationElement(
   messageEl.className = 'text-sm text-content-secondary'
   messageEl.textContent = options.message
   contentContainer.appendChild(messageEl)
+
+  if (options.detail) {
+    const detailToggle = document.createElement('button')
+    detailToggle.className =
+      'mt-1 text-xs text-content-tertiary hover:text-content-secondary transition-colors underline cursor-pointer'
+    const showDetailText = i18n.global.t('notification.showDetail')
+    const hideDetailText = i18n.global.t('notification.hideDetail')
+    detailToggle.textContent = showDetailText
+
+    const detailEl = document.createElement('div')
+    detailEl.className =
+      'mt-1 text-xs text-content-tertiary bg-surface-secondary rounded px-2 py-1.5 max-h-[120px] overflow-auto whitespace-pre-wrap break-all hidden'
+    detailEl.textContent = options.detail
+
+    detailToggle.addEventListener('click', () => {
+      const isHidden = detailEl.classList.contains('hidden')
+      detailEl.classList.toggle('hidden')
+      detailToggle.textContent = isHidden ? hideDetailText : showDetailText
+    })
+
+    contentContainer.appendChild(detailToggle)
+    contentContainer.appendChild(detailEl)
+  }
+
   el.appendChild(contentContainer)
 
   const closeBtn = document.createElement('button')
@@ -126,9 +153,11 @@ function createNotificationElement(
     }, 300)
   }
 
-  // Auto close timer managed inside the element
-  if (options.duration !== 0) {
-    const duration = options.duration ?? 3000
+  // Auto close timer: error/warning stay until manually closed, others auto-close
+  const isSticky = options.type === 'error' || options.type === 'warning'
+  const defaultDuration = isSticky ? 0 : 3000
+  const duration = options.duration ?? defaultDuration
+  if (duration !== 0) {
     autoCloseTimer = setTimeout(close, duration)
   }
 

@@ -32,71 +32,28 @@
       </div>
 
       <!-- 标题输入区域 -->
-      <div v-if="activeNote" class="title-area">
-        <div class="flex items-center">
-          <button
-            v-if="props.layout === 'mobile'"
-            @click="emit('back')"
-            class="p-1.5 -ml-1.5 mr-1 text-content-secondary hover:text-content hover:bg-surface-dim rounded-lg transition-colors shrink-0"
-            :aria-label="t('common.close')"
-          >
-            <ArrowLeft class="w-5 h-5" />
-          </button>
-          <div class="flex-1">
-            <input
-              ref="titleInput"
-              :value="activeNote.title"
-              @input="$emit('updateNoteTitle', ($event.target as HTMLInputElement).value)"
-              :placeholder="t('editor.noteTitlePlaceholder')"
-              :readonly="!editMode"
-              :aria-label="t('editor.noteTitle')"
-              class="w-full text-xl font-bold border-0 outline-none bg-transparent focus:ring-0"
-              :class="{ 'cursor-default': !editMode }"
-            />
-          </div>
-        </div>
-      </div>
+      <EditorTitleBar
+        ref="titleBarRef"
+        :active-note="activeNote"
+        :edit-mode="editMode"
+        :layout="layout"
+        @update-title="(val: string) => emit('updateNoteTitle', val)"
+        @back="emit('back')"
+      />
 
       <!-- TipTap 编辑器 / Markdown 源码编辑器 -->
       <div v-if="activeNote" class="relative flex-1">
         <!-- Markdown 双面板布局 -->
-        <div
+        <MarkdownSplitEditor
           v-if="isMarkdownMode && markdownLayout !== MarkdownLayout.None && editMode"
-          class="markdown-split-layout"
-          :class="
-            markdownLayout === MarkdownLayout.Vertical ? 'layout-vertical' : 'layout-horizontal'
-          "
+          :layout="markdownLayout"
+          :source="markdownSource"
+          @update:source="handleMarkdownSourceUpdate"
         >
-          <!-- 源码编辑面板 -->
-          <div class="split-panel source-panel" :style="splitPanelStyle">
-            <div class="panel-header">{{ t('editor.markdownEditor.source') }}</div>
-            <textarea
-              ref="sourcePanel"
-              v-model="markdownSource"
-              class="markdown-source-panel"
-              :placeholder="t('editor.editorDialog.markdownSource')"
-              @input="handleSourceChange"
-              @scroll="handleSourceScroll"
-            />
-          </div>
-
-          <!-- 拖拽分隔条 -->
-          <div
-            class="split-resizer"
-            :class="
-              markdownLayout === MarkdownLayout.Vertical ? 'resizer-horizontal' : 'resizer-vertical'
-            "
-            @mousedown="startResize"
-          />
-
-          <!-- 预览面板 -->
-          <div class="split-panel preview-panel">
-            <div class="panel-header">{{ t('editor.markdownEditor.preview') }}</div>
-            <div ref="previewPanel" class="markdown-preview-panel" @scroll="handlePreviewScroll">
-              <editor-content :editor="editor" />
-            </div>
-          </div>
-        </div>
+          <template #preview>
+            <editor-content :editor="editor" />
+          </template>
+        </MarkdownSplitEditor>
 
         <!-- Markdown 单面板模式（源码或预览） -->
         <template v-else-if="isMarkdownMode">
@@ -132,51 +89,15 @@
     </main>
 
     <!-- 右侧悬浮抽屉 -->
-    <Transition name="drawer-right">
-      <div
-        v-if="(showAttachmentPanel || showLinkPanel) && activeNote && !isNewNote"
-        class="editor-drawer-overlay"
-      >
-        <!-- 点击遮罩区域关闭 -->
-        <div class="drawer-backdrop" @click="closeDrawer" />
-        <!-- 抽屉面板 -->
-        <aside class="editor-drawer">
-          <!-- 标题栏 -->
-          <div class="drawer-header">
-            <div class="flex items-center gap-2">
-              <button
-                class="drawer-tab"
-                :class="{ active: showAttachmentPanel }"
-                @click="switchToAttachment"
-              >
-                <Paperclip class="w-3.5 h-3.5" />
-                {{ t('attachment.title') }}
-              </button>
-              <button class="drawer-tab" :class="{ active: showLinkPanel }" @click="switchToLink">
-                <Link2 class="w-3.5 h-3.5" />
-                {{ t('noteLink.title') }}
-              </button>
-            </div>
-            <button
-              class="p-1 rounded-md text-content-tertiary hover:text-content hover:bg-surface-dim transition-colors"
-              @click="closeDrawer"
-              :title="t('common.close')"
-            >
-              <XIcon class="w-4 h-4" />
-            </button>
-          </div>
-          <!-- 内容 -->
-          <div class="drawer-body">
-            <AttachmentPanel v-if="showAttachmentPanel" :note-id="Number(activeNote.id)" />
-            <NoteLinkPanel
-              v-if="showLinkPanel"
-              :note-id="Number(activeNote.id)"
-              @navigate-to-note="(id: number) => $emit('navigateToNote', id)"
-            />
-          </div>
-        </aside>
-      </div>
-    </Transition>
+    <EditorDrawer
+      :active-note="activeNote"
+      :is-new-note="isNewNote"
+      :show-attachment="showAttachmentPanel"
+      :show-link="showLinkPanel"
+      @switch-tab="handleDrawerTabSwitch"
+      @close="closeDrawer"
+      @navigate-to-note="(id: number) => emit('navigateToNote', id)"
+    />
 
     <!-- 设置弹窗 -->
     <EditorSettingsDialog
@@ -236,25 +157,20 @@ import TiptapToolbar from './TiptapToolbar.vue'
 import EditorSettingsDialog from './EditorSettingsDialog.vue'
 import ExportDialog from './ExportDialog.vue'
 import { ConfirmDialog } from './ui'
-import { ArrowLeft, Paperclip, Link2, X as XIcon } from 'lucide-vue-next'
 import { ContentType, McpAccess, MarkdownLayout } from '../types'
 import type { NoteHistory, ShowNote, ShowNotebook, ShowTag } from '../types'
 import type { LayoutMode } from '../composables/usePlatform'
 import { getMarkdownFromEditor } from '../types/tiptap-markdown'
 import { isTemporaryId } from '../utils/validation'
 import { throttle } from '../utils/debounce'
-import {
-  MARKDOWN_PREVIEW_THROTTLE,
-  SCROLL_SYNC_THROTTLE,
-  SPLIT_PANEL_MIN_RATIO,
-  SPLIT_PANEL_MAX_RATIO,
-} from '../config/constants'
+import { MARKDOWN_PREVIEW_THROTTLE } from '../config/constants'
 import { preprocessMarkdown } from '../utils/markdownWorker'
 import NoteHistoryDialog from './NoteHistoryDialog.vue'
 import TableOfContents from './TableOfContents.vue'
 import EditorStatusBar from './EditorStatusBar.vue'
-import NoteLinkPanel from './NoteLinkPanel.vue'
-import AttachmentPanel from './AttachmentPanel.vue'
+import EditorDrawer from './EditorDrawer.vue'
+import EditorTitleBar from './EditorTitleBar.vue'
+import MarkdownSplitEditor from './MarkdownSplitEditor.vue'
 import type { TocItem } from '../extensions'
 import { exportAsPdf } from '../utils/export'
 
@@ -308,39 +224,15 @@ const markdownSource = ref('')
 
 // Markdown 布局模式
 const markdownLayout = ref<MarkdownLayout>(MarkdownLayout.None)
-const splitRatio = ref(50) // 分割比例，默认 50%
-const isResizing = ref(false)
 
-// 滚动同步相关 - 使用状态机管理滚动方向
-const sourcePanel = ref<HTMLTextAreaElement | null>(null)
-const previewPanel = ref<HTMLDivElement | null>(null)
-// 滚动状态：'idle' | 'source' | 'preview'
-// idle: 无滚动同步进行中
-// source: 源码面板主导滚动，预览面板被动跟随
-// preview: 预览面板主导滚动，源码面板被动跟随
-const scrollState = ref<'idle' | 'source' | 'preview'>('idle')
-let scrollResetTimer: ReturnType<typeof setTimeout> | null = null
-
-// 标题输入框引用
-const titleInput = ref<HTMLInputElement | null>(null)
+// 标题栏引用
+const titleBarRef = ref<InstanceType<typeof EditorTitleBar> | null>(null)
 
 // Timer refs for cleanup
 let editModeFocusTimer: ReturnType<typeof setTimeout> | null = null
 
-// Resize cleanup refs
-let resizeCleanup: (() => void) | null = null
-
 // 是否为 Markdown 模式
 const isMarkdownMode = computed(() => props.activeNote?.contentType === ContentType.Markdown)
-
-// 分割面板样式
-const splitPanelStyle = computed(() => {
-  if (markdownLayout.value === MarkdownLayout.Vertical) {
-    return { height: `${splitRatio.value}%` }
-  } else {
-    return { width: `${splitRatio.value}%` }
-  }
-})
 
 // TipTap 编辑器实例（根据内容类型动态选择扩展）
 const editor = shallowRef<Editor | undefined>(undefined)
@@ -375,14 +267,12 @@ const createEditor = async (contentType: ContentType, content: string) => {
     editable: false,
     editorProps: {
       attributes: {
-        // 禁用浏览器自动大写
         autocapitalize: 'off',
         autocorrect: 'off',
         spellcheck: 'false',
       },
     },
     onUpdate: ({ editor: ed }) => {
-      // 根据内容类型决定保存格式
       if (contentType === ContentType.Markdown) {
         emit('updateNoteContent', getMarkdownFromEditor(ed))
       } else {
@@ -406,29 +296,23 @@ watch(
   () => props.activeNote,
   (newNote, oldNote) => {
     if (newNote) {
-      // 编辑模式下，如果只是内容变化（同一笔记），不重置编辑器
-      // 避免输入时因响应式更新导致光标跳转
       if (props.editMode && oldNote && newNote.id === oldNote.id) {
         return
       }
 
-      // 检查内容类型是否变化，需要重新创建编辑器
       const newContentType = newNote.contentType ?? ContentType.Html
       const oldContentType = oldNote?.contentType ?? ContentType.Html
       const contentTypeChanged = newContentType !== oldContentType
 
       if (contentTypeChanged || !editor.value) {
-        // 内容类型变化或编辑器不存在，重新创建
         createEditor(newContentType, newNote.content)
       } else {
-        // 仅内容变化，直接设置内容
         editor.value.commands.setContent(newNote.content)
       }
 
       // 重置源码模式和布局
       sourceMode.value = false
       markdownLayout.value = MarkdownLayout.None
-      splitRatio.value = 50
       // 关闭抽屉面板
       closeDrawer()
     }
@@ -441,16 +325,12 @@ watch(
   (newMode) => {
     if (editor.value && newMode) {
       editor.value?.setEditable(true)
-      // 切换到编辑模式时，根据是否为新建笔记决定焦点位置
       if (editModeFocusTimer) clearTimeout(editModeFocusTimer)
       editModeFocusTimer = setTimeout(() => {
         editModeFocusTimer = null
         if (isNewNote.value) {
-          // 新建笔记：焦点在标题开头
-          titleInput.value?.focus()
-          titleInput.value?.setSelectionRange(0, 0)
+          titleBarRef.value?.focus()
         } else {
-          // 编辑笔记：焦点在内容开头
           editor.value?.commands.focus('start')
         }
       }, 100)
@@ -464,14 +344,14 @@ watch(
 const showAttachmentPanel = ref(false)
 const showLinkPanel = ref(false)
 
-const switchToAttachment = () => {
-  showAttachmentPanel.value = true
-  showLinkPanel.value = false
-}
-
-const switchToLink = () => {
-  showLinkPanel.value = true
-  showAttachmentPanel.value = false
+const handleDrawerTabSwitch = (tab: 'attachment' | 'link') => {
+  if (tab === 'attachment') {
+    showAttachmentPanel.value = true
+    showLinkPanel.value = false
+  } else {
+    showLinkPanel.value = true
+    showAttachmentPanel.value = false
+  }
 }
 
 const toggleAttachment = () => {
@@ -502,12 +382,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleDrawerEsc))
 const tocVisible = ref(false)
 const tocItems = ref<TocItem[]>([])
 
-// 切换目录显示
 const toggleToc = () => {
   tocVisible.value = !tocVisible.value
 }
 
-// 更新目录项
 const updateTocItems = () => {
   if (!editor.value) return
   const storage = (editor.value.storage as unknown as Record<string, unknown>).tableOfContents as
@@ -526,14 +404,6 @@ onBeforeUnmount(() => {
   if (editModeFocusTimer) {
     clearTimeout(editModeFocusTimer)
     editModeFocusTimer = null
-  }
-  if (scrollResetTimer) {
-    clearTimeout(scrollResetTimer)
-    scrollResetTimer = null
-  }
-  if (resizeCleanup) {
-    resizeCleanup()
-    resizeCleanup = null
   }
 })
 
@@ -600,10 +470,8 @@ const handleContentTypeChange = (contentType: ContentType) => {
     const oldContentType = props.activeNote.contentType
     emit('updateNoteContentType', contentType)
 
-    // 内容类型变化时，重新创建编辑器以使用正确的扩展配置
     if (oldContentType !== contentType) {
       createEditor(contentType, props.activeNote.content)
-      // 重新设置可编辑状态
       if (props.editMode) {
         editor.value?.setEditable(true)
       }
@@ -613,9 +481,8 @@ const handleContentTypeChange = (contentType: ContentType) => {
 
 // 处理 Markdown 布局变化
 const handleMarkdownLayoutChange = (layout: MarkdownLayout) => {
-  // 取消布局后再打开，重置为初始状态（50%）
   if (layout !== MarkdownLayout.None && markdownLayout.value === MarkdownLayout.None) {
-    splitRatio.value = 50
+    // 重置分割比例 (MarkdownSplitEditor 内部管理)
   }
 
   markdownLayout.value = layout
@@ -626,74 +493,19 @@ const handleMarkdownLayoutChange = (layout: MarkdownLayout) => {
   }
 }
 
-// 拖拽调整面板大小
-const startResize = (e: MouseEvent) => {
-  isResizing.value = true
-  const startPos = markdownLayout.value === MarkdownLayout.Vertical ? e.clientY : e.clientX
-  const startRatio = splitRatio.value
-
-  const onMouseMove = (moveEvent: MouseEvent) => {
-    if (!isResizing.value) return
-
-    const container = (moveEvent.target as HTMLElement).closest('.markdown-split-layout')
-    if (!container) return
-
-    const rect = container.getBoundingClientRect()
-    const currentPos =
-      markdownLayout.value === MarkdownLayout.Vertical ? moveEvent.clientY : moveEvent.clientX
-    const containerSize =
-      markdownLayout.value === MarkdownLayout.Vertical ? rect.height : rect.width
-
-    const delta = currentPos - startPos
-    const deltaRatio = (delta / containerSize) * 100
-
-    let newRatio = startRatio + deltaRatio
-
-    // 限制最小和最大比例
-    newRatio = Math.max(SPLIT_PANEL_MIN_RATIO, Math.min(SPLIT_PANEL_MAX_RATIO, newRatio))
-    splitRatio.value = newRatio
-  }
-
-  const onMouseUp = () => {
-    isResizing.value = false
-    document.removeEventListener('mousemove', onMouseMove)
-    document.removeEventListener('mouseup', onMouseUp)
-    document.body.style.cursor = ''
-    document.body.style.userSelect = ''
-    resizeCleanup = null
-  }
-
-  document.addEventListener('mousemove', onMouseMove)
-  document.addEventListener('mouseup', onMouseUp)
-  document.body.style.cursor =
-    markdownLayout.value === MarkdownLayout.Vertical ? 'row-resize' : 'col-resize'
-  document.body.style.userSelect = 'none'
-
-  // Store cleanup function for onBeforeUnmount
-  resizeCleanup = () => {
-    document.removeEventListener('mousemove', onMouseMove)
-    document.removeEventListener('mouseup', onMouseUp)
-    document.body.style.cursor = ''
-    document.body.style.userSelect = ''
-  }
-}
-
 // 切换源码模式
 const toggleSourceMode = () => {
   if (!editor.value) return
 
   if (sourceMode.value) {
-    // 从源码模式切换到预览模式：将 Markdown 转换为 HTML
     editor.value.commands.setContent(markdownSource.value)
   } else {
-    // 从预览模式切换到源码模式：获取 Markdown
     markdownSource.value = getMarkdownFromEditor(editor.value)
   }
   sourceMode.value = !sourceMode.value
 }
 
-// 节流的预览更新函数（100ms 间隔，提升大文件编辑性能）
-// 使用 Web Worker 处理大文件的 Markdown 预处理
+// 节流的预览更新函数
 const throttledUpdatePreview = throttle(async (content: string) => {
   if (editor.value) {
     const processedContent = await preprocessMarkdown(content)
@@ -701,62 +513,28 @@ const throttledUpdatePreview = throttle(async (content: string) => {
   }
 }, MARKDOWN_PREVIEW_THROTTLE)
 
+// 处理 MarkdownSplitEditor 的源码更新
+const handleMarkdownSourceUpdate = (value: string) => {
+  markdownSource.value = value
+  handleSourceChange()
+}
+
 // 处理源码内容变化
 const handleSourceChange = () => {
-  // 根据内容类型决定保存格式
   const contentType = props.activeNote?.contentType ?? ContentType.Html
   if (contentType === ContentType.Markdown) {
-    // Markdown 模式直接保存源码
     emit('updateNoteContent', markdownSource.value)
 
-    // 如果在双面板布局下，使用节流更新预览（提升性能）
     if (markdownLayout.value !== MarkdownLayout.None) {
       throttledUpdatePreview(markdownSource.value)
     }
   } else {
-    // HTML 模式需要先同步到编辑器再获取 HTML
     if (editor.value) {
       editor.value.commands.setContent(markdownSource.value)
       emit('updateNoteContent', editor.value.getHTML())
     }
   }
 }
-
-// 重置滚动状态（延迟执行，避免频繁切换）
-const resetScrollState = () => {
-  if (scrollResetTimer) {
-    clearTimeout(scrollResetTimer)
-  }
-  scrollResetTimer = setTimeout(() => {
-    scrollState.value = 'idle'
-  }, 150) // 150ms 后重置为 idle 状态
-}
-
-// 滚动同步核心逻辑：from 面板滚动时同步 to 面板
-const syncScroll = (from: 'source' | 'preview') => {
-  if (!sourcePanel.value || !previewPanel.value) return
-
-  const opposite = from === 'source' ? 'preview' : 'source'
-  if (scrollState.value === opposite) return
-
-  scrollState.value = from
-
-  const fromEl = from === 'source' ? sourcePanel.value : previewPanel.value
-  const toEl = from === 'source' ? previewPanel.value : sourcePanel.value
-
-  const maxFromScroll = fromEl.scrollHeight - fromEl.clientHeight
-  if (maxFromScroll <= 0) return
-
-  const scrollRatio = fromEl.scrollTop / maxFromScroll
-  const maxToScroll = toEl.scrollHeight - toEl.clientHeight
-  toEl.scrollTop = scrollRatio * maxToScroll
-
-  resetScrollState()
-}
-
-// 节流的滚动同步处理（16ms ≈ 60fps，确保流畅体验）
-const handleSourceScroll = throttle(() => syncScroll('source'), SCROLL_SYNC_THROTTLE)
-const handlePreviewScroll = throttle(() => syncScroll('preview'), SCROLL_SYNC_THROTTLE)
 </script>
 
 <!-- 共享 ProseMirror 样式 -->
@@ -765,13 +543,6 @@ const handlePreviewScroll = throttle(() => syncScroll('preview'), SCROLL_SYNC_TH
 <style scoped>
 .editor-main {
   padding: 1rem 1rem 0.5rem;
-}
-
-.title-area {
-  padding-top: 1rem;
-  padding-bottom: 0.75rem;
-  margin-bottom: 0.25rem;
-  border-bottom: 1px solid var(--color-border);
 }
 
 @media (min-width: 640px) {
@@ -903,7 +674,7 @@ const handlePreviewScroll = throttle(() => syncScroll('preview'), SCROLL_SYNC_TH
   margin-bottom: 0.75rem;
 }
 
-/* Markdown 源码编辑器样式 */
+/* Markdown 源码编辑器样式（单面板模式） */
 .markdown-source {
   width: 100%;
   height: 100%;
@@ -925,127 +696,6 @@ const handlePreviewScroll = throttle(() => syncScroll('preview'), SCROLL_SYNC_TH
 
 .markdown-source:focus {
   outline: none;
-}
-
-/* Markdown 分割布局样式 */
-.markdown-split-layout {
-  display: flex;
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
-  border: 1px solid var(--color-border);
-  border-radius: 0.5rem;
-}
-
-.layout-vertical {
-  flex-direction: column;
-}
-
-.layout-horizontal {
-  flex-direction: row;
-}
-
-.split-panel {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  min-width: 0;
-  min-height: 0;
-}
-
-.source-panel {
-  flex-shrink: 0;
-}
-
-.preview-panel {
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
-}
-
-.panel-header {
-  padding: 0.5rem 1rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  background-color: var(--color-bg-secondary);
-  border-bottom: 1px solid var(--color-border);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.markdown-source-panel {
-  flex: 1;
-  width: 100%;
-  padding: 1rem;
-  border: none;
-  outline: none;
-  resize: none;
-  font-family: var(--font-mono);
-  font-size: 14px;
-  line-height: 1.6;
-  background-color: var(--color-code-bg);
-  color: var(--color-code-text);
-  overflow-y: auto;
-  height: 0; /* 关键：让 flex 子元素可以缩小，使 overflow-y: auto 生效 */
-  min-height: 0;
-}
-
-.markdown-source-panel::placeholder {
-  color: var(--color-code-placeholder);
-}
-
-.markdown-preview-panel {
-  flex: 1;
-  padding: 1rem;
-  overflow-y: auto;
-  background-color: var(--color-bg-primary);
-  height: 0; /* 关键：让 flex 子元素可以缩小，使 overflow-y: auto 生效 */
-  min-height: 0;
-}
-
-/* 分割条样式 */
-.split-resizer {
-  flex-shrink: 0;
-  background-color: var(--color-border);
-  transition: background-color var(--transition-fast) var(--ease-default);
-}
-
-.split-resizer:hover {
-  background-color: var(--color-primary);
-}
-
-.resizer-horizontal {
-  height: 6px;
-  cursor: row-resize;
-}
-
-.resizer-vertical {
-  width: 6px;
-  cursor: col-resize;
-}
-
-/* 上下布局时的边框调整 */
-.layout-vertical .source-panel {
-  border-bottom: none;
-}
-
-.layout-vertical .preview-panel {
-  border-top: none;
-}
-
-/* 左右布局时的边框调整 */
-.layout-horizontal .source-panel {
-  border-right: none;
-}
-
-.layout-horizontal .preview-panel {
-  border-left: none;
-}
-
-/* 预览面板中的 ProseMirror 样式继承 */
-.markdown-preview-panel :deep(.ProseMirror) {
-  min-height: 100%;
 }
 
 /* 搜索结果高亮样式 */
@@ -1095,89 +745,5 @@ const handlePreviewScroll = throttle(() => syncScroll('preview'), SCROLL_SYNC_TH
   to {
     opacity: 1;
   }
-}
-
-/* 右侧悬浮抽屉 */
-.editor-drawer-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 30;
-  display: flex;
-}
-
-.drawer-backdrop {
-  flex: 1;
-  min-width: 0;
-}
-
-.editor-drawer {
-  width: 400px;
-  max-width: 80%;
-  display: flex;
-  flex-direction: column;
-  background: var(--color-bg, #fff);
-  box-shadow:
-    -8px 0 24px rgba(0, 0, 0, 0.12),
-    -2px 0 8px rgba(0, 0, 0, 0.06);
-  overflow: hidden;
-}
-
-.drawer-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--color-border);
-  flex-shrink: 0;
-}
-
-.drawer-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 5px 12px;
-  font-size: 13px;
-  border-radius: 6px;
-  color: var(--color-text-secondary);
-  transition: all 0.15s;
-  cursor: pointer;
-}
-
-.drawer-tab:hover {
-  background: var(--color-surface-dim, #f1f5f9);
-  color: var(--color-text);
-}
-
-.drawer-tab.active {
-  background: var(--color-primary-lighter, #eef2ff);
-  color: var(--color-primary, #4f46e5);
-  font-weight: 500;
-}
-
-.drawer-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 4px 0;
-}
-
-/* drawer-right 过渡 */
-.drawer-right-enter-active,
-.drawer-right-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.drawer-right-enter-active .editor-drawer,
-.drawer-right-leave-active .editor-drawer {
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.drawer-right-enter-from,
-.drawer-right-leave-to {
-  opacity: 0;
-}
-
-.drawer-right-enter-from .editor-drawer,
-.drawer-right-leave-to .editor-drawer {
-  transform: translateX(100%);
 }
 </style>

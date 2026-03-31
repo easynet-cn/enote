@@ -22,22 +22,8 @@
       <div v-if="activeTab === 'db'" class="space-y-3">
         <!-- 筛选栏 -->
         <div class="flex flex-wrap items-center gap-2">
-          <select
-            v-model="searchParam.level"
-            class="px-2 py-1.5 text-xs border border-edge rounded-lg bg-surface focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          >
-            <option value="">{{ t('log.allLevels') }}</option>
-            <option value="INFO">INFO</option>
-            <option value="WARN">WARN</option>
-            <option value="ERROR">ERROR</option>
-          </select>
-          <select
-            v-model="searchParam.module"
-            class="px-2 py-1.5 text-xs border border-edge rounded-lg bg-surface focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          >
-            <option value="">{{ t('log.allModules') }}</option>
-            <option v-for="m in modules" :key="m" :value="m">{{ m }}</option>
-          </select>
+          <AppSelect v-model="searchParam.level" :options="logLevelOptions" size="xs" />
+          <AppSelect v-model="searchParam.module" :options="moduleOptions" size="xs" />
           <input
             v-model="searchParam.keyword"
             type="text"
@@ -235,10 +221,11 @@
 import { ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Trash2 } from 'lucide-vue-next'
-import { Dialog, Pagination } from './ui'
+import { Dialog, Pagination, AppSelect } from './ui'
+import type { AppSelectOption } from './ui'
 import { appLogApi } from '../api/appLog'
 import { showNotification } from './ui/notification'
-import { parseError } from '../utils/errorHandler'
+import { showError } from '../utils/errorHandler'
 import type { AppLog, AppLogSearchParam, LogFileInfo } from '../types'
 
 const { t } = useI18n()
@@ -263,6 +250,18 @@ const modules = [
   'system',
   'frontend',
 ]
+
+const logLevelOptions = computed<AppSelectOption[]>(() => [
+  { value: '', label: t('log.allLevels') },
+  { value: 'INFO', label: 'INFO' },
+  { value: 'WARN', label: 'WARN' },
+  { value: 'ERROR', label: 'ERROR' },
+])
+
+const moduleOptions = computed<AppSelectOption[]>(() => [
+  { value: '', label: t('log.allModules') },
+  ...modules.map((m) => ({ value: m, label: m })),
+])
 
 // ============================================================================
 // 数据库日志
@@ -291,7 +290,7 @@ async function loadDbLogs() {
     dbLogs.value = result.data
     dbTotal.value = result.total
   } catch (e: unknown) {
-    showNotification({ message: parseError(e), type: 'error' })
+    showError(e)
   } finally {
     dbLoading.value = false
   }
@@ -303,7 +302,7 @@ async function deleteDbLog(id: number) {
     dbLogs.value = dbLogs.value.filter((l) => l.id !== id)
     dbTotal.value--
   } catch (e: unknown) {
-    showNotification({ message: parseError(e), type: 'error' })
+    showError(e)
   }
 }
 
@@ -314,7 +313,7 @@ async function clearDbLogs() {
     dbTotal.value = 0
     showNotification({ message: t('log.clearedCount', { count }), type: 'success' })
   } catch (e: unknown) {
-    showNotification({ message: parseError(e), type: 'error' })
+    showError(e)
   }
 }
 
@@ -327,7 +326,7 @@ async function cleanupDbLogs() {
     showNotification({ message: t('log.clearedCount', { count }), type: 'success' })
     loadDbLogs()
   } catch (e: unknown) {
-    showNotification({ message: parseError(e), type: 'error' })
+    showError(e)
   }
 }
 
@@ -359,7 +358,7 @@ async function loadLogFiles() {
   try {
     logFiles.value = await appLogApi.listLogFiles()
   } catch (e: unknown) {
-    showNotification({ message: parseError(e), type: 'error' })
+    showError(e)
   }
 }
 
@@ -369,7 +368,7 @@ async function selectFile(file: LogFileInfo) {
     fileContent.value = await appLogApi.readLogFile(file.name)
   } catch (e: unknown) {
     fileContent.value = ''
-    showNotification({ message: parseError(e), type: 'error' })
+    showError(e)
   }
 }
 
@@ -382,7 +381,7 @@ async function deleteSelectedFile() {
     loadLogFiles()
     showNotification({ message: t('log.fileDeleted'), type: 'success' })
   } catch (e: unknown) {
-    showNotification({ message: parseError(e), type: 'error' })
+    showError(e)
   }
 }
 
@@ -392,7 +391,7 @@ async function cleanupFilesByDays() {
     showNotification({ message: t('log.clearedCount', { count }), type: 'success' })
     loadLogFiles()
   } catch (e: unknown) {
-    showNotification({ message: parseError(e), type: 'error' })
+    showError(e)
   }
 }
 

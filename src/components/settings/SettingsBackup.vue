@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { backupApi } from '../../api/note'
 import { showNotification } from '../ui/notification'
+import { AppSelect } from '../ui'
+import type { AppSelectOption } from '../ui'
 
 const { t } = useI18n()
 
@@ -23,6 +25,20 @@ const toggleAutoBackup = () => {
   emit('save')
   emit('backupSettingsChanged')
 }
+
+const backupIntervalOptions = computed<AppSelectOption[]>(() => [
+  { value: '1', label: `1 ${t('settings.autoBackupIntervalHours', { n: '' }).trim()}` },
+  { value: '4', label: `4 ${t('settings.autoBackupIntervalHours', { n: '' }).trim()}` },
+  { value: '8', label: `8 ${t('settings.autoBackupIntervalHours', { n: '' }).trim()}` },
+  { value: '24', label: `24 ${t('settings.autoBackupIntervalHours', { n: '' }).trim()}` },
+])
+
+const backupRetentionOptions = computed<AppSelectOption[]>(() => [
+  { value: '5', label: t('settings.autoBackupRetentionCount', { n: 5 }) },
+  { value: '10', label: t('settings.autoBackupRetentionCount', { n: 10 }) },
+  { value: '20', label: t('settings.autoBackupRetentionCount', { n: 20 }) },
+  { value: '50', label: t('settings.autoBackupRetentionCount', { n: 50 }) },
+])
 
 const handleIntervalChange = () => {
   emit('save')
@@ -81,18 +97,12 @@ defineExpose({ loadLastBackup })
       <!-- 备份间隔 -->
       <div v-if="autoBackupEnabled" class="flex items-center justify-between">
         <label class="text-sm text-content-secondary">{{ t('settings.autoBackupInterval') }}</label>
-        <select
+        <AppSelect
           v-model="autoBackupInterval"
+          :options="backupIntervalOptions"
+          size="sm"
           @change="handleIntervalChange"
-          class="px-3 py-1.5 text-sm border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        >
-          <option value="1">1 {{ t('settings.autoBackupIntervalHours', { n: '' }).trim() }}</option>
-          <option value="4">4 {{ t('settings.autoBackupIntervalHours', { n: '' }).trim() }}</option>
-          <option value="8">8 {{ t('settings.autoBackupIntervalHours', { n: '' }).trim() }}</option>
-          <option value="24">
-            24 {{ t('settings.autoBackupIntervalHours', { n: '' }).trim() }}
-          </option>
-        </select>
+        />
       </div>
 
       <!-- 保留份数 -->
@@ -100,16 +110,12 @@ defineExpose({ loadLastBackup })
         <label class="text-sm text-content-secondary">{{
           t('settings.autoBackupRetention')
         }}</label>
-        <select
+        <AppSelect
           v-model="autoBackupRetention"
+          :options="backupRetentionOptions"
+          size="sm"
           @change="emit('save')"
-          class="px-3 py-1.5 text-sm border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        >
-          <option value="5">{{ t('settings.autoBackupRetentionCount', { n: 5 }) }}</option>
-          <option value="10">{{ t('settings.autoBackupRetentionCount', { n: 10 }) }}</option>
-          <option value="20">{{ t('settings.autoBackupRetentionCount', { n: 20 }) }}</option>
-          <option value="50">{{ t('settings.autoBackupRetentionCount', { n: 50 }) }}</option>
-        </select>
+        />
       </div>
 
       <!-- 立即备份 + 上次备份 -->

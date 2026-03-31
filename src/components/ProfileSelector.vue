@@ -125,8 +125,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ask } from '@tauri-apps/plugin-dialog'
 import { profileApi } from '../api/note'
-import { showNotification } from './ui/notification'
-import { parseError } from '../utils/errorHandler'
+import { showError } from '../utils/errorHandler'
 import { availableLocales, setLocale, getCurrentLocale } from '../i18n'
 import type { LocaleType } from '../i18n'
 import type { ProfileSummary } from '../types'
@@ -214,7 +213,7 @@ const connectProfile = async (profileId: string) => {
     profileApi.setAutoConnect(autoConnect.value).catch(() => {})
     emit('connected')
   } catch (e: unknown) {
-    showNotification({ type: 'error', message: parseError(e) })
+    showError(e)
     connecting.value = false
   }
 }
@@ -234,7 +233,7 @@ const confirmDeleteProfile = async (profile: ProfileSummary) => {
     await profileApi.deleteProfile(profile.id)
     await loadProfiles()
   } catch (e: unknown) {
-    showNotification({ type: 'error', message: parseError(e) })
+    showError(e)
   }
 }
 

@@ -185,7 +185,7 @@ import { openHelpInNewWindow } from './utils/multiWindow'
 const SetupWizard = defineAsyncComponent(() => import('./components/SetupWizard.vue'))
 const ProfileSelector = defineAsyncComponent(() => import('./components/ProfileSelector.vue'))
 import { showNotification } from './components/ui/notification'
-import { parseError } from './utils/errorHandler'
+import { showError, parseError } from './utils/errorHandler'
 import { exportAsPdf } from './utils/export'
 import { usePlatform } from './composables/usePlatform'
 import type { PaletteCommand } from './components/CommandPalette.vue'
@@ -327,7 +327,7 @@ const onEditProfile = async (profileId: string) => {
     editProfileData.value = { ...config, id: profileId }
     appMode.value = 'setup'
   } catch (e: unknown) {
-    showNotification({ type: 'error', message: parseError(e) })
+    showError(e)
   }
 }
 
@@ -420,7 +420,7 @@ const handleReorderNotebooks = async (orders: [string, number][]) => {
     await noteApi.reorderNotebooks(orders.map(([id, order]) => [Number(id), order]))
     await refreshAllData()
   } catch (e: unknown) {
-    showNotification({ type: 'error', message: parseError(e) })
+    showError(e)
   }
 }
 
@@ -429,7 +429,7 @@ const handleReorderTags = async (orders: [string, number][]) => {
     await noteApi.reorderTags(orders.map(([id, order]) => [Number(id), order]))
     await refreshAllData()
   } catch (e: unknown) {
-    showNotification({ type: 'error', message: parseError(e) })
+    showError(e)
   }
 }
 
@@ -443,7 +443,7 @@ const handleTogglePin = async (noteId: string) => {
       await refreshAllData()
     }
   } catch (e: unknown) {
-    showNotification({ type: 'error', message: parseError(e) })
+    showError(e)
   }
 }
 
@@ -457,7 +457,7 @@ const handleToggleStar = async (noteId: string) => {
       await refreshAllData()
     }
   } catch (e: unknown) {
-    showNotification({ type: 'error', message: parseError(e) })
+    showError(e)
   }
 }
 
@@ -520,7 +520,7 @@ const handleSaveAsTemplate = async () => {
     })
     showNotification({ type: 'success', message: t('template.saveAsTemplateSuccess') })
   } catch (e: unknown) {
-    showNotification({ type: 'error', message: parseError(e) })
+    showError(e)
   }
 }
 

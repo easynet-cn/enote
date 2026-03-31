@@ -4,6 +4,8 @@ import { useI18n } from 'vue-i18n'
 import { setLocale, type LocaleType } from '../../i18n'
 import { useAppStore } from '../../stores/app'
 import { usePlatform, type LayoutMode } from '../../composables/usePlatform'
+import { AppSelect } from '../ui'
+import type { AppSelectOption } from '../ui'
 
 const { t, locale } = useI18n()
 const appStore = useAppStore()
@@ -25,7 +27,13 @@ const themeOptions = computed(() => [
   { value: 'system', label: t('settings.themeSystem') },
 ])
 
-const editorFontSizeOptions = ['12', '14', '16', '18', '20']
+const editorFontSizeOptions: AppSelectOption[] = [
+  { value: '12', label: '12px' },
+  { value: '14', label: '14px' },
+  { value: '16', label: '16px' },
+  { value: '18', label: '18px' },
+  { value: '20', label: '20px' },
+]
 
 const applyEditorFontSize = (size: string) => {
   document.documentElement.style.setProperty('--editor-font-size', `${size}px`)
@@ -161,15 +169,12 @@ defineExpose({ applyTheme, applyEditorFontSize })
       <!-- 编辑器字体大小 -->
       <div class="flex items-center justify-between">
         <label class="text-sm text-content-secondary">{{ t('settings.editorFontSize') }}</label>
-        <select
-          :value="currentEditorFontSize"
-          @change="setEditorFontSize(($event.target as HTMLSelectElement).value)"
-          class="px-3 py-1.5 text-sm border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        >
-          <option v-for="size in editorFontSizeOptions" :key="size" :value="size">
-            {{ size }}px
-          </option>
-        </select>
+        <AppSelect
+          :model-value="currentEditorFontSize"
+          :options="editorFontSizeOptions"
+          size="sm"
+          @change="(val: string | number) => setEditorFontSize(String(val))"
+        />
       </div>
     </div>
   </div>

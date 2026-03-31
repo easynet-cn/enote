@@ -43,15 +43,7 @@
         <label class="block text-sm font-medium text-content-secondary mb-2">{{
           t('settings.mcpAccess')
         }}</label>
-        <select
-          v-model.number="form.mcpAccess"
-          class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-        >
-          <option :value="0">{{ t('settings.mcpAccessInherit') }}</option>
-          <option :value="1">{{ t('settings.mcpAccessReadWrite') }}</option>
-          <option :value="2">{{ t('settings.mcpAccessReadOnly') }}</option>
-          <option :value="3">{{ t('settings.mcpAccessDeny') }}</option>
-        </select>
+        <AppSelect v-model="form.mcpAccess" :options="mcpAccessOptions" size="md" class="w-full" />
       </div>
     </div>
     <template #footer>
@@ -67,8 +59,8 @@
 import { computed, reactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Check } from 'lucide-vue-next'
-import { Button, Select, Dialog } from './ui'
-import type { SelectOption } from './ui'
+import { Button, Select, Dialog, AppSelect } from './ui'
+import type { SelectOption, AppSelectOption } from './ui'
 import type { ShowNotebook, ShowTag } from '../types'
 import { McpAccess } from '../types'
 
@@ -116,6 +108,13 @@ const notebookOptions = computed<SelectOption[]>(() => {
 const availableTags = computed(() => {
   return props.tags.filter((t) => t.id !== '0')
 })
+
+const mcpAccessOptions = computed<AppSelectOption[]>(() => [
+  { label: t('settings.mcpAccessInherit'), value: 0 },
+  { label: t('settings.mcpAccessReadWrite'), value: 1 },
+  { label: t('settings.mcpAccessReadOnly'), value: 2 },
+  { label: t('settings.mcpAccessDeny'), value: 3 },
+])
 
 // 监听 visible 变化，初始化表单
 watch(visible, (newVal) => {

@@ -1,88 +1,44 @@
 <template>
   <div class="toolbar-section">
     <Tooltip :content="t('editor.toolbarTooltip.headingLevel')" placement="bottom">
-      <select
-        :value="headingLevel"
-        @change="$emit('update:headingLevel', ($event.target as HTMLSelectElement).value)"
+      <AppSelect
+        :modelValue="headingLevel"
+        @update:modelValue="$emit('update:headingLevel', String($event))"
+        :options="headingOptions"
         :disabled="!editMode"
-        class="h-8 px-2 text-sm border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <option value="0">{{ t('editor.headingOptions.normal') }}</option>
-        <option value="1">{{ t('editor.headingOptions.h1') }}</option>
-        <option value="2">{{ t('editor.headingOptions.h2') }}</option>
-        <option value="3">{{ t('editor.headingOptions.h3') }}</option>
-        <option value="4">{{ t('editor.headingOptions.h4') }}</option>
-        <option value="5">{{ t('editor.headingOptions.h5') }}</option>
-        <option value="6">{{ t('editor.headingOptions.h6') }}</option>
-      </select>
+        size="sm"
+      />
     </Tooltip>
 
     <Tooltip :content="t('editor.toolbarTooltip.fontFamily')" placement="bottom">
-      <select
-        :value="fontFamily"
-        @change="$emit('update:fontFamily', ($event.target as HTMLSelectElement).value)"
+      <AppSelect
+        :modelValue="fontFamily"
+        @update:modelValue="$emit('update:fontFamily', String($event))"
+        :options="fontFamilyOptions"
         :disabled="!editMode"
-        class="h-8 px-2 text-sm border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ml-1 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <option value="">{{ t('editor.fontOptions.default') }}</option>
-        <optgroup :label="t('editor.fontOptions.sansSerif')">
-          <option value="Arial, sans-serif">Arial</option>
-          <option value="Helvetica, sans-serif">Helvetica</option>
-          <option value="Verdana, sans-serif">Verdana</option>
-          <option value="Tahoma, sans-serif">Tahoma</option>
-          <option value="Trebuchet MS, sans-serif">Trebuchet MS</option>
-          <option value="Microsoft YaHei, sans-serif">{{ t('fontName.microsoftYaHei') }}</option>
-          <option value="PingFang SC, sans-serif">{{ t('fontName.pingFang') }}</option>
-        </optgroup>
-        <optgroup :label="t('editor.fontOptions.serif')">
-          <option value="Times New Roman, serif">Times New Roman</option>
-          <option value="Georgia, serif">Georgia</option>
-          <option value="Palatino, serif">Palatino</option>
-          <option value="SimSun, serif">{{ t('fontName.simSun') }}</option>
-          <option value="KaiTi, serif">{{ t('fontName.kaiTi') }}</option>
-          <option value="FangSong, serif">{{ t('fontName.fangSong') }}</option>
-        </optgroup>
-        <optgroup :label="t('editor.fontOptions.monospace')">
-          <option value="Courier New, monospace">Courier New</option>
-          <option value="Consolas, monospace">Consolas</option>
-          <option value="Monaco, monospace">Monaco</option>
-          <option value="Source Code Pro, monospace">Source Code Pro</option>
-        </optgroup>
-        <optgroup :label="t('editor.fontOptions.artistic')">
-          <option value="Comic Sans MS, cursive">Comic Sans MS</option>
-          <option value="Impact, fantasy">Impact</option>
-          <option value="Brush Script MT, cursive">Brush Script</option>
-        </optgroup>
-      </select>
+        size="sm"
+        class="ml-1"
+      />
     </Tooltip>
 
     <Tooltip :content="t('editor.toolbarTooltip.fontSize')" placement="bottom">
-      <select
-        :value="fontSize"
-        @change="$emit('update:fontSize', ($event.target as HTMLSelectElement).value)"
+      <AppSelect
+        :modelValue="fontSize"
+        @update:modelValue="$emit('update:fontSize', String($event))"
+        :options="fontSizeOptions"
         :disabled="!editMode"
-        class="h-8 px-2 text-sm border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ml-1 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <option value="">{{ t('editor.fontOptions.defaultSize') }}</option>
-        <option value="12px">12px</option>
-        <option value="14px">14px</option>
-        <option value="16px">16px</option>
-        <option value="18px">18px</option>
-        <option value="20px">20px</option>
-        <option value="24px">24px</option>
-        <option value="28px">28px</option>
-        <option value="32px">32px</option>
-        <option value="36px">36px</option>
-        <option value="48px">48px</option>
-        <option value="72px">72px</option>
-      </select>
+        size="sm"
+        class="ml-1"
+      />
     </Tooltip>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Tooltip } from '../ui'
+import { Tooltip, AppSelect } from '../ui'
+import type { AppSelectOption } from '../ui'
 
 defineProps<{
   headingLevel: string
@@ -98,4 +54,81 @@ defineEmits<{
 }>()
 
 const { t } = useI18n()
+
+const headingOptions = computed<AppSelectOption[]>(() => [
+  { label: t('editor.headingOptions.normal'), value: '0' },
+  { label: t('editor.headingOptions.h1'), value: '1' },
+  { label: t('editor.headingOptions.h2'), value: '2' },
+  { label: t('editor.headingOptions.h3'), value: '3' },
+  { label: t('editor.headingOptions.h4'), value: '4' },
+  { label: t('editor.headingOptions.h5'), value: '5' },
+  { label: t('editor.headingOptions.h6'), value: '6' },
+])
+
+const fontFamilyOptions = computed<AppSelectOption[]>(() => [
+  { label: t('editor.fontOptions.default'), value: '' },
+  {
+    group: t('editor.fontOptions.sansSerif'),
+    label: t('editor.fontOptions.sansSerif'),
+    value: '__sans',
+    children: [
+      { label: 'Arial', value: 'Arial, sans-serif' },
+      { label: 'Helvetica', value: 'Helvetica, sans-serif' },
+      { label: 'Verdana', value: 'Verdana, sans-serif' },
+      { label: 'Tahoma', value: 'Tahoma, sans-serif' },
+      { label: 'Trebuchet MS', value: 'Trebuchet MS, sans-serif' },
+      { label: t('fontName.microsoftYaHei'), value: 'Microsoft YaHei, sans-serif' },
+      { label: t('fontName.pingFang'), value: 'PingFang SC, sans-serif' },
+    ],
+  },
+  {
+    group: t('editor.fontOptions.serif'),
+    label: t('editor.fontOptions.serif'),
+    value: '__serif',
+    children: [
+      { label: 'Times New Roman', value: 'Times New Roman, serif' },
+      { label: 'Georgia', value: 'Georgia, serif' },
+      { label: 'Palatino', value: 'Palatino, serif' },
+      { label: t('fontName.simSun'), value: 'SimSun, serif' },
+      { label: t('fontName.kaiTi'), value: 'KaiTi, serif' },
+      { label: t('fontName.fangSong'), value: 'FangSong, serif' },
+    ],
+  },
+  {
+    group: t('editor.fontOptions.monospace'),
+    label: t('editor.fontOptions.monospace'),
+    value: '__mono',
+    children: [
+      { label: 'Courier New', value: 'Courier New, monospace' },
+      { label: 'Consolas', value: 'Consolas, monospace' },
+      { label: 'Monaco', value: 'Monaco, monospace' },
+      { label: 'Source Code Pro', value: 'Source Code Pro, monospace' },
+    ],
+  },
+  {
+    group: t('editor.fontOptions.artistic'),
+    label: t('editor.fontOptions.artistic'),
+    value: '__artistic',
+    children: [
+      { label: 'Comic Sans MS', value: 'Comic Sans MS, cursive' },
+      { label: 'Impact', value: 'Impact, fantasy' },
+      { label: 'Brush Script', value: 'Brush Script MT, cursive' },
+    ],
+  },
+])
+
+const fontSizeOptions = computed<AppSelectOption[]>(() => [
+  { label: t('editor.fontOptions.defaultSize'), value: '' },
+  { label: '12px', value: '12px' },
+  { label: '14px', value: '14px' },
+  { label: '16px', value: '16px' },
+  { label: '18px', value: '18px' },
+  { label: '20px', value: '20px' },
+  { label: '24px', value: '24px' },
+  { label: '28px', value: '28px' },
+  { label: '32px', value: '32px' },
+  { label: '36px', value: '36px' },
+  { label: '48px', value: '48px' },
+  { label: '72px', value: '72px' },
+])
 </script>

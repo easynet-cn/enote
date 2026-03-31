@@ -4,6 +4,8 @@ import { useI18n } from 'vue-i18n'
 import { authApi } from '../../api/note'
 import { useLockScreen } from '../../composables/useLockScreen'
 import { showNotification } from '../ui/notification'
+import { AppSelect } from '../ui'
+import type { AppSelectOption } from '../ui'
 
 const { t } = useI18n()
 const { lockMode, lockOnMinimize } = useLockScreen()
@@ -23,6 +25,13 @@ const showPasswordForm = ref(false)
 const passwordError = ref('')
 const savingPassword = ref(false)
 const passwordForm = ref({ current: '', newPwd: '', confirm: '' })
+
+const lockTimeoutOptions = computed<AppSelectOption[]>(() => [
+  { value: '0', label: t('settings.lockTimeoutNone') },
+  { value: '5', label: t('settings.lockTimeoutMinutes', { n: 5 }) },
+  { value: '15', label: t('settings.lockTimeoutMinutes', { n: 15 }) },
+  { value: '30', label: t('settings.lockTimeoutMinutes', { n: 30 }) },
+])
 
 const lockModeOptions = computed(() => [
   { value: 'none' as const, label: t('settings.lockModeNone') },
@@ -219,16 +228,12 @@ defineExpose({ initHasPassword })
       <!-- 自动锁定 -->
       <div v-if="currentLockMode !== 'none'" class="flex items-center justify-between">
         <label class="text-sm text-content-secondary">{{ t('settings.lockTimeout') }}</label>
-        <select
+        <AppSelect
           v-model="lockTimeoutValue"
+          :options="lockTimeoutOptions"
+          size="sm"
           @change="emit('save')"
-          class="px-3 py-1.5 text-sm border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        >
-          <option value="0">{{ t('settings.lockTimeoutNone') }}</option>
-          <option value="5">{{ t('settings.lockTimeoutMinutes', { n: 5 }) }}</option>
-          <option value="15">{{ t('settings.lockTimeoutMinutes', { n: 15 }) }}</option>
-          <option value="30">{{ t('settings.lockTimeoutMinutes', { n: 30 }) }}</option>
-        </select>
+        />
       </div>
 
       <!-- 最小化时锁定 -->

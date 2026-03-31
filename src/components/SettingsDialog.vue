@@ -78,17 +78,12 @@
           <!-- 前端日志级别 -->
           <div class="flex items-center justify-between">
             <label class="text-sm text-content-secondary">{{ t('log.frontendLogLevel') }}</label>
-            <select
+            <AppSelect
               v-model="frontendLogLevel"
+              :options="frontendLogLevelOptions"
+              size="sm"
               @change="saveSettings"
-              class="px-3 py-1.5 text-sm border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="debug">DEBUG</option>
-              <option value="info">INFO</option>
-              <option value="warn">WARN</option>
-              <option value="error">ERROR</option>
-              <option value="none">{{ t('settings.lockModeNone') }}</option>
-            </select>
+            />
           </div>
 
           <!-- 打开日志管理 -->
@@ -163,9 +158,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Dialog, Button } from './ui'
+import { Dialog, Button, AppSelect } from './ui'
+import type { AppSelectOption } from './ui'
 import SyncDialog from './SyncDialog.vue'
 import SyncHistoryDialog from './SyncHistoryDialog.vue'
 import LogDialog from './LogDialog.vue'
@@ -232,6 +228,13 @@ const mcpToolEnabled = ref<Record<string, boolean>>({
 
 // 日志
 const frontendLogLevel = ref('info')
+const frontendLogLevelOptions = computed<AppSelectOption[]>(() => [
+  { value: 'debug', label: 'DEBUG' },
+  { value: 'info', label: 'INFO' },
+  { value: 'warn', label: 'WARN' },
+  { value: 'error', label: 'ERROR' },
+  { value: 'none', label: t('settings.lockModeNone') },
+])
 
 // 子对话框
 const syncDialogVisible = ref(false)

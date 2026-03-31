@@ -101,16 +101,12 @@
       <div class="template-editor-container border border-edge rounded-lg overflow-hidden">
         <!-- 富文本工具栏 -->
         <div v-if="templateEditor && templateContentType === 0" class="template-toolbar">
-          <select
-            :value="currentHeading"
-            @change="setHeading(($event.target as HTMLSelectElement).value)"
-            class="h-7 px-1.5 text-xs border border-edge rounded bg-surface text-content"
-          >
-            <option value="0">{{ t('editor.headingOptions.normal') }}</option>
-            <option value="1">H1</option>
-            <option value="2">H2</option>
-            <option value="3">H3</option>
-          </select>
+          <AppSelect
+            :modelValue="currentHeading"
+            @update:modelValue="setHeading(String($event))"
+            :options="headingOptions"
+            size="xs"
+          />
 
           <div class="toolbar-divider" />
 
@@ -250,10 +246,11 @@ import {
   Undo,
   Redo,
 } from 'lucide-vue-next'
-import { Dialog, Button } from './ui'
+import { Dialog, Button, AppSelect } from './ui'
+import type { AppSelectOption } from './ui'
 import { templateApi } from '../api/note'
 import { showNotification } from './ui/notification'
-import { parseError } from '../utils/errorHandler'
+import { showError } from '../utils/errorHandler'
 import { getRichTextExtensions, getMarkdownExtensions } from '../config/editorExtensions'
 import { ContentType } from '../types'
 import type { NoteTemplate } from '../types'
@@ -280,6 +277,13 @@ const currentHeading = computed(() => {
   }
   return '0'
 })
+
+const headingOptions = computed<AppSelectOption[]>(() => [
+  { label: t('editor.headingOptions.normal'), value: '0' },
+  { label: 'H1', value: '1' },
+  { label: 'H2', value: '2' },
+  { label: 'H3', value: '3' },
+])
 
 const setHeading = (value: string) => {
   if (!templateEditor.value) return
@@ -397,7 +401,7 @@ const handleSave = async () => {
     await loadTemplates()
     handleBack()
   } catch (e: unknown) {
-    showNotification({ type: 'error', message: parseError(e) })
+    showError(e)
   }
 }
 
@@ -406,7 +410,7 @@ const handleDelete = async (tpl: NoteTemplate) => {
     await templateApi.delete(tpl.id)
     await loadTemplates()
   } catch (e: unknown) {
-    showNotification({ type: 'error', message: parseError(e) })
+    showError(e)
   }
 }
 

@@ -32,16 +32,13 @@
     }}</span>
 
     <!-- Page size selector -->
-    <select
+    <AppSelect
       v-if="showSizes"
-      :value="pageSize"
+      :model-value="pageSize"
+      :options="pageSizeOptions"
+      size="sm"
       @change="handleSizeChange"
-      class="h-8 px-2 text-sm border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-    >
-      <option v-for="size in pageSizes" :key="size" :value="size">
-        {{ t('pagination.itemsPerPage', { size }) }}
-      </option>
-    </select>
+    />
 
     <!-- Prev button -->
     <button
@@ -88,6 +85,8 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import Tooltip from './BaseTooltip.vue'
+import AppSelect from './AppSelect.vue'
+import type { AppSelectOption } from './AppSelect.vue'
 
 const { t } = useI18n()
 
@@ -114,6 +113,13 @@ const emit = defineEmits<{
   sizeChange: [size: number]
   currentChange: [page: number]
 }>()
+
+const pageSizeOptions = computed<AppSelectOption[]>(() =>
+  props.pageSizes.map((size) => ({
+    label: t('pagination.itemsPerPage', { size }),
+    value: size,
+  })),
+)
 
 const totalPages = computed(() => Math.max(1, Math.ceil(props.total / props.pageSize)))
 
@@ -174,8 +180,8 @@ const handlePageClick = (page: number) => {
   emit('currentChange', page)
 }
 
-const handleSizeChange = (event: Event) => {
-  const size = Number((event.target as HTMLSelectElement).value)
+const handleSizeChange = (value: string | number) => {
+  const size = Number(value)
   emit('update:pageSize', size)
   emit('sizeChange', size)
 }
