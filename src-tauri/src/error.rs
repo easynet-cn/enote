@@ -5,6 +5,7 @@
 
 use serde::Serialize;
 use thiserror::Error;
+use tracing::error;
 
 use crate::i18n::t_simple;
 
@@ -110,6 +111,18 @@ impl Serialize for AppError {
     where
         S: serde::Serializer,
     {
+        // 错误返回前端时自动记录到日志，便于排查问题
+        match self {
+            AppError::Database(e) => {
+                error!("Database error: {:#}", e);
+            }
+            AppError::Internal(e) => {
+                error!("Internal error: {:#}", e);
+            }
+            AppError::Business(_) | AppError::BusinessCode { .. } => {
+                // 业务错误属于正常流程，不记录 error 级别日志
+            }
+        }
         let response: ErrorResponse = self.clone_to_response();
         response.serialize(serializer)
     }

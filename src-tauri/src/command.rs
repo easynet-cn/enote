@@ -734,7 +734,8 @@ pub async fn permanent_delete_note(
     id: i64,
 ) -> Result<(), AppError> {
     let db = require_db(&app_state).await?;
-    service::note::permanent_delete_by_id(&db, id, OperateSource::User)
+    let enc_key = app_state.encryption_key.read().await;
+    service::note::permanent_delete_by_id(&db, id, OperateSource::User, enc_key.as_deref())
         .await
         .map_err(AppError::from)?;
     let _ = service::app_log::log_action(
@@ -749,7 +750,10 @@ pub async fn permanent_delete_note(
 #[tauri::command]
 pub async fn empty_trash(app_state: tauri::State<'_, Arc<AppState>>) -> Result<(), AppError> {
     let db = require_db(&app_state).await?;
-    service::note::empty_trash(&db).await.map_err(AppError::from)?;
+    let enc_key = app_state.encryption_key.read().await;
+    service::note::empty_trash(&db, enc_key.as_deref())
+        .await
+        .map_err(AppError::from)?;
     let _ = service::app_log::log_action(
         &db, "note", "empty_trash",
         None, None,

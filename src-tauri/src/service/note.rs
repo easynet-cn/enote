@@ -388,6 +388,7 @@ async fn permanent_delete_one<C: ConnectionTrait>(
     db: &C,
     id: i64,
     source: OperateSource,
+    encryption_key: Option<&str>,
 ) -> anyhow::Result<()> {
     let result = entity::note::Entity::find_by_id(id)
         .find_also_related(entity::notebook::Entity)
@@ -414,10 +415,13 @@ async fn permanent_delete_one<C: ConnectionTrait>(
 
         let extra = serde_json::to_string(&note_history_extra)?;
 
+        // 历史记录统一存明文（与 create/update 保持一致）
+        let old_content_plain = decrypt_content(&entity.content, encryption_key);
+
         entity::note_history::ActiveModel {
             id: NotSet,
             note_id: Set(id),
-            old_content: Set(entity.content),
+            old_content: Set(old_content_plain),
             new_content: Set(String::default()),
             extra: Set(extra),
             operate_type: Set(OperationType::Delete.as_i32()),
@@ -432,6 +436,14 @@ async fn permanent_delete_one<C: ConnectionTrait>(
             .filter(entity::note_tags::Column::NoteId.eq(id))
             .exec(db)
             .await?;
+        entity::note_link::Entity::delete_many()
+            .filter(
+                Condition::any()
+                    .add(entity::note_link::Column::SourceNoteId.eq(id))
+                    .add(entity::note_link::Column::TargetNoteId.eq(id)),
+            )
+            .exec(db)
+            .await?;
         entity::note::Entity::delete_by_id(id).exec(db).await?;
     }
 
@@ -443,9 +455,10 @@ pub async fn permanent_delete_by_id(
     db: &DatabaseConnection,
     id: i64,
     source: OperateSource,
+    encryption_key: Option<&str>,
 ) -> anyhow::Result<()> {
     let txn = db.begin().await?;
-    permanent_delete_one(&txn, id, source).await?;
+    permanent_delete_one(&txn, id, source, encryption_key).await?;
     txn.commit().await?;
     Ok(())
 }
@@ -453,7 +466,10 @@ pub async fn permanent_delete_by_id(
 /// 清空回收站（永久删除所有软删除的笔记）
 ///
 /// 在单个事务中批量删除，每条笔记仍会生成对应的历史记录
-pub async fn empty_trash(db: &DatabaseConnection) -> anyhow::Result<()> {
+pub async fn empty_trash(
+    db: &DatabaseConnection,
+    encryption_key: Option<&str>,
+) -> anyhow::Result<()> {
     let deleted_notes = entity::note::Entity::find()
         .filter(entity::note::Column::DeletedAt.is_not_null())
         .all(db)
@@ -466,7 +482,7 @@ pub async fn empty_trash(db: &DatabaseConnection) -> anyhow::Result<()> {
     let txn = db.begin().await?;
 
     for note in deleted_notes {
-        permanent_delete_one(&txn, note.id, OperateSource::User).await?;
+        permanent_delete_one(&txn, note.id, OperateSource::User, encryption_key).await?;
     }
 
     txn.commit().await?;
