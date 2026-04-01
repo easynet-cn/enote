@@ -1,10 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useI18n } from 'vue-i18n'
+import i18n from '../i18n'
 import type { ShowTag } from '../types'
 
 export const useTagStore = defineStore('tags', () => {
-  const { t } = useI18n()
+  const t = i18n.global.t
 
   const tagsMap = ref<Map<string, ShowTag>>(new Map())
 

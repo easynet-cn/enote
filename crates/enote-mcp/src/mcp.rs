@@ -264,6 +264,9 @@ impl ENoteMcpServer {
             notebook_id: params.notebook_id.unwrap_or(0),
             tag_id: params.tag_id.unwrap_or(0),
             keyword: params.keyword.unwrap_or_default(),
+            sort_field: String::new(),
+            sort_order: String::new(),
+            is_starred: false,
         };
         search_param.normalize();
 
