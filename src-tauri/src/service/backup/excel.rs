@@ -322,5 +322,6 @@ fn cell_i64(cell: &calamine::Data) -> i64 {
 }
 
 fn cell_dt(cell: &calamine::Data) -> anyhow::Result<NaiveDateTime> {
-    parse_dt(&cell_str(cell))
+    let s = cell_str(cell);
+    parse_dt(&s).map_err(|e| anyhow::anyhow!("Excel date parse error (cell={:?}): {}", cell, e))
 }

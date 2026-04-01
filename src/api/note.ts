@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { invokeWithRetry } from '../utils/invokeWithRetry'
 
 import {
+  AttachmentStats,
   ContentType,
   Note,
   NoteAttachment,
@@ -231,6 +232,14 @@ export const attachmentApi = {
 
   async openAttachment(filePath: string): Promise<void> {
     return await invoke('open_attachment', { filePath })
+  },
+
+  async getStats(): Promise<AttachmentStats> {
+    return await invoke('get_attachment_stats')
+  },
+
+  async cleanupOrphans(): Promise<number> {
+    return await invoke('cleanup_orphan_attachments')
   },
 }
 

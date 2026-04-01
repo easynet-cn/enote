@@ -17,8 +17,11 @@ pub async fn save_image(
 
 /// 删除本地图片文件
 #[tauri::command]
-pub async fn delete_image(path: String) -> Result<(), AppError> {
-    service::image::delete_image(&path).map_err(AppError::from)
+pub async fn delete_image(
+    app_state: tauri::State<'_, Arc<AppState>>,
+    path: String,
+) -> Result<(), AppError> {
+    service::image::delete_image(&app_state.app_data_dir, &path).map_err(AppError::from)
 }
 
 // ============================================================================
@@ -244,15 +247,47 @@ pub async fn open_attachment(
 ) -> Result<(), AppError> {
     use tauri_plugin_opener::OpenerExt;
 
+    // 安全校验：防止路径穿越
+    if file_path.contains("..") || file_path.contains('/') || file_path.contains('\\') {
+        return Err(AppError::Business("Invalid attachment file path".to_string()));
+    }
+
     let full_path = app_state
         .app_data_dir
         .join("attachments")
         .join(&file_path);
+
+    if !full_path.exists() {
+        return Err(AppError::code("ATTACHMENT_NOT_FOUND"));
+    }
+
     let path_str = full_path.to_string_lossy().to_string();
     app_handle
         .opener()
         .open_path(&path_str, None::<&str>)
         .map_err(|e| AppError::Internal(anyhow::anyhow!("{}", e)))
+}
+
+/// 获取附件统计信息
+#[tauri::command]
+pub async fn get_attachment_stats(
+    app_state: tauri::State<'_, Arc<AppState>>,
+) -> Result<AttachmentStats, AppError> {
+    let db = require_db(&app_state).await?;
+    service::attachment::get_stats(&db, &app_state.app_data_dir)
+        .await
+        .map_err(AppError::from)
+}
+
+/// 清理孤立附件文件
+#[tauri::command]
+pub async fn cleanup_orphan_attachments(
+    app_state: tauri::State<'_, Arc<AppState>>,
+) -> Result<u32, AppError> {
+    let db = require_db(&app_state).await?;
+    service::attachment::cleanup_orphans(&db, &app_state.app_data_dir)
+        .await
+        .map_err(AppError::from)
 }
 
 // ============================================================================

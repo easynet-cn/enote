@@ -51,10 +51,28 @@ pub fn save_image(app_data_dir: &Path, base64_data: &str) -> Result<String> {
 }
 
 /// 删除图片文件
-pub fn delete_image(path: &str) -> Result<()> {
-    let path = Path::new(path);
-    if path.exists() {
-        std::fs::remove_file(path).context("Failed to delete image file")?;
+///
+/// 安全校验：仅允许删除 images 目录内的文件，防止路径穿越攻击
+pub fn delete_image(app_data_dir: &Path, path: &str) -> Result<()> {
+    let target = Path::new(path);
+    let images = images_dir(app_data_dir);
+
+    // 规范化路径并检查是否在 images 目录内
+    let canonical_target = target
+        .canonicalize()
+        .context("Image file not found or path invalid")?;
+    // images 目录可能不存在，如果不存在则说明没有图片可删
+    let canonical_images = match images.canonicalize() {
+        Ok(p) => p,
+        Err(_) => return Ok(()), // images 目录不存在，无需删除
+    };
+
+    if !canonical_target.starts_with(&canonical_images) {
+        anyhow::bail!("Path traversal detected: image path must be within images directory");
+    }
+
+    if canonical_target.exists() {
+        std::fs::remove_file(&canonical_target).context("Failed to delete image file")?;
     }
     Ok(())
 }

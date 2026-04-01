@@ -241,6 +241,8 @@ pub fn run_with_config(config_path: Option<String>) {
             command::find_attachments,
             command::delete_attachment,
             command::open_attachment,
+            command::get_attachment_stats,
+            command::cleanup_orphan_attachments,
         ])
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| {

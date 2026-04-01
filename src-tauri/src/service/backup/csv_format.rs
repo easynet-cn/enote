@@ -1,10 +1,23 @@
 use std::io::Read;
 
+use anyhow::Context;
 use sea_orm::*;
 use tracing::info;
 
 use super::{clear_tables, format_dt, parse_dt, restore_data, BackupData, BATCH_SIZE};
 use crate::entity::{note, note_history, note_tags, notebook, tag};
+
+/// 安全解析 CSV 字段为 i64，解析失败时返回带上下文的错误
+fn parse_i64(val: &str, table: &str, field: &str) -> anyhow::Result<i64> {
+    val.parse::<i64>()
+        .with_context(|| format!("CSV import: invalid integer in {}.{}: '{}'", table, field, val))
+}
+
+/// 安全解析 CSV 字段为 i32，解析失败时返回带上下文的错误
+fn parse_i32(val: &str, table: &str, field: &str) -> anyhow::Result<i32> {
+    val.parse::<i32>()
+        .with_context(|| format!("CSV import: invalid integer in {}.{}: '{}'", table, field, val))
+}
 
 pub async fn export_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<()> {
     let file = std::fs::File::create(path)?;
@@ -188,13 +201,13 @@ pub async fn import_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
                 continue;
             }
             data.notebooks.push(notebook::Model {
-                id: r[0].parse()?,
-                parent_id: r[1].parse()?,
+                id: parse_i64(&r[0], "notebook", "id")?,
+                parent_id: parse_i64(&r[1], "notebook", "parent_id")?,
                 name: r[2].to_string(),
                 description: r[3].to_string(),
                 icon: r[4].to_string(),
                 cls: r[5].to_string(),
-                sort_order: r[6].parse()?,
+                sort_order: parse_i32(&r[6], "notebook", "sort_order")?,
                 mcp_access: 0,
                 create_time: parse_dt(&r[7])?,
                 update_time: parse_dt(&r[8])?,
@@ -213,11 +226,11 @@ pub async fn import_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
                 continue;
             }
             data.tags.push(tag::Model {
-                id: r[0].parse()?,
+                id: parse_i64(&r[0], "tag", "id")?,
                 name: r[1].to_string(),
                 icon: r[2].to_string(),
                 cls: r[3].to_string(),
-                sort_order: r[4].parse()?,
+                sort_order: parse_i32(&r[4], "tag", "sort_order")?,
                 mcp_access: 0,
                 create_time: parse_dt(&r[5])?,
                 update_time: parse_dt(&r[6])?,
@@ -236,11 +249,11 @@ pub async fn import_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
                 continue;
             }
             data.notes.push(note::Model {
-                id: r[0].parse()?,
-                notebook_id: r[1].parse()?,
+                id: parse_i64(&r[0], "note", "id")?,
+                notebook_id: parse_i64(&r[1], "note", "notebook_id")?,
                 title: r[2].to_string(),
                 content: r[3].to_string(),
-                content_type: r[4].parse()?,
+                content_type: parse_i32(&r[4], "note", "content_type")?,
                 is_pinned: if r.len() > 7 {
                     r[7].parse().unwrap_or(0)
                 } else {
@@ -270,10 +283,10 @@ pub async fn import_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
                 continue;
             }
             data.note_tags.push(note_tags::Model {
-                id: r[0].parse()?,
-                note_id: r[1].parse()?,
-                tag_id: r[2].parse()?,
-                sort_order: r[3].parse()?,
+                id: parse_i64(&r[0], "note_tags", "id")?,
+                note_id: parse_i64(&r[1], "note_tags", "note_id")?,
+                tag_id: parse_i64(&r[2], "note_tags", "tag_id")?,
+                sort_order: parse_i32(&r[3], "note_tags", "sort_order")?,
                 create_time: parse_dt(&r[4])?,
                 update_time: parse_dt(&r[5])?,
             });
@@ -291,12 +304,12 @@ pub async fn import_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
                 continue;
             }
             data.note_histories.push(note_history::Model {
-                id: r[0].parse()?,
-                note_id: r[1].parse()?,
+                id: parse_i64(&r[0], "note_history", "id")?,
+                note_id: parse_i64(&r[1], "note_history", "note_id")?,
                 old_content: r[2].to_string(),
                 new_content: r[3].to_string(),
                 extra: r[4].to_string(),
-                operate_type: r[5].parse()?,
+                operate_type: parse_i32(&r[5], "note_history", "operate_type")?,
                 operate_source: 0,
                 operate_time: parse_dt(&r[6])?,
                 create_time: parse_dt(&r[7])?,

@@ -11,6 +11,28 @@
 import { vi } from 'vitest'
 import { config } from '@vue/test-utils'
 
+// Mock localStorage (jsdom 环境中 localStorage.getItem 可能不是函数)
+const store: Record<string, string> = {}
+const storageMock = {
+  getItem: (key: string) => store[key] ?? null,
+  setItem: (key: string, value: string) => {
+    store[key] = value
+  },
+  removeItem: (key: string) => {
+    delete store[key]
+  },
+  clear: () => Object.keys(store).forEach((k) => delete store[k]),
+  get length() {
+    return Object.keys(store).length
+  },
+  key: (index: number) => Object.keys(store)[index] ?? null,
+}
+Object.defineProperty(globalThis, 'localStorage', {
+  value: storageMock,
+  writable: true,
+  configurable: true,
+})
+
 // 配置 Vue Test Utils
 config.global.stubs = {
   // 禁用 teleport 以避免测试中的问题

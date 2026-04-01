@@ -1,457 +1,97 @@
 import { defineStore } from 'pinia'
-import { ref, computed, toRaw } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { ContentType } from '../types'
-import type {
-  ShowNotebook,
-  ShowTag,
-  ShowNote,
-  NoteHistory,
-  NoteSearchPageParam,
-  NotebookTreeNode,
-} from '../types'
-import { DEFAULT_NOTE_PAGE_SIZE, DEFAULT_HISTORY_PAGE_SIZE } from '../config/constants'
+import { useNotebookStore } from './notebooks'
+import { useTagStore } from './tags'
+import { useNoteStore } from './notes'
+import { useEditorStore } from './editor'
+import { useUiStore } from './ui'
 
+/**
+ * 统一应用 Store（门面模式）
+ *
+ * 内部委托给拆分后的子 store，对外保持统一的 API，
+ * 已有组件无需修改导入。新代码建议直接使用子 store。
+ */
 export const useAppStore = defineStore('app', () => {
-  const { t } = useI18n()
+  const notebookStore = useNotebookStore()
+  const tagStore = useTagStore()
+  const noteStore = useNoteStore()
+  const editorStore = useEditorStore()
+  const uiStore = useUiStore()
 
-  // ==================== 数据状态 ====================
-  // 使用 Map 优化查询性能 O(1)
-  // 使用 Map 优化查询性能 O(1)，Map 保持插入顺序
-  const notebooksMap = ref<Map<string, ShowNotebook>>(new Map())
-  const tagsMap = ref<Map<string, ShowTag>>(new Map())
-  const notesMap = ref<Map<string, ShowNote>>(new Map())
-
-  // 默认项（使用计算属性支持国际化）
-  const defaultNotebook = computed<ShowNotebook>(() => ({
-    id: '0',
-    name: t('notebook.all'),
-    count: 0,
-    icon: 'BookOpen',
-  }))
-
-  const defaultTag = computed<ShowTag>(() => ({
-    id: '0',
-    name: t('tag.all'),
-    icon: 'Tags',
-  }))
-
-  // 初始化默认项
-  notebooksMap.value.set('0', defaultNotebook.value)
-  tagsMap.value.set('0', defaultTag.value)
-
-  // 历史记录
-  const histories = ref<NoteHistory[]>([])
-
-  // 笔记本展开状态
-  const expandedNotebooks = ref<Set<string>>(new Set())
-
-  // 搜索关键词
-  const query = ref<string>('')
-
-  // 编辑缓冲区
-  const editingNote = ref<ShowNote | null>(null)
-
-  // ==================== UI 状态 ====================
-  const activeNotebook = ref<string>('')
-  const activeTag = ref<string>('')
-  const activeNote = ref<string | null>(null)
-  const editMode = ref<boolean>(false)
-  const loading = ref<boolean>(false)
-  const notesLoading = ref<boolean>(false)
-
-  // 多选模式
-  const isSelectMode = ref<boolean>(false)
-  const selectedNotes = ref<Set<string>>(new Set())
-
-  // 笔记分页（通过 computed 代理 noteSearchPageParam，避免双重状态）
-  const notePageIndex = computed({
-    get: () => noteSearchPageParam.value.pageIndex,
-    set: (v: number) => {
-      noteSearchPageParam.value.pageIndex = v
-    },
-  })
-  const notePageSize = computed({
-    get: () => noteSearchPageParam.value.pageSize,
-    set: (v: number) => {
-      noteSearchPageParam.value.pageSize = v
-    },
-  })
-  const noteTotal = ref<number>(0)
-  const noteSortField = computed({
-    get: () => noteSearchPageParam.value.sortField,
-    set: (v: string) => {
-      noteSearchPageParam.value.sortField = v
-    },
-  })
-  const noteSortOrder = computed({
-    get: () => noteSearchPageParam.value.sortOrder,
-    set: (v: string) => {
-      noteSearchPageParam.value.sortOrder = v
-    },
-  })
-
-  // 搜索参数
-  const noteSearchPageParam = ref<NoteSearchPageParam>({
-    pageIndex: 1,
-    pageSize: DEFAULT_NOTE_PAGE_SIZE,
-    notebookId: 0,
-    tagId: 0,
-    keyword: '',
-    sortField: 'update_time',
-    sortOrder: 'desc',
-    isStarred: false,
-  })
-
-  // 历史分页
-  const historyPageIndex = ref<number>(1)
-  const historyPageSize = ref<number>(DEFAULT_HISTORY_PAGE_SIZE)
-  const historyTotal = ref<number>(0)
-  const historyLoading = ref<boolean>(false)
-
-  // ==================== Getters ====================
-  // 计算属性：数组形式（兼容现有组件）
-  const notebooks = computed<ShowNotebook[]>(() => {
-    return Array.from(notebooksMap.value.values())
-  })
-
-  // 笔记本树形结构（不含 id='0' 的虚拟"全部"项）
-  const notebookTree = computed<NotebookTreeNode[]>(() => {
-    const allNotebooks = Array.from(notebooksMap.value.values()).filter((n) => n.id !== '0')
-    const expanded = expandedNotebooks.value
-
-    const buildChildren = (parentId: number): NotebookTreeNode[] => {
-      return allNotebooks
-        .filter((n) => (n.parentId ?? 0) === parentId)
-        .sort((a, b) => (b.sortOrder ?? 0) - (a.sortOrder ?? 0))
-        .map((n) => ({
-          ...n,
-          expanded: expanded.has(n.id),
-          children: buildChildren(Number(n.id)),
-        }))
-    }
-
-    return buildChildren(0)
-  })
-
-  // 切换笔记本展开/折叠
-  const toggleNotebookExpand = (id: string) => {
-    const newSet = new Set(expandedNotebooks.value)
-    if (newSet.has(id)) {
-      newSet.delete(id)
-    } else {
-      newSet.add(id)
-    }
-    expandedNotebooks.value = newSet
-  }
-
-  // 初始化时展开所有根笔记本
-  const initExpandedNotebooks = () => {
-    const rootIds = Array.from(notebooksMap.value.values())
-      .filter((n) => n.id !== '0' && (!n.parentId || n.parentId === 0))
-      .map((n) => n.id)
-    expandedNotebooks.value = new Set(rootIds)
-  }
-
-  const tags = computed<ShowTag[]>(() => {
-    return Array.from(tagsMap.value.values())
-  })
-
-  const notes = computed<ShowNote[]>(() => {
-    return Array.from(notesMap.value.values())
-  })
-
-  // 当前活动笔记数据
-  const activeNoteData = computed<ShowNote | null>(() => {
-    if (editMode.value && editingNote.value) {
-      return editingNote.value
-    }
-    if (!activeNote.value) return null
-    return notesMap.value.get(activeNote.value) || null
-  })
-
-  // 脏状态检测：编辑中的笔记与原始笔记是否有差异
-  const isDirty = computed<boolean>(() => {
-    if (!editMode.value || !editingNote.value || !activeNote.value) return false
-    const original = notesMap.value.get(activeNote.value)
-    if (!original) return false
-    return (
-      editingNote.value.title !== original.title ||
-      editingNote.value.content !== original.content ||
-      editingNote.value.contentType !== original.contentType
-    )
-  })
-
-  // ==================== Actions ====================
-  // 设置笔记本列表
-  const setNotebooks = (items: ShowNotebook[]) => {
-    const isFirstLoad = notebooksMap.value.size <= 1
-    notebooksMap.value.clear()
-    notebooksMap.value.set('0', defaultNotebook.value)
-
-    for (const item of items) {
-      notebooksMap.value.set(item.id, item)
-    }
-
-    // 首次加载时展开根笔记本
-    if (isFirstLoad) {
-      initExpandedNotebooks()
-    }
-  }
-
-  // 更新笔记本
-  const updateNotebook = (notebook: ShowNotebook) => {
-    notebooksMap.value.set(notebook.id, notebook)
-  }
-
-  // 删除笔记本
-  const removeNotebook = (id: string) => {
-    notebooksMap.value.delete(id)
-  }
-
-  // 设置标签列表
-  const setTags = (items: ShowTag[]) => {
-    tagsMap.value.clear()
-    tagsMap.value.set('0', defaultTag.value)
-
-    for (const item of items) {
-      tagsMap.value.set(item.id, item)
-    }
-  }
-
-  // 更新标签
-  const updateTag = (tag: ShowTag) => {
-    tagsMap.value.set(tag.id, tag)
-  }
-
-  // 删除标签
-  const removeTag = (id: string) => {
-    tagsMap.value.delete(id)
-  }
-
-  // 更新默认项的语言（用于语言切换时调用）
+  // 语言切换时更新默认项
   const updateDefaultItems = () => {
-    notebooksMap.value.set('0', defaultNotebook.value)
-    tagsMap.value.set('0', defaultTag.value)
-  }
-
-  // 设置笔记列表
-  const setNotes = (items: ShowNote[]) => {
-    notesMap.value.clear()
-
-    for (const item of items) {
-      notesMap.value.set(item.id, item)
-    }
-  }
-
-  // 添加笔记到开头
-  const prependNote = (note: ShowNote) => {
-    // Map 保持插入顺序，需重建以确保新笔记在前
-    const newMap = new Map<string, ShowNote>()
-    newMap.set(note.id, note)
-    for (const [id, n] of notesMap.value) {
-      newMap.set(id, n)
-    }
-    notesMap.value = newMap
-  }
-
-  // 更新笔记
-  const updateNote = (note: ShowNote) => {
-    notesMap.value.set(note.id, note)
-  }
-
-  // 删除笔记
-  const removeNote = (id: string) => {
-    notesMap.value.delete(id)
-  }
-
-  // 根据 ID 获取笔记
-  const getNoteById = (id: string): ShowNote | undefined => {
-    return notesMap.value.get(id)
-  }
-
-  // 根据 ID 获取笔记本
-  const getNotebookById = (id: string): ShowNotebook | undefined => {
-    return notebooksMap.value.get(id)
-  }
-
-  // 根据 ID 获取标签
-  const getTagById = (id: string): ShowTag | undefined => {
-    return tagsMap.value.get(id)
-  }
-
-  // 设置活动笔记
-  const setActiveNote = (noteId: string | null) => {
-    activeNote.value = noteId
-    editMode.value = false
-
-    if (noteId) {
-      const note = notesMap.value.get(noteId)
-      if (note) {
-        // 使用 toRaw 获取原始对象，避免 structuredClone 无法克隆响应式代理
-        editingNote.value = structuredClone(toRaw(note))
-      }
-    } else {
-      editingNote.value = null
-    }
-  }
-
-  // 创建默认笔记
-  const createDefaultNote = (
-    notebookId: string,
-    timestamp: number,
-    contentType: ContentType = ContentType.Html,
-  ): ShowNote => {
-    const timeStr = new Date(timestamp).toISOString().replace('T', ' ').slice(0, 19)
-    return {
-      id: '0-' + timestamp,
-      notebookId,
-      notebookName: undefined,
-      title: '',
-      content: '',
-      contentType,
-      isPinned: 0,
-      isStarred: 0,
-      tags: [],
-      createTime: timeStr,
-      updateTime: timeStr,
-    }
-  }
-
-  // 开始编辑
-  const startEdit = () => {
-    editMode.value = true
-  }
-
-  // 取消编辑
-  const cancelEdit = () => {
-    editMode.value = false
-    if (activeNote.value) {
-      const note = notesMap.value.get(activeNote.value)
-      if (note) {
-        // 使用 toRaw 获取原始对象，避免 structuredClone 无法克隆响应式代理
-        editingNote.value = structuredClone(toRaw(note))
-      }
-    }
-  }
-
-  // 多选模式操作
-  const toggleSelectMode = () => {
-    isSelectMode.value = !isSelectMode.value
-    if (!isSelectMode.value) {
-      selectedNotes.value = new Set()
-    }
-  }
-
-  const toggleNoteSelection = (noteId: string) => {
-    const newSet = new Set(selectedNotes.value)
-    if (newSet.has(noteId)) {
-      newSet.delete(noteId)
-    } else {
-      newSet.add(noteId)
-    }
-    selectedNotes.value = newSet
-  }
-
-  const selectAllNotes = () => {
-    const newSet = new Set<string>()
-    for (const id of notesMap.value.keys()) {
-      newSet.add(id)
-    }
-    selectedNotes.value = newSet
-  }
-
-  const clearSelection = () => {
-    selectedNotes.value = new Set()
-    isSelectMode.value = false
-  }
-
-  // 重置搜索参数
-  const resetSearchParam = () => {
-    noteSearchPageParam.value = {
-      pageIndex: 1,
-      pageSize: DEFAULT_NOTE_PAGE_SIZE,
-      notebookId: 0,
-      tagId: 0,
-      keyword: '',
-      sortField: 'update_time',
-      sortOrder: 'desc',
-      isStarred: false,
-    }
+    notebookStore.updateDefaultNotebook()
+    tagStore.updateDefaultTag()
   }
 
   return {
-    // 数据状态
-    notebooks,
-    tags,
-    notes,
-    histories,
-    query,
-    editingNote,
+    // ==================== 笔记本 ====================
+    notebooks: notebookStore.notebooks,
+    notebookTree: notebookStore.notebookTree,
+    expandedNotebooks: notebookStore.expandedNotebooks,
+    setNotebooks: notebookStore.setNotebooks,
+    updateNotebook: notebookStore.updateNotebook,
+    removeNotebook: notebookStore.removeNotebook,
+    getNotebookById: notebookStore.getNotebookById,
+    toggleNotebookExpand: notebookStore.toggleNotebookExpand,
+    initExpandedNotebooks: notebookStore.initExpandedNotebooks,
 
-    // UI 状态
-    activeNotebook,
-    activeTag,
-    activeNote,
-    editMode,
-    loading,
-    notesLoading,
+    // ==================== 标签 ====================
+    tags: tagStore.tags,
+    setTags: tagStore.setTags,
+    updateTag: tagStore.updateTag,
+    removeTag: tagStore.removeTag,
+    getTagById: tagStore.getTagById,
 
-    // 分页状态
-    notePageIndex,
-    notePageSize,
-    noteTotal,
-    noteSortField,
-    noteSortOrder,
-    noteSearchPageParam,
-    historyPageIndex,
-    historyPageSize,
-    historyTotal,
-    historyLoading,
+    // ==================== 笔记列表 ====================
+    notes: noteStore.notes,
+    query: noteStore.query,
+    notePageIndex: noteStore.notePageIndex,
+    notePageSize: noteStore.notePageSize,
+    noteTotal: noteStore.noteTotal,
+    noteSortField: noteStore.noteSortField,
+    noteSortOrder: noteStore.noteSortOrder,
+    noteSearchPageParam: noteStore.noteSearchPageParam,
+    notesLoading: noteStore.notesLoading,
+    setNotes: noteStore.setNotes,
+    prependNote: noteStore.prependNote,
+    updateNote: noteStore.updateNote,
+    removeNote: noteStore.removeNote,
+    getNoteById: noteStore.getNoteById,
+    resetSearchParam: noteStore.resetSearchParam,
 
-    // Getters
-    activeNoteData,
-    isDirty,
+    // ==================== 多选 ====================
+    isSelectMode: noteStore.isSelectMode,
+    selectedNotes: noteStore.selectedNotes,
+    toggleSelectMode: noteStore.toggleSelectMode,
+    toggleNoteSelection: noteStore.toggleNoteSelection,
+    selectAllNotes: noteStore.selectAllNotes,
+    clearSelection: noteStore.clearSelection,
 
-    // Actions - 笔记本
-    notebookTree,
-    expandedNotebooks,
-    toggleNotebookExpand,
-    initExpandedNotebooks,
-    setNotebooks,
-    updateNotebook,
-    removeNotebook,
-    getNotebookById,
+    // ==================== 编辑器 ====================
+    editingNote: editorStore.editingNote,
+    editMode: editorStore.editMode,
+    activeNote: editorStore.activeNote,
+    activeNoteData: editorStore.activeNoteData,
+    isDirty: editorStore.isDirty,
+    setActiveNote: editorStore.setActiveNote,
+    createDefaultNote: editorStore.createDefaultNote,
+    startEdit: editorStore.startEdit,
+    cancelEdit: editorStore.cancelEdit,
 
-    // Actions - 标签
-    setTags,
-    updateTag,
-    removeTag,
-    getTagById,
+    // ==================== 历史记录 ====================
+    histories: editorStore.histories,
+    historyPageIndex: editorStore.historyPageIndex,
+    historyPageSize: editorStore.historyPageSize,
+    historyTotal: editorStore.historyTotal,
+    historyLoading: editorStore.historyLoading,
 
-    // Actions - 笔记
-    setNotes,
-    prependNote,
-    updateNote,
-    removeNote,
-    getNoteById,
-    setActiveNote,
-    createDefaultNote,
+    // ==================== UI ====================
+    activeNotebook: uiStore.activeNotebook,
+    activeTag: uiStore.activeTag,
+    loading: uiStore.loading,
 
-    // Actions - 编辑
-    startEdit,
-    cancelEdit,
-    resetSearchParam,
-
-    // Actions - 多选
-    isSelectMode,
-    selectedNotes,
-    toggleSelectMode,
-    toggleNoteSelection,
-    selectAllNotes,
-    clearSelection,
-
-    // Actions - 国际化
+    // ==================== 国际化 ====================
     updateDefaultItems,
   }
 })

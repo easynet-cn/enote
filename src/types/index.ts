@@ -222,7 +222,16 @@ export interface NoteAttachment {
   filePath: string
   fileSize: number
   mimeType: string
+  fileHash: string
+  refCount: number
   createTime: string | null
+}
+
+export interface AttachmentStats {
+  totalCount: number
+  uniqueFileCount: number
+  totalSize: number
+  orphanCount: number
 }
 
 // ============================================================================

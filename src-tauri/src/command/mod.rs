@@ -23,7 +23,7 @@ use crate::{
     config::AppState,
     error::AppError,
     model::{
-        AppLog, AppLogSearchParam, LogFileInfo, Note, NoteAttachment, NoteHistory,
+        AppLog, AppLogSearchParam, AttachmentStats, LogFileInfo, Note, NoteAttachment, NoteHistory,
         NoteHistorySearchPageParam, NoteLink, NoteSearchPageParam, NoteStatsResult, NoteTemplate,
         Notebook, OperateSource, PageParam, PageResult, SyncLog, SyncLogDetail, SyncOptions,
         SyncPreview, Tag,

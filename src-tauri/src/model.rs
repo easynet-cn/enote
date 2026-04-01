@@ -907,6 +907,8 @@ pub struct NoteAttachment {
     pub file_path: String,
     pub file_size: i64,
     pub mime_type: String,
+    pub file_hash: String,
+    pub ref_count: i32,
     #[serde(
         serialize_with = "serialize_option_dt",
         deserialize_with = "deserialize_option_dt"
@@ -923,9 +925,25 @@ impl From<entity::note_attachment::Model> for NoteAttachment {
             file_path: value.file_path,
             file_size: value.file_size,
             mime_type: value.mime_type,
+            file_hash: value.file_hash,
+            ref_count: value.ref_count,
             create_time: Some(value.create_time),
         }
     }
+}
+
+/// 附件统计信息
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AttachmentStats {
+    /// 附件总数
+    pub total_count: u64,
+    /// 去重后的物理文件数
+    pub unique_file_count: u64,
+    /// 总存储大小（字节）
+    pub total_size: i64,
+    /// 孤立附件数（文件存在但无数据库记录）
+    pub orphan_count: u64,
 }
 
 // ============================================================================

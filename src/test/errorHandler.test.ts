@@ -32,7 +32,8 @@ describe('errorHandler utils', () => {
       const result = parseErrorToAppError(error)
 
       expect(result.code).toBe(AppErrorCode.NOT_FOUND)
-      expect(result.message).toBe('Note not found')
+      // message 会被 i18n 本地化，只需确保非空
+      expect(result.message).toBeTruthy()
     })
 
     it('should handle string errors', () => {
@@ -59,9 +60,13 @@ describe('errorHandler utils', () => {
     })
 
     it('should return default message for unknown types', () => {
-      expect(parseError(null)).toBe('操作失败，请稍后重试')
-      expect(parseError(undefined)).toBe('操作失败，请稍后重试')
-      expect(parseError(123)).toBe('操作失败，请稍后重试')
+      // 默认消息取决于 i18n 语言，只需确保返回非空字符串
+      expect(parseError(null)).toBeTruthy()
+      expect(parseError(undefined)).toBeTruthy()
+      expect(parseError(123)).toBeTruthy()
+      // 三者返回相同的默认消息
+      expect(parseError(null)).toBe(parseError(undefined))
+      expect(parseError(null)).toBe(parseError(123))
     })
   })
 })

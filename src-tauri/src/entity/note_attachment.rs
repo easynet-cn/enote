@@ -13,6 +13,12 @@ pub struct Model {
     pub file_path: String,
     pub file_size: i64,
     pub mime_type: String,
+    /// SHA256 哈希值，用于去重
+    #[sea_orm(default_value = "")]
+    pub file_hash: String,
+    /// 引用计数（多个附件记录可能指向同一物理文件）
+    #[sea_orm(default_value = 1)]
+    pub ref_count: i32,
     pub create_time: DateTime,
 }
 
