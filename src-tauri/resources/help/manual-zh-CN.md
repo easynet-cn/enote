@@ -135,6 +135,7 @@
   - [21.3 配置项说明](#213-配置项说明)
   - [21.4 数据库配置示例](#214-数据库配置示例)
   - [21.5 Profile 配置管理](#215-profile-配置管理)
+    - [21.5.1 Server 后端功能说明](#2151-server-后端功能说明)
   - [21.6 内容加密与密钥管理](#216-内容加密与密钥管理)
   - [21.7 SSL/TLS 证书认证](#217-ssltls-证书认证)
   - [21.8 历史版本保护](#218-历史版本保护)
@@ -1338,31 +1339,40 @@ enote -c /path/to/application.yml
 
 设置向导包含以下步骤：
 
-**步骤一：选择数据库类型**
+**步骤一：选择后端类型**
 
 - **SQLite（推荐）：** 本地文件数据库，无需安装额外服务，开箱即用。适合个人使用。
 - **MySQL：** 网络数据库，适合团队协作或远程访问场景。需预先安装 MySQL 5.7+。
 - **PostgreSQL：** 功能丰富的企业级数据库。需预先安装 PostgreSQL 12+。
+- **ENote Server：** 连接远程 ENote 兼容 API 服务器。适合自建服务或企业部署场景。
 
 **步骤二：配置连接信息**
 
-根据所选的数据库类型，填写相应的连接参数：
+根据所选的后端类型，填写相应的连接参数：
 
 - **配置名称：** 为此配置取一个便于识别的名称（如「本地笔记」、「工作数据库」）。
 - **SQLite：** 选择数据库文件存储路径。支持「新建」（选择保存位置创建新数据库）和「打开已有」（选择已存在的 .db 文件）两种方式。留空则使用默认位置（应用数据目录）。
 - **MySQL / PostgreSQL：** 填写主机地址、端口、数据库名，选择认证方式：
   - **密码登录：** 输入用户名和密码。密码将安全存储在操作系统钥匙串中，不保存在配置文件里。
   - **证书登录：** 输入用户名，选择 SSL 模式（优先/必须/验证 CA/验证身份），并指定 CA 证书、客户端证书、客户端私钥文件路径。
+- **ENote Server：** 填写服务器地址，选择认证方式：
+  - **无认证：** 不需要认证信息（仅限内网或测试环境）。
+  - **Bearer Token：** 使用 API Key 或 Token 认证。Token 安全存储在操作系统钥匙串中。
+  - **Basic（用户名/密码）：** HTTP Basic 认证。密码安全存储在钥匙串中。
+  - **JWT（自动刷新）：** 使用 JSON Web Token 认证，支持 Token 过期自动刷新。需填写用户名、密码和 Token 刷新地址。
+  - **自定义 Header：** 使用自定义 HTTP Header 认证（如 X-API-Key），适合企业内部网关。Header 值存储在钥匙串中。
+  - **OAuth 2.0：** 使用 OAuth 2.0 协议认证。需填写 Token URL、Client ID、Client Secret 和权限范围。
 
 可点击「测试连接」按钮验证配置是否正确。
 
 **步骤三：安全设置**
 
-- **内容加密：** 开关控制是否启用笔记内容加密。启用后：
+- **数据库后端：** 开关控制是否启用笔记内容加密。启用后：
   - 系统自动生成 AES-256 加密密钥，安全存储在操作系统钥匙串（macOS Keychain / Windows Credential Store / Linux Secret Service）中。
   - 所有笔记内容在写入数据库前自动加密，读取时自动解密，对用户完全透明。
   - 即使数据库文件被直接访问，笔记内容也无法被读取。
   - **注意：** 启用加密后，笔记标题仍可搜索，但内容将无法通过全文搜索检索。
+- **ENote Server 后端：** 内容加密由服务端处理，客户端无需配置。
 
 **步骤四：保存并连接**
 
@@ -1774,7 +1784,80 @@ security:
   content-encryption: true
 ```
 
-> **注意：** 数据库密码和加密密钥不保存在配置文件中，而是安全存储在操作系统钥匙串中。
+**ENote Server Profile 示例（`profiles/company-server.yml`）：**
+
+```yaml
+name: 公司服务器
+icon: ''
+backend: server
+server:
+  url: https://enote.company.com
+  auth-method:
+    type: bearer
+  timeout: 30
+datasource:
+  type: sqlite
+security:
+  content-encryption: false
+```
+
+**ENote Server Profile 示例 — JWT 认证（`profiles/cloud-jwt.yml`）：**
+
+```yaml
+name: 云端笔记
+icon: ''
+backend: server
+server:
+  url: https://api.enote-cloud.com
+  auth-method:
+    type: jwt
+    refresh-url: /auth/refresh
+    username: user@example.com
+  timeout: 30
+datasource:
+  type: sqlite
+security:
+  content-encryption: false
+```
+
+**ENote Server Profile 示例 — OAuth 2.0（`profiles/sso-oauth.yml`）：**
+
+```yaml
+name: 企业 SSO
+icon: ''
+backend: server
+server:
+  url: https://enote.company.com
+  auth-method:
+    type: oauth2
+    token-url: https://sso.company.com/oauth/token
+    client-id: enote-desktop
+    scopes: notes.read notes.write
+  timeout: 30
+datasource:
+  type: sqlite
+security:
+  content-encryption: false
+```
+
+> **注意：**
+> - 数据库密码、加密密钥和服务器认证信息（Token、密码、Client Secret 等）均不保存在配置文件中，而是安全存储在操作系统钥匙串中。
+> - `backend` 字段为 `"server"` 时表示使用远程服务器后端，省略或为 `"database"` 时使用数据库后端。
+> - Server 后端的 `datasource` 字段保留默认值即可，不会被使用。
+
+### 21.5.1 Server 后端功能说明
+
+使用 ENote Server 后端时，以下功能的行为与数据库后端有所不同：
+
+| 功能 | 数据库后端 | Server 后端 |
+|------|-----------|------------|
+| 笔记 CRUD | 本地数据库操作 | 通过 HTTP API 调用服务端 |
+| 全文搜索 | 本地 FTS 索引 | 由服务端实现 |
+| 内容加密 | 客户端 AES-256 加密 | 由服务端处理 |
+| 数据备份 | 支持（SQL/Excel/CSV） | 不支持（由服务端管理） |
+| 跨 Profile 同步 | 支持 | 不支持 |
+| 自动备份 | 支持 | 不支持 |
+| 操作日志 | 本地记录 | 通过 API 记录到服务端 |
 
 ### 21.6 内容加密与密钥管理
 

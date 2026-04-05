@@ -7,6 +7,9 @@ pub async fn export_backup(
     format: String,
     path: String,
 ) -> Result<(), AppError> {
+    if is_server_backend(&app_state).await {
+        return Err(AppError::code("SERVER_FEATURE_NOT_SUPPORTED"));
+    }
     let db = require_db(&app_state).await?;
     match format.as_str() {
         "sql" => service::backup::export_sql(&db, &path)
@@ -35,6 +38,9 @@ pub async fn import_backup(
     format: String,
     path: String,
 ) -> Result<(), AppError> {
+    if is_server_backend(&app_state).await {
+        return Err(AppError::code("SERVER_FEATURE_NOT_SUPPORTED"));
+    }
     let db = require_db(&app_state).await?;
     match format.as_str() {
         "sql" => service::backup::import_sql(&db, &path)
@@ -59,6 +65,9 @@ pub async fn import_backup(
 /// 执行一次自动备份
 #[tauri::command]
 pub async fn auto_backup(app_state: tauri::State<'_, Arc<AppState>>) -> Result<String, AppError> {
+    if is_server_backend(&app_state).await {
+        return Err(AppError::code("SERVER_FEATURE_NOT_SUPPORTED"));
+    }
     let db = require_db(&app_state).await?;
     let filename = service::backup::auto_backup(&db, &app_state.app_data_dir)
         .await

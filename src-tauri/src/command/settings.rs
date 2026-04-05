@@ -13,6 +13,14 @@ pub async fn get_all_settings(
         }
     }
 
+    if is_server_backend(&app_state).await {
+        let client = require_server(&app_state).await?;
+        let settings = client.get_all_settings().await?;
+        let mut cache = app_state.settings_cache.write().await;
+        *cache = Some(settings.clone());
+        return Ok(settings);
+    }
+
     // 缓存未命中，从数据库读取
     let db = require_db(&app_state).await?;
     let settings = service::settings::get_all(&db)
@@ -34,6 +42,19 @@ pub async fn save_settings(
     app_state: tauri::State<'_, Arc<AppState>>,
     settings: HashMap<String, String>,
 ) -> Result<(), AppError> {
+    if is_server_backend(&app_state).await {
+        let client = require_server(&app_state).await?;
+        client.save_settings(&settings).await?;
+        // 写穿缓存
+        let mut cache = app_state.settings_cache.write().await;
+        if let Some(ref mut cached) = *cache {
+            for (k, v) in settings {
+                cached.insert(k, v);
+            }
+        }
+        return Ok(());
+    }
+
     let db = require_db(&app_state).await?;
     let keys: Vec<String> = settings.keys().cloned().collect();
     service::settings::save(&db, settings.clone())

@@ -46,7 +46,8 @@
 
 ### 数据管理
 - **多配置管理** - 支持多个数据库配置（Profile），启动时选择或自动连接
-- **设置向导** - 首次启动引导配置数据库，支持 SQLite/MySQL/PostgreSQL
+- **设置向导** - 首次启动引导配置后端，支持 SQLite/MySQL/PostgreSQL/ENote Server
+- **ENote Server 后端** - 连接远程 ENote 兼容 API 服务器，支持多种认证方式（Bearer/Basic/JWT/自定义 Header/OAuth 2.0）
 - **SSL/TLS 认证** - MySQL/PostgreSQL 支持证书登录
 - **数据备份** - SQL/Excel/CSV 导出导入，自动定时备份
 - **导入导出** - 支持印象笔记、有道笔记、Notion 导入，PDF/HTML/Word/Markdown/JSON/XML 导出
@@ -85,6 +86,7 @@
 - **Tauri 2.x** - 轻量级跨平台桌面应用框架
 - **SeaORM** - 异步 ORM 框架
 - **SQLite/MySQL/PostgreSQL** - 多数据库支持
+- **reqwest** - HTTP 客户端，用于 ENote Server 后端
 - **aes-gcm** - AES-256-GCM 加密
 - **argon2** - 密码哈希
 - **keyring** - 系统钥匙串集成
@@ -111,7 +113,7 @@ enote/
 │   │   ├── HelpManual.vue      # 帮助文档
 │   │   ├── LogDialog.vue       # 应用日志
 │   │   └── UpdateChecker.vue   # 自动更新检查
-│   ├── composables/            # 组合式函数（11 个）
+│   ├── composables/            # 组合式函数（12 个）
 │   ├── extensions/             # TipTap 自定义扩展（8 个）
 │   ├── utils/                  # 工具函数
 │   │   └── import/             # 导入解析器（印象笔记/有道/Notion）
@@ -122,7 +124,7 @@ enote/
 ├── src-tauri/                  # Tauri 后端源码
 │   └── src/
 │       ├── command.rs          # IPC 命令处理
-│       ├── service/            # 业务逻辑层（18 个服务）
+│       ├── service/            # 业务逻辑层（19 个服务）
 │       ├── entity/             # 数据库实体（13 个）
 │       ├── migration/          # 数据库迁移（25 个）
 │       ├── config.rs           # 配置管理
@@ -210,15 +212,17 @@ pnpm test
 
 ## 数据库配置
 
-支持 SQLite（默认）、MySQL 和 PostgreSQL。
+支持 SQLite（默认）、MySQL、PostgreSQL 和 ENote Server。
 
-**首次启动**时，设置向导将引导您完成数据库连接配置：
+**首次启动**时，设置向导将引导您完成后端配置：
 
 - **SQLite** - 本地文件数据库，开箱即用，无需安装额外服务
 - **MySQL** - 支持密码登录和 SSL 证书认证
 - **PostgreSQL** - 支持密码登录和 SSL 证书认证
+- **ENote Server** - 连接远程 ENote 兼容 API 服务器，支持多种认证方式：
+  - Bearer Token、Basic Auth、JWT（自动刷新）、自定义 Header、OAuth 2.0
 
-配置以 Profile 形式管理，支持多个数据库配置随时切换。数据库密码和加密密钥安全存储在操作系统钥匙串中（macOS Keychain / Windows Credential Store / Linux Secret Service），不保存在配置文件里。
+配置以 Profile 形式管理，支持多个后端配置随时切换。数据库密码、加密密钥和服务器认证信息安全存储在操作系统钥匙串中（macOS Keychain / Windows Credential Store / Linux Secret Service），不保存在配置文件里。
 
 也可通过命令行参数使用传统配置文件：
 

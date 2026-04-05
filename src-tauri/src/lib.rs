@@ -146,6 +146,7 @@ pub fn run_with_config(config_path: Option<String>) {
             command::delete_profile_config,
             command::select_profile,
             command::test_db_connection,
+            command::test_server_connection,
             command::generate_encryption_key,
             command::get_profile_index,
             command::set_auto_connect,
@@ -266,11 +267,13 @@ fn auto_create_mobile_profile(
     let config = ProfileConfig {
         name: "Local".to_string(),
         icon: "database".to_string(),
+        backend: "database".to_string(),
         datasource: DatasourceConfig {
             db_type: "sqlite".to_string(),
             path: db_path_str,
             ..Default::default()
         },
+        server: None,
         security: SecurityConfig::default(),
     };
 
@@ -445,6 +448,7 @@ async fn setup_normal_mode(
     let app_state = Arc::new(AppState {
         configuration,
         database_connection: tokio::sync::RwLock::new(database_connection),
+        backend: tokio::sync::RwLock::new(config::ProfileBackend::Database),
         app_data_dir,
         active_profile_id: tokio::sync::RwLock::new(active_profile_id),
         encryption_key: tokio::sync::RwLock::new(encryption_key),
@@ -476,6 +480,7 @@ async fn setup_wizard_mode_state(app: &mut tauri::App) -> Result<(), Box<dyn std
     let app_state = Arc::new(AppState {
         configuration: config::Configuration::default(),
         database_connection: tokio::sync::RwLock::new(None),
+        backend: tokio::sync::RwLock::new(config::ProfileBackend::Database),
         app_data_dir,
         active_profile_id: tokio::sync::RwLock::new(String::new()),
         encryption_key: tokio::sync::RwLock::new(None),

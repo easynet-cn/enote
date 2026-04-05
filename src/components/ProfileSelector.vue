@@ -137,6 +137,7 @@ import {
   HardDrive,
   Database,
   Server,
+  Globe,
   Languages,
   X,
 } from 'lucide-vue-next'
@@ -180,6 +181,8 @@ const getDbIcon = (dbType: string) => {
       return Database
     case 'postgres':
       return Server
+    case 'server':
+      return Globe
     default:
       return HardDrive
   }

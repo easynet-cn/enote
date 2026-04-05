@@ -18,6 +18,7 @@ use tauri::{AppHandle, Manager};
 use tracing::info;
 
 use crate::i18n::t_simple;
+use crate::service::enote_server::EnoteServerClient;
 use crate::service::profile::{self, ProfileConfig};
 
 /// 应用配置结构体
@@ -306,6 +307,20 @@ impl Configuration {
     }
 }
 
+/// 当前活���的 Profile 后端类型
+pub enum ProfileBackend {
+    /// 数据库后端（使用 AppState.database_connection）
+    Database,
+    /// 远程 ENote Server 后端
+    Server(EnoteServerClient),
+}
+
+impl Default for ProfileBackend {
+    fn default() -> Self {
+        ProfileBackend::Database
+    }
+}
+
 /// 应用全局状态
 ///
 /// 存储应用运行时需要的共享状态，通过 Tauri 状态管理器在各命令间共享
@@ -316,6 +331,8 @@ pub struct AppState {
     /// 数据库连接（连接池），使用 RwLock 支持 Profile 热切换
     /// 在 Profile 选择模式下为 None，待用户选择后通过 reconnect_profile 填充
     pub database_connection: tokio::sync::RwLock<Option<DatabaseConnection>>,
+    /// 当前活跃的后端类型（Database 或 Server）
+    pub backend: tokio::sync::RwLock<ProfileBackend>,
     /// 应用数据目录（用于图片等文件存储）
     pub app_data_dir: PathBuf,
     /// 当前活跃的 profile ID，使用 RwLock 支持 Profile 热切换

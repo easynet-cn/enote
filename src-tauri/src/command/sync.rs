@@ -7,6 +7,9 @@ pub async fn get_sync_preview(
     target_profile_id: String,
     target_db_password: Option<String>,
 ) -> Result<SyncPreview, AppError> {
+    if is_server_backend(&app_state).await {
+        return Err(AppError::code("SERVER_FEATURE_NOT_SUPPORTED"));
+    }
     let db = require_db(&app_state).await?;
     let profile_id = app_state.active_profile_id.read().await;
     service::sync::get_preview(
@@ -29,6 +32,9 @@ pub async fn start_sync(
     target_db_password: Option<String>,
     target_encryption_key: Option<String>,
 ) -> Result<SyncLog, AppError> {
+    if is_server_backend(&app_state).await {
+        return Err(AppError::code("SERVER_FEATURE_NOT_SUPPORTED"));
+    }
     let db = require_db(&app_state).await?;
     let profile_id = app_state.active_profile_id.read().await;
     let enc_key = app_state.encryption_key.read().await;
@@ -60,6 +66,9 @@ pub async fn find_sync_logs(
     app_state: tauri::State<'_, Arc<AppState>>,
     mut page: PageParam,
 ) -> Result<PageResult<SyncLog>, AppError> {
+    if is_server_backend(&app_state).await {
+        return Err(AppError::code("SERVER_FEATURE_NOT_SUPPORTED"));
+    }
     page.normalize();
     let db = require_db(&app_state).await?;
     service::sync_log::search_page(&db, &page)
@@ -76,6 +85,9 @@ pub async fn find_sync_log_details(
     status: Option<String>,
     mut page: PageParam,
 ) -> Result<PageResult<SyncLogDetail>, AppError> {
+    if is_server_backend(&app_state).await {
+        return Err(AppError::code("SERVER_FEATURE_NOT_SUPPORTED"));
+    }
     page.normalize();
     let db = require_db(&app_state).await?;
     service::sync_log::search_detail_page(
@@ -95,6 +107,9 @@ pub async fn delete_sync_log(
     app_state: tauri::State<'_, Arc<AppState>>,
     sync_log_id: i64,
 ) -> Result<(), AppError> {
+    if is_server_backend(&app_state).await {
+        return Err(AppError::code("SERVER_FEATURE_NOT_SUPPORTED"));
+    }
     let db = require_db(&app_state).await?;
     service::sync_log::delete_by_id(&db, sync_log_id)
         .await
@@ -104,6 +119,9 @@ pub async fn delete_sync_log(
 /// 清空所有同步日志
 #[tauri::command]
 pub async fn clear_sync_logs(app_state: tauri::State<'_, Arc<AppState>>) -> Result<(), AppError> {
+    if is_server_backend(&app_state).await {
+        return Err(AppError::code("SERVER_FEATURE_NOT_SUPPORTED"));
+    }
     let db = require_db(&app_state).await?;
     service::sync_log::clear_all(&db)
         .await
@@ -117,6 +135,9 @@ pub async fn export_sync_log(
     sync_log_id: i64,
     path: String,
 ) -> Result<(), AppError> {
+    if is_server_backend(&app_state).await {
+        return Err(AppError::code("SERVER_FEATURE_NOT_SUPPORTED"));
+    }
     let db = require_db(&app_state).await?;
 
     // 获取日志

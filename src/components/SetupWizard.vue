@@ -290,11 +290,212 @@
               </div>
             </template>
           </template>
+
+          <!-- ENote Server 配置 -->
+          <template v-if="isServerBackend">
+            <div>
+              <label class="block text-sm font-medium text-content-secondary mb-1">
+                {{ t('setup.serverUrl') }}
+              </label>
+              <input
+                v-model="form.server!.url"
+                type="url"
+                :placeholder="t('setup.serverUrlPlaceholder')"
+                class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-content-secondary mb-1">
+                {{ t('setup.serverAuthMethod') }}
+              </label>
+              <select
+                v-model="form.server!['auth-method'].type"
+                class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="none">{{ t('setup.serverAuthNone') }}</option>
+                <option value="bearer">{{ t('setup.serverAuthBearer') }}</option>
+                <option value="basic">{{ t('setup.serverAuthBasic') }}</option>
+                <option value="jwt">{{ t('setup.serverAuthJwt') }}</option>
+                <option value="custom-header">{{ t('setup.serverAuthCustomHeader') }}</option>
+                <option value="oauth2">{{ t('setup.serverAuthOAuth2') }}</option>
+              </select>
+            </div>
+
+            <!-- Bearer Token -->
+            <div v-if="form.server!['auth-method'].type === 'bearer'">
+              <label class="block text-sm font-medium text-content-secondary mb-1">
+                {{ t('setup.serverToken') }}
+              </label>
+              <input
+                v-model="serverToken"
+                type="password"
+                :placeholder="t('setup.serverTokenPlaceholder')"
+                class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            <!-- Basic Auth -->
+            <template v-if="form.server!['auth-method'].type === 'basic'">
+              <div>
+                <label class="block text-sm font-medium text-content-secondary mb-1">
+                  {{ t('setup.username') }}
+                </label>
+                <input
+                  v-model="(form.server!['auth-method'] as any).username"
+                  type="text"
+                  :placeholder="t('setup.usernamePlaceholder')"
+                  class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-content-secondary mb-1">
+                  {{ t('setup.password') }}
+                </label>
+                <input
+                  v-model="serverPassword"
+                  type="password"
+                  :placeholder="t('setup.passwordPlaceholder')"
+                  class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            </template>
+
+            <!-- JWT -->
+            <template v-if="form.server!['auth-method'].type === 'jwt'">
+              <div>
+                <label class="block text-sm font-medium text-content-secondary mb-1">
+                  {{ t('setup.username') }}
+                </label>
+                <input
+                  v-model="(form.server!['auth-method'] as any).username"
+                  type="text"
+                  :placeholder="t('setup.usernamePlaceholder')"
+                  class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-content-secondary mb-1">
+                  {{ t('setup.password') }}
+                </label>
+                <input
+                  v-model="serverPassword"
+                  type="password"
+                  :placeholder="t('setup.passwordPlaceholder')"
+                  class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-content-secondary mb-1">
+                  {{ t('setup.serverRefreshUrl') }}
+                </label>
+                <input
+                  v-model="(form.server!['auth-method'] as any)['refresh-url']"
+                  type="text"
+                  :placeholder="t('setup.serverRefreshUrlPlaceholder')"
+                  class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            </template>
+
+            <!-- Custom Header -->
+            <template v-if="form.server!['auth-method'].type === 'custom-header'">
+              <div>
+                <label class="block text-sm font-medium text-content-secondary mb-1">
+                  {{ t('setup.serverHeaderName') }}
+                </label>
+                <input
+                  v-model="(form.server!['auth-method'] as any)['header-name']"
+                  type="text"
+                  :placeholder="t('setup.serverHeaderNamePlaceholder')"
+                  class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-content-secondary mb-1">
+                  {{ t('setup.serverHeaderValue') }}
+                </label>
+                <input
+                  v-model="serverHeaderValue"
+                  type="password"
+                  class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            </template>
+
+            <!-- OAuth 2.0 -->
+            <template v-if="form.server!['auth-method'].type === 'oauth2'">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-sm font-medium text-content-secondary mb-1">
+                    {{ t('setup.serverOAuthTokenUrl') }}
+                  </label>
+                  <input
+                    v-model="(form.server!['auth-method'] as any)['token-url']"
+                    type="text"
+                    class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-content-secondary mb-1">
+                    {{ t('setup.serverOAuthClientId') }}
+                  </label>
+                  <input
+                    v-model="(form.server!['auth-method'] as any)['client-id']"
+                    type="text"
+                    class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-content-secondary mb-1">
+                  {{ t('setup.serverOAuthClientSecret') }}
+                </label>
+                <input
+                  v-model="serverClientSecret"
+                  type="password"
+                  class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-content-secondary mb-1">
+                  {{ t('setup.serverOAuthScopes') }}
+                </label>
+                <input
+                  v-model="(form.server!['auth-method'] as any).scopes"
+                  type="text"
+                  placeholder="notes.read notes.write"
+                  class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            </template>
+
+            <div>
+              <label class="block text-sm font-medium text-content-secondary mb-1">
+                {{ t('setup.serverTimeout') }}
+              </label>
+              <input
+                v-model.number="form.server!.timeout"
+                type="number"
+                min="5"
+                max="300"
+                class="w-24 px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+          </template>
         </div>
 
         <!-- Step 2: 安全设置 -->
         <div v-if="currentStep === 2" class="space-y-6">
+          <!-- Server 后端提示 -->
+          <div v-if="isServerBackend" class="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+            <p class="text-sm text-blue-700">
+              <Globe class="w-4 h-4 inline mr-1" />
+              {{ t('setup.serverEncryptionNote') }}
+            </p>
+          </div>
           <div
+            v-if="!isServerBackend"
             class="p-5 rounded-xl border-2 transition-all"
             :class="
               form.security.contentEncryption ? 'border-indigo-600 bg-indigo-50/50' : 'border-edge'
@@ -439,6 +640,7 @@ import {
   HardDrive,
   Database,
   Server,
+  Globe,
   Languages,
   RotateCcw,
 } from 'lucide-vue-next'
@@ -477,6 +679,11 @@ const saveError = ref('')
 const encryptionKeyGenerated = ref(false)
 const encryptionKey = ref('')
 const dbPassword = ref('')
+// Server 认证表单
+const serverToken = ref('')
+const serverPassword = ref('')
+const serverClientSecret = ref('')
+const serverHeaderValue = ref('')
 
 const steps = computed(() => [
   t('setup.step.dbType'),
@@ -485,9 +692,12 @@ const steps = computed(() => [
   t('setup.step.finish'),
 ])
 
+const isServerBackend = computed(() => form.datasource.type === 'enote-server')
+
 const form = reactive<ProfileConfig>({
   name: props.editProfile?.name || '',
   icon: props.editProfile?.icon || '',
+  backend: props.editProfile?.backend || 'database',
   datasource: {
     type: props.editProfile?.datasource?.type || 'sqlite',
     path: props.editProfile?.datasource?.path || '',
@@ -502,6 +712,11 @@ const form = reactive<ProfileConfig>({
       clientCert: props.editProfile?.datasource?.ssl?.clientCert || '',
       clientKey: props.editProfile?.datasource?.ssl?.clientKey || '',
     },
+  },
+  server: props.editProfile?.server || {
+    url: '',
+    'auth-method': { type: 'none' },
+    timeout: 30,
   },
   security: {
     contentEncryption: props.editProfile?.security?.contentEncryption || false,
@@ -527,6 +742,12 @@ const dbTypeOptions = computed(() => [
     desc: t('setup.dbType.postgresDesc'),
     icon: Server,
   },
+  {
+    value: 'enote-server',
+    label: t('setup.dbType.enoteServer'),
+    desc: t('setup.dbType.enoteServerDesc'),
+    icon: Globe,
+  },
 ])
 
 const sslModeOptions = computed(() => {
@@ -550,6 +771,7 @@ const canNext = computed(() => {
   if (currentStep.value === 0) return true
   if (currentStep.value === 1) {
     if (!form.name.trim()) return false
+    if (isServerBackend.value) return !!form.server?.url?.trim()
     if (form.datasource.type === 'sqlite') return true
     return !!(form.datasource.host && form.datasource.port && form.datasource.database)
   }
@@ -588,6 +810,13 @@ const dbTypeDefaults: Record<
     database: 'enote',
     username: 'postgres',
   },
+  'enote-server': {
+    name: 'ENote Server',
+    host: '',
+    port: 0,
+    database: '',
+    username: '',
+  },
 }
 
 /** 标记用户是否手动修改过某个字段（修改过则不覆盖） */
@@ -601,6 +830,9 @@ const userEdited = reactive<Record<string, boolean>>({
 
 const nextStep = async () => {
   if (currentStep.value === 0) {
+    // 设置 backend 字段
+    form.backend = isServerBackend.value ? 'server' : 'database'
+
     const defaults = dbTypeDefaults[form.datasource.type]
     if (defaults) {
       // 仅在用户未手动修改时填充默认值
@@ -709,7 +941,16 @@ const toggleEncryption = async () => {
 const testConn = async () => {
   testing.value = true
   try {
-    await profileApi.testConnection(form, dbPassword.value || undefined)
+    if (isServerBackend.value && form.server) {
+      await profileApi.testServerConnection(
+        form.server,
+        serverToken.value || undefined,
+        serverPassword.value || undefined,
+        serverHeaderValue.value || undefined,
+      )
+    } else {
+      await profileApi.testConnection(form, dbPassword.value || undefined)
+    }
     showNotification({ type: 'success', message: t('setup.testSuccess') })
   } catch (e: unknown) {
     const appError = parseErrorToAppError(e)
@@ -736,6 +977,10 @@ const saveAndConnect = async () => {
       form,
       dbPassword.value || undefined,
       form.security.contentEncryption ? encryptionKey.value : undefined,
+      // Server 认证信息
+      serverToken.value || undefined,
+      serverPassword.value || undefined,
+      serverClientSecret.value || undefined,
     )
 
     // 热连接新 profile（不重启进程）

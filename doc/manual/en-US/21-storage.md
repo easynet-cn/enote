@@ -180,7 +180,80 @@ security:
   content-encryption: true
 ```
 
-> **Note:** Database passwords and encryption keys are not stored in configuration files; they are securely stored in the operating system keychain.
+**ENote Server Profile example (`profiles/company-server.yml`):**
+
+```yaml
+name: Company Server
+icon: ''
+backend: server
+server:
+  url: https://enote.company.com
+  auth-method:
+    type: bearer
+  timeout: 30
+datasource:
+  type: sqlite
+security:
+  content-encryption: false
+```
+
+**ENote Server Profile example — JWT auth (`profiles/cloud-jwt.yml`):**
+
+```yaml
+name: Cloud Notes
+icon: ''
+backend: server
+server:
+  url: https://api.enote-cloud.com
+  auth-method:
+    type: jwt
+    refresh-url: /auth/refresh
+    username: user@example.com
+  timeout: 30
+datasource:
+  type: sqlite
+security:
+  content-encryption: false
+```
+
+**ENote Server Profile example — OAuth 2.0 (`profiles/sso-oauth.yml`):**
+
+```yaml
+name: Enterprise SSO
+icon: ''
+backend: server
+server:
+  url: https://enote.company.com
+  auth-method:
+    type: oauth2
+    token-url: https://sso.company.com/oauth/token
+    client-id: enote-desktop
+    scopes: notes.read notes.write
+  timeout: 30
+datasource:
+  type: sqlite
+security:
+  content-encryption: false
+```
+
+> **Note:**
+> - Database passwords, encryption keys, and server authentication credentials (tokens, passwords, client secrets, etc.) are never stored in configuration files; they are securely stored in the operating system keychain.
+> - When the `backend` field is `"server"`, a remote server backend is used. When omitted or set to `"database"`, a database backend is used.
+> - For Server backend profiles, the `datasource` field retains default values and is not used.
+
+### 21.5.1 Server Backend Feature Notes
+
+When using the ENote Server backend, the following features behave differently compared to database backends:
+
+| Feature | Database Backend | Server Backend |
+|---------|-----------------|----------------|
+| Note CRUD | Local database operations | Via HTTP API calls to the server |
+| Full-text Search | Local FTS index | Implemented by the server |
+| Content Encryption | Client-side AES-256 | Handled by the server |
+| Data Backup | Supported (SQL/Excel/CSV) | Not supported (managed by server) |
+| Cross-Profile Sync | Supported | Not supported |
+| Auto Backup | Supported | Not supported |
+| Operation Logs | Recorded locally | Recorded on server via API |
 
 ### 21.6 Content Encryption and Key Management
 

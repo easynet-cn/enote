@@ -180,7 +180,80 @@ security:
   content-encryption: true
 ```
 
-> **注意：** 数据库密码和加密密钥不保存在配置文件中，而是安全存储在操作系统钥匙串中。
+**ENote Server Profile 示例（`profiles/company-server.yml`）：**
+
+```yaml
+name: 公司服务器
+icon: ''
+backend: server
+server:
+  url: https://enote.company.com
+  auth-method:
+    type: bearer
+  timeout: 30
+datasource:
+  type: sqlite
+security:
+  content-encryption: false
+```
+
+**ENote Server Profile 示例 — JWT 认证（`profiles/cloud-jwt.yml`）：**
+
+```yaml
+name: 云端笔记
+icon: ''
+backend: server
+server:
+  url: https://api.enote-cloud.com
+  auth-method:
+    type: jwt
+    refresh-url: /auth/refresh
+    username: user@example.com
+  timeout: 30
+datasource:
+  type: sqlite
+security:
+  content-encryption: false
+```
+
+**ENote Server Profile 示例 — OAuth 2.0（`profiles/sso-oauth.yml`）：**
+
+```yaml
+name: 企业 SSO
+icon: ''
+backend: server
+server:
+  url: https://enote.company.com
+  auth-method:
+    type: oauth2
+    token-url: https://sso.company.com/oauth/token
+    client-id: enote-desktop
+    scopes: notes.read notes.write
+  timeout: 30
+datasource:
+  type: sqlite
+security:
+  content-encryption: false
+```
+
+> **注意：**
+> - 数据库密码、加密密钥和服务器认证信息（Token、密码、Client Secret 等）均不保存在配置文件中，而是安全存储在操作系统钥匙串中。
+> - `backend` 字段为 `"server"` 时表示使用远程服务器后端，省略或为 `"database"` 时使用数据库后端。
+> - Server 后端的 `datasource` 字段保留默认值即可，不会被使用。
+
+### 21.5.1 Server 后端功能说明
+
+使用 ENote Server 后端时，以下功能的行为与数据库后端有所不同：
+
+| 功能 | 数据库后端 | Server 后端 |
+|------|-----------|------------|
+| 笔记 CRUD | 本地数据库操作 | 通过 HTTP API 调用服务端 |
+| 全文搜索 | 本地 FTS 索引 | 由服务端实现 |
+| 内容加密 | 客户端 AES-256 加密 | 由服务端处理 |
+| 数据备份 | 支持（SQL/Excel/CSV） | 不支持（由服务端管理） |
+| 跨 Profile 同步 | 支持 | 不支持 |
+| 自动备份 | 支持 | 不支持 |
+| 操作日志 | 本地记录 | 通过 API 记录到服务端 |
 
 ### 21.6 内容加密与密钥管理
 

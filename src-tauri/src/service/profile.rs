@@ -21,6 +21,8 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use tracing::info;
 
+use super::enote_server::auth::ServerConfig;
+
 /// Profile 索引文件（profiles.yml）
 ///
 /// 序列化使用 camelCase（兼容前端 JSON IPC），
@@ -123,11 +125,33 @@ pub struct ProfileConfig {
     /// 图标标识（用于 UI 区分）
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub icon: String,
-    /// 数据源配置
+    /// 后端类型："database"（默认）或 "server"
+    #[serde(default = "default_backend_type", skip_serializing_if = "is_database_backend")]
+    pub backend: String,
+    /// 数据源配置（backend = "database" 时使用）
+    #[serde(default)]
     pub datasource: DatasourceConfig,
+    /// 远程服务器配置（backend = "server" 时使用）
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub server: Option<ServerConfig>,
     /// 安全配置
     #[serde(default)]
     pub security: SecurityConfig,
+}
+
+fn default_backend_type() -> String {
+    "database".to_string()
+}
+
+fn is_database_backend(s: &str) -> bool {
+    s.is_empty() || s == "database"
+}
+
+impl ProfileConfig {
+    /// 是否是服务器后端
+    pub fn is_server_backend(&self) -> bool {
+        self.backend == "server"
+    }
 }
 
 /// Profile 摘要信息（用于列表展示）
@@ -140,9 +164,11 @@ pub struct ProfileSummary {
     pub name: String,
     /// 图标
     pub icon: String,
-    /// 数据库类型
+    /// 后端类型："database" 或 "server"
+    pub backend_type: String,
+    /// 数据库类型（database 后端）或 "server"（server 后端）
     pub db_type: String,
-    /// 连接信息摘要（如 "localhost:3306/enote"）
+    /// 连接信息摘要（如 "localhost:3306/enote" 或服务器 URL）
     pub connection_info: String,
     /// 是否启用内容加密
     pub content_encryption: bool,
@@ -251,15 +277,31 @@ pub fn list_profiles(app_data_dir: &Path) -> Result<Vec<ProfileSummary>> {
             .to_string();
 
         if let Ok(config) = read_profile(app_data_dir, &id) {
-            let connection_info = match config.datasource.db_type.as_str() {
-                "sqlite" => config.datasource.path.clone(),
-                "mysql" | "postgres" => {
-                    format!(
-                        "{}:{}/{}",
-                        config.datasource.host, config.datasource.port, config.datasource.database
-                    )
-                }
-                _ => String::new(),
+            let (backend_type, db_type, connection_info) = if config.is_server_backend() {
+                let url = config
+                    .server
+                    .as_ref()
+                    .map(|s| s.url.clone())
+                    .unwrap_or_default();
+                ("server".to_string(), "server".to_string(), url)
+            } else {
+                let conn = match config.datasource.db_type.as_str() {
+                    "sqlite" => config.datasource.path.clone(),
+                    "mysql" | "postgres" => {
+                        format!(
+                            "{}:{}/{}",
+                            config.datasource.host,
+                            config.datasource.port,
+                            config.datasource.database
+                        )
+                    }
+                    _ => String::new(),
+                };
+                (
+                    "database".to_string(),
+                    config.datasource.db_type.clone(),
+                    conn,
+                )
             };
 
             profiles.push(ProfileSummary {
@@ -267,7 +309,8 @@ pub fn list_profiles(app_data_dir: &Path) -> Result<Vec<ProfileSummary>> {
                 id,
                 name: config.name,
                 icon: config.icon,
-                db_type: config.datasource.db_type,
+                backend_type,
+                db_type,
                 connection_info,
                 content_encryption: config.security.content_encryption,
             });

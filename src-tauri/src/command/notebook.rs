@@ -5,6 +5,10 @@ use super::*;
 pub async fn find_all_notebooks(
     app_state: tauri::State<'_, Arc<AppState>>,
 ) -> Result<Vec<Notebook>, AppError> {
+    if is_server_backend(&app_state).await {
+        let client = require_server(&app_state).await?;
+        return client.find_all_notebooks().await;
+    }
     let db = require_db(&app_state).await?;
     let notebooks = service::notebook::find_all(&db)
         .await
@@ -19,6 +23,10 @@ pub async fn create_notebook(
     notebook: Notebook,
 ) -> Result<Option<Notebook>, AppError> {
     notebook.validate().map_err(AppError::from)?;
+    if is_server_backend(&app_state).await {
+        let client = require_server(&app_state).await?;
+        return client.create_notebook(&notebook).await;
+    }
     let db = require_db(&app_state).await?;
     let result = service::notebook::create(&db, &notebook)
         .await
@@ -39,6 +47,10 @@ pub async fn delete_notebook_by_id(
     app_state: tauri::State<'_, Arc<AppState>>,
     id: i64,
 ) -> Result<(), AppError> {
+    if is_server_backend(&app_state).await {
+        let client = require_server(&app_state).await?;
+        return client.delete_notebook_by_id(id).await;
+    }
     let db = require_db(&app_state).await?;
     service::notebook::delete_by_id(&db, id)
         .await
@@ -58,6 +70,10 @@ pub async fn update_notebook(
     notebook: Notebook,
 ) -> Result<Option<Notebook>, AppError> {
     notebook.validate().map_err(AppError::from)?;
+    if is_server_backend(&app_state).await {
+        let client = require_server(&app_state).await?;
+        return client.update_notebook(&notebook).await;
+    }
     let db = require_db(&app_state).await?;
     let result = service::notebook::update(&db, &notebook)
         .await

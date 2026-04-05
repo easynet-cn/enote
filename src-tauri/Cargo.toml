@@ -78,6 +78,9 @@ calamine.workspace = true
 csv.workspace = true
 zip.workspace = true
 
+# HTTP Client
+reqwest.workspace = true
+
 # Utilities
 chrono.workspace = true
 config.workspace = true

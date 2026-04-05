@@ -110,8 +110,78 @@ pub fn get_db_password(profile_name: &str) -> Result<Option<String>> {
     get_secret(&db_password_key_name(profile_name))
 }
 
+// ============================================================================
+// Server 认证相关
+// ============================================================================
+
+fn server_token_key(profile_name: &str) -> String {
+    format!("{}.server_token", profile_name)
+}
+
+fn server_refresh_token_key(profile_name: &str) -> String {
+    format!("{}.server_refresh_token", profile_name)
+}
+
+fn server_password_key(profile_name: &str) -> String {
+    format!("{}.server_password", profile_name)
+}
+
+fn server_client_secret_key(profile_name: &str) -> String {
+    format!("{}.server_client_secret", profile_name)
+}
+
+fn server_header_value_key(profile_name: &str) -> String {
+    format!("{}.server_header_value", profile_name)
+}
+
+pub fn set_server_token(profile_name: &str, token: &str) -> Result<()> {
+    set_secret(&server_token_key(profile_name), token)
+}
+
+pub fn get_server_token(profile_name: &str) -> Result<Option<String>> {
+    get_secret(&server_token_key(profile_name))
+}
+
+pub fn set_server_refresh_token(profile_name: &str, token: &str) -> Result<()> {
+    set_secret(&server_refresh_token_key(profile_name), token)
+}
+
+pub fn get_server_refresh_token(profile_name: &str) -> Result<Option<String>> {
+    get_secret(&server_refresh_token_key(profile_name))
+}
+
+pub fn set_server_password(profile_name: &str, password: &str) -> Result<()> {
+    set_secret(&server_password_key(profile_name), password)
+}
+
+pub fn get_server_password(profile_name: &str) -> Result<Option<String>> {
+    get_secret(&server_password_key(profile_name))
+}
+
+pub fn set_server_client_secret(profile_name: &str, secret: &str) -> Result<()> {
+    set_secret(&server_client_secret_key(profile_name), secret)
+}
+
+pub fn get_server_client_secret(profile_name: &str) -> Result<Option<String>> {
+    get_secret(&server_client_secret_key(profile_name))
+}
+
+pub fn set_server_header_value(profile_name: &str, value: &str) -> Result<()> {
+    set_secret(&server_header_value_key(profile_name), value)
+}
+
+pub fn get_server_header_value(profile_name: &str) -> Result<Option<String>> {
+    get_secret(&server_header_value_key(profile_name))
+}
+
 pub fn delete_profile_secrets(profile_name: &str) -> Result<()> {
     delete_secret(&encryption_key_name(profile_name))?;
     delete_secret(&db_password_key_name(profile_name))?;
+    // Server 相关 secrets
+    delete_secret(&server_token_key(profile_name))?;
+    delete_secret(&server_refresh_token_key(profile_name))?;
+    delete_secret(&server_password_key(profile_name))?;
+    delete_secret(&server_client_secret_key(profile_name))?;
+    delete_secret(&server_header_value_key(profile_name))?;
     Ok(())
 }

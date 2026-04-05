@@ -135,6 +135,7 @@
   - [21.3 Configuration Options](21-storage.md#213-configuration-options)
   - [21.4 Database Configuration Examples](21-storage.md#214-database-configuration-examples)
   - [21.5 Profile Configuration Management](21-storage.md#215-profile-configuration-management)
+    - [21.5.1 Server Backend Feature Notes](21-storage.md#2151-server-backend-feature-notes)
   - [21.6 Content Encryption and Key Management](21-storage.md#216-content-encryption-and-key-management)
   - [21.7 SSL/TLS Certificate Authentication](21-storage.md#217-ssltls-certificate-authentication)
   - [21.8 History Version Protection](21-storage.md#218-history-version-protection)

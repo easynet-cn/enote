@@ -7,6 +7,10 @@ pub async fn create_note(
     note: Note,
 ) -> Result<Option<Note>, AppError> {
     note.validate().map_err(AppError::from)?;
+    if is_server_backend(&app_state).await {
+        let client = require_server(&app_state).await?;
+        return client.create_note(&note).await;
+    }
     let db = require_db(&app_state).await?;
     let enc_key = app_state.encryption_key.read().await;
     let is_encrypted = service::app_log::should_skip_content(&note.content);
@@ -40,6 +44,10 @@ pub async fn update_note(
     note: Note,
 ) -> Result<Option<Note>, AppError> {
     note.validate().map_err(AppError::from)?;
+    if is_server_backend(&app_state).await {
+        let client = require_server(&app_state).await?;
+        return client.update_note(&note).await;
+    }
     let db = require_db(&app_state).await?;
     let enc_key = app_state.encryption_key.read().await;
     let is_encrypted = service::app_log::should_skip_content(&note.content);
@@ -72,6 +80,10 @@ pub async fn delete_note_by_id(
     app_state: tauri::State<'_, Arc<AppState>>,
     id: i64,
 ) -> Result<(), AppError> {
+    if is_server_backend(&app_state).await {
+        let client = require_server(&app_state).await?;
+        return client.delete_note_by_id(id).await;
+    }
     let db = require_db(&app_state).await?;
     service::note::delete_by_id(&db, id)
         .await
@@ -91,6 +103,10 @@ pub async fn search_page_notes(
     mut search_param: NoteSearchPageParam,
 ) -> Result<PageResult<Note>, AppError> {
     search_param.normalize();
+    if is_server_backend(&app_state).await {
+        let client = require_server(&app_state).await?;
+        return client.search_page_notes(&search_param).await;
+    }
     let db = require_db(&app_state).await?;
     let enc_key = app_state.encryption_key.read().await;
     service::note::search_page_with_key(&db, &search_param, enc_key.as_deref())
@@ -104,6 +120,10 @@ pub async fn note_stats(
     mut search_param: NoteSearchPageParam,
 ) -> Result<NoteStatsResult, AppError> {
     search_param.normalize();
+    if is_server_backend(&app_state).await {
+        let client = require_server(&app_state).await?;
+        return client.note_stats(&search_param).await;
+    }
     let db = require_db(&app_state).await?;
     service::note::stats(&db, &search_param)
         .await
@@ -117,6 +137,10 @@ pub async fn batch_move_notes(
     note_ids: Vec<i64>,
     notebook_id: i64,
 ) -> Result<(), AppError> {
+    if is_server_backend(&app_state).await {
+        let client = require_server(&app_state).await?;
+        return client.batch_move_notes(&note_ids, notebook_id).await;
+    }
     let db = require_db(&app_state).await?;
     service::note::batch_move(&db, &note_ids, notebook_id)
         .await
@@ -129,6 +153,10 @@ pub async fn batch_delete_notes(
     app_state: tauri::State<'_, Arc<AppState>>,
     note_ids: Vec<i64>,
 ) -> Result<(), AppError> {
+    if is_server_backend(&app_state).await {
+        let client = require_server(&app_state).await?;
+        return client.batch_delete_notes(&note_ids).await;
+    }
     let db = require_db(&app_state).await?;
     service::note::batch_delete(&db, &note_ids)
         .await
@@ -142,6 +170,10 @@ pub async fn search_page_note_histories(
     mut search_param: NoteHistorySearchPageParam,
 ) -> Result<PageResult<NoteHistory>, AppError> {
     search_param.page_param.normalize();
+    if is_server_backend(&app_state).await {
+        let client = require_server(&app_state).await?;
+        return client.search_page_note_histories(&search_param).await;
+    }
     let db = require_db(&app_state).await?;
     service::note_history::search_page(&db, &search_param)
         .await
@@ -154,6 +186,10 @@ pub async fn toggle_note_star(
     app_state: tauri::State<'_, Arc<AppState>>,
     id: i64,
 ) -> Result<Option<Note>, AppError> {
+    if is_server_backend(&app_state).await {
+        let client = require_server(&app_state).await?;
+        return client.toggle_note_star(id).await;
+    }
     let db = require_db(&app_state).await?;
     service::note::toggle_star(&db, id)
         .await
@@ -166,6 +202,10 @@ pub async fn toggle_note_pin(
     app_state: tauri::State<'_, Arc<AppState>>,
     id: i64,
 ) -> Result<Option<Note>, AppError> {
+    if is_server_backend(&app_state).await {
+        let client = require_server(&app_state).await?;
+        return client.toggle_note_pin(id).await;
+    }
     let db = require_db(&app_state).await?;
     service::note::toggle_pin(&db, id)
         .await
@@ -178,6 +218,10 @@ pub async fn restore_note(
     app_state: tauri::State<'_, Arc<AppState>>,
     id: i64,
 ) -> Result<(), AppError> {
+    if is_server_backend(&app_state).await {
+        let client = require_server(&app_state).await?;
+        return client.restore_note(id).await;
+    }
     let db = require_db(&app_state).await?;
     service::note::restore_by_id(&db, id)
         .await
@@ -196,6 +240,10 @@ pub async fn permanent_delete_note(
     app_state: tauri::State<'_, Arc<AppState>>,
     id: i64,
 ) -> Result<(), AppError> {
+    if is_server_backend(&app_state).await {
+        let client = require_server(&app_state).await?;
+        return client.permanent_delete_note(id).await;
+    }
     let db = require_db(&app_state).await?;
     let enc_key = app_state.encryption_key.read().await;
     service::note::permanent_delete_by_id(&db, id, OperateSource::User, enc_key.as_deref())
@@ -212,6 +260,10 @@ pub async fn permanent_delete_note(
 /// 清空回收站
 #[tauri::command]
 pub async fn empty_trash(app_state: tauri::State<'_, Arc<AppState>>) -> Result<(), AppError> {
+    if is_server_backend(&app_state).await {
+        let client = require_server(&app_state).await?;
+        return client.empty_trash().await;
+    }
     let db = require_db(&app_state).await?;
     let enc_key = app_state.encryption_key.read().await;
     service::note::empty_trash(&db, enc_key.as_deref())
@@ -231,6 +283,10 @@ pub async fn find_deleted_notes(
     app_state: tauri::State<'_, Arc<AppState>>,
     page_param: PageParam,
 ) -> Result<PageResult<Note>, AppError> {
+    if is_server_backend(&app_state).await {
+        let client = require_server(&app_state).await?;
+        return client.find_deleted_notes(&page_param).await;
+    }
     let db = require_db(&app_state).await?;
     let enc_key = app_state.encryption_key.read().await;
     service::note::find_deleted_with_key(&db, &page_param, enc_key.as_deref())
@@ -244,6 +300,10 @@ pub async fn reorder_notebooks(
     app_state: tauri::State<'_, Arc<AppState>>,
     orders: Vec<(i64, i32)>,
 ) -> Result<(), AppError> {
+    if is_server_backend(&app_state).await {
+        let client = require_server(&app_state).await?;
+        return client.reorder_notebooks(&orders).await;
+    }
     let db = require_db(&app_state).await?;
     service::notebook::reorder(&db, orders)
         .await
@@ -256,6 +316,10 @@ pub async fn reorder_tags(
     app_state: tauri::State<'_, Arc<AppState>>,
     orders: Vec<(i64, i32)>,
 ) -> Result<(), AppError> {
+    if is_server_backend(&app_state).await {
+        let client = require_server(&app_state).await?;
+        return client.reorder_tags(&orders).await;
+    }
     let db = require_db(&app_state).await?;
     service::tag::reorder(&db, orders)
         .await

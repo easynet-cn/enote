@@ -269,11 +269,31 @@ export interface SecurityConfig {
   contentEncryption: boolean
 }
 
+/** 服务器认证方式 */
+export type ServerAuthMethod =
+  | { type: 'none' }
+  | { type: 'bearer' }
+  | { type: 'basic'; username: string }
+  | { type: 'jwt'; 'refresh-url': string; username: string }
+  | { type: 'custom-header'; 'header-name': string }
+  | { type: 'oauth2'; 'token-url': string; 'client-id': string; scopes: string }
+
+/** 服务器配置 */
+export interface ServerConfig {
+  url: string
+  'auth-method': ServerAuthMethod
+  timeout: number
+}
+
 /** Profile 配置 */
 export interface ProfileConfig {
   name: string
   icon: string
+  /** 后端类型："database"（默认）或 "server" */
+  backend?: string
   datasource: DatasourceConfig
+  /** 远程服务器配置（backend = "server" 时使用） */
+  server?: ServerConfig
   security: SecurityConfig
 }
 
@@ -282,6 +302,8 @@ export interface ProfileSummary {
   id: string
   name: string
   icon: string
+  /** 后端类型："database" 或 "server" */
+  backendType: string
   dbType: string
   connectionInfo: string
   contentEncryption: boolean

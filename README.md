@@ -46,7 +46,8 @@ A cross-platform desktop note-taking application built with Tauri, supporting ri
 
 ### Data Management
 - **Multi-Profile Management** - Multiple database profiles with startup selection or auto-connect
-- **Setup Wizard** - First-launch guided database configuration for SQLite/MySQL/PostgreSQL
+- **Setup Wizard** - First-launch guided configuration for SQLite/MySQL/PostgreSQL/ENote Server
+- **ENote Server Backend** - Connect to remote ENote-compatible API servers with multiple auth methods (Bearer/Basic/JWT/Custom Header/OAuth 2.0)
 - **SSL/TLS Authentication** - MySQL/PostgreSQL support certificate-based login
 - **Data Backup** - SQL/Excel/CSV export/import with scheduled auto-backup
 - **Import/Export** - Import from Evernote, Youdao Notes, Notion; Export to PDF/HTML/Word/Markdown/JSON/XML
@@ -85,6 +86,7 @@ A cross-platform desktop note-taking application built with Tauri, supporting ri
 - **Tauri 2.x** - Lightweight cross-platform desktop application framework
 - **SeaORM** - Async ORM framework
 - **SQLite/MySQL/PostgreSQL** - Multiple database support
+- **reqwest** - HTTP client for ENote Server backend
 - **aes-gcm** - AES-256-GCM encryption
 - **argon2** - Password hashing
 - **keyring** - OS keychain integration
@@ -111,7 +113,7 @@ enote/
 │   │   ├── HelpManual.vue      # Help documentation
 │   │   ├── LogDialog.vue       # Application logs
 │   │   └── UpdateChecker.vue   # Auto update checker
-│   ├── composables/            # Composable functions (11)
+│   ├── composables/            # Composable functions (12)
 │   ├── extensions/             # Custom TipTap extensions (8)
 │   ├── utils/                  # Utility functions
 │   │   └── import/             # Import parsers (Evernote/Youdao/Notion)
@@ -122,7 +124,7 @@ enote/
 ├── src-tauri/                  # Tauri backend source code
 │   └── src/
 │       ├── command.rs          # IPC command handlers
-│       ├── service/            # Business logic layer (18 services)
+│       ├── service/            # Business logic layer (19 services)
 │       ├── entity/             # Database entities (13)
 │       ├── migration/          # Database migrations (25)
 │       ├── config.rs           # Configuration management
@@ -210,15 +212,17 @@ pnpm test
 
 ## Database Configuration
 
-Supports SQLite (default), MySQL, and PostgreSQL.
+Supports SQLite (default), MySQL, PostgreSQL, and ENote Server.
 
-On **first launch**, the Setup Wizard guides you through database connection configuration:
+On **first launch**, the Setup Wizard guides you through backend configuration:
 
 - **SQLite** - Local file database, ready to use out of the box
 - **MySQL** - Supports password login and SSL certificate authentication
 - **PostgreSQL** - Supports password login and SSL certificate authentication
+- **ENote Server** - Connect to a remote ENote-compatible API server with multiple authentication methods:
+  - Bearer Token, Basic Auth, JWT (auto-refresh), Custom Header, OAuth 2.0
 
-Configurations are managed as Profiles, supporting multiple database setups that can be switched at any time. Database passwords and encryption keys are securely stored in the OS keychain (macOS Keychain / Windows Credential Store / Linux Secret Service), never in configuration files.
+Configurations are managed as Profiles, supporting multiple backend setups that can be switched at any time. Database passwords, encryption keys, and server authentication credentials are securely stored in the OS keychain (macOS Keychain / Windows Credential Store / Linux Secret Service), never in configuration files.
 
 You can also use a traditional configuration file via command-line:
 

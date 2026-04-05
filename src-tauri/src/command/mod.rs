@@ -20,7 +20,7 @@ use sea_orm::DatabaseConnection;
 use tauri::Manager;
 
 use crate::{
-    config::AppState,
+    config::{AppState, ProfileBackend},
     error::AppError,
     model::{
         AppLog, AppLogSearchParam, AttachmentStats, LogFileInfo, Note, NoteAttachment, NoteHistory,
@@ -29,6 +29,7 @@ use crate::{
         SyncPreview, Tag,
     },
     service,
+    service::enote_server::EnoteServerClient,
 };
 
 /// 从 AppState 获取数据库连接，未连接时返回明确错误。
@@ -41,6 +42,19 @@ pub(crate) async fn require_db(app_state: &AppState) -> Result<DatabaseConnectio
         .await
         .clone()
         .ok_or_else(|| AppError::code("DB_NOT_CONNECTED"))
+}
+
+/// 检查当前是否是 Server 后端
+pub(crate) async fn is_server_backend(app_state: &AppState) -> bool {
+    matches!(*app_state.backend.read().await, ProfileBackend::Server(_))
+}
+
+/// 获取 EnoteServerClient，仅 Server 后端可用
+pub(crate) async fn require_server(app_state: &AppState) -> Result<EnoteServerClient, AppError> {
+    match &*app_state.backend.read().await {
+        ProfileBackend::Server(client) => Ok(client.clone()),
+        ProfileBackend::Database => Err(AppError::code("NOT_SERVER_BACKEND")),
+    }
 }
 
 mod profile;

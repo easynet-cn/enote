@@ -114,3 +114,8 @@ pub mod sync;
 ///
 /// 管理同步记录和明细的 CRUD 操作
 pub mod sync_log;
+
+/// ENote Server 远程后端模块
+///
+/// 通过 HTTP API 连接远程 ENote 服务器
+pub mod enote_server;

@@ -20,31 +20,40 @@ On the first launch of ENote, the system detects that no Profile configuration e
 
 The Setup Wizard includes the following steps:
 
-**Step 1: Select Database Type**
+**Step 1: Select Backend Type**
 
 - **SQLite (Recommended):** Local file database, no additional service installation required, ready to use out of the box. Suitable for personal use.
 - **MySQL:** Network database, suitable for team collaboration or remote access. Requires pre-installation of MySQL 5.7+.
 - **PostgreSQL:** Feature-rich enterprise database. Requires pre-installation of PostgreSQL 12+.
+- **ENote Server:** Connect to a remote ENote-compatible API server. Suitable for self-hosted services or enterprise deployments.
 
 **Step 2: Configure Connection**
 
-Fill in the corresponding connection parameters based on the selected database type:
+Fill in the corresponding connection parameters based on the selected backend type:
 
 - **Profile Name:** Give this configuration an identifiable name (e.g., "Local Notes", "Work Database").
 - **SQLite:** Select the database file storage path. Supports "New" (choose a save location to create a new database) and "Open Existing" (select an existing .db file). Leave empty to use the default location (application data directory).
 - **MySQL / PostgreSQL:** Enter host address, port, and database name, then select the authentication method:
   - **Password Login:** Enter username and password. The password is securely stored in the operating system keychain, not saved in the configuration file.
   - **Certificate Login:** Enter username, select the SSL mode (Preferred/Required/Verify CA/Verify Identity), and specify the CA certificate, client certificate, and client key file paths.
+- **ENote Server:** Enter the server URL and select the authentication method:
+  - **None:** No authentication required (for internal networks or testing only).
+  - **Bearer Token:** Authenticate using an API Key or Token. The token is securely stored in the operating system keychain.
+  - **Basic (Username/Password):** HTTP Basic authentication. The password is securely stored in the keychain.
+  - **JWT (Auto-refresh):** JSON Web Token authentication with automatic token refresh. Requires username, password, and token refresh URL.
+  - **Custom Header:** Authenticate using a custom HTTP header (e.g., X-API-Key), suitable for enterprise API gateways. The header value is stored in the keychain.
+  - **OAuth 2.0:** Authenticate using the OAuth 2.0 protocol. Requires Token URL, Client ID, Client Secret, and scopes.
 
 You can click the "Test Connection" button to verify the configuration.
 
 **Step 3: Security Settings**
 
-- **Content Encryption:** Toggle to enable note content encryption. When enabled:
+- **Database backends:** Toggle to enable note content encryption. When enabled:
   - The system automatically generates an AES-256 encryption key, securely stored in the operating system keychain (macOS Keychain / Windows Credential Store / Linux Secret Service).
   - All note content is automatically encrypted before writing to the database and automatically decrypted when reading, completely transparent to the user.
   - Even if the database file is accessed directly, note content cannot be read.
   - **Note:** With encryption enabled, note titles remain searchable, but content cannot be retrieved through full-text search.
+- **ENote Server backend:** Content encryption is handled by the server; no client-side configuration is needed.
 
 **Step 4: Save and Connect**
 

@@ -17,6 +17,7 @@ import {
   ProfileConfig,
   ProfileIndex,
   ProfileSummary,
+  ServerConfig,
   SyncLog,
   SyncLogDetail,
   SyncOptions,
@@ -50,12 +51,18 @@ export const profileApi = {
     config: ProfileConfig,
     dbPassword?: string,
     encryptionKey?: string,
+    serverToken?: string,
+    serverPassword?: string,
+    serverClientSecret?: string,
   ): Promise<void> {
     return await invoke('save_profile_config', {
       profileId,
       config,
       dbPassword: dbPassword || null,
       encryptionKey: encryptionKey || null,
+      serverToken: serverToken || null,
+      serverPassword: serverPassword || null,
+      serverClientSecret: serverClientSecret || null,
     })
   },
 
@@ -75,6 +82,20 @@ export const profileApi = {
     return await invoke('test_db_connection', {
       config,
       dbPassword: dbPassword || null,
+    })
+  },
+
+  async testServerConnection(
+    config: ServerConfig,
+    serverToken?: string,
+    serverPassword?: string,
+    serverHeaderValue?: string,
+  ): Promise<boolean> {
+    return await invoke('test_server_connection', {
+      config,
+      serverToken: serverToken || null,
+      serverPassword: serverPassword || null,
+      serverHeaderValue: serverHeaderValue || null,
     })
   },
 
