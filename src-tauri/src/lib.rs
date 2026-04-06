@@ -198,6 +198,14 @@ pub fn run_with_config(config_path: Option<String>) {
             command::auto_backup,
             command::cleanup_old_backups,
             command::list_auto_backups,
+            // 云备份相关命令
+            command::test_cloud_connection,
+            command::save_cloud_backup_config,
+            command::upload_backup_to_cloud,
+            command::cloud_backup_now,
+            command::list_cloud_backups,
+            command::download_cloud_backup,
+            command::cleanup_cloud_backups,
             // 模板相关命令
             command::find_all_templates,
             command::create_template,

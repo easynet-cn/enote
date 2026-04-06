@@ -174,6 +174,34 @@ pub fn get_server_header_value(profile_name: &str) -> Result<Option<String>> {
     get_secret(&server_header_value_key(profile_name))
 }
 
+// ============================================================================
+// 云备份相关
+// ============================================================================
+
+fn cloud_backup_secret_key(profile_name: &str) -> String {
+    format!("{}.cloud_backup_secret", profile_name)
+}
+
+fn cloud_backup_password_key(profile_name: &str) -> String {
+    format!("{}.cloud_backup_password", profile_name)
+}
+
+pub fn set_cloud_backup_secret(profile_name: &str, secret: &str) -> Result<()> {
+    set_secret(&cloud_backup_secret_key(profile_name), secret)
+}
+
+pub fn get_cloud_backup_secret(profile_name: &str) -> Result<Option<String>> {
+    get_secret(&cloud_backup_secret_key(profile_name))
+}
+
+pub fn set_cloud_backup_password(profile_name: &str, password: &str) -> Result<()> {
+    set_secret(&cloud_backup_password_key(profile_name), password)
+}
+
+pub fn get_cloud_backup_password(profile_name: &str) -> Result<Option<String>> {
+    get_secret(&cloud_backup_password_key(profile_name))
+}
+
 pub fn delete_profile_secrets(profile_name: &str) -> Result<()> {
     delete_secret(&encryption_key_name(profile_name))?;
     delete_secret(&db_password_key_name(profile_name))?;
@@ -183,5 +211,8 @@ pub fn delete_profile_secrets(profile_name: &str) -> Result<()> {
     delete_secret(&server_password_key(profile_name))?;
     delete_secret(&server_client_secret_key(profile_name))?;
     delete_secret(&server_header_value_key(profile_name))?;
+    // 云备份相关 secrets
+    delete_secret(&cloud_backup_secret_key(profile_name))?;
+    delete_secret(&cloud_backup_password_key(profile_name))?;
     Ok(())
 }

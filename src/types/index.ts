@@ -437,6 +437,24 @@ export interface LogFileInfo {
   modifiedTime: string | null
 }
 
+export interface CloudStorageConfig {
+  provider: string
+  endpoint: string
+  bucket: string
+  region: string
+  accessKeyId: string
+  secretAccessKey: string
+  prefix: string
+  username: string
+  password: string
+}
+
+export interface CloudBackupEntry {
+  name: string
+  size: number
+  lastModified: string
+}
+
 export interface AppState {
   notePageIndex: number
   notePageSize: number

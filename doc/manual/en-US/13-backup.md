@@ -43,3 +43,36 @@ ENote supports automatic scheduled backup, which creates database backups automa
 - When the application starts, it automatically checks whether a backup is needed (whether the time since the last backup exceeds the configured interval).
 
 **Configuration:** Configure in the "Automatic Backup" area of the "Settings" dialog. See [14.5 Automatic Backup Settings](14-settings.md#145-automatic-backup-settings) for details.
+
+### 13.4 Cloud Backup
+
+ENote supports uploading backup files to cloud storage for off-site disaster recovery. The following cloud storage providers are supported:
+
+| Provider | Description |
+|----------|-------------|
+| **Alibaba Cloud OSS** | Alibaba Cloud Object Storage Service, fast access within China |
+| **AWS S3** | Amazon Web Services object storage, global coverage |
+| **Tencent Cloud COS** | Tencent Cloud Object Storage, commonly used in China |
+| **MinIO** | S3-compatible self-hosted object storage, ideal for private deployments |
+| **WebDAV** | Supports services like Nutstore, NextCloud, and other WebDAV-compatible services |
+
+**How It Works:**
+
+- Cloud backup is based on the local automatic backup SQL files -- a local backup is generated first, then uploaded to the cloud.
+- Cloud backup files are stored under the configured path prefix (e.g., `enote-backups/`), with the same file names as local backups.
+- The system automatically cleans up old cloud backups based on the configured cloud retention count.
+- When cloud backup is enabled, each automatic backup is automatically uploaded to the cloud upon completion; cloud backup failure does not affect the local backup.
+
+**Restoring from Cloud:**
+
+1. In the cloud backup settings area, click "Cloud Backups" to view all cloud backup files.
+2. Click the "Download" button next to the target backup file to download it to the local `backups/` directory.
+3. Use the "Import & Restore" function in the "Data Backup" dialog to select the downloaded SQL file for restoration.
+
+**Security Notes:**
+
+- Cloud storage Access Key Secrets (or WebDAV passwords) are stored using the operating system's native secure storage (macOS Keychain / Windows Credential Store / Linux Secret Service), not saved as plaintext in the database.
+- All cloud transfers are encrypted via HTTPS.
+- If note content encryption is enabled, the content in backup files is already in encrypted form.
+
+**Configuration:** Configure in the "Cloud Backup" area of the "Settings" dialog. See [14.6 Cloud Backup Settings](14-settings.md#146-cloud-backup-settings) for details.

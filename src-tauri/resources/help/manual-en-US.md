@@ -103,12 +103,13 @@
   - [14.3 Layout Mode Settings](#143-layout-mode-settings)
   - [14.4 Shortcut Settings](#144-shortcut-settings)
   - [14.5 Automatic Backup Settings](#145-automatic-backup-settings)
-  - [14.6 Security Settings (Lock Screen)](#146-security-settings-lock-screen)
-  - [14.7 MCP Settings](#147-mcp-settings)
-  - [14.8 Profile Management](#148-profile-management)
-  - [14.9 System Maintenance (Cross-Profile Sync)](#149-system-maintenance-cross-profile-sync)
-  - [14.10 Editor Font Size](#1410-editor-font-size)
-  - [14.11 Profile Editing](#1411-profile-editing)
+  - [14.6 Cloud Backup Settings](#146-cloud-backup-settings)
+  - [14.7 Security Settings (Lock Screen)](#147-security-settings-lock-screen)
+  - [14.8 MCP Settings](#148-mcp-settings)
+  - [14.9 Profile Management](#149-profile-management)
+  - [14.10 System Maintenance (Cross-Profile Sync)](#1410-system-maintenance-cross-profile-sync)
+  - [14.11 Editor Font Size](#1411-editor-font-size)
+  - [14.12 Profile Editing](#1412-profile-editing)
 - 15. Command Palette
 - 16. System Tray
 - 17. Keyboard Shortcuts
@@ -1023,6 +1024,39 @@ ENote supports automatic scheduled backup, which creates database backups automa
 
 **Configuration:** Configure in the "Automatic Backup" area of the "Settings" dialog. See [14.5 Automatic Backup Settings](#145-automatic-backup-settings) for details.
 
+### 13.4 Cloud Backup
+
+ENote supports uploading backup files to cloud storage for off-site disaster recovery. The following cloud storage providers are supported:
+
+| Provider | Description |
+|----------|-------------|
+| **Alibaba Cloud OSS** | Alibaba Cloud Object Storage Service, fast access within China |
+| **AWS S3** | Amazon Web Services object storage, global coverage |
+| **Tencent Cloud COS** | Tencent Cloud Object Storage, commonly used in China |
+| **MinIO** | S3-compatible self-hosted object storage, ideal for private deployments |
+| **WebDAV** | Supports services like Nutstore, NextCloud, and other WebDAV-compatible services |
+
+**How It Works:**
+
+- Cloud backup is based on the local automatic backup SQL files -- a local backup is generated first, then uploaded to the cloud.
+- Cloud backup files are stored under the configured path prefix (e.g., `enote-backups/`), with the same file names as local backups.
+- The system automatically cleans up old cloud backups based on the configured cloud retention count.
+- When cloud backup is enabled, each automatic backup is automatically uploaded to the cloud upon completion; cloud backup failure does not affect the local backup.
+
+**Restoring from Cloud:**
+
+1. In the cloud backup settings area, click "Cloud Backups" to view all cloud backup files.
+2. Click the "Download" button next to the target backup file to download it to the local `backups/` directory.
+3. Use the "Import & Restore" function in the "Data Backup" dialog to select the downloaded SQL file for restoration.
+
+**Security Notes:**
+
+- Cloud storage Access Key Secrets (or WebDAV passwords) are stored using the operating system's native secure storage (macOS Keychain / Windows Credential Store / Linux Secret Service), not saved as plaintext in the database.
+- All cloud transfers are encrypted via HTTPS.
+- If note content encryption is enabled, the content in backup files is already in encrypted form.
+
+**Configuration:** Configure in the "Cloud Backup" area of the "Settings" dialog. See [14.6 Cloud Backup Settings](#146-cloud-backup-settings) for details.
+
 ---
 
 ## 14. Application Settings
@@ -1089,7 +1123,51 @@ In the "Automatic Backup" area of the settings dialog, the following options can
 
 After enabling automatic backup, the system automatically performs backups at the set interval in the background and automatically cleans up old backup files based on the retention count.
 
-### 14.6 Security Settings (Lock Screen)
+### 14.6 Cloud Backup Settings
+
+In the "Cloud Backup" area of the settings dialog, you can configure automatic uploading of backup files to cloud storage.
+
+**Basic Configuration:**
+
+| Option | Description |
+|--------|-------------|
+| **Enable Cloud Backup** | Toggle switch to enable or disable cloud backup |
+| **Storage Provider** | Dropdown: Alibaba Cloud OSS, AWS S3, Tencent Cloud COS, MinIO, WebDAV |
+| **Cloud Retention Count** | Dropdown to select the maximum number of cloud backups to retain: 5, 10, 20, 50 |
+
+**Connection Configuration (Object Storage: S3 / OSS / COS / MinIO):**
+
+| Option | Description |
+|--------|-------------|
+| **Endpoint** | Cloud storage service endpoint URL, e.g., `https://oss-cn-hangzhou.aliyuncs.com` |
+| **Bucket** | Bucket name |
+| **Region** | Storage region, e.g., `cn-hangzhou`, `us-east-1` |
+| **Access Key ID** | Access key ID |
+| **Secret Access Key** | Access key secret (stored in system Keychain) |
+| **Path Prefix** | Cloud storage path prefix, default `enote-backups/` |
+
+**Connection Configuration (WebDAV):**
+
+| Option | Description |
+|--------|-------------|
+| **Endpoint** | WebDAV service URL, e.g., `https://dav.jianguoyun.com/dav/` |
+| **Username** | WebDAV login username |
+| **Password** | WebDAV login password (stored in system Keychain) |
+| **Path Prefix** | Cloud storage path prefix, default `enote-backups/` |
+
+**Action Buttons:**
+
+| Button | Description |
+|--------|-------------|
+| **Test Connection** | Verify cloud storage configuration. A notification shows success or failure |
+| **Save** | Save the current cloud backup configuration |
+| **Backup to Cloud** | Immediately perform a local backup and upload it to the cloud |
+
+**Cloud Backup List:** Click the "Cloud Backups" link to expand and view all cloud backup files, including file name, size, and modification time. Click "Download" to download a file to the local machine.
+
+> **Security Note:** Secret Access Keys and WebDAV passwords are stored using the operating system's native secure storage (Keychain) and are never saved as plaintext in the database. It is recommended to create sub-account credentials with only read/write permissions for cloud storage, following the principle of least privilege.
+
+### 14.7 Security Settings (Lock Screen)
 
 ENote provides a lock screen security feature that can automatically lock the interface when the application starts or after a period of inactivity, requiring a password to continue using the application and preventing unauthorized access.
 
@@ -1114,7 +1192,7 @@ When the application is locked, a full-screen semi-transparent overlay is displa
 
 **Password Security:** The lock screen password is stored after being hashed with the Argon2id algorithm, not saved in plaintext, ensuring password security.
 
-### 14.7 MCP Settings
+### 14.8 MCP Settings
 
 MCP (Model Context Protocol) is an AI tool integration feature that allows AI clients such as Claude Desktop and Claude Code to operate on note data through a standard protocol. MCP functionality is disabled by default and must be manually enabled in the settings.
 
@@ -1140,7 +1218,7 @@ After enabling the master switch, expand the individual tool switch list to prec
 >
 > In addition to global and tool-level control, ENote also supports more fine-grained **data-level access control** -- you can set AI access permissions (Inherit / Read-Write / Read-Only / Deny) separately on notebooks, tags, and individual notes. See [20.4 Access Control](#204-access-control) for details.
 
-### 14.8 Profile Management
+### 14.9 Profile Management
 
 In the Settings dialog, the **Profile Management** section provides the following:
 
@@ -1151,11 +1229,11 @@ In the Settings dialog, the **Profile Management** section provides the followin
   - Edit or delete existing configurations
   - Click the close button in the upper right to close the selection page and return to the main interface
 
-### 14.9 System Maintenance (Cross-Profile Sync)
+### 14.10 System Maintenance (Cross-Profile Sync)
 
 At the bottom of the Settings dialog, the "System Maintenance" section provides cross-profile data synchronization and sync history management.
 
-#### 14.9.1 Cross-Profile Sync
+#### 14.10.1 Cross-Profile Sync
 
 Synchronize data from the current profile to another profile, supporting cross-database synchronization (SQLite <-> MySQL <-> PostgreSQL).
 
@@ -1192,7 +1270,7 @@ Synchronize data from the current profile to another profile, supporting cross-d
 - **History Records:** Notes are synced through the service layer. The target automatically generates history records with the operation source marked as "Sync".
 - **Foreign Key Mapping:** Notebook and tag IDs are reassigned in the target database. Note associations with notebooks and tags are automatically corrected.
 
-#### 14.9.2 Sync History Management
+#### 14.10.2 Sync History Management
 
 Each sync operation automatically generates detailed records, including the status of each data record.
 

@@ -60,6 +60,11 @@ pub mod tag;
 /// 支持 SQL、Excel、CSV 三种格式的导出和导入
 pub mod backup;
 
+/// 云备份服务模块
+///
+/// 通过 OpenDAL 支持 S3/OSS/COS/WebDAV 等云存储后端
+pub mod cloud_backup;
+
 /// 应用设置服务模块
 ///
 /// 提供键值对形式的设置存取功能

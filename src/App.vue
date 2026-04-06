@@ -169,7 +169,14 @@ import { useI18n } from 'vue-i18n'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { listen } from '@tauri-apps/api/event'
 import { ask } from '@tauri-apps/plugin-dialog'
-import { noteApi, settingsApi, backupApi, templateApi, profileApi } from './api/note'
+import {
+  noteApi,
+  settingsApi,
+  backupApi,
+  cloudBackupApi,
+  templateApi,
+  profileApi,
+} from './api/note'
 import { noteToShowNote } from './utils/converters'
 import { useNotes } from './composables/useNotes'
 import { useKeyboardShortcuts } from './composables/useKeyboardShortcuts'
@@ -813,9 +820,28 @@ const startAutoBackup = async () => {
 
 const doAutoBackup = async (retention: number) => {
   try {
-    await backupApi.autoBackup()
+    const filename = await backupApi.autoBackup()
     await backupApi.cleanupOldBackups(retention)
     autoBackupErrorNotified = false // 成功后重置，下次失败可再通知
+
+    // 云备份：上传到云端
+    try {
+      const settings = await settingsApi.getAll()
+      if (settings.cloudBackupEnabled === '1' && settings.cloudBackupProvider) {
+        await cloudBackupApi.uploadToCloud(filename)
+        const cloudRetention = parseInt(settings.cloudBackupRetention || '10')
+        await cloudBackupApi.cleanupBackups(cloudRetention)
+      }
+    } catch (e: unknown) {
+      // 云备份失败不影响本地备份成功，仅警告一次
+      if (!autoBackupErrorNotified) {
+        showNotification({
+          type: 'warning',
+          message: `${t('settings.cloudBackupUploadFailed')}: ${parseError(e)}`,
+          duration: 5000,
+        })
+      }
+    }
   } catch (e: unknown) {
     if (!autoBackupErrorNotified) {
       autoBackupErrorNotified = true

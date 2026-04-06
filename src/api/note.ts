@@ -3,6 +3,8 @@ import { invokeWithRetry } from '../utils/invokeWithRetry'
 
 import {
   AttachmentStats,
+  CloudBackupEntry,
+  CloudStorageConfig,
   ContentType,
   Note,
   NoteAttachment,
@@ -171,6 +173,36 @@ export const backupApi = {
 
   async listAutoBackups(): Promise<[string, number][]> {
     return await invoke('list_auto_backups')
+  },
+}
+
+export const cloudBackupApi = {
+  async testConnection(config: CloudStorageConfig): Promise<void> {
+    return await invoke('test_cloud_connection', { config })
+  },
+
+  async saveConfig(config: CloudStorageConfig): Promise<void> {
+    return await invoke('save_cloud_backup_config', { config })
+  },
+
+  async uploadToCloud(filename: string): Promise<void> {
+    return await invoke('upload_backup_to_cloud', { filename })
+  },
+
+  async cloudBackupNow(): Promise<string> {
+    return await invoke('cloud_backup_now')
+  },
+
+  async listBackups(): Promise<CloudBackupEntry[]> {
+    return await invoke('list_cloud_backups')
+  },
+
+  async downloadBackup(filename: string): Promise<string> {
+    return await invoke('download_cloud_backup', { filename })
+  },
+
+  async cleanupBackups(maxCount: number): Promise<number> {
+    return await invoke('cleanup_cloud_backups', { maxCount })
   },
 }
 

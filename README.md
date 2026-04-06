@@ -50,6 +50,7 @@ A cross-platform desktop note-taking application built with Tauri, supporting ri
 - **ENote Server Backend** - Connect to remote ENote-compatible API servers with multiple auth methods (Bearer/Basic/JWT/Custom Header/OAuth 2.0)
 - **SSL/TLS Authentication** - MySQL/PostgreSQL support certificate-based login
 - **Data Backup** - SQL/Excel/CSV export/import with scheduled auto-backup
+- **Cloud Backup** - Upload backups to cloud storage (Alibaba Cloud OSS, AWS S3, Tencent Cloud COS, MinIO, WebDAV) with automatic sync and retention management
 - **Import/Export** - Import from Evernote, Youdao Notes, Notion; Export to PDF/HTML/Word/Markdown/JSON/XML
 - **PDF Export** - Export notes as PDF via print dialog
 - **HTML Export** - Export as standalone HTML files with embedded styles and dark mode support
@@ -90,6 +91,7 @@ A cross-platform desktop note-taking application built with Tauri, supporting ri
 - **aes-gcm** - AES-256-GCM encryption
 - **argon2** - Password hashing
 - **keyring** - OS keychain integration
+- **opendal** - Unified cloud storage abstraction (S3/OSS/COS/WebDAV)
 - **rmcp** - MCP protocol server
 
 ## Project Structure
@@ -124,7 +126,7 @@ enote/
 ├── src-tauri/                  # Tauri backend source code
 │   └── src/
 │       ├── command.rs          # IPC command handlers
-│       ├── service/            # Business logic layer (19 services)
+│       ├── service/            # Business logic layer (20 services)
 │       ├── entity/             # Database entities (13)
 │       ├── migration/          # Database migrations (25)
 │       ├── config.rs           # Configuration management

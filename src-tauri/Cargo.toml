@@ -81,6 +81,9 @@ zip.workspace = true
 # HTTP Client
 reqwest.workspace = true
 
+# Cloud Storage
+opendal.workspace = true
+
 # Utilities
 chrono.workspace = true
 config.workspace = true

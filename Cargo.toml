@@ -3,7 +3,7 @@ members = ["src-tauri", "crates/enote-mcp"]
 resolver = "2"
 
 [workspace.package]
-version = "1.1.1"
+version = "1.2.0"
 edition = "2024"
 authors = ["124244236@qq.com"]
 
@@ -66,6 +66,9 @@ keyring = { version = "3", features = ["apple-native", "windows-native", "sync-s
 
 # HTTP Client
 reqwest = { version = "0.12", default-features = false, features = ["json", "multipart", "rustls-tls"] }
+
+# Cloud Storage
+opendal = { version = "0.55", features = ["services-s3", "services-oss", "services-cos", "services-webdav"] }
 
 # MCP
 rmcp = { version = "0.16", features = ["server", "transport-io"] }

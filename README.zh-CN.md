@@ -50,6 +50,7 @@
 - **ENote Server 后端** - 连接远程 ENote 兼容 API 服务器，支持多种认证方式（Bearer/Basic/JWT/自定义 Header/OAuth 2.0）
 - **SSL/TLS 认证** - MySQL/PostgreSQL 支持证书登录
 - **数据备份** - SQL/Excel/CSV 导出导入，自动定时备份
+- **云备份** - 备份文件上传到云存储（阿里云 OSS、AWS S3、腾讯云 COS、MinIO、WebDAV），自动同步与保留管理
 - **导入导出** - 支持印象笔记、有道笔记、Notion 导入，PDF/HTML/Word/Markdown/JSON/XML 导出
 - **PDF 导出** - 通过打印对话框导出为 PDF
 - **HTML 导出** - 导出为独立 HTML 文件，内置样式，支持暗色模式
@@ -90,6 +91,7 @@
 - **aes-gcm** - AES-256-GCM 加密
 - **argon2** - 密码哈希
 - **keyring** - 系统钥匙串集成
+- **opendal** - 统一云存储抽象层（S3/OSS/COS/WebDAV）
 - **rmcp** - MCP 协议服务器
 
 ## 项目结构
@@ -124,7 +126,7 @@ enote/
 ├── src-tauri/                  # Tauri 后端源码
 │   └── src/
 │       ├── command.rs          # IPC 命令处理
-│       ├── service/            # 业务逻辑层（19 个服务）
+│       ├── service/            # 业务逻辑层（20 个服务）
 │       ├── entity/             # 数据库实体（13 个）
 │       ├── migration/          # 数据库迁移（25 个）
 │       ├── config.rs           # 配置管理

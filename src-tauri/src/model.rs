@@ -1263,6 +1263,58 @@ pub struct LogFileInfo {
 }
 
 // ============================================================================
+// 云备份配置
+// ============================================================================
+
+/// 云存储提供商类型
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum CloudProvider {
+    S3,
+    Oss,
+    Cos,
+    Webdav,
+    Minio,
+}
+
+/// 云存储配置（前后端交互）
+#[serde_as]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CloudStorageConfig {
+    pub provider: String,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub endpoint: String,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub bucket: String,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub region: String,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub access_key_id: String,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub secret_access_key: String,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub prefix: String,
+    /// WebDAV 用户名
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub username: String,
+    /// WebDAV 密码
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub password: String,
+}
+
+/// 云端备份文件条目
+#[serde_as]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CloudBackupEntry {
+    pub name: String,
+    pub size: u64,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub last_modified: String,
+}
+
+// ============================================================================
 // 日期时间序列化工具函数
 // ============================================================================
 

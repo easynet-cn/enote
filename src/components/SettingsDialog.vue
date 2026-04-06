@@ -23,6 +23,15 @@
         @backup-settings-changed="emit('backupSettingsChanged')"
       />
 
+      <!-- 云备份设置 -->
+      <SettingsCloudBackup
+        ref="cloudBackupRef"
+        v-model:enabled="cloudBackupEnabled"
+        v-model:retention="cloudBackupRetention"
+        @save="saveSettings"
+        @config-changed="emit('backupSettingsChanged')"
+      />
+
       <!-- 配置管理 -->
       <div>
         <h3 class="text-sm font-semibold text-content-secondary mb-3">
@@ -168,6 +177,7 @@ import LogDialog from './LogDialog.vue'
 import SettingsAppearance from './settings/SettingsAppearance.vue'
 import SettingsShortcuts from './settings/SettingsShortcuts.vue'
 import SettingsBackup from './settings/SettingsBackup.vue'
+import SettingsCloudBackup from './settings/SettingsCloudBackup.vue'
 import SettingsSecurity from './settings/SettingsSecurity.vue'
 import SettingsMcp from './settings/SettingsMcp.vue'
 import { settingsApi } from '../api/note'
@@ -191,6 +201,7 @@ const visible = defineModel<boolean>({ default: false })
 // 子组件 refs
 const appearanceRef = ref<InstanceType<typeof SettingsAppearance>>()
 const backupRef = ref<InstanceType<typeof SettingsBackup>>()
+const cloudBackupRef = ref<InstanceType<typeof SettingsCloudBackup>>()
 const securityRef = ref<InstanceType<typeof SettingsSecurity>>()
 
 // ============================================================================
@@ -205,6 +216,10 @@ const editorFontSize = ref('14')
 const autoBackupEnabled = ref(false)
 const autoBackupInterval = ref('24')
 const autoBackupRetention = ref('10')
+
+// 云备份
+const cloudBackupEnabled = ref(false)
+const cloudBackupRetention = ref('10')
 
 // 安全
 const currentLockMode = ref<'none' | 'password' | 'biometric'>('none')
@@ -260,6 +275,8 @@ const saveSettings = async () => {
       autoBackupEnabled: autoBackupEnabled.value ? '1' : '0',
       autoBackupInterval: autoBackupInterval.value,
       autoBackupRetention: autoBackupRetention.value,
+      cloudBackupEnabled: cloudBackupEnabled.value ? '1' : '0',
+      cloudBackupRetention: cloudBackupRetention.value,
       lockMode: currentLockMode.value,
       lockTimeout: lockTimeoutValue.value,
       lockOnMinimize: lockOnMinimizeEnabled.value ? '1' : '0',
@@ -319,6 +336,13 @@ const loadSettings = async () => {
     autoBackupEnabled.value = settings.autoBackupEnabled === '1'
     if (settings.autoBackupInterval) autoBackupInterval.value = settings.autoBackupInterval
     if (settings.autoBackupRetention) autoBackupRetention.value = settings.autoBackupRetention
+
+    cloudBackupEnabled.value = settings.cloudBackupEnabled === '1'
+    if (settings.cloudBackupRetention) cloudBackupRetention.value = settings.cloudBackupRetention
+    cloudBackupRef.value?.loadSavedConfig(settings)
+    if (cloudBackupEnabled.value) {
+      cloudBackupRef.value?.loadLastCloudBackup()
+    }
 
     currentLockMode.value = (settings.lockMode as 'none' | 'password' | 'biometric') || 'none'
     lockTimeoutValue.value = settings.lockTimeout || '0'

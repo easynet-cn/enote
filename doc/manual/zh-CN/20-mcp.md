@@ -55,7 +55,7 @@ Claude Code 的配置方式类似，在 `.claude/settings.json` 中配置 MCP Se
 
 **步骤四：设置面板精细控制**
 
-在 ENote 的设置面板（[14.7 MCP 设置](14-settings.md#147-mcp-设置)）中，启用 MCP 总开关并根据需要开启/关闭各个工具。
+在 ENote 的设置面板（[14.8 MCP 设置](14-settings.md#148-mcp-设置)）中，启用 MCP 总开关并根据需要开启/关闭各个工具。
 
 ### 20.3 可用工具列表
 
