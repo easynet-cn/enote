@@ -648,6 +648,8 @@ export default {
     operateSource: 'Source',
     sourceUser: 'User',
     sourceMcp: 'AI Tool',
+    sideBySideView: 'Side by Side',
+    diffView: 'Diff View',
   },
 
   // Editor settings dialog

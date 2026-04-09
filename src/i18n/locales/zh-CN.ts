@@ -644,6 +644,8 @@ export default {
     operateSource: '操作来源',
     sourceUser: '用户操作',
     sourceMcp: 'AI 工具',
+    sideBySideView: '并排查看',
+    diffView: '差异对比',
   },
 
   // 编辑器设置对话框
