@@ -5,12 +5,12 @@
 
 use anyhow::Result;
 use base64::{Engine as _, engine::general_purpose::STANDARD};
-use rand::RngCore;
+use rand::Rng;
 
 /// 生成 256-bit 随机加密密钥并返回 Base64 编码
 pub fn generate_encryption_key() -> String {
     let mut key = [0u8; 32];
-    rand::thread_rng().fill_bytes(&mut key);
+    rand::rng().fill_bytes(&mut key);
     STANDARD.encode(key)
 }
 
@@ -25,13 +25,17 @@ mod platform {
     const SERVICE_NAME: &str = "net.easycloudcn.enote";
 
     pub fn set_secret(key: &str, value: &str) -> Result<()> {
-        let entry = keyring::Entry::new(SERVICE_NAME, key).context("Failed to create Keychain entry")?;
-        entry.set_password(value).context("Failed to write to Keychain")?;
+        let entry =
+            keyring::Entry::new(SERVICE_NAME, key).context("Failed to create Keychain entry")?;
+        entry
+            .set_password(value)
+            .context("Failed to write to Keychain")?;
         Ok(())
     }
 
     pub fn get_secret(key: &str) -> Result<Option<String>> {
-        let entry = keyring::Entry::new(SERVICE_NAME, key).context("Failed to create Keychain entry")?;
+        let entry =
+            keyring::Entry::new(SERVICE_NAME, key).context("Failed to create Keychain entry")?;
         match entry.get_password() {
             Ok(value) => Ok(Some(value)),
             Err(keyring::Error::NoEntry) => Ok(None),
@@ -40,7 +44,8 @@ mod platform {
     }
 
     pub fn delete_secret(key: &str) -> Result<()> {
-        let entry = keyring::Entry::new(SERVICE_NAME, key).context("Failed to create Keychain entry")?;
+        let entry =
+            keyring::Entry::new(SERVICE_NAME, key).context("Failed to create Keychain entry")?;
         match entry.delete_credential() {
             Ok(()) => Ok(()),
             Err(keyring::Error::NoEntry) => Ok(()),

@@ -7,7 +7,7 @@ use aes_gcm::{Aes256Gcm, KeyInit, Nonce, aead::Aead};
 use anyhow::{Context, Result};
 use argon2::Argon2;
 use base64::{Engine as _, engine::general_purpose::STANDARD};
-use rand::RngCore;
+use rand::Rng;
 
 /// 加密前缀标识（用于检测内容是否已加密）
 const ENCRYPTED_PREFIX: &str = "ENOTE_ENC_V2:";
@@ -28,14 +28,14 @@ fn derive_key(password: &str, salt: &[u8]) -> Result<[u8; 32]> {
 pub fn encrypt(content: &str, password: &str) -> Result<String> {
     // 生成随机盐 (128 bits)
     let mut salt = [0u8; 16];
-    rand::thread_rng().fill_bytes(&mut salt);
+    rand::rng().fill_bytes(&mut salt);
 
     let key = derive_key(password, &salt)?;
     let cipher = Aes256Gcm::new_from_slice(&key).context("Failed to create cipher")?;
 
     // 生成随机 nonce (96 bits)
     let mut nonce_bytes = [0u8; 12];
-    rand::thread_rng().fill_bytes(&mut nonce_bytes);
+    rand::rng().fill_bytes(&mut nonce_bytes);
     let nonce = Nonce::from_slice(&nonce_bytes);
 
     let ciphertext = cipher
