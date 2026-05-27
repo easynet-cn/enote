@@ -4,7 +4,7 @@
       <ToolbarButton
         :tooltip="t('editor.toolbarTooltip.outdent')"
         :disabled="!editMode"
-        @click="editor?.chain().focus().outdent().run()"
+        @click="handleOutdent"
       >
         <IndentDecrease class="w-4 h-4" />
       </ToolbarButton>
@@ -12,7 +12,7 @@
       <ToolbarButton
         :tooltip="t('editor.toolbarTooltip.indent')"
         :disabled="!editMode"
-        @click="editor?.chain().focus().indent().run()"
+        @click="handleIndent"
       >
         <IndentIncrease class="w-4 h-4" />
       </ToolbarButton>
@@ -26,10 +26,18 @@ import type { Editor } from '@tiptap/vue-3'
 import { ToolbarButton } from '.'
 import { IndentDecrease, IndentIncrease } from 'lucide-vue-next'
 
-defineProps<{
+const props = defineProps<{
   editor: Editor | null
   editMode: boolean
 }>()
 
 const { t } = useI18n()
+
+const handleOutdent = () => {
+  props.editor?.commands.outdent()
+}
+
+const handleIndent = () => {
+  props.editor?.commands.indent()
+}
 </script>
