@@ -83,13 +83,17 @@ fn parse_data_uri(data_uri: &str) -> Result<(String, Vec<u8>)> {
         // data:image/png;base64,iVBOR...
         if let Some((mime_part, base64_part)) = rest.split_once(";base64,") {
             let ext = mime_to_ext(mime_part);
-            let bytes = STANDARD.decode(base64_part).context("Failed to decode Base64")?;
+            let bytes = STANDARD
+                .decode(base64_part)
+                .context("Failed to decode Base64")?;
             return Ok((ext, bytes));
         }
     }
 
     // 纯 Base64 数据（无 data URI 前缀），默认 png
-    let bytes = STANDARD.decode(data_uri).context("Failed to decode Base64")?;
+    let bytes = STANDARD
+        .decode(data_uri)
+        .context("Failed to decode Base64")?;
     Ok(("png".to_string(), bytes))
 }
 

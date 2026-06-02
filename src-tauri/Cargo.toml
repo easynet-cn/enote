@@ -90,3 +90,4 @@ config.workspace = true
 uuid.workspace = true
 dirs.workspace = true
 sys-locale.workspace = true
+tauri-plugin-os = "2"

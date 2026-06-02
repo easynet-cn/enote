@@ -57,24 +57,24 @@ pub(crate) async fn require_server(app_state: &AppState) -> Result<EnoteServerCl
     }
 }
 
-mod profile;
-mod notebook;
-mod tag;
-mod note;
+mod app_log;
 mod backup;
 mod cloud_backup;
+mod misc;
+mod note;
+mod notebook;
+mod profile;
 mod settings;
 mod sync;
-mod app_log;
-mod misc;
+mod tag;
 
-pub use profile::*;
-pub use notebook::*;
-pub use tag::*;
-pub use note::*;
+pub use app_log::*;
 pub use backup::*;
 pub use cloud_backup::*;
+pub use misc::*;
+pub use note::*;
+pub use notebook::*;
+pub use profile::*;
 pub use settings::*;
 pub use sync::*;
-pub use app_log::*;
-pub use misc::*;
+pub use tag::*;

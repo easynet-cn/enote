@@ -71,7 +71,8 @@ pub async fn save_attachment(
 
     let (stored_name, should_write) = if let Some(ref existing_model) = existing {
         // 复用已有物理文件，增加引用计数
-        let mut am: entity::note_attachment::ActiveModel = existing_model.clone().into_active_model();
+        let mut am: entity::note_attachment::ActiveModel =
+            existing_model.clone().into_active_model();
         am.ref_count = ActiveValue::Set(existing_model.ref_count + 1);
         am.update(db).await?;
 
@@ -127,10 +128,7 @@ pub async fn save_attachment(
 }
 
 /// 查询笔记的所有附件
-pub async fn find_by_note_id(
-    db: &DatabaseConnection,
-    note_id: i64,
-) -> Result<Vec<NoteAttachment>> {
+pub async fn find_by_note_id(db: &DatabaseConnection, note_id: i64) -> Result<Vec<NoteAttachment>> {
     let models = entity::note_attachment::Entity::find()
         .filter(entity::note_attachment::Column::NoteId.eq(note_id))
         .order_by_desc(entity::note_attachment::Column::CreateTime)
@@ -143,17 +141,16 @@ pub async fn find_by_note_id(
 ///
 /// 如果同一物理文件被多个附件引用，仅减少引用计数；
 /// 当引用计数降为 0 时才删除物理文件。
-pub async fn delete_by_id(
-    db: &DatabaseConnection,
-    app_data_dir: &Path,
-    id: i64,
-) -> Result<()> {
+pub async fn delete_by_id(db: &DatabaseConnection, app_data_dir: &Path, id: i64) -> Result<()> {
     if let Some(model) = entity::note_attachment::Entity::find_by_id(id)
         .one(db)
         .await?
     {
         // 安全校验：防止路径穿越
-        if model.file_path.contains("..") || model.file_path.contains('/') || model.file_path.contains('\\') {
+        if model.file_path.contains("..")
+            || model.file_path.contains('/')
+            || model.file_path.contains('\\')
+        {
             anyhow::bail!("Invalid attachment file path detected");
         }
 
@@ -194,18 +191,11 @@ pub async fn delete_by_id(
 }
 
 /// 获取附件统计信息
-pub async fn get_stats(
-    db: &DatabaseConnection,
-    app_data_dir: &Path,
-) -> Result<AttachmentStats> {
-    let total_count = entity::note_attachment::Entity::find()
-        .count(db)
-        .await?;
+pub async fn get_stats(db: &DatabaseConnection, app_data_dir: &Path) -> Result<AttachmentStats> {
+    let total_count = entity::note_attachment::Entity::find().count(db).await?;
 
     // 按 file_path 去重计数 → 物理文件数
-    let all_attachments = entity::note_attachment::Entity::find()
-        .all(db)
-        .await?;
+    let all_attachments = entity::note_attachment::Entity::find().all(db).await?;
 
     let unique_paths: std::collections::HashSet<&str> = all_attachments
         .iter()
@@ -238,19 +228,14 @@ pub async fn get_stats(
 }
 
 /// 清理孤立附件文件（磁盘上存在但数据库中无记录的文件）
-pub async fn cleanup_orphans(
-    db: &DatabaseConnection,
-    app_data_dir: &Path,
-) -> Result<u32> {
+pub async fn cleanup_orphans(db: &DatabaseConnection, app_data_dir: &Path) -> Result<u32> {
     let dir = attachments_dir(app_data_dir);
     if !dir.exists() {
         return Ok(0);
     }
 
     // 获取数据库中所有已知的文件路径
-    let all_attachments = entity::note_attachment::Entity::find()
-        .all(db)
-        .await?;
+    let all_attachments = entity::note_attachment::Entity::find().all(db).await?;
     let known_paths: std::collections::HashSet<String> = all_attachments
         .iter()
         .map(|a| a.file_path.clone())

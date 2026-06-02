@@ -12,15 +12,15 @@
 use std::sync::{Arc, OnceLock};
 
 use sea_orm_migration::MigratorTrait;
-use tauri::{Emitter, Manager};
 #[cfg(feature = "desktop")]
 use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder};
 #[cfg(feature = "desktop")]
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder};
+use tauri::{Emitter, Manager};
 use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 use tracing::{error, info};
-use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 use tracing_subscriber::Layer;
+use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::config::AppState;
 use crate::i18n::{t, t_simple};
@@ -67,19 +67,14 @@ pub fn run_with_config(config_path: Option<String>) {
     // 将 guard 存入静态变量以确保生命周期（优于 Box::leak，程序退出时会正常 flush）
     let _ = TRACING_GUARDS.set((_all_guard, _error_guard));
 
-    let env_filter =
-        EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
+    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
 
     tracing_subscriber::registry()
         .with(env_filter)
         // stdout 输出（开发调试用）
         .with(fmt::layer())
         // 全量日志文件
-        .with(
-            fmt::layer()
-                .with_writer(all_writer)
-                .with_ansi(false),
-        )
+        .with(fmt::layer().with_writer(all_writer).with_ansi(false))
         // Error 日志单独文件（仅 ERROR 级别）
         .with(
             fmt::layer()
@@ -90,6 +85,7 @@ pub fn run_with_config(config_path: Option<String>) {
         .init();
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_os::init())
         // 注册 Tauri 插件
         .plugin(tauri_plugin_fs::init()) // 文件系统访问
         .plugin(tauri_plugin_opener::init()) // 打开外部链接/文件
@@ -103,19 +99,17 @@ pub fn run_with_config(config_path: Option<String>) {
                 let handle = app.handle();
 
                 // 获取应用数据目录
-                let app_data_dir = handle.path().app_data_dir()
-                    .map_err(|e| {
-                        error!("Failed to get app data directory: {:#}", e);
-                        e
-                    })?;
+                let app_data_dir = handle.path().app_data_dir().map_err(|e| {
+                    error!("Failed to get app data directory: {:#}", e);
+                    e
+                })?;
 
                 // 确保目录存在
                 if !app_data_dir.exists() {
-                    std::fs::create_dir_all(&app_data_dir)
-                        .map_err(|e| {
-                            error!("Failed to create app data directory: {:#}", e);
-                            e
-                        })?;
+                    std::fs::create_dir_all(&app_data_dir).map_err(|e| {
+                        error!("Failed to create app data directory: {:#}", e);
+                        e
+                    })?;
                 }
 
                 // 决定启动模式
@@ -265,9 +259,7 @@ pub fn run_with_config(config_path: Option<String>) {
 fn auto_create_mobile_profile(
     app_data_dir: &std::path::Path,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    use service::profile::{
-        DatasourceConfig, ProfileConfig, ProfileIndex, SecurityConfig,
-    };
+    use service::profile::{DatasourceConfig, ProfileConfig, ProfileIndex, SecurityConfig};
 
     let db_path = app_data_dir.join("enote.db");
     let db_path_str = db_path.to_string_lossy().to_string();
@@ -313,23 +305,90 @@ async fn setup_normal_mode(
         String,
         Option<String>,
     ) = if let Some(ref _config_path) = config_path {
-            // 兼容旧模式：使用 application.yml
-            let configuration = match config::Configuration::new(handle, config_path.as_deref()) {
-                Ok(config) => config,
-                Err(e) => {
-                    error!("Config load failed: {:#}", e);
-                    let error_msg = format!("{}", e);
-                    handle
-                        .dialog()
-                        .message(t("config.load.failed.message", &[&error_msg]))
-                        .kind(MessageDialogKind::Error)
-                        .title(t_simple("config.load.failed.title"))
-                        .blocking_show();
-                    std::process::exit(1);
+        // 兼容旧模式：使用 application.yml
+        let configuration = match config::Configuration::new(handle, config_path.as_deref()) {
+            Ok(config) => config,
+            Err(e) => {
+                error!("Config load failed: {:#}", e);
+                let error_msg = format!("{}", e);
+                handle
+                    .dialog()
+                    .message(t("config.load.failed.message", &[&error_msg]))
+                    .kind(MessageDialogKind::Error)
+                    .title(t_simple("config.load.failed.title"))
+                    .blocking_show();
+                std::process::exit(1);
+            }
+        };
+
+        let database_connection = match configuration.database_connection().await {
+            Ok(conn) => conn,
+            Err(e) => {
+                error!("Database connection failed: {:#}", e);
+                let error_msg = format!("{}", e);
+                handle
+                    .dialog()
+                    .message(t("database.connection.failed.message", &[&error_msg]))
+                    .kind(MessageDialogKind::Error)
+                    .title(t_simple("database.connection.failed.title"))
+                    .blocking_show();
+                std::process::exit(1);
+            }
+        };
+
+        (
+            configuration,
+            Some(database_connection),
+            String::new(),
+            None,
+        )
+    } else {
+        // Profile 模式
+        let index = service::profile::read_index(&app_data_dir)?;
+        let profiles = service::profile::list_profiles(&app_data_dir)?;
+        info!(
+            "Profile mode: auto_connect={}, profiles_count={}",
+            index.auto_connect,
+            profiles.len()
+        );
+
+        // 多 Profile + 非自动连接 → 延迟连接，等待用户在前端选择
+        if !index.auto_connect && profiles.len() > 1 {
+            info!("Multiple profiles without auto-connect, waiting for user selection");
+            (config::Configuration::default(), None, String::new(), None)
+        } else {
+            let profile_id = if index.active.is_empty() {
+                // 没有活跃 profile，使用第一个
+                if profiles.is_empty() {
+                    // 不应该到这里，但以防万一进入向导模式
+                    setup_wizard_mode_state(app).await?;
+                    return Ok(());
                 }
+                profiles[0].id.clone()
+            } else {
+                index.active.clone()
             };
 
-            let database_connection = match configuration.database_connection().await {
+            let profile_config = service::profile::read_profile(&app_data_dir, &profile_id)?;
+
+            // 从 Keychain 获取数据库密码（桌面端/db-full 模式 MySQL/PG 需要）
+            #[cfg(any(feature = "desktop", feature = "db-full"))]
+            let db_password = if profile_config.datasource.db_type != "sqlite"
+                && profile_config.datasource.auth_method != "certificate"
+            {
+                service::keychain::get_db_password(&profile_id)?
+            } else {
+                None
+            };
+            #[cfg(not(any(feature = "desktop", feature = "db-full")))]
+            let db_password: Option<String> = None;
+
+            let database_connection = match config::database_connection_from_profile(
+                &profile_config,
+                db_password.as_deref(),
+            )
+            .await
+            {
                 Ok(conn) => conn,
                 Err(e) => {
                     error!("Database connection failed: {:#}", e);
@@ -340,102 +399,31 @@ async fn setup_normal_mode(
                         .kind(MessageDialogKind::Error)
                         .title(t_simple("database.connection.failed.title"))
                         .blocking_show();
-                    std::process::exit(1);
+                    // 进入向导模式让用户重新配置
+                    setup_wizard_mode_state(app).await?;
+                    return Ok(());
                 }
             };
 
-            (configuration, Some(database_connection), String::new(), None)
-        } else {
-            // Profile 模式
-            let index = service::profile::read_index(&app_data_dir)?;
-            let profiles = service::profile::list_profiles(&app_data_dir)?;
-            info!(
-                "Profile mode: auto_connect={}, profiles_count={}",
-                index.auto_connect,
-                profiles.len()
-            );
-
-            // 多 Profile + 非自动连接 → 延迟连接，等待用户在前端选择
-            if !index.auto_connect && profiles.len() > 1 {
-                info!("Multiple profiles without auto-connect, waiting for user selection");
-                (
-                    config::Configuration::default(),
-                    None,
-                    String::new(),
-                    None,
-                )
+            // 从 Keychain 获取加密密钥（桌面端/db-full 模式）
+            #[cfg(any(feature = "desktop", feature = "db-full"))]
+            let encryption_key = if profile_config.security.content_encryption {
+                service::keychain::get_encryption_key(&profile_id)?
             } else {
-                let profile_id = if index.active.is_empty() {
-                    // 没有活跃 profile，使用第一个
-                    if profiles.is_empty() {
-                        // 不应该到这里，但以防万一进入向导模式
-                        setup_wizard_mode_state(app).await?;
-                        return Ok(());
-                    }
-                    profiles[0].id.clone()
-                } else {
-                    index.active.clone()
-                };
+                None
+            };
+            #[cfg(not(any(feature = "desktop", feature = "db-full")))]
+            let encryption_key: Option<String> = None;
 
-                let profile_config =
-                    service::profile::read_profile(&app_data_dir, &profile_id)?;
-
-                // 从 Keychain 获取数据库密码（桌面端/db-full 模式 MySQL/PG 需要）
-                #[cfg(any(feature = "desktop", feature = "db-full"))]
-                let db_password = if profile_config.datasource.db_type != "sqlite"
-                    && profile_config.datasource.auth_method != "certificate"
-                {
-                    service::keychain::get_db_password(&profile_id)?
-                } else {
-                    None
-                };
-                #[cfg(not(any(feature = "desktop", feature = "db-full")))]
-                let db_password: Option<String> = None;
-
-                let database_connection = match config::database_connection_from_profile(
-                    &profile_config,
-                    db_password.as_deref(),
-                )
-                .await
-                {
-                    Ok(conn) => conn,
-                    Err(e) => {
-                        error!("Database connection failed: {:#}", e);
-                        let error_msg = format!("{}", e);
-                        handle
-                            .dialog()
-                            .message(t(
-                                "database.connection.failed.message",
-                                &[&error_msg],
-                            ))
-                            .kind(MessageDialogKind::Error)
-                            .title(t_simple("database.connection.failed.title"))
-                            .blocking_show();
-                        // 进入向导模式让用户重新配置
-                        setup_wizard_mode_state(app).await?;
-                        return Ok(());
-                    }
-                };
-
-                // 从 Keychain 获取加密密钥（桌面端/db-full 模式）
-                #[cfg(any(feature = "desktop", feature = "db-full"))]
-                let encryption_key = if profile_config.security.content_encryption {
-                    service::keychain::get_encryption_key(&profile_id)?
-                } else {
-                    None
-                };
-                #[cfg(not(any(feature = "desktop", feature = "db-full")))]
-                let encryption_key: Option<String> = None;
-
-                let configuration = config::Configuration::default();
-                (
-                    configuration,
-                    Some(database_connection),
-                    profile_id,
-                    encryption_key,
-                )
-            }
-        };
+            let configuration = config::Configuration::default();
+            (
+                configuration,
+                Some(database_connection),
+                profile_id,
+                encryption_key,
+            )
+        }
+    };
 
     // 运行数据库迁移（仅在有数据库连接时）
     if let Some(ref db) = database_connection {
@@ -510,10 +498,10 @@ async fn setup_wizard_mode_state(app: &mut tauri::App) -> Result<(), Box<dyn std
 /// 设置应用菜单栏（仅桌面端编译）
 #[cfg(feature = "desktop")]
 fn setup_app_menu(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-    let help_item = MenuItemBuilder::with_id("help-manual", t_simple("help.menuItem"))
-        .build(app)?;
-    let check_update_item = MenuItemBuilder::with_id("check-update", t_simple("help.checkUpdate"))
-        .build(app)?;
+    let help_item =
+        MenuItemBuilder::with_id("help-manual", t_simple("help.menuItem")).build(app)?;
+    let check_update_item =
+        MenuItemBuilder::with_id("check-update", t_simple("help.checkUpdate")).build(app)?;
 
     let help_menu = SubmenuBuilder::new(app, t_simple("help.menuTitle"))
         .item(&help_item)
@@ -551,28 +539,23 @@ fn setup_app_menu(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
         menu_builder = menu_builder.item(&app_submenu);
     }
 
-    let app_menu = menu_builder
-        .item(&edit_menu)
-        .item(&help_menu)
-        .build()?;
+    let app_menu = menu_builder.item(&edit_menu).item(&help_menu).build()?;
 
     app.set_menu(app_menu)?;
 
     let handle = app.handle().clone();
-    app.on_menu_event(move |_app, event| {
-        match event.id().as_ref() {
-            "help-manual" => {
-                if let Some(window) = handle.get_webview_window("main") {
-                    let _ = window.emit("menu-help-manual", ());
-                }
+    app.on_menu_event(move |_app, event| match event.id().as_ref() {
+        "help-manual" => {
+            if let Some(window) = handle.get_webview_window("main") {
+                let _ = window.emit("menu-help-manual", ());
             }
-            "check-update" => {
-                if let Some(window) = handle.get_webview_window("main") {
-                    let _ = window.emit("menu-check-update", ());
-                }
-            }
-            _ => {}
         }
+        "check-update" => {
+            if let Some(window) = handle.get_webview_window("main") {
+                let _ = window.emit("menu-check-update", ());
+            }
+        }
+        _ => {}
     });
 
     Ok(())
@@ -590,11 +573,10 @@ fn setup_tray(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .item(&quit_item)
         .build()?;
 
-    let tray_icon = app.default_window_icon().cloned()
-        .ok_or_else(|| {
-            error!("Default window icon not found for tray");
-            Box::<dyn std::error::Error>::from("Default window icon not found")
-        })?;
+    let tray_icon = app.default_window_icon().cloned().ok_or_else(|| {
+        error!("Default window icon not found for tray");
+        Box::<dyn std::error::Error>::from("Default window icon not found")
+    })?;
 
     TrayIconBuilder::new()
         .icon(tray_icon)

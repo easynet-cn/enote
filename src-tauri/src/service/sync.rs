@@ -14,8 +14,8 @@ use tracing::info;
 
 use crate::{
     config::database_connection_from_profile,
-    i18n::t,
     entity,
+    i18n::t,
     model::{DataStats, SyncLog, SyncMode, SyncOptions, SyncPreview, SyncProgress},
     service::{backup, note, note_template, notebook, profile, settings, sync_log, tag},
 };
@@ -407,9 +407,7 @@ pub async fn sync_to_profile(
     const SYNC_BATCH_SIZE: u64 = 200;
 
     if options.scope.notes {
-        let count = entity::note::Entity::find()
-            .count(source_db)
-            .await? as u32;
+        let count = entity::note::Entity::find().count(source_db).await? as u32;
         let mut global_idx: u32 = 0;
 
         let total_batches = (count as u64).div_ceil(SYNC_BATCH_SIZE);
@@ -420,132 +418,132 @@ pub async fn sync_to_profile(
                 .all(source_db)
                 .await?;
 
-        for src_note in source_notes.iter() {
-            let i = global_idx;
-            global_idx += 1;
-            let source_id = src_note.id;
-            let synced_at = Local::now().naive_local();
+            for src_note in source_notes.iter() {
+                let i = global_idx;
+                global_idx += 1;
+                let source_id = src_note.id;
+                let synced_at = Local::now().naive_local();
 
-            // 通过 service 层读取（自动解密 + 获取标签）
-            let decrypted =
-                note::find_by_id_with_key(source_db, source_id, source_encryption_key).await?;
+                // 通过 service 层读取（自动解密 + 获取标签）
+                let decrypted =
+                    note::find_by_id_with_key(source_db, source_id, source_encryption_key).await?;
 
-            if let Some(mut n) = decrypted {
-                // 重映射外键
-                n.id = 0;
-                n.notebook_id = id_maps
-                    .notebook
-                    .get(&n.notebook_id)
-                    .copied()
-                    .unwrap_or(n.notebook_id);
-                // 重映射标签 ID
-                for tag_item in &mut n.tags {
-                    tag_item.id = id_maps
-                        .tag
-                        .get(&tag_item.id)
+                if let Some(mut n) = decrypted {
+                    // 重映射外键
+                    n.id = 0;
+                    n.notebook_id = id_maps
+                        .notebook
+                        .get(&n.notebook_id)
                         .copied()
-                        .unwrap_or(tag_item.id);
-                }
+                        .unwrap_or(n.notebook_id);
+                    // 重映射标签 ID
+                    for tag_item in &mut n.tags {
+                        tag_item.id = id_maps
+                            .tag
+                            .get(&tag_item.id)
+                            .copied()
+                            .unwrap_or(tag_item.id);
+                    }
 
-                // 保持原始的删除状态、置顶状态和收藏状态
-                let original_deleted_at = src_note.deleted_at;
-                let original_is_pinned = src_note.is_pinned;
-                let original_is_starred = src_note.is_starred;
+                    // 保持原始的删除状态、置顶状态和收藏状态
+                    let original_deleted_at = src_note.deleted_at;
+                    let original_is_pinned = src_note.is_pinned;
+                    let original_is_starred = src_note.is_starred;
 
-                // 通过 service 层写入目标（自动加密，跳过历史生成——原始历史会单独同步）
-                match note::create_for_sync(
-                    &target_db,
-                    &n,
-                    target_encryption_key,
-                )
-                .await
-                {
-                    Ok(Some(created)) => {
-                        id_maps.note.insert(source_id, created.id);
+                    // 通过 service 层写入目标（自动加密，跳过历史生成——原始历史会单独同步）
+                    match note::create_for_sync(&target_db, &n, target_encryption_key).await {
+                        Ok(Some(created)) => {
+                            id_maps.note.insert(source_id, created.id);
 
-                        // 恢复原始状态（create_with_key 会重置 is_pinned=0, is_starred=0 和 deleted_at=None）
-                        if original_deleted_at.is_some() || original_is_pinned != 0 || original_is_starred != 0 {
-                            use sea_orm::{ActiveModelTrait, ActiveValue::Set, IntoActiveModel};
-                            if let Some(entity) = entity::note::Entity::find_by_id(created.id)
-                                .one(&target_db)
-                                .await?
+                            // 恢复原始状态（create_with_key 会重置 is_pinned=0, is_starred=0 和 deleted_at=None）
+                            if original_deleted_at.is_some()
+                                || original_is_pinned != 0
+                                || original_is_starred != 0
                             {
-                                let mut am: entity::note::ActiveModel = entity.into_active_model();
-                                if original_deleted_at.is_some() {
-                                    am.deleted_at = Set(original_deleted_at);
+                                use sea_orm::{
+                                    ActiveModelTrait, ActiveValue::Set, IntoActiveModel,
+                                };
+                                if let Some(entity) = entity::note::Entity::find_by_id(created.id)
+                                    .one(&target_db)
+                                    .await?
+                                {
+                                    let mut am: entity::note::ActiveModel =
+                                        entity.into_active_model();
+                                    if original_deleted_at.is_some() {
+                                        am.deleted_at = Set(original_deleted_at);
+                                    }
+                                    if original_is_pinned != 0 {
+                                        am.is_pinned = Set(original_is_pinned);
+                                    }
+                                    if original_is_starred != 0 {
+                                        am.is_starred = Set(original_is_starred);
+                                    }
+                                    am.update(&target_db).await?;
                                 }
-                                if original_is_pinned != 0 {
-                                    am.is_pinned = Set(original_is_pinned);
-                                }
-                                if original_is_starred != 0 {
-                                    am.is_starred = Set(original_is_starred);
-                                }
-                                am.update(&target_db).await?;
                             }
-                        }
 
-                        sync_log::add_detail(
-                            source_db,
-                            log_id,
-                            "note",
-                            source_id,
-                            Some(created.id),
-                            &n.title,
-                            "success",
-                            None,
-                            synced_at,
-                        )
-                        .await?;
-                        success += 1;
+                            sync_log::add_detail(
+                                source_db,
+                                log_id,
+                                "note",
+                                source_id,
+                                Some(created.id),
+                                &n.title,
+                                "success",
+                                None,
+                                synced_at,
+                            )
+                            .await?;
+                            success += 1;
+                        }
+                        Ok(None) => {
+                            sync_log::add_detail(
+                                source_db, log_id, "note", source_id, None, &n.title, "skipped",
+                                None, synced_at,
+                            )
+                            .await?;
+                        }
+                        Err(e) => {
+                            sync_log::add_detail(
+                                source_db,
+                                log_id,
+                                "note",
+                                source_id,
+                                None,
+                                &n.title,
+                                "failed",
+                                Some(&e.to_string()),
+                                synced_at,
+                            )
+                            .await?;
+                            failed += 1;
+                        }
                     }
-                    Ok(None) => {
-                        sync_log::add_detail(
-                            source_db, log_id, "note", source_id, None, &n.title, "skipped", None,
-                            synced_at,
-                        )
-                        .await?;
-                    }
-                    Err(e) => {
-                        sync_log::add_detail(
-                            source_db,
-                            log_id,
-                            "note",
-                            source_id,
-                            None,
-                            &n.title,
-                            "failed",
-                            Some(&e.to_string()),
-                            synced_at,
-                        )
-                        .await?;
-                        failed += 1;
-                    }
+                } else {
+                    sync_log::add_detail(
+                        source_db,
+                        log_id,
+                        "note",
+                        source_id,
+                        None,
+                        &src_note.title,
+                        "skipped",
+                        Some(&t("sync.progress.sourceNoteNotFound", &[])),
+                        synced_at,
+                    )
+                    .await?;
                 }
-            } else {
-                sync_log::add_detail(
-                    source_db,
+                total += 1;
+                emit_progress(
+                    app_handle,
                     log_id,
+                    "sync",
                     "note",
-                    source_id,
-                    None,
+                    i + 1,
+                    count,
                     &src_note.title,
-                    "skipped",
-                    Some(&t("sync.progress.sourceNoteNotFound", &[])),
-                    synced_at,
-                )
-                .await?;
+                );
             }
-            total += 1;
-            emit_progress(
-                app_handle,
-                log_id,
-                "sync",
-                "note",
-                i + 1,
-                count,
-                &src_note.title,
-            );
-        }
         } // end batch loop
     }
 
@@ -566,74 +564,74 @@ pub async fn sync_to_profile(
                     .all(source_db)
                     .await?;
 
-        for h in source_histories.iter() {
-            let i = global_hist_idx as usize;
-            global_hist_idx += 1;
-            let source_id = h.id;
-            let synced_at = Local::now().naive_local();
-            let note_id = id_maps.note.get(&h.note_id).copied().unwrap_or(h.note_id);
+            for h in source_histories.iter() {
+                let i = global_hist_idx as usize;
+                global_hist_idx += 1;
+                let source_id = h.id;
+                let synced_at = Local::now().naive_local();
+                let note_id = id_maps.note.get(&h.note_id).copied().unwrap_or(h.note_id);
 
-            use sea_orm::ActiveValue::{NotSet, Set};
-            let active_model = entity::note_history::ActiveModel {
-                id: NotSet,
-                note_id: Set(note_id),
-                old_content: Set(h.old_content.clone()),
-                new_content: Set(h.new_content.clone()),
-                extra: Set(h.extra.clone()),
-                operate_type: Set(h.operate_type),
-                operate_source: Set(h.operate_source),
-                operate_time: Set(h.operate_time),
-                create_time: Set(h.create_time),
-            };
+                use sea_orm::ActiveValue::{NotSet, Set};
+                let active_model = entity::note_history::ActiveModel {
+                    id: NotSet,
+                    note_id: Set(note_id),
+                    old_content: Set(h.old_content.clone()),
+                    new_content: Set(h.new_content.clone()),
+                    extra: Set(h.extra.clone()),
+                    operate_type: Set(h.operate_type),
+                    operate_source: Set(h.operate_source),
+                    operate_time: Set(h.operate_time),
+                    create_time: Set(h.create_time),
+                };
 
-            use sea_orm::ActiveModelTrait;
-            match active_model.insert(&target_db).await {
-                Ok(inserted) => {
-                    let name = format!("note_id={} type={}", h.note_id, h.operate_type);
-                    sync_log::add_detail(
-                        source_db,
-                        log_id,
-                        "note_history",
-                        source_id,
-                        Some(inserted.id),
-                        &name,
-                        "success",
-                        None,
-                        synced_at,
-                    )
-                    .await?;
-                    success += 1;
+                use sea_orm::ActiveModelTrait;
+                match active_model.insert(&target_db).await {
+                    Ok(inserted) => {
+                        let name = format!("note_id={} type={}", h.note_id, h.operate_type);
+                        sync_log::add_detail(
+                            source_db,
+                            log_id,
+                            "note_history",
+                            source_id,
+                            Some(inserted.id),
+                            &name,
+                            "success",
+                            None,
+                            synced_at,
+                        )
+                        .await?;
+                        success += 1;
+                    }
+                    Err(e) => {
+                        let name = format!("note_id={} type={}", h.note_id, h.operate_type);
+                        sync_log::add_detail(
+                            source_db,
+                            log_id,
+                            "note_history",
+                            source_id,
+                            None,
+                            &name,
+                            "failed",
+                            Some(&e.to_string()),
+                            synced_at,
+                        )
+                        .await?;
+                        failed += 1;
+                    }
                 }
-                Err(e) => {
-                    let name = format!("note_id={} type={}", h.note_id, h.operate_type);
-                    sync_log::add_detail(
-                        source_db,
+                total += 1;
+                if (i + 1).is_multiple_of(50) || i + 1 == count as usize {
+                    emit_progress(
+                        app_handle,
                         log_id,
+                        "sync",
                         "note_history",
-                        source_id,
-                        None,
-                        &name,
-                        "failed",
-                        Some(&e.to_string()),
-                        synced_at,
-                    )
-                    .await?;
-                    failed += 1;
+                        i as u32 + 1,
+                        count,
+                        &format!("{}/{}", i + 1, count),
+                    );
                 }
             }
-            total += 1;
-            if (i + 1).is_multiple_of(50) || i + 1 == count as usize {
-                emit_progress(
-                    app_handle,
-                    log_id,
-                    "sync",
-                    "note_history",
-                    i as u32 + 1,
-                    count,
-                    &format!("{}/{}", i + 1, count),
-                );
-            }
-        }
         } // end history batch loop
     }
 

@@ -84,7 +84,11 @@ impl From<AppError> for ErrorResponse {
             AppError::BusinessCode { code, args } => ErrorResponse {
                 code: code.clone(),
                 message: String::new(),
-                args: if args.is_empty() { None } else { Some(args.clone()) },
+                args: if args.is_empty() {
+                    None
+                } else {
+                    Some(args.clone())
+                },
                 details: None,
             },
             AppError::Internal(_e) => {

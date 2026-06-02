@@ -66,11 +66,7 @@ fn sanitize_db_url(message: &str) -> String {
                     let pwd_start = after_proto + colon + 1;
                     let pwd_end = after_proto + at_in_auth;
                     if pwd_end > pwd_start {
-                        result = format!(
-                            "{}****{}",
-                            &result[..pwd_start],
-                            &result[pwd_end..]
-                        );
+                        result = format!("{}****{}", &result[..pwd_start], &result[pwd_end..]);
                     }
                 }
             }
@@ -158,7 +154,10 @@ pub async fn log_action(
     };
 
     if let Err(e) = active_model.insert(db).await {
-        warn!("Failed to write app log [module={}, action={}]: {:#}", module, action, e);
+        warn!(
+            "Failed to write app log [module={}, action={}]: {:#}",
+            module, action, e
+        );
         return Err(e.into());
     }
     Ok(())
@@ -192,7 +191,10 @@ pub async fn log_error(
     };
 
     if let Err(e) = active_model.insert(db).await {
-        warn!("Failed to write app error log [module={}, action={}]: {:#}", module, action, e);
+        warn!(
+            "Failed to write app error log [module={}, action={}]: {:#}",
+            module, action, e
+        );
         return Err(e.into());
     }
     Ok(())
@@ -224,10 +226,7 @@ pub async fn log_warn(
 }
 
 /// 从前端记录日志（统一入口）
-pub async fn log_from_frontend(
-    db: &DatabaseConnection,
-    log: &AppLog,
-) -> anyhow::Result<()> {
+pub async fn log_from_frontend(db: &DatabaseConnection, log: &AppLog) -> anyhow::Result<()> {
     let now = Local::now().naive_local();
 
     let active_model = entity::app_log::ActiveModel {
@@ -243,7 +242,10 @@ pub async fn log_from_frontend(
     };
 
     if let Err(e) = active_model.insert(db).await {
-        warn!("Failed to write frontend log [module={}, action={}]: {:#}", log.module, log.action, e);
+        warn!(
+            "Failed to write frontend log [module={}, action={}]: {:#}",
+            log.module, log.action, e
+        );
         return Err(e.into());
     }
     Ok(())
@@ -258,21 +260,24 @@ pub async fn search_page(
 
     // 按级别筛选
     if let Some(ref level) = param.level
-        && !level.is_empty() {
-            query = query.filter(entity::app_log::Column::Level.eq(level.as_str()));
-        }
+        && !level.is_empty()
+    {
+        query = query.filter(entity::app_log::Column::Level.eq(level.as_str()));
+    }
 
     // 按模块筛选
     if let Some(ref module) = param.module
-        && !module.is_empty() {
-            query = query.filter(entity::app_log::Column::Module.eq(module.as_str()));
-        }
+        && !module.is_empty()
+    {
+        query = query.filter(entity::app_log::Column::Module.eq(module.as_str()));
+    }
 
     // 按操作筛选
     if let Some(ref action) = param.action
-        && !action.is_empty() {
-            query = query.filter(entity::app_log::Column::Action.eq(action.as_str()));
-        }
+        && !action.is_empty()
+    {
+        query = query.filter(entity::app_log::Column::Action.eq(action.as_str()));
+    }
 
     // 关键词模糊搜索
     if !param.keyword.is_empty() {
@@ -404,14 +409,11 @@ pub fn list_log_files(log_dir: &Path) -> anyhow::Result<Vec<LogFileInfo>> {
             }
 
             let metadata = entry.metadata()?;
-            let modified = metadata
-                .modified()
-                .ok()
-                .and_then(|t| {
-                    let duration = t.duration_since(std::time::UNIX_EPOCH).ok()?;
-                    chrono::DateTime::from_timestamp(duration.as_secs() as i64, 0)
-                        .map(|dt| dt.naive_local())
-                });
+            let modified = metadata.modified().ok().and_then(|t| {
+                let duration = t.duration_since(std::time::UNIX_EPOCH).ok()?;
+                chrono::DateTime::from_timestamp(duration.as_secs() as i64, 0)
+                    .map(|dt| dt.naive_local())
+            });
 
             let is_error = name.contains("error");
 
@@ -455,7 +457,10 @@ pub fn read_log_file(log_dir: &Path, filename: &str) -> anyhow::Result<String> {
         if let Some(pos) = content.find('\n') {
             content = content[pos + 1..].to_string();
         }
-        Ok(format!("... (truncated, showing last 5MB) ...\n{}", content))
+        Ok(format!(
+            "... (truncated, showing last 5MB) ...\n{}",
+            content
+        ))
     } else {
         Ok(std::fs::read_to_string(&path)?)
     }
@@ -493,26 +498,24 @@ pub fn cleanup_old_log_files(log_dir: &Path, retention_days: u32) -> anyhow::Res
         let entry = entry?;
         let path = entry.path();
         if path.is_file() {
-            let name = path
-                .file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or("");
+            let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
             if !name.starts_with("enote") {
                 continue;
             }
 
             if let Ok(metadata) = entry.metadata()
-                && let Ok(modified) = metadata.modified() {
-                    let duration = modified
-                        .duration_since(std::time::UNIX_EPOCH)
-                        .unwrap_or_default();
-                    if let Some(dt) =
-                        chrono::DateTime::from_timestamp(duration.as_secs() as i64, 0)
-                        && dt.naive_local() < cutoff_time
-                            && std::fs::remove_file(&path).is_ok() {
-                                deleted += 1;
-                            }
+                && let Ok(modified) = metadata.modified()
+            {
+                let duration = modified
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or_default();
+                if let Some(dt) = chrono::DateTime::from_timestamp(duration.as_secs() as i64, 0)
+                    && dt.naive_local() < cutoff_time
+                    && std::fs::remove_file(&path).is_ok()
+                {
+                    deleted += 1;
                 }
+            }
         }
     }
 

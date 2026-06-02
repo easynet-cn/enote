@@ -7,8 +7,8 @@ use std::time::Duration;
 
 use anyhow::Result;
 use reqwest::Method;
-use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 use tokio::sync::RwLock;
 use tracing::{debug, warn};
 
@@ -115,9 +115,10 @@ impl EnoteServerClient {
         let status = response.status();
 
         if status.is_success() {
-            response.json::<T>().await.map_err(|e| {
-                AppError::code_with_args("SERVER_PARSE_ERROR", vec![e.to_string()])
-            })
+            response
+                .json::<T>()
+                .await
+                .map_err(|e| AppError::code_with_args("SERVER_PARSE_ERROR", vec![e.to_string()]))
         } else {
             let body_text = response.text().await.unwrap_or_default();
             Err(map_http_error(status, &body_text))
@@ -204,7 +205,11 @@ impl EnoteServerClient {
         let auth = self.auth.read().await;
         let builder = self.http.post(&url);
         let builder = auth.apply_to_request(builder);
-        let response = builder.multipart(form).send().await.map_err(map_reqwest_error)?;
+        let response = builder
+            .multipart(form)
+            .send()
+            .await
+            .map_err(map_reqwest_error)?;
         Ok(response)
     }
 }

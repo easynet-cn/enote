@@ -3,8 +3,7 @@
 //! 通过 rmcp 提供笔记操作工具给 AI 客户端
 
 use rmcp::{
-    ErrorData as McpError,
-    ServerHandler,
+    ErrorData as McpError, RoleServer, ServerHandler,
     handler::server::tool::{ToolCallContext, ToolRouter},
     model::{
         CallToolRequestParams, CallToolResult, Content, Implementation, InitializeRequestParams,
@@ -12,7 +11,7 @@ use rmcp::{
         ServerCapabilities, ServerInfo, Tool,
     },
     service::RequestContext,
-    tool, tool_router, RoleServer,
+    tool, tool_router,
 };
 use sea_orm::DatabaseConnection;
 use serde::Serialize;
@@ -37,12 +36,28 @@ async fn get_enabled_tools(
 
     // 返回已启用的工具集合
     if let Some(enabled_tools) = settings.get("mcpEnabledTools") {
-        Ok(enabled_tools.split(',').filter(|s| !s.is_empty()).map(String::from).collect())
+        Ok(enabled_tools
+            .split(',')
+            .filter(|s| !s.is_empty())
+            .map(String::from)
+            .collect())
     } else {
         // 没有配置 → 默认全部启用
-        Ok(["search_notes", "get_note", "create_note", "update_note", "delete_note",
-            "list_notebooks", "create_notebook", "list_tags", "create_tag", "note_stats"]
-            .iter().map(|s| s.to_string()).collect())
+        Ok([
+            "search_notes",
+            "get_note",
+            "create_note",
+            "update_note",
+            "delete_note",
+            "list_notebooks",
+            "create_notebook",
+            "list_tags",
+            "create_tag",
+            "note_stats",
+        ]
+        .iter()
+        .map(|s| s.to_string())
+        .collect())
     }
 }
 
@@ -186,7 +201,9 @@ impl From<Note> for NoteSummary {
             snippet: strip_html(&note.content, 200),
             notebook_name: note.notebook_name,
             tags: note.tags.iter().map(|t| t.name.clone()).collect(),
-            update_time: note.update_time.map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string()),
+            update_time: note
+                .update_time
+                .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string()),
         }
     }
 }
@@ -232,9 +249,20 @@ impl From<Note> for NoteDetail {
             notebook_name: note.notebook_name,
             content_type: note.content_type,
             is_pinned: note.is_pinned,
-            tags: note.tags.iter().map(|t| TagInfo { id: t.id, name: t.name.clone() }).collect(),
-            create_time: note.create_time.map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string()),
-            update_time: note.update_time.map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string()),
+            tags: note
+                .tags
+                .iter()
+                .map(|t| TagInfo {
+                    id: t.id,
+                    name: t.name.clone(),
+                })
+                .collect(),
+            create_time: note
+                .create_time
+                .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string()),
+            update_time: note
+                .update_time
+                .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string()),
         }
     }
 }
@@ -250,7 +278,9 @@ impl ENoteMcpServer {
 
     // ---- 笔记操作 ----
 
-    #[tool(description = "搜索笔记。支持关键词搜索、按笔记本或标签过滤，返回分页结果（标题+摘要）。注意：设置了 AI 访问禁止的笔记不会出现在结果中")]
+    #[tool(
+        description = "搜索笔记。支持关键词搜索、按笔记本或标签过滤，返回分页结果（标题+摘要）。注意：设置了 AI 访问禁止的笔记不会出现在结果中"
+    )]
     async fn search_notes(
         &self,
         rmcp::handler::server::wrapper::Parameters(params): rmcp::handler::server::wrapper::Parameters<SearchNotesParams>,
@@ -279,10 +309,12 @@ impl ENoteMcpServer {
             .await
             .map_err(|e| McpError::internal_error(format!("权限解析失败: {}", e), None))?;
 
-        let filtered_notes: Vec<NoteSummary> = result.data
+        let filtered_notes: Vec<NoteSummary> = result
+            .data
             .into_iter()
             .filter(|note| {
-                access_map.get(&note.id)
+                access_map
+                    .get(&note.id)
                     .map(|p| *p != McpPermission::Deny)
                     .unwrap_or(true)
             })
@@ -319,13 +351,15 @@ impl ENoteMcpServer {
         match note {
             Some(note) => {
                 let detail = NoteDetail::from(note);
-                let content = Content::json(detail)
-                    .map_err(|e| McpError::internal_error(format!("JSON 序列化失败: {}", e), None))?;
+                let content = Content::json(detail).map_err(|e| {
+                    McpError::internal_error(format!("JSON 序列化失败: {}", e), None)
+                })?;
                 Ok(CallToolResult::success(vec![content]))
             }
-            None => Ok(CallToolResult::success(vec![Content::text(
-                format!("笔记 ID {} 不存在", params.note_id),
-            )])),
+            None => Ok(CallToolResult::success(vec![Content::text(format!(
+                "笔记 ID {} 不存在",
+                params.note_id
+            ))])),
         }
     }
 
@@ -369,7 +403,9 @@ impl ENoteMcpServer {
                 let msg = format!("笔记创建成功，ID: {}，标题: {}", note.id, note.title);
                 Ok(CallToolResult::success(vec![Content::text(msg)]))
             }
-            None => Ok(CallToolResult::success(vec![Content::text("创建后未找到笔记")])),
+            None => Ok(CallToolResult::success(vec![Content::text(
+                "创建后未找到笔记",
+            )])),
         }
     }
 
@@ -391,15 +427,19 @@ impl ENoteMcpServer {
             .map_err(|e| McpError::internal_error(format!("查询失败: {}", e), None))?;
 
         let Some(existing) = existing else {
-            return Ok(CallToolResult::success(vec![Content::text(
-                format!("笔记 ID {} 不存在", params.note_id),
-            )]));
+            return Ok(CallToolResult::success(vec![Content::text(format!(
+                "笔记 ID {} 不存在",
+                params.note_id
+            ))]));
         };
 
         let tags = if let Some(tag_ids) = params.tag_ids {
             tag_ids
                 .into_iter()
-                .map(|id| Tag { id, ..Default::default() })
+                .map(|id| Tag {
+                    id,
+                    ..Default::default()
+                })
                 .collect()
         } else {
             existing.tags
@@ -425,7 +465,9 @@ impl ENoteMcpServer {
                 let msg = format!("笔记更新成功，ID: {}，标题: {}", note.id, note.title);
                 Ok(CallToolResult::success(vec![Content::text(msg)]))
             }
-            None => Ok(CallToolResult::success(vec![Content::text("更新后未找到笔记")])),
+            None => Ok(CallToolResult::success(vec![Content::text(
+                "更新后未找到笔记",
+            )])),
         }
     }
 
@@ -445,9 +487,10 @@ impl ENoteMcpServer {
             .await
             .map_err(|e| McpError::internal_error(format!("删除失败: {}", e), None))?;
 
-        Ok(CallToolResult::success(vec![Content::text(
-            format!("笔记 ID {} 已移入回收站", params.note_id),
-        )]))
+        Ok(CallToolResult::success(vec![Content::text(format!(
+            "笔记 ID {} 已移入回收站",
+            params.note_id
+        ))]))
     }
 
     // ---- 笔记本操作 ----
@@ -461,11 +504,21 @@ impl ENoteMcpServer {
 
         #[derive(Serialize)]
         #[serde(rename_all = "camelCase")]
-        struct NotebookInfo { id: i64, name: String, description: String, mcp_access: i32 }
+        struct NotebookInfo {
+            id: i64,
+            name: String,
+            description: String,
+            mcp_access: i32,
+        }
 
         let list: Vec<NotebookInfo> = notebooks
             .into_iter()
-            .map(|n| NotebookInfo { id: n.id, name: n.name, description: n.description, mcp_access: n.mcp_access })
+            .map(|n| NotebookInfo {
+                id: n.id,
+                name: n.name,
+                description: n.description,
+                mcp_access: n.mcp_access,
+            })
             .collect();
 
         let content = Content::json(list)
@@ -494,7 +547,9 @@ impl ENoteMcpServer {
                 let msg = format!("笔记本创建成功，ID: {}，名称: {}", nb.id, nb.name);
                 Ok(CallToolResult::success(vec![Content::text(msg)]))
             }
-            None => Ok(CallToolResult::success(vec![Content::text("创建后未找到笔记本")])),
+            None => Ok(CallToolResult::success(vec![Content::text(
+                "创建后未找到笔记本",
+            )])),
         }
     }
 
@@ -509,11 +564,19 @@ impl ENoteMcpServer {
 
         #[derive(Serialize)]
         #[serde(rename_all = "camelCase")]
-        struct TagInfo { id: i64, name: String, mcp_access: i32 }
+        struct TagInfo {
+            id: i64,
+            name: String,
+            mcp_access: i32,
+        }
 
         let list: Vec<TagInfo> = tags
             .into_iter()
-            .map(|t| TagInfo { id: t.id, name: t.name, mcp_access: t.mcp_access })
+            .map(|t| TagInfo {
+                id: t.id,
+                name: t.name,
+                mcp_access: t.mcp_access,
+            })
             .collect();
 
         let content = Content::json(list)
@@ -541,7 +604,9 @@ impl ENoteMcpServer {
                 let msg = format!("标签创建成功，ID: {}，名称: {}", t.id, t.name);
                 Ok(CallToolResult::success(vec![Content::text(msg)]))
             }
-            None => Ok(CallToolResult::success(vec![Content::text("创建后未找到标签")])),
+            None => Ok(CallToolResult::success(vec![Content::text(
+                "创建后未找到标签",
+            )])),
         }
     }
 
@@ -623,7 +688,11 @@ impl ServerHandler for ENoteMcpServer {
             .into_iter()
             .filter(|t| enabled.contains(t.name.as_ref()))
             .collect();
-        Ok(ListToolsResult { tools, next_cursor: None, meta: None })
+        Ok(ListToolsResult {
+            tools,
+            next_cursor: None,
+            meta: None,
+        })
     }
 
     fn get_tool(&self, name: &str) -> Option<Tool> {

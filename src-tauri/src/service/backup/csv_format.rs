@@ -4,19 +4,27 @@ use anyhow::Context;
 use sea_orm::*;
 use tracing::info;
 
-use super::{clear_tables, format_dt, parse_dt, restore_data, BackupData, BATCH_SIZE};
+use super::{BATCH_SIZE, BackupData, clear_tables, format_dt, parse_dt, restore_data};
 use crate::entity::{note, note_history, note_tags, notebook, tag};
 
 /// 安全解析 CSV 字段为 i64，解析失败时返回带上下文的错误
 fn parse_i64(val: &str, table: &str, field: &str) -> anyhow::Result<i64> {
-    val.parse::<i64>()
-        .with_context(|| format!("CSV import: invalid integer in {}.{}: '{}'", table, field, val))
+    val.parse::<i64>().with_context(|| {
+        format!(
+            "CSV import: invalid integer in {}.{}: '{}'",
+            table, field, val
+        )
+    })
 }
 
 /// 安全解析 CSV 字段为 i32，解析失败时返回带上下文的错误
 fn parse_i32(val: &str, table: &str, field: &str) -> anyhow::Result<i32> {
-    val.parse::<i32>()
-        .with_context(|| format!("CSV import: invalid integer in {}.{}: '{}'", table, field, val))
+    val.parse::<i32>().with_context(|| {
+        format!(
+            "CSV import: invalid integer in {}.{}: '{}'",
+            table, field, val
+        )
+    })
 }
 
 pub async fn export_csv(db: &DatabaseConnection, path: &str) -> anyhow::Result<()> {

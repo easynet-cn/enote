@@ -82,18 +82,27 @@ impl EnoteServerClient {
     }
 
     pub async fn toggle_note_pin(&self, id: i64) -> Result<Option<Note>, AppError> {
-        self.put(&format!("/api/notes/{}/toggle-pin", id), &serde_json::json!({}))
-            .await
+        self.put(
+            &format!("/api/notes/{}/toggle-pin", id),
+            &serde_json::json!({}),
+        )
+        .await
     }
 
     pub async fn toggle_note_star(&self, id: i64) -> Result<Option<Note>, AppError> {
-        self.put(&format!("/api/notes/{}/toggle-star", id), &serde_json::json!({}))
-            .await
+        self.put(
+            &format!("/api/notes/{}/toggle-star", id),
+            &serde_json::json!({}),
+        )
+        .await
     }
 
     pub async fn restore_note(&self, id: i64) -> Result<(), AppError> {
-        self.put_void(&format!("/api/notes/{}/restore", id), &serde_json::json!({}))
-            .await
+        self.put_void(
+            &format!("/api/notes/{}/restore", id),
+            &serde_json::json!({}),
+        )
+        .await
     }
 
     pub async fn permanent_delete_note(&self, id: i64) -> Result<(), AppError> {
@@ -349,9 +358,10 @@ impl EnoteServerClient {
         let status = response.status();
 
         if status.is_success() {
-            response.json::<NoteAttachment>().await.map_err(|e| {
-                AppError::code_with_args("SERVER_PARSE_ERROR", vec![e.to_string()])
-            })
+            response
+                .json::<NoteAttachment>()
+                .await
+                .map_err(|e| AppError::code_with_args("SERVER_PARSE_ERROR", vec![e.to_string()]))
         } else {
             let body = response.text().await.unwrap_or_default();
             Err(map_http_error(status, &body))

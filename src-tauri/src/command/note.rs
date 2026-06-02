@@ -14,14 +14,10 @@ pub async fn create_note(
     let db = require_db(&app_state).await?;
     let enc_key = app_state.encryption_key.read().await;
     let is_encrypted = service::app_log::should_skip_content(&note.content);
-    let result = service::note::create_with_key(
-        &db,
-        &note,
-        OperateSource::User,
-        enc_key.as_deref(),
-    )
-    .await
-    .map_err(AppError::from)?;
+    let result =
+        service::note::create_with_key(&db, &note, OperateSource::User, enc_key.as_deref())
+            .await
+            .map_err(AppError::from)?;
     if let Some(ref n) = result {
         let msg = if is_encrypted {
             format!("Created note: {} [encrypted content]", n.title)
@@ -29,10 +25,15 @@ pub async fn create_note(
             format!("Created note: {}", n.title)
         };
         let _ = service::app_log::log_action(
-            &db, "note", "create",
-            Some(&n.id.to_string()), Some(&n.title),
-            &msg, None,
-        ).await;
+            &db,
+            "note",
+            "create",
+            Some(&n.id.to_string()),
+            Some(&n.title),
+            &msg,
+            None,
+        )
+        .await;
     }
     Ok(result)
 }
@@ -51,14 +52,10 @@ pub async fn update_note(
     let db = require_db(&app_state).await?;
     let enc_key = app_state.encryption_key.read().await;
     let is_encrypted = service::app_log::should_skip_content(&note.content);
-    let result = service::note::update_with_key(
-        &db,
-        &note,
-        OperateSource::User,
-        enc_key.as_deref(),
-    )
-    .await
-    .map_err(AppError::from)?;
+    let result =
+        service::note::update_with_key(&db, &note, OperateSource::User, enc_key.as_deref())
+            .await
+            .map_err(AppError::from)?;
     if result.is_some() {
         let msg = if is_encrypted {
             format!("Updated note: {} [encrypted content]", note.title)
@@ -66,10 +63,15 @@ pub async fn update_note(
             format!("Updated note: {}", note.title)
         };
         let _ = service::app_log::log_action(
-            &db, "note", "update",
-            Some(&note.id.to_string()), Some(&note.title),
-            &msg, None,
-        ).await;
+            &db,
+            "note",
+            "update",
+            Some(&note.id.to_string()),
+            Some(&note.title),
+            &msg,
+            None,
+        )
+        .await;
     }
     Ok(result)
 }
@@ -89,10 +91,15 @@ pub async fn delete_note_by_id(
         .await
         .map_err(AppError::from)?;
     let _ = service::app_log::log_action(
-        &db, "note", "delete",
-        Some(&id.to_string()), None,
-        &format!("Moved note id={} to trash", id), None,
-    ).await;
+        &db,
+        "note",
+        "delete",
+        Some(&id.to_string()),
+        None,
+        &format!("Moved note id={} to trash", id),
+        None,
+    )
+    .await;
     Ok(())
 }
 
@@ -227,10 +234,15 @@ pub async fn restore_note(
         .await
         .map_err(AppError::from)?;
     let _ = service::app_log::log_action(
-        &db, "note", "restore",
-        Some(&id.to_string()), None,
-        &format!("Restored note id={} from trash", id), None,
-    ).await;
+        &db,
+        "note",
+        "restore",
+        Some(&id.to_string()),
+        None,
+        &format!("Restored note id={} from trash", id),
+        None,
+    )
+    .await;
     Ok(())
 }
 
@@ -250,10 +262,15 @@ pub async fn permanent_delete_note(
         .await
         .map_err(AppError::from)?;
     let _ = service::app_log::log_action(
-        &db, "note", "permanent_delete",
-        Some(&id.to_string()), None,
-        &format!("Permanently deleted note id={}", id), None,
-    ).await;
+        &db,
+        "note",
+        "permanent_delete",
+        Some(&id.to_string()),
+        None,
+        &format!("Permanently deleted note id={}", id),
+        None,
+    )
+    .await;
     Ok(())
 }
 
@@ -270,10 +287,15 @@ pub async fn empty_trash(app_state: tauri::State<'_, Arc<AppState>>) -> Result<(
         .await
         .map_err(AppError::from)?;
     let _ = service::app_log::log_action(
-        &db, "note", "empty_trash",
-        None, None,
-        "Emptied trash", None,
-    ).await;
+        &db,
+        "note",
+        "empty_trash",
+        None,
+        None,
+        "Emptied trash",
+        None,
+    )
+    .await;
     Ok(())
 }
 

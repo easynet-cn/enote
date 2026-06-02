@@ -2,7 +2,11 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capability for desktop platforms",
-  "platforms": ["linux", "macOS", "windows"],
+  "platforms": [
+    "linux",
+    "macOS",
+    "windows"
+  ],
   "windows": [
     "main",
     "note-*"
@@ -27,6 +31,7 @@
     "core:tray:default",
     "core:tray:allow-set-icon",
     "updater:default",
-    "process:default"
+    "process:default",
+    "os:default"
   ]
 }

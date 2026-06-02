@@ -24,10 +24,15 @@ pub async fn export_backup(
         _ => return Err(AppError::code("UNSUPPORTED_EXPORT_FORMAT")),
     }
     let _ = service::app_log::log_action(
-        &db, "backup", "export",
-        None, None,
-        &format!("Exported backup: format={}, path={}", format, path), None,
-    ).await;
+        &db,
+        "backup",
+        "export",
+        None,
+        None,
+        &format!("Exported backup: format={}, path={}", format, path),
+        None,
+    )
+    .await;
     Ok(())
 }
 
@@ -55,10 +60,15 @@ pub async fn import_backup(
         _ => return Err(AppError::code("UNSUPPORTED_IMPORT_FORMAT")),
     }
     let _ = service::app_log::log_action(
-        &db, "backup", "import",
-        None, None,
-        &format!("Imported backup: format={}, path={}", format, path), None,
-    ).await;
+        &db,
+        "backup",
+        "import",
+        None,
+        None,
+        &format!("Imported backup: format={}, path={}", format, path),
+        None,
+    )
+    .await;
     Ok(())
 }
 

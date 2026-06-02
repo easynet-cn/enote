@@ -142,13 +142,12 @@ impl AuthState {
     }
 
     /// 将认证信息应用到请求上
-    pub fn apply_to_request(
-        &self,
-        builder: reqwest::RequestBuilder,
-    ) -> reqwest::RequestBuilder {
+    pub fn apply_to_request(&self, builder: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
         match &self.method {
             ServerAuthMethod::None => builder,
-            ServerAuthMethod::Bearer | ServerAuthMethod::Jwt { .. } | ServerAuthMethod::OAuth2 { .. } => {
+            ServerAuthMethod::Bearer
+            | ServerAuthMethod::Jwt { .. }
+            | ServerAuthMethod::OAuth2 { .. } => {
                 if let Some(token) = &self.access_token {
                     builder.bearer_auth(token)
                 } else {

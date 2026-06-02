@@ -201,7 +201,9 @@ impl MigrationTrait for Migration {
         );
         db.execute_unprepared(&note_tags_delete).await?;
 
-        tracing::info!("FTS5 触发器修复完成：delete 操作统一使用 clean_content，加密前缀支持 V1+V2");
+        tracing::info!(
+            "FTS5 触发器修复完成：delete 操作统一使用 clean_content，加密前缀支持 V1+V2"
+        );
 
         // PostgreSQL: 补充 note_attachment 表 id 列类型修复（m20260329 遗漏）
         if backend == sea_orm::DatabaseBackend::Postgres {

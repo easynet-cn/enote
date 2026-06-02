@@ -56,29 +56,35 @@ pub async fn save_profile_config(
 
     // 保存数据库密码到 Keychain
     if let Some(password) = db_password
-        && !password.is_empty() {
-            service::keychain::set_db_password(&profile_id, &password).map_err(AppError::from)?;
-        }
+        && !password.is_empty()
+    {
+        service::keychain::set_db_password(&profile_id, &password).map_err(AppError::from)?;
+    }
 
     // 保存加密密钥到 Keychain
     if let Some(key) = encryption_key
-        && !key.is_empty() {
-            service::keychain::set_encryption_key(&profile_id, &key).map_err(AppError::from)?;
-        }
+        && !key.is_empty()
+    {
+        service::keychain::set_encryption_key(&profile_id, &key).map_err(AppError::from)?;
+    }
 
     // 保存服务器认证信息到 Keychain
     if let Some(token) = server_token
-        && !token.is_empty() {
-            service::keychain::set_server_token(&profile_id, &token).map_err(AppError::from)?;
-        }
+        && !token.is_empty()
+    {
+        service::keychain::set_server_token(&profile_id, &token).map_err(AppError::from)?;
+    }
     if let Some(password) = server_password
-        && !password.is_empty() {
-            service::keychain::set_server_password(&profile_id, &password).map_err(AppError::from)?;
-        }
+        && !password.is_empty()
+    {
+        service::keychain::set_server_password(&profile_id, &password).map_err(AppError::from)?;
+    }
     if let Some(secret) = server_client_secret
-        && !secret.is_empty() {
-            service::keychain::set_server_client_secret(&profile_id, &secret).map_err(AppError::from)?;
-        }
+        && !secret.is_empty()
+    {
+        service::keychain::set_server_client_secret(&profile_id, &secret)
+            .map_err(AppError::from)?;
+    }
 
     Ok(())
 }
@@ -123,7 +129,10 @@ pub async fn test_db_connection(
 ) -> Result<bool, AppError> {
     match crate::config::database_connection_from_profile(&config, db_password.as_deref()).await {
         Ok(_) => Ok(true),
-        Err(e) => Err(AppError::code_with_args("DB_CONNECTION_FAILED", vec![e.to_string()])),
+        Err(e) => Err(AppError::code_with_args(
+            "DB_CONNECTION_FAILED",
+            vec![e.to_string()],
+        )),
     }
 }
 
@@ -204,8 +213,9 @@ pub async fn reconnect_profile(
             header_value: service::keychain::get_server_header_value(&profile_id).unwrap_or(None),
         };
 
-        let client = EnoteServerClient::new(server_config, secrets)
-            .map_err(|e| AppError::code_with_args("SERVER_CONNECTION_FAILED", vec![e.to_string()]))?;
+        let client = EnoteServerClient::new(server_config, secrets).map_err(|e| {
+            AppError::code_with_args("SERVER_CONNECTION_FAILED", vec![e.to_string()])
+        })?;
 
         // 替换 AppState
         {
@@ -236,10 +246,12 @@ pub async fn reconnect_profile(
         let db_password: Option<String> = None;
 
         // 4. 创建新数据库连接
-        let new_db =
-            crate::config::database_connection_from_profile(&profile_config, db_password.as_deref())
-                .await
-                .map_err(|e| AppError::code_with_args("DB_CONNECTION_FAILED", vec![e.to_string()]))?;
+        let new_db = crate::config::database_connection_from_profile(
+            &profile_config,
+            db_password.as_deref(),
+        )
+        .await
+        .map_err(|e| AppError::code_with_args("DB_CONNECTION_FAILED", vec![e.to_string()]))?;
 
         // 5. 运行数据库迁移
         use sea_orm_migration::MigratorTrait;

@@ -5,9 +5,14 @@ use crate::model::{CloudBackupEntry, CloudStorageConfig};
 /// 从 settings 和 keychain 构建 CloudStorageConfig
 async fn load_cloud_config(app_state: &AppState) -> Result<CloudStorageConfig, AppError> {
     let db = require_db(app_state).await?;
-    let settings = service::settings::get_all(&db).await.map_err(AppError::from)?;
+    let settings = service::settings::get_all(&db)
+        .await
+        .map_err(AppError::from)?;
 
-    let provider = settings.get("cloudBackupProvider").cloned().unwrap_or_default();
+    let provider = settings
+        .get("cloudBackupProvider")
+        .cloned()
+        .unwrap_or_default();
     if provider.is_empty() {
         return Err(AppError::code("CLOUD_BACKUP_NOT_CONFIGURED"));
     }
@@ -24,13 +29,31 @@ async fn load_cloud_config(app_state: &AppState) -> Result<CloudStorageConfig, A
 
     Ok(CloudStorageConfig {
         provider,
-        endpoint: settings.get("cloudBackupEndpoint").cloned().unwrap_or_default(),
-        bucket: settings.get("cloudBackupBucket").cloned().unwrap_or_default(),
-        region: settings.get("cloudBackupRegion").cloned().unwrap_or_default(),
-        access_key_id: settings.get("cloudBackupAccessKeyId").cloned().unwrap_or_default(),
+        endpoint: settings
+            .get("cloudBackupEndpoint")
+            .cloned()
+            .unwrap_or_default(),
+        bucket: settings
+            .get("cloudBackupBucket")
+            .cloned()
+            .unwrap_or_default(),
+        region: settings
+            .get("cloudBackupRegion")
+            .cloned()
+            .unwrap_or_default(),
+        access_key_id: settings
+            .get("cloudBackupAccessKeyId")
+            .cloned()
+            .unwrap_or_default(),
         secret_access_key,
-        prefix: settings.get("cloudBackupPrefix").cloned().unwrap_or_default(),
-        username: settings.get("cloudBackupUsername").cloned().unwrap_or_default(),
+        prefix: settings
+            .get("cloudBackupPrefix")
+            .cloned()
+            .unwrap_or_default(),
+        username: settings
+            .get("cloudBackupUsername")
+            .cloned()
+            .unwrap_or_default(),
         password,
     })
 }
@@ -61,11 +84,16 @@ pub async fn save_cloud_backup_config(
     settings.insert("cloudBackupEndpoint".to_string(), config.endpoint.clone());
     settings.insert("cloudBackupBucket".to_string(), config.bucket.clone());
     settings.insert("cloudBackupRegion".to_string(), config.region.clone());
-    settings.insert("cloudBackupAccessKeyId".to_string(), config.access_key_id.clone());
+    settings.insert(
+        "cloudBackupAccessKeyId".to_string(),
+        config.access_key_id.clone(),
+    );
     settings.insert("cloudBackupPrefix".to_string(), config.prefix.clone());
     settings.insert("cloudBackupUsername".to_string(), config.username.clone());
 
-    service::settings::save(&db, settings).await.map_err(AppError::from)?;
+    service::settings::save(&db, settings)
+        .await
+        .map_err(AppError::from)?;
 
     // 敏感信息存 keychain
     if !config.secret_access_key.is_empty() {
@@ -77,7 +105,10 @@ pub async fn save_cloud_backup_config(
             .map_err(AppError::from)?;
     }
 
-    info!("Cloud backup config saved for provider: {}", config.provider);
+    info!(
+        "Cloud backup config saved for provider: {}",
+        config.provider
+    );
     Ok(())
 }
 

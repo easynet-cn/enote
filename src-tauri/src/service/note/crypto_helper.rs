@@ -2,7 +2,10 @@ use crate::model::Note;
 use crate::service::crypto;
 
 /// 加密内容（如果提供了密钥）
-pub(super) fn encrypt_content(content: &str, encryption_key: Option<&str>) -> anyhow::Result<String> {
+pub(super) fn encrypt_content(
+    content: &str,
+    encryption_key: Option<&str>,
+) -> anyhow::Result<String> {
     match encryption_key {
         Some(key) if !key.is_empty() => crypto::encrypt(content, key),
         _ => Ok(content.to_string()),

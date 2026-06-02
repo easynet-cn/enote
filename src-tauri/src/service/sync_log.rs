@@ -180,13 +180,15 @@ pub async fn search_detail_page(
         .filter(entity::sync_log_detail::Column::SyncLogId.eq(sync_log_id));
 
     if let Some(tn) = table_name
-        && !tn.is_empty() {
-            query = query.filter(entity::sync_log_detail::Column::TableName.eq(tn));
-        }
+        && !tn.is_empty()
+    {
+        query = query.filter(entity::sync_log_detail::Column::TableName.eq(tn));
+    }
     if let Some(st) = status
-        && !st.is_empty() {
-            query = query.filter(entity::sync_log_detail::Column::Status.eq(st));
-        }
+        && !st.is_empty()
+    {
+        query = query.filter(entity::sync_log_detail::Column::Status.eq(st));
+    }
 
     let total = query.clone().count(db).await? as i64;
 

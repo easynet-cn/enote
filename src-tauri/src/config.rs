@@ -102,7 +102,9 @@ impl Configuration {
             path.to_path_buf()
         };
 
-        let config_str = path.to_str().context("Config file path contains invalid characters")?;
+        let config_str = path
+            .to_str()
+            .context("Config file path contains invalid characters")?;
 
         let config = Config::builder()
             .add_source(config::File::with_name(config_str))
@@ -180,10 +182,11 @@ mcp:
 
         // 展开 ~ 为用户主目录
         if url.contains("~/")
-            && let Some(home) = dirs::home_dir() {
-                let home_str = home.to_string_lossy();
-                url = url.replace("~", &home_str);
-            }
+            && let Some(home) = dirs::home_dir()
+        {
+            let home_str = home.to_string_lossy();
+            url = url.replace("~", &home_str);
+        }
 
         let is_sqlite = url.starts_with("sqlite:");
 

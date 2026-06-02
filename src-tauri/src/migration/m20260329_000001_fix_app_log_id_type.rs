@@ -35,7 +35,8 @@ impl MigrationTrait for Migration {
             for table in TABLES {
                 db.execute_unprepared(&format!(
                     "ALTER TABLE {table} ALTER COLUMN id SET DATA TYPE BIGINT"
-                )).await?;
+                ))
+                .await?;
             }
         }
 
@@ -50,7 +51,8 @@ impl MigrationTrait for Migration {
             for table in TABLES {
                 db.execute_unprepared(&format!(
                     "ALTER TABLE {table} ALTER COLUMN id SET DATA TYPE INTEGER"
-                )).await?;
+                ))
+                .await?;
             }
         }
 

@@ -3,7 +3,7 @@ use std::io::{BufWriter, Write};
 use sea_orm::*;
 use tracing::info;
 
-use super::{clear_tables, escape_sql, format_dt, BATCH_SIZE, DT_FMT};
+use super::{BATCH_SIZE, DT_FMT, clear_tables, escape_sql, format_dt};
 use crate::entity::{note, note_history, note_tags, notebook, tag};
 
 pub async fn export_sql(db: &DatabaseConnection, path: &str) -> anyhow::Result<()> {

@@ -118,7 +118,9 @@ pub async fn create_note_link(
 ) -> Result<(), AppError> {
     if is_server_backend(&app_state).await {
         let client = require_server(&app_state).await?;
-        return client.create_note_link(source_note_id, target_note_id).await;
+        return client
+            .create_note_link(source_note_id, target_note_id)
+            .await;
     }
     let db = require_db(&app_state).await?;
     service::note_link::create_link(&db, source_note_id, target_note_id)
@@ -247,7 +249,9 @@ pub async fn save_attachment(
 ) -> Result<NoteAttachment, AppError> {
     if is_server_backend(&app_state).await {
         let client = require_server(&app_state).await?;
-        return client.save_attachment(note_id, &file_name, &file_data, &mime_type).await;
+        return client
+            .save_attachment(note_id, &file_name, &file_data, &mime_type)
+            .await;
     }
     let db = require_db(&app_state).await?;
     service::attachment::save_attachment(
@@ -305,13 +309,12 @@ pub async fn open_attachment(
 
     // 安全校验：防止路径穿越
     if file_path.contains("..") || file_path.contains('/') || file_path.contains('\\') {
-        return Err(AppError::Business("Invalid attachment file path".to_string()));
+        return Err(AppError::Business(
+            "Invalid attachment file path".to_string(),
+        ));
     }
 
-    let full_path = app_state
-        .app_data_dir
-        .join("attachments")
-        .join(&file_path);
+    let full_path = app_state.app_data_dir.join("attachments").join(&file_path);
 
     if !full_path.exists() {
         return Err(AppError::code("ATTACHMENT_NOT_FOUND"));
@@ -360,7 +363,10 @@ pub async fn cleanup_orphan_attachments(
 
 /// 读取帮助手册内容
 #[tauri::command]
-pub async fn read_help_manual(app_handle: tauri::AppHandle, lang: String) -> Result<String, AppError> {
+pub async fn read_help_manual(
+    app_handle: tauri::AppHandle,
+    lang: String,
+) -> Result<String, AppError> {
     let filename = match lang.as_str() {
         "en-US" => "manual-en-US.md",
         _ => "manual-zh-CN.md",
@@ -373,7 +379,6 @@ pub async fn read_help_manual(app_handle: tauri::AppHandle, lang: String) -> Res
         .join("resources/help")
         .join(filename);
 
-    std::fs::read_to_string(&resource_path).map_err(|e| {
-        AppError::code_with_args("HELP_MANUAL_READ_FAILED", vec![e.to_string()])
-    })
+    std::fs::read_to_string(&resource_path)
+        .map_err(|e| AppError::code_with_args("HELP_MANUAL_READ_FAILED", vec![e.to_string()]))
 }

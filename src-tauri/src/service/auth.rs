@@ -35,7 +35,9 @@ pub async fn set_password(db: &DatabaseConnection, password: &str) -> Result<()>
 
     let mut map = HashMap::new();
     map.insert(KEY_LOCK_PASSWORD_HASH.to_string(), hash);
-    settings::save(db, map).await.context("Failed to save password hash")
+    settings::save(db, map)
+        .await
+        .context("Failed to save password hash")
 }
 
 /// 验证锁屏密码
@@ -50,13 +52,12 @@ pub async fn verify_password(db: &DatabaseConnection, password: &str) -> Result<
         return Ok(false);
     }
 
-    let parsed =
-        PasswordHash::new(hash_str).map_err(|e| {
-            anyhow::Error::from(crate::error::AppError::code_with_args(
-                "PASSWORD_HASH_INVALID",
-                vec![e.to_string()],
-            ))
-        })?;
+    let parsed = PasswordHash::new(hash_str).map_err(|e| {
+        anyhow::Error::from(crate::error::AppError::code_with_args(
+            "PASSWORD_HASH_INVALID",
+            vec![e.to_string()],
+        ))
+    })?;
 
     Ok(Argon2::default()
         .verify_password(password.as_bytes(), &parsed)
@@ -68,5 +69,7 @@ pub async fn clear_password(db: &DatabaseConnection) -> Result<()> {
     let mut map = HashMap::new();
     map.insert(KEY_LOCK_PASSWORD_HASH.to_string(), String::new());
     map.insert(KEY_LOCK_MODE.to_string(), "none".to_string());
-    settings::save(db, map).await.context("Failed to clear password")
+    settings::save(db, map)
+        .await
+        .context("Failed to clear password")
 }

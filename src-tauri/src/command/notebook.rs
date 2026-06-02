@@ -33,10 +33,15 @@ pub async fn create_notebook(
         .map_err(AppError::from)?;
     if let Some(ref nb) = result {
         let _ = service::app_log::log_action(
-            &db, "notebook", "create",
-            Some(&nb.id.to_string()), Some(&nb.name),
-            &format!("Created notebook: {}", nb.name), None,
-        ).await;
+            &db,
+            "notebook",
+            "create",
+            Some(&nb.id.to_string()),
+            Some(&nb.name),
+            &format!("Created notebook: {}", nb.name),
+            None,
+        )
+        .await;
     }
     Ok(result)
 }
@@ -56,10 +61,15 @@ pub async fn delete_notebook_by_id(
         .await
         .map_err(AppError::from)?;
     let _ = service::app_log::log_action(
-        &db, "notebook", "delete",
-        Some(&id.to_string()), None,
-        &format!("Deleted notebook id={}", id), None,
-    ).await;
+        &db,
+        "notebook",
+        "delete",
+        Some(&id.to_string()),
+        None,
+        &format!("Deleted notebook id={}", id),
+        None,
+    )
+    .await;
     Ok(())
 }
 
@@ -80,10 +90,15 @@ pub async fn update_notebook(
         .map_err(AppError::from)?;
     if result.is_some() {
         let _ = service::app_log::log_action(
-            &db, "notebook", "update",
-            Some(&notebook.id.to_string()), Some(&notebook.name),
-            &format!("Updated notebook: {}", notebook.name), None,
-        ).await;
+            &db,
+            "notebook",
+            "update",
+            Some(&notebook.id.to_string()),
+            Some(&notebook.name),
+            &format!("Updated notebook: {}", notebook.name),
+            None,
+        )
+        .await;
     }
     Ok(result)
 }

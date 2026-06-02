@@ -48,9 +48,7 @@ export default defineConfig(async () => ({
       '@tiptap/pm/history',
       '@tiptap/pm/keymap',
       '@tiptap/pm/inputrules',
-      '@tiptap/pm/collab',
       '@tiptap/pm/dropcursor',
-      '@tiptap/pm/markdown',
     ],
   },
 

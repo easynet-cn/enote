@@ -119,10 +119,7 @@ fn zh_cn_messages() -> HashMap<String, String> {
         "sync.progress.settingsCount".to_string(),
         "{} 项设置".to_string(),
     );
-    messages.insert(
-        "sync.progress.settings".to_string(),
-        "设置".to_string(),
-    );
+    messages.insert("sync.progress.settings".to_string(), "设置".to_string());
 
     // 通用错误
     messages.insert("error.common.title".to_string(), "错误".to_string());
@@ -254,7 +251,10 @@ fn en_us_messages() -> HashMap<String, String> {
     // Help menu
     messages.insert("help.menuTitle".to_string(), "Help".to_string());
     messages.insert("help.menuItem".to_string(), "Help Manual".to_string());
-    messages.insert("help.checkUpdate".to_string(), "Check for Updates".to_string());
+    messages.insert(
+        "help.checkUpdate".to_string(),
+        "Check for Updates".to_string(),
+    );
 
     // Sync progress
     messages.insert(
@@ -269,10 +269,7 @@ fn en_us_messages() -> HashMap<String, String> {
         "sync.progress.settingsCount".to_string(),
         "{} settings".to_string(),
     );
-    messages.insert(
-        "sync.progress.settings".to_string(),
-        "Settings".to_string(),
-    );
+    messages.insert("sync.progress.settings".to_string(), "Settings".to_string());
 
     // Common errors
     messages.insert("error.common.title".to_string(), "Error".to_string());

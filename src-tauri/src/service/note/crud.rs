@@ -77,10 +77,10 @@ pub async fn create_with_key(
         && let Some(notebook) = entity::notebook::Entity::find_by_id(note.notebook_id)
             .one(&txn)
             .await?
-        {
-            notebook_id = notebook.id;
-            notebook_name = notebook.name;
-        }
+    {
+        notebook_id = notebook.id;
+        notebook_name = notebook.name;
+    }
 
     let extra = serde_json::to_string(&NoteHistoryExtra {
         notebook_id,
@@ -425,10 +425,10 @@ pub async fn update_with_key(
                 && let Some(notebook) = entity::notebook::Entity::find_by_id(note.notebook_id)
                     .one(&txn)
                     .await?
-                {
-                    notebook_id = notebook.id;
-                    notebook_name = notebook.name;
-                }
+            {
+                notebook_id = notebook.id;
+                notebook_name = notebook.name;
+            }
 
             let extra = serde_json::to_string(&NoteHistoryExtra {
                 notebook_id,
@@ -482,20 +482,14 @@ pub async fn batch_move(
 }
 
 /// 批量软删除笔记
-pub async fn batch_delete(
-    db: &DatabaseConnection,
-    note_ids: &[i64],
-) -> anyhow::Result<()> {
+pub async fn batch_delete(db: &DatabaseConnection, note_ids: &[i64]) -> anyhow::Result<()> {
     if note_ids.is_empty() {
         return Ok(());
     }
     let now = Local::now().naive_local();
     let txn = db.begin().await?;
     entity::note::Entity::update_many()
-        .col_expr(
-            entity::note::Column::DeletedAt,
-            Expr::value(Some(now)),
-        )
+        .col_expr(entity::note::Column::DeletedAt, Expr::value(Some(now)))
         .col_expr(entity::note::Column::UpdateTime, Expr::value(now))
         .filter(entity::note::Column::Id.is_in(note_ids.to_vec()))
         .filter(entity::note::Column::DeletedAt.is_null())

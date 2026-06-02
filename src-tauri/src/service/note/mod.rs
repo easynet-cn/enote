@@ -18,8 +18,8 @@
 //! - OperationType::Update (2): 更新
 //! - OperationType::Delete (3): 删除
 
-mod crypto_helper;
 mod crud;
+mod crypto_helper;
 mod search;
 
 pub use crud::*;

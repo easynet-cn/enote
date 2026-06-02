@@ -26,13 +26,20 @@ pub async fn create_tag(
         return client.create_tag(&tag).await;
     }
     let db = require_db(&app_state).await?;
-    let result = service::tag::create(&db, &tag).await.map_err(AppError::from)?;
+    let result = service::tag::create(&db, &tag)
+        .await
+        .map_err(AppError::from)?;
     if let Some(ref t) = result {
         let _ = service::app_log::log_action(
-            &db, "tag", "create",
-            Some(&t.id.to_string()), Some(&t.name),
-            &format!("Created tag: {}", t.name), None,
-        ).await;
+            &db,
+            "tag",
+            "create",
+            Some(&t.id.to_string()),
+            Some(&t.name),
+            &format!("Created tag: {}", t.name),
+            None,
+        )
+        .await;
     }
     Ok(result)
 }
@@ -52,10 +59,15 @@ pub async fn delete_tag_by_id(
         .await
         .map_err(AppError::from)?;
     let _ = service::app_log::log_action(
-        &db, "tag", "delete",
-        Some(&id.to_string()), None,
-        &format!("Deleted tag id={}", id), None,
-    ).await;
+        &db,
+        "tag",
+        "delete",
+        Some(&id.to_string()),
+        None,
+        &format!("Deleted tag id={}", id),
+        None,
+    )
+    .await;
     Ok(())
 }
 
@@ -71,13 +83,20 @@ pub async fn update_tag(
         return client.update_tag(&tag).await;
     }
     let db = require_db(&app_state).await?;
-    let result = service::tag::update(&db, &tag).await.map_err(AppError::from)?;
+    let result = service::tag::update(&db, &tag)
+        .await
+        .map_err(AppError::from)?;
     if result.is_some() {
         let _ = service::app_log::log_action(
-            &db, "tag", "update",
-            Some(&tag.id.to_string()), Some(&tag.name),
-            &format!("Updated tag: {}", tag.name), None,
-        ).await;
+            &db,
+            "tag",
+            "update",
+            Some(&tag.id.to_string()),
+            Some(&tag.name),
+            &format!("Updated tag: {}", tag.name),
+            None,
+        )
+        .await;
     }
     Ok(result)
 }

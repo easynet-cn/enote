@@ -51,9 +51,7 @@ pub async fn delete_batch_app_logs(
 
 /// 清空所有应用日志
 #[tauri::command]
-pub async fn clear_app_logs(
-    app_state: tauri::State<'_, Arc<AppState>>,
-) -> Result<u64, AppError> {
+pub async fn clear_app_logs(app_state: tauri::State<'_, Arc<AppState>>) -> Result<u64, AppError> {
     if is_server_backend(&app_state).await {
         let client = require_server(&app_state).await?;
         return client.clear_app_logs().await;

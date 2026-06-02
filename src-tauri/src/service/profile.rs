@@ -126,7 +126,10 @@ pub struct ProfileConfig {
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub icon: String,
     /// 后端类型："database"（默认）或 "server"
-    #[serde(default = "default_backend_type", skip_serializing_if = "is_database_backend")]
+    #[serde(
+        default = "default_backend_type",
+        skip_serializing_if = "is_database_backend"
+    )]
     pub backend: String,
     /// 数据源配置（backend = "database" 时使用）
     #[serde(default)]
@@ -323,9 +326,10 @@ pub fn list_profiles(app_data_dir: &Path) -> Result<Vec<ProfileSummary>> {
 /// 读取单个 profile 配置
 pub fn read_profile(app_data_dir: &Path, profile_id: &str) -> Result<ProfileConfig> {
     let path = profile_file_path(app_data_dir, profile_id);
-    let content =
-        fs::read_to_string(&path).with_context(|| format!("Failed to read profile file: {:?}", path))?;
-    serde_yaml::from_str(&content).with_context(|| format!("Failed to parse profile file: {:?}", path))
+    let content = fs::read_to_string(&path)
+        .with_context(|| format!("Failed to read profile file: {:?}", path))?;
+    serde_yaml::from_str(&content)
+        .with_context(|| format!("Failed to parse profile file: {:?}", path))
 }
 
 /// 保存 profile 配置

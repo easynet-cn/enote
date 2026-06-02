@@ -26,9 +26,7 @@ struct Args {
 async fn main() -> Result<()> {
     // 日志输出到 stderr（stdout 留给 MCP stdio 协议）
     tracing_subscriber::fmt()
-        .with_env_filter(
-            EnvFilter::from_default_env().add_directive(tracing::Level::INFO.into()),
-        )
+        .with_env_filter(EnvFilter::from_default_env().add_directive(tracing::Level::INFO.into()))
         .with_writer(std::io::stderr)
         .with_ansi(false)
         .init();
@@ -42,7 +40,9 @@ async fn main() -> Result<()> {
 
     // 检查 MCP 是否启用
     if !configuration.is_mcp_enabled() {
-        anyhow::bail!("MCP Server is disabled in configuration. Set mcp.enabled to true in application.yml to enable it.");
+        anyhow::bail!(
+            "MCP Server is disabled in configuration. Set mcp.enabled to true in application.yml to enable it."
+        );
     }
 
     let db = configuration.database_connection().await?;

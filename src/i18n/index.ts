@@ -1,3 +1,4 @@
+import { locale } from '@tauri-apps/plugin-os'
 import { createI18n } from 'vue-i18n'
 import zhCN from './locales/zh-CN'
 import enUS from './locales/en-US'
@@ -11,14 +12,13 @@ const messages = {
 
 const supportedLocales: LocaleType[] = ['zh-CN', 'en-US']
 
-function detectDefaultLocale(): LocaleType {
-  const browserLang = navigator.language
+function matchLocale(lang: string): LocaleType {
   // 精确匹配
-  if (supportedLocales.includes(browserLang as LocaleType)) {
-    return browserLang as LocaleType
+  if (supportedLocales.includes(lang as LocaleType)) {
+    return lang as LocaleType
   }
   // 前缀匹配（如 zh → zh-CN, en → en-US）
-  const prefix = browserLang.split('-')[0]
+  const prefix = lang.split('-')[0]
   const matched = supportedLocales.find((l) => l.startsWith(prefix))
   if (matched) {
     return matched
@@ -27,13 +27,27 @@ function detectDefaultLocale(): LocaleType {
   return 'en-US'
 }
 
-const savedLocale = (localStorage.getItem('app-locale') as LocaleType) || detectDefaultLocale()
+// 同步检测：先用 localStorage 或浏览器语言初始化，确保页面立即可用
+function detectDefaultLocaleSync(): LocaleType {
+  return matchLocale(navigator.language)
+}
+
+const savedLocale = (localStorage.getItem('app-locale') as LocaleType) || detectDefaultLocaleSync()
 
 const i18n = createI18n({
   legacy: false,
   locale: savedLocale,
   fallbackLocale: 'en-US',
   messages,
+})
+
+// 异步获取系统语言，如果与当前不同则更新（仅当用户未手动设置过语言时）
+locale().then((osLang) => {
+  if (!osLang) return
+  const manualSet = localStorage.getItem('app-locale')
+  if (!manualSet) {
+    i18n.global.locale.value = matchLocale(osLang)
+  }
 })
 
 export const availableLocales: { value: LocaleType; label: string }[] = [

@@ -4,9 +4,9 @@
 
 use std::path::Path;
 
-use anyhow::{bail, Result};
-use opendal::services;
+use anyhow::{Result, bail};
 use opendal::Operator;
+use opendal::services;
 use tracing::info;
 
 use crate::model::{CloudBackupEntry, CloudStorageConfig};
@@ -81,7 +81,10 @@ pub async fn test_connection(config: &CloudStorageConfig) -> Result<()> {
     };
     // 尝试列出目录验证连接
     let _ = op.list(&list_path).await?;
-    info!("Cloud storage connection test successful: {}", config.provider);
+    info!(
+        "Cloud storage connection test successful: {}",
+        config.provider
+    );
     Ok(())
 }
 
@@ -150,15 +153,16 @@ pub async fn download_cloud_backup(
     let local_path = backup_dir.join(filename);
     tokio::fs::write(&local_path, data.to_vec()).await?;
 
-    info!("Downloaded cloud backup: {} -> {}", path, local_path.display());
+    info!(
+        "Downloaded cloud backup: {} -> {}",
+        path,
+        local_path.display()
+    );
     Ok(local_path.to_string_lossy().to_string())
 }
 
 /// 清理云端旧备份，保留最近 max_count 个
-pub async fn cleanup_cloud_backups(
-    config: &CloudStorageConfig,
-    max_count: usize,
-) -> Result<u32> {
+pub async fn cleanup_cloud_backups(config: &CloudStorageConfig, max_count: usize) -> Result<u32> {
     let backups = list_cloud_backups(config).await?;
     if backups.len() <= max_count {
         return Ok(0);

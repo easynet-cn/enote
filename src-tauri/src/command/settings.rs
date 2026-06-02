@@ -72,10 +72,15 @@ pub async fn save_settings(
     }
 
     let _ = service::app_log::log_action(
-        &db, "settings", "update",
-        None, None,
-        &format!("Updated settings: {}", keys.join(", ")), None,
-    ).await;
+        &db,
+        "settings",
+        "update",
+        None,
+        None,
+        &format!("Updated settings: {}", keys.join(", ")),
+        None,
+    )
+    .await;
 
     Ok(())
 }

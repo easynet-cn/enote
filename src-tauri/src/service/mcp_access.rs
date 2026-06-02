@@ -225,7 +225,9 @@ pub async fn check_notebook_write(db: &DatabaseConnection, notebook_id: i64) -> 
                 anyhow::bail!("AI access denied for target notebook (mcp_access=Deny)");
             }
             McpAccess::ReadOnly => {
-                anyhow::bail!("Target notebook is read-only, AI cannot create notes here (mcp_access=ReadOnly)");
+                anyhow::bail!(
+                    "Target notebook is read-only, AI cannot create notes here (mcp_access=ReadOnly)"
+                );
             }
             _ => {}
         }
