@@ -24,7 +24,7 @@
 import { useI18n } from 'vue-i18n'
 import type { Editor } from '@tiptap/vue-3'
 import { ToolbarButton } from '.'
-import { IndentDecrease, IndentIncrease } from 'lucide-vue-next'
+import { IndentDecrease, IndentIncrease } from '@lucide/vue'
 
 const props = defineProps<{
   editor: Editor | null

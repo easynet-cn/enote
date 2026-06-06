@@ -56,7 +56,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Search } from 'lucide-vue-next'
+import { Search } from '@lucide/vue'
 
 const { t } = useI18n()
 

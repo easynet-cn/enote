@@ -50,7 +50,7 @@
 import { useI18n } from 'vue-i18n'
 import type { Editor } from '@tiptap/vue-3'
 import { ToolbarButton } from '.'
-import { Highlighter, Minus, RemoveFormatting, Search, ListTree } from 'lucide-vue-next'
+import { Highlighter, Minus, RemoveFormatting, Search, ListTree } from '@lucide/vue'
 
 defineProps<{
   editor: Editor | null

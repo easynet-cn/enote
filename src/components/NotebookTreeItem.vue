@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronRight, ChevronDown, Shield } from 'lucide-vue-next'
+import { ChevronRight, ChevronDown, Shield } from '@lucide/vue'
 import { iconComponents } from './ui/icons'
 import { useI18n } from 'vue-i18n'
 import type { NotebookTreeNode } from '../types'

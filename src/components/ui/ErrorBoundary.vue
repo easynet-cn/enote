@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onErrorCaptured } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { RotateCcw } from 'lucide-vue-next'
+import { RotateCcw } from '@lucide/vue'
 
 const { t } = useI18n()
 const error = ref<Error | null>(null)

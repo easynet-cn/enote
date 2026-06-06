@@ -48,7 +48,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { FileText, FileJson, FileCode, Printer, Globe, Check, Download } from 'lucide-vue-next'
+import { FileText, FileJson, FileCode, Printer, Globe, Check, Download } from '@lucide/vue'
 import { Dialog, Button } from './ui'
 import { showNotification } from './ui/notification'
 import { exportNote, getExportFormats, type ExportFormat } from '../utils/export'

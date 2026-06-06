@@ -362,7 +362,7 @@ import {
   Square,
   Move,
   Trash2,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { Pagination, Tooltip, Dropdown, DropdownItem } from './ui'
 import NoteListSkeleton from './NoteListSkeleton.vue'
 import { stripHtml, truncateText, markdownToHtml } from '../utils'

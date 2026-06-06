@@ -49,12 +49,16 @@
         <div class="flex gap-3">
           <Tooltip :content="t('editor.searchDialog.findPrevious')">
             <Button type="secondary" :disabled="searchResultCount === 0" @click="findPrevious">
-              <template #icon><ChevronUp class="w-4 h-4" /></template>
+              <template #icon>
+                <ChevronUp class="w-4 h-4" />
+              </template>
             </Button>
           </Tooltip>
           <Tooltip :content="t('editor.searchDialog.findNext')">
             <Button type="secondary" :disabled="searchResultCount === 0" @click="findNext">
-              <template #icon><ChevronDown class="w-4 h-4" /></template>
+              <template #icon>
+                <ChevronDown class="w-4 h-4" />
+              </template>
             </Button>
           </Tooltip>
         </div>
@@ -76,7 +80,7 @@ import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Editor } from '@tiptap/vue-3'
 import { Dialog, Tooltip, Button } from '../ui'
-import { ChevronUp, ChevronDown } from 'lucide-vue-next'
+import { ChevronUp, ChevronDown } from '@lucide/vue'
 
 const { t } = useI18n()
 

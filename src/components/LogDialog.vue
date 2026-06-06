@@ -220,7 +220,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Trash2 } from 'lucide-vue-next'
+import { Trash2 } from '@lucide/vue'
 import { Dialog, Pagination, AppSelect } from './ui'
 import type { AppSelectOption } from './ui'
 import { appLogApi } from '../api/appLog'

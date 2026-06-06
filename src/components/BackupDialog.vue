@@ -129,7 +129,7 @@ import {
   Download,
   Upload,
   AlertTriangle,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { Dialog, Button, ConfirmDialog } from './ui'
 import { showNotification } from './ui/notification'
 import { backupApi } from '../api/note'

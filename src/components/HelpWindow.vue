@@ -81,7 +81,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Search, X, AlertCircle, ArrowUp, SearchX } from 'lucide-vue-next'
+import { Search, X, AlertCircle, ArrowUp, SearchX } from '@lucide/vue'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { helpApi } from '../api/help'
@@ -361,6 +361,7 @@ onMounted(async () => {
 .help-toc-level-2 a {
   padding-left: 1.75rem;
 }
+
 .help-toc-level-3 a {
   padding-left: 2.5rem;
   font-size: 0.75rem;

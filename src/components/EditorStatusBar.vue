@@ -46,7 +46,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Paperclip, Link2 } from 'lucide-vue-next'
+import { Paperclip, Link2 } from '@lucide/vue'
 import type { Editor } from '@tiptap/vue-3'
 
 interface Props {

@@ -114,7 +114,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { X, ChevronDown } from 'lucide-vue-next'
+import { X, ChevronDown } from '@lucide/vue'
 import { getPresetColors, getColorFamilies } from '../../config/colors'
 
 const { t } = useI18n()

@@ -24,7 +24,7 @@
 import { useI18n } from 'vue-i18n'
 import type { Editor } from '@tiptap/vue-3'
 import { ToolbarButton } from '.'
-import { Undo2, Redo2 } from 'lucide-vue-next'
+import { Undo2, Redo2 } from '@lucide/vue'
 
 defineProps<{
   editor: Editor | null

@@ -156,7 +156,7 @@ import {
   Loader2,
   CheckCircle,
   AlertCircle,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import {
   IMPORT_SOURCES,
   selectImportFile,

@@ -27,7 +27,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { AlertTriangle, HelpCircle } from 'lucide-vue-next'
+import { AlertTriangle, HelpCircle } from '@lucide/vue'
 import Dialog from './BaseDialog.vue'
 import Button from './BaseButton.vue'
 

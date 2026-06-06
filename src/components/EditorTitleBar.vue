@@ -28,7 +28,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ArrowLeft } from 'lucide-vue-next'
+import { ArrowLeft } from '@lucide/vue'
 import type { ShowNote } from '../types'
 import type { LayoutMode } from '../composables/usePlatform'
 

@@ -80,7 +80,7 @@
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Link2, ChevronDown, Plus, X } from 'lucide-vue-next'
+import { Link2, ChevronDown, Plus, X } from '@lucide/vue'
 import { noteLinkApi } from '../api/note'
 import type { NoteLink } from '../types'
 

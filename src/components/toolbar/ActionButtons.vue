@@ -117,7 +117,7 @@ import {
   Trash2,
   LayoutTemplate,
   Printer,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 
 const { t } = useI18n()
 

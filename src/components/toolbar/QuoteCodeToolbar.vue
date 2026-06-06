@@ -37,7 +37,7 @@
 import { useI18n } from 'vue-i18n'
 import type { Editor } from '@tiptap/vue-3'
 import { ToolbarButton } from '.'
-import { Quote, Code2, Code } from 'lucide-vue-next'
+import { Quote, Code2, Code } from '@lucide/vue'
 import CodeBlockSelect from './CodeBlockSelect.vue'
 
 defineProps<{

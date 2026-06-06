@@ -202,7 +202,7 @@ import {
   Superscript,
   ChevronLeft,
   ChevronRight,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { ToolbarButton } from './toolbar'
 import {
   AlignmentToolbar,

@@ -93,7 +93,7 @@ import {
   FileArchive,
   FileSpreadsheet,
   File,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { open } from '@tauri-apps/plugin-dialog'
 import { readFile } from '@tauri-apps/plugin-fs'
 import { attachmentApi } from '../api/note'

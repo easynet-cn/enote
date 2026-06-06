@@ -58,7 +58,7 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Check } from 'lucide-vue-next'
+import { Check } from '@lucide/vue'
 import { Button, Select, Dialog, AppSelect } from './ui'
 import type { SelectOption, AppSelectOption } from './ui'
 import type { ShowNotebook, ShowTag } from '../types'

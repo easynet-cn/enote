@@ -21,7 +21,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Languages, Check } from 'lucide-vue-next'
+import { Languages, Check } from '@lucide/vue'
 import { Button, Dropdown, DropdownItem } from './ui'
 import { availableLocales, setLocale, type LocaleType } from '../i18n'
 import { useAppStore } from '../stores/app'

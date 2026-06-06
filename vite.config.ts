@@ -88,7 +88,7 @@ export default defineConfig(async () => ({
               return 'vendor-katex'
             }
             // 图标库
-            if (id.includes('lucide-vue-next')) {
+            if (id.includes('@lucide/vue')) {
               return 'vendor-icons'
             }
             // Vue 生态核心（稳定，缓存友好）
@@ -122,10 +122,10 @@ export default defineConfig(async () => ({
     host: host || false,
     hmr: host
       ? {
-          protocol: 'ws',
-          host,
-          port: 1421,
-        }
+        protocol: 'ws',
+        host,
+        port: 1421,
+      }
       : undefined,
     watch: {
       ignored: ['**/src-tauri/**'],

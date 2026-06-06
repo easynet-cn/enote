@@ -216,7 +216,7 @@ import {
   ScrollText,
   RefreshCw,
   Printer as PrinterIcon,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 
 // 对话框组件懒加载 —— 仅在用户打开时才加载，减少首屏 JS 体积
 const ImportDialog = defineAsyncComponent(() => import('./components/ImportDialog.vue'))

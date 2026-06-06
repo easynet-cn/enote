@@ -52,7 +52,7 @@
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { Paperclip, Link2, X as XIcon } from 'lucide-vue-next'
+import { Paperclip, Link2, X as XIcon } from '@lucide/vue'
 import AttachmentPanel from './AttachmentPanel.vue'
 import NoteLinkPanel from './NoteLinkPanel.vue'
 import type { ShowNote } from '../types'

@@ -392,7 +392,7 @@ import {
   Ambulance,
   Construction,
   Wrench as Tool,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 
 // 图标组件映射
 export const iconComponents: Record<string, Component> = {

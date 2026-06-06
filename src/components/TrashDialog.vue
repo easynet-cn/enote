@@ -78,7 +78,7 @@
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Dialog, Button, ConfirmDialog, Pagination } from './ui'
-import { Trash2 } from 'lucide-vue-next'
+import { Trash2 } from '@lucide/vue'
 import { trashApi } from '../api/note'
 import { showNotification } from './ui/notification'
 import type { Note } from '../types'

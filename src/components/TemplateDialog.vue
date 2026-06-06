@@ -245,7 +245,7 @@ import {
   Minus,
   Undo,
   Redo,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { Dialog, Button, AppSelect } from './ui'
 import type { AppSelectOption } from './ui'
 import { templateApi } from '../api/note'

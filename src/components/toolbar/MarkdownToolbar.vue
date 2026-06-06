@@ -40,7 +40,7 @@
 import { useI18n } from 'vue-i18n'
 import { MarkdownLayout } from '../../types'
 import { ToolbarButton } from '.'
-import { FileCode, Eye, PanelTop, PanelLeft } from 'lucide-vue-next'
+import { FileCode, Eye, PanelTop, PanelLeft } from '@lucide/vue'
 
 const props = defineProps<{
   sourceMode: boolean

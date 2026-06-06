@@ -643,7 +643,7 @@ import {
   Globe,
   Languages,
   RotateCcw,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 
 const emit = defineEmits<{
   (e: 'complete'): void

@@ -42,7 +42,7 @@
 import { useI18n } from 'vue-i18n'
 import type { Editor } from '@tiptap/vue-3'
 import { ToolbarButton } from '.'
-import { Table as TableIcon, Columns3, Rows3, TableProperties as TableOff } from 'lucide-vue-next'
+import { Table as TableIcon, Columns3, Rows3, TableProperties as TableOff } from '@lucide/vue'
 
 defineProps<{
   editor: Editor | null

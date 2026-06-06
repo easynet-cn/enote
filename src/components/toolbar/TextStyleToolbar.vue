@@ -52,7 +52,7 @@
 <script setup lang="ts">
 import type { Editor } from '@tiptap/vue-3'
 import { useI18n } from 'vue-i18n'
-import { Bold, Italic, Underline as UnderlineIcon, Strikethrough, Code } from 'lucide-vue-next'
+import { Bold, Italic, Underline as UnderlineIcon, Strikethrough, Code } from '@lucide/vue'
 import ToolbarButton from './ToolbarButton.vue'
 
 const { t } = useI18n()

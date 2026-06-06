@@ -33,7 +33,7 @@
 import { useI18n } from 'vue-i18n'
 import type { Editor } from '@tiptap/vue-3'
 import { ToolbarButton } from '.'
-import { Link as LinkIcon, Unlink, Image as ImageIcon } from 'lucide-vue-next'
+import { Link as LinkIcon, Unlink, Image as ImageIcon } from '@lucide/vue'
 
 defineProps<{
   editor: Editor | null

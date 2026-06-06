@@ -97,7 +97,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { X, ChevronDown, Search } from 'lucide-vue-next'
+import { X, ChevronDown, Search } from '@lucide/vue'
 import Tooltip from './BaseTooltip.vue'
 import { iconComponents, getIconCategories, getIconsByCategory } from './icons'
 

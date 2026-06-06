@@ -443,7 +443,7 @@ import {
   LayoutTemplate,
   Shield,
   X,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import {
   Button,
   IconPicker,

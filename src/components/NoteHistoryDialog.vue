@@ -180,7 +180,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Clock } from 'lucide-vue-next'
+import { Clock } from '@lucide/vue'
 import { ContentType, NoteHistory } from '../types'
 import { diffHtml, diffText } from '../utils/diff'
 import TipTapEditor from './TipTapEditor.vue'

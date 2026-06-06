@@ -140,7 +140,7 @@ import {
   Globe,
   Languages,
   X,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 
 const props = defineProps<{
   /** 是否显示关闭按钮（从主界面进入时显示，首次启动时不显示） */

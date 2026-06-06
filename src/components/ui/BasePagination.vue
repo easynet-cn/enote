@@ -83,7 +83,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight } from '@lucide/vue'
 import Tooltip from './BaseTooltip.vue'
 import AppSelect from './AppSelect.vue'
 import type { AppSelectOption } from './AppSelect.vue'

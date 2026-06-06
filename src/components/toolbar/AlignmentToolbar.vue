@@ -43,7 +43,7 @@
 <script setup lang="ts">
 import type { Editor } from '@tiptap/vue-3'
 import { useI18n } from 'vue-i18n'
-import { AlignLeft, AlignCenter, AlignRight, AlignJustify } from 'lucide-vue-next'
+import { AlignLeft, AlignCenter, AlignRight, AlignJustify } from '@lucide/vue'
 import ToolbarButton from './ToolbarButton.vue'
 
 const { t } = useI18n()

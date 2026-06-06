@@ -36,7 +36,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { X } from 'lucide-vue-next'
+import { X } from '@lucide/vue'
 import type { Editor } from '@tiptap/vue-3'
 
 const { t } = useI18n()
