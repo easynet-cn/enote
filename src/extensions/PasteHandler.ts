@@ -191,11 +191,51 @@ export const PasteHandler = Extension.create({
             const clipboardData = event.clipboardData
             if (!clipboardData) return false
 
-            // 处理剪贴板图片（截图粘贴）
+            // 检测剪贴板图片
             const imageItems = Array.from(clipboardData.items).filter((item) =>
               item.type.startsWith('image/'),
             )
 
+            // 处理 HTML 粘贴内容
+            const html = clipboardData.getData('text/html')
+            const hasHtml = !!html
+            const isExternal = hasHtml && isExternalHtml(html)
+
+            // 同时有图片和外部 HTML：先处理图片，再插入清理后的 HTML
+            if (imageItems.length > 0 && isExternal) {
+              event.preventDefault()
+
+              // 先插入清理后的 HTML（文本部分）
+              const cleaned = cleanPastedHtml(html)
+              editor.commands.insertContent(cleaned, {
+                parseOptions: { preserveWhitespace: false },
+              })
+
+              // 再异步处理图片
+              for (const item of imageItems) {
+                const file = item.getAsFile()
+                if (!file) continue
+
+                const reader = new FileReader()
+                reader.onload = async (e) => {
+                  const base64 = e.target?.result as string
+                  if (base64) {
+                    try {
+                      const filePath = await imageApi.saveImage(base64)
+                      const assetUrl = convertFileSrc(filePath)
+                      editor.chain().focus().setImage({ src: assetUrl }).run()
+                    } catch {
+                      // 保存失败时回退到 Base64 内联
+                      editor.chain().focus().setImage({ src: base64 }).run()
+                    }
+                  }
+                }
+                reader.readAsDataURL(file)
+              }
+              return true
+            }
+
+            // 只有图片，没有外部 HTML（纯截图粘贴）
             if (imageItems.length > 0) {
               event.preventDefault()
 
@@ -222,18 +262,14 @@ export const PasteHandler = Extension.create({
               return true
             }
 
-            // 处理 HTML 粘贴内容
-            const html = clipboardData.getData('text/html')
-            if (html) {
-              // 检测是否来自外部来源（非本编辑器）
-              if (isExternalHtml(html)) {
-                event.preventDefault()
-                const cleaned = cleanPastedHtml(html)
-                editor.commands.insertContent(cleaned, {
-                  parseOptions: { preserveWhitespace: false },
-                })
-                return true
-              }
+            // 只有外部 HTML，没有图片
+            if (isExternal) {
+              event.preventDefault()
+              const cleaned = cleanPastedHtml(html)
+              editor.commands.insertContent(cleaned, {
+                parseOptions: { preserveWhitespace: false },
+              })
+              return true
             }
 
             // 其他情况走默认处理
