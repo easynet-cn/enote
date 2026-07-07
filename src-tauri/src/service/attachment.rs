@@ -55,9 +55,14 @@ pub async fn save_attachment(
         anyhow::bail!("File size exceeds maximum limit of 50 MB");
     }
 
-    // 安全校验：防止通过文件名进行路径穿越
+    // 安全校验：从 file_name 中提取纯文件名，防止路径穿越
+    // 注意：前端在 Windows 上可能传入完整路径，因此先用 Path::file_name() 清理
+    let file_name = Path::new(file_name)
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or(file_name);
     if file_name.contains("..") || file_name.contains('/') || file_name.contains('\\') {
-        anyhow::bail!("Invalid file name");
+        anyhow::bail!("Invalid file name: path traversal detected");
     }
 
     let dir = ensure_attachments_dir(app_data_dir)?;

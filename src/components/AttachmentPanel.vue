@@ -194,9 +194,16 @@ const guessMimeType = (fileName: string): string => {
   return mimeMap[ext] || 'application/octet-stream'
 }
 
+// Extract clean file name from a full path (cross-platform safe)
+const extractFileName = (path: string): string => {
+  // Match last segment after / or \
+  const match = path.match(/[^\\/]+$/)
+  return match ? match[0] : 'file'
+}
+
 // Upload a file from path
 const uploadFile = async (filePath: string) => {
-  const fileName = filePath.split('/').pop() || filePath.split('\\').pop() || 'file'
+  const fileName = extractFileName(filePath)
   const mimeType = guessMimeType(fileName)
 
   try {
