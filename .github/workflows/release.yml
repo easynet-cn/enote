@@ -14,9 +14,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: macos-latest
+          - platform: macos-15
             args: '--target aarch64-apple-darwin'
-          - platform: macos-latest
+          - platform: macos-15
             args: '--target x86_64-apple-darwin'
           - platform: ubuntu-22.04
             args: ''
@@ -24,18 +24,16 @@ jobs:
             args: ''
 
     runs-on: ${{ matrix.platform }}
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: 'pnpm'
@@ -43,7 +41,7 @@ jobs:
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          targets: ${{ matrix.platform == 'macos-15' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: Cache Rust dependencies
         uses: swatinem/rust-cache@v2
