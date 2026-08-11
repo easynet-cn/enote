@@ -45,7 +45,7 @@ impl MigrationTrait for Migration {
                         "SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = '{table}' AND index_name = '{idx_name}' LIMIT 1"
                     );
                     let has: Vec<sea_orm::QueryResult> = db
-                        .query_all(sea_orm::Statement::from_string(backend, check))
+                        .query_all_raw(sea_orm::Statement::from_string(backend, check))
                         .await?;
                     if has.is_empty() {
                         db.execute_unprepared(&format!(
@@ -54,6 +54,7 @@ impl MigrationTrait for Migration {
                         .await?;
                     }
                 }
+                _ => {}
             }
         }
 

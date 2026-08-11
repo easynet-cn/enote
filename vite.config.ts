@@ -21,16 +21,17 @@ export default defineConfig(async () => ({
   base: './',
 
   // Path aliases (must match tsconfig.json paths)
+  // Vite 8: 使用 import.meta.dirname 替代 __dirname（兼容 native configLoader）
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src'),
-      '@components': resolve(__dirname, 'src/components'),
-      '@composables': resolve(__dirname, 'src/composables'),
-      '@utils': resolve(__dirname, 'src/utils'),
-      '@stores': resolve(__dirname, 'src/stores'),
-      '@types': resolve(__dirname, 'src/types'),
-      '@config': resolve(__dirname, 'src/config'),
-      '@api': resolve(__dirname, 'src/api'),
+      '@': resolve(import.meta.dirname, 'src'),
+      '@components': resolve(import.meta.dirname, 'src/components'),
+      '@composables': resolve(import.meta.dirname, 'src/composables'),
+      '@utils': resolve(import.meta.dirname, 'src/utils'),
+      '@stores': resolve(import.meta.dirname, 'src/stores'),
+      '@types': resolve(import.meta.dirname, 'src/types'),
+      '@config': resolve(import.meta.dirname, 'src/config'),
+      '@api': resolve(import.meta.dirname, 'src/api'),
     },
   },
 
@@ -58,17 +59,18 @@ export default defineConfig(async () => ({
     reportCompressedSize: false,
     // Target modern browsers for smaller bundle
     target: 'esnext',
-    // Minification settings
-    minify: 'esbuild',
+    // Vite 8: 使用 Oxc 压缩器（替代 esbuild）
+    minify: true,
     // Increase warning limit since Tauri apps load locally
     chunkSizeWarningLimit: 1000,
-    // 生成稳定的 chunk 文件名，避免缓存导致白屏
-    rollupOptions: {
+    // Vite 8: rollupOptions 已弃用，迁移至 rolldownOptions
+    rolldownOptions: {
       output: {
         // 使用内容哈希确保文件名与内容一致
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash][extname]',
+        // Vite 8: manualChunks 函数形式已弃用但仍可用，保持兼容
         manualChunks(id) {
           if (id.includes('node_modules')) {
             // TipTap 编辑器核心（最大 chunk）

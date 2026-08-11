@@ -126,7 +126,7 @@ pub async fn import_sql(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
     clear_tables(&txn).await?;
 
     for stmt in &statements {
-        txn.execute(Statement::from_string(backend, stmt.to_owned()))
+        txn.execute_raw(Statement::from_string(backend, stmt.to_owned()))
             .await
             .map_err(|e| {
                 anyhow::Error::from(crate::error::AppError::code_with_args(

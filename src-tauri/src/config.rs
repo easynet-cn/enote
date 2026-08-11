@@ -298,7 +298,7 @@ impl Configuration {
             // 启用外键约束
             "PRAGMA foreign_keys=ON",
         ] {
-            db.execute(Statement::from_string(backend, pragma.to_string()))
+            db.execute_raw(Statement::from_string(backend, pragma.to_string()))
                 .await
                 .context(format!(
                     "{}: {}",

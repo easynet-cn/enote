@@ -6,9 +6,9 @@ use rmcp::{
     ErrorData as McpError, RoleServer, ServerHandler,
     handler::server::tool::{ToolCallContext, ToolRouter},
     model::{
-        CallToolRequestParams, CallToolResult, Content, Implementation, InitializeRequestParams,
-        InitializeResult, ListToolsResult, PaginatedRequestParams, ProtocolVersion,
-        ServerCapabilities, ServerInfo, Tool,
+        CallToolRequestParams, CallToolResult, CallToolResponse, ContentBlock, Implementation,
+        InitializeRequestParams, InitializeResult, ListToolsResult, PaginatedRequestParams,
+        ProtocolVersion, ServerCapabilities, ServerInfo, Tool,
     },
     service::RequestContext,
     tool, tool_router,
@@ -327,7 +327,7 @@ impl ENoteMcpServer {
             notes: filtered_notes,
         };
 
-        let content = Content::json(search_result)
+        let content = ContentBlock::json(search_result)
             .map_err(|e| McpError::internal_error(format!("JSON 序列化失败: {}", e), None))?;
         Ok(CallToolResult::success(vec![content]))
     }
@@ -351,12 +351,12 @@ impl ENoteMcpServer {
         match note {
             Some(note) => {
                 let detail = NoteDetail::from(note);
-                let content = Content::json(detail).map_err(|e| {
+                let content = ContentBlock::json(detail).map_err(|e| {
                     McpError::internal_error(format!("JSON 序列化失败: {}", e), None)
                 })?;
                 Ok(CallToolResult::success(vec![content]))
             }
-            None => Ok(CallToolResult::success(vec![Content::text(format!(
+            None => Ok(CallToolResult::success(vec![ContentBlock::text(format!(
                 "笔记 ID {} 不存在",
                 params.note_id
             ))])),
@@ -401,9 +401,9 @@ impl ENoteMcpServer {
         match result {
             Some(note) => {
                 let msg = format!("笔记创建成功，ID: {}，标题: {}", note.id, note.title);
-                Ok(CallToolResult::success(vec![Content::text(msg)]))
+                Ok(CallToolResult::success(vec![ContentBlock::text(msg)]))
             }
-            None => Ok(CallToolResult::success(vec![Content::text(
+            None => Ok(CallToolResult::success(vec![ContentBlock::text(
                 "创建后未找到笔记",
             )])),
         }
@@ -427,7 +427,7 @@ impl ENoteMcpServer {
             .map_err(|e| McpError::internal_error(format!("查询失败: {}", e), None))?;
 
         let Some(existing) = existing else {
-            return Ok(CallToolResult::success(vec![Content::text(format!(
+            return Ok(CallToolResult::success(vec![ContentBlock::text(format!(
                 "笔记 ID {} 不存在",
                 params.note_id
             ))]));
@@ -463,9 +463,9 @@ impl ENoteMcpServer {
         match result {
             Some(note) => {
                 let msg = format!("笔记更新成功，ID: {}，标题: {}", note.id, note.title);
-                Ok(CallToolResult::success(vec![Content::text(msg)]))
+                Ok(CallToolResult::success(vec![ContentBlock::text(msg)]))
             }
-            None => Ok(CallToolResult::success(vec![Content::text(
+            None => Ok(CallToolResult::success(vec![ContentBlock::text(
                 "更新后未找到笔记",
             )])),
         }
@@ -487,7 +487,7 @@ impl ENoteMcpServer {
             .await
             .map_err(|e| McpError::internal_error(format!("删除失败: {}", e), None))?;
 
-        Ok(CallToolResult::success(vec![Content::text(format!(
+        Ok(CallToolResult::success(vec![ContentBlock::text(format!(
             "笔记 ID {} 已移入回收站",
             params.note_id
         ))]))
@@ -521,7 +521,7 @@ impl ENoteMcpServer {
             })
             .collect();
 
-        let content = Content::json(list)
+        let content = ContentBlock::json(list)
             .map_err(|e| McpError::internal_error(format!("JSON 序列化失败: {}", e), None))?;
         Ok(CallToolResult::success(vec![content]))
     }
@@ -545,9 +545,9 @@ impl ENoteMcpServer {
         match result {
             Some(nb) => {
                 let msg = format!("笔记本创建成功，ID: {}，名称: {}", nb.id, nb.name);
-                Ok(CallToolResult::success(vec![Content::text(msg)]))
+                Ok(CallToolResult::success(vec![ContentBlock::text(msg)]))
             }
-            None => Ok(CallToolResult::success(vec![Content::text(
+            None => Ok(CallToolResult::success(vec![ContentBlock::text(
                 "创建后未找到笔记本",
             )])),
         }
@@ -579,7 +579,7 @@ impl ENoteMcpServer {
             })
             .collect();
 
-        let content = Content::json(list)
+        let content = ContentBlock::json(list)
             .map_err(|e| McpError::internal_error(format!("JSON 序列化失败: {}", e), None))?;
         Ok(CallToolResult::success(vec![content]))
     }
@@ -602,9 +602,9 @@ impl ENoteMcpServer {
         match result {
             Some(t) => {
                 let msg = format!("标签创建成功，ID: {}，名称: {}", t.id, t.name);
-                Ok(CallToolResult::success(vec![Content::text(msg)]))
+                Ok(CallToolResult::success(vec![ContentBlock::text(msg)]))
             }
-            None => Ok(CallToolResult::success(vec![Content::text(
+            None => Ok(CallToolResult::success(vec![ContentBlock::text(
                 "创建后未找到标签",
             )])),
         }
@@ -620,7 +620,7 @@ impl ENoteMcpServer {
             .await
             .map_err(|e| McpError::internal_error(format!("统计失败: {}", e), None))?;
 
-        let content = Content::json(stats)
+        let content = ContentBlock::json(stats)
             .map_err(|e| McpError::internal_error(format!("JSON 序列化失败: {}", e), None))?;
         Ok(CallToolResult::success(vec![content]))
     }
@@ -632,18 +632,14 @@ impl ENoteMcpServer {
 
 impl ServerHandler for ENoteMcpServer {
     fn get_info(&self) -> ServerInfo {
-        ServerInfo {
-            protocol_version: ProtocolVersion::V_2024_11_05,
-            capabilities: ServerCapabilities::builder().enable_tools().build(),
-            server_info: Implementation {
-                name: "enote-mcp".to_string(),
-                version: env!("CARGO_PKG_VERSION").to_string(),
-                title: Some("ENote MCP Server".to_string()),
-                description: Some("笔记管理 MCP 服务器".to_string()),
-                icons: None,
-                website_url: None,
-            },
-            instructions: Some(
+        ServerInfo::new(ServerCapabilities::builder().enable_tools().build())
+            .with_protocol_version(ProtocolVersion::V_2024_11_05)
+            .with_server_info(
+                Implementation::new("enote-mcp", env!("CARGO_PKG_VERSION"))
+                    .with_title("ENote MCP Server")
+                    .with_description("笔记管理 MCP 服务器"),
+            )
+            .with_instructions(
                 "ENote MCP Server - 笔记管理工具。\n\
                  支持的操作：\n\
                  - search_notes: 搜索笔记\n\
@@ -662,8 +658,7 @@ impl ServerHandler for ENoteMcpServer {
                  0=继承上层, 1=读写, 2=只读, 3=禁止。\n\
                  加密笔记始终禁止 AI 访问。"
                     .to_string(),
-            ),
-        }
+            )
     }
 
     async fn initialize(
@@ -688,11 +683,7 @@ impl ServerHandler for ENoteMcpServer {
             .into_iter()
             .filter(|t| enabled.contains(t.name.as_ref()))
             .collect();
-        Ok(ListToolsResult {
-            tools,
-            next_cursor: None,
-            meta: None,
-        })
+        Ok(ListToolsResult::with_all_items(tools))
     }
 
     fn get_tool(&self, name: &str) -> Option<Tool> {
@@ -704,7 +695,7 @@ impl ServerHandler for ENoteMcpServer {
         &self,
         request: CallToolRequestParams,
         context: RequestContext<RoleServer>,
-    ) -> Result<CallToolResult, McpError> {
+    ) -> Result<CallToolResponse, McpError> {
         let ctx = ToolCallContext::new(self, request, context);
         self.tool_router.call(ctx).await
     }

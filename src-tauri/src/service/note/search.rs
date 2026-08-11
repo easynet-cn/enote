@@ -6,7 +6,7 @@ use crate::{
 };
 use sea_orm::{
     ColumnTrait, Condition, ConnectionTrait, DatabaseBackend, DatabaseConnection, EntityTrait,
-    Order, QueryFilter, QueryOrder, QuerySelect, Select,
+    ExprTrait, Order, QueryFilter, QueryOrder, QuerySelect, Select,
     prelude::Expr,
     sea_query::{Asterisk, Query},
 };
@@ -75,7 +75,7 @@ pub(super) fn apply_search_filters<E: EntityTrait>(
         let sub_query = Query::select()
             .column(entity::note_tags::Column::NoteId)
             .distinct()
-            .and_where(Expr::col(entity::note_tags::Column::TagId).eq(search_param.tag_id))
+            .and_where(Expr::col(entity::note_tags::Column::TagId).eq(Expr::val(search_param.tag_id)))
             .from(entity::note_tags::Entity)
             .to_owned();
         b = b.filter(Condition::any().add(entity::note::Column::Id.in_subquery(sub_query)));
@@ -157,7 +157,7 @@ pub async fn find_deleted_with_key(
 ) -> anyhow::Result<PageResult<Note>> {
     use sea_orm::PaginatorTrait;
 
-    let page_index = page_param.page_index.max(1) as u64;
+    let page_index = std::cmp::max(page_param.page_index, 1) as u64;
     let page_size = page_param.page_size.clamp(1, 200) as u64;
 
     let query = entity::note::Entity::find()

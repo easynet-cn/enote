@@ -21,7 +21,7 @@ fn build_operator(config: &CloudStorageConfig) -> Result<Operator> {
                 .endpoint(&config.endpoint)
                 .access_key_id(&config.access_key_id)
                 .secret_access_key(&config.secret_access_key);
-            Ok(Operator::new(builder)?.finish())
+            Ok(Operator::new(builder)?)
         }
         "oss" => {
             let builder = services::Oss::default()
@@ -29,7 +29,7 @@ fn build_operator(config: &CloudStorageConfig) -> Result<Operator> {
                 .endpoint(&config.endpoint)
                 .access_key_id(&config.access_key_id)
                 .access_key_secret(&config.secret_access_key);
-            Ok(Operator::new(builder)?.finish())
+            Ok(Operator::new(builder)?)
         }
         "cos" => {
             let builder = services::Cos::default()
@@ -37,7 +37,7 @@ fn build_operator(config: &CloudStorageConfig) -> Result<Operator> {
                 .endpoint(&config.endpoint)
                 .secret_id(&config.access_key_id)
                 .secret_key(&config.secret_access_key);
-            Ok(Operator::new(builder)?.finish())
+            Ok(Operator::new(builder)?)
         }
         "minio" => {
             // MinIO 兼容 S3 协议
@@ -47,14 +47,14 @@ fn build_operator(config: &CloudStorageConfig) -> Result<Operator> {
                 .endpoint(&config.endpoint)
                 .access_key_id(&config.access_key_id)
                 .secret_access_key(&config.secret_access_key);
-            Ok(Operator::new(builder)?.finish())
+            Ok(Operator::new(builder)?)
         }
         "webdav" => {
             let builder = services::Webdav::default()
                 .endpoint(&config.endpoint)
                 .username(&config.username)
                 .password(&config.password);
-            Ok(Operator::new(builder)?.finish())
+            Ok(Operator::new(builder)?)
         }
         other => bail!("Unsupported cloud provider: {}", other),
     }

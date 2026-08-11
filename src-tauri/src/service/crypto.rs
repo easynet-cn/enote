@@ -36,10 +36,10 @@ pub fn encrypt(content: &str, password: &str) -> Result<String> {
     // 生成随机 nonce (96 bits)
     let mut nonce_bytes = [0u8; 12];
     rand::rng().fill_bytes(&mut nonce_bytes);
-    let nonce = Nonce::from_slice(&nonce_bytes);
+    let nonce = Nonce::from(nonce_bytes);
 
     let ciphertext = cipher
-        .encrypt(nonce, content.as_bytes())
+        .encrypt(&nonce, content.as_bytes())
         .map_err(|e| anyhow::anyhow!("Encryption failed: {}", e))?;
 
     // 组合 salt + nonce + ciphertext
@@ -75,9 +75,9 @@ pub fn decrypt(encrypted: &str, password: &str) -> Result<String> {
     let key = derive_key(password, salt)?;
     let cipher = Aes256Gcm::new_from_slice(&key).context("Failed to create decipher")?;
 
-    let nonce = Nonce::from_slice(nonce_bytes);
+    let nonce = Nonce::try_from(nonce_bytes).context("Invalid nonce length")?;
     let plaintext = cipher
-        .decrypt(nonce, ciphertext)
+        .decrypt(&nonce, ciphertext)
         .map_err(|_| anyhow::anyhow!("Decryption failed: wrong password"))?;
 
     String::from_utf8(plaintext).context("Decrypted content is not valid UTF-8")

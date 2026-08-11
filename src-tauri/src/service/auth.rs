@@ -8,8 +8,9 @@ use std::collections::HashMap;
 use anyhow::{Context, Result};
 use argon2::{
     Argon2,
-    password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
+    password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
 };
+use rand::Rng;
 use sea_orm::DatabaseConnection;
 
 use super::settings;
@@ -21,7 +22,14 @@ const KEY_LOCK_MODE: &str = "lockMode";
 ///
 /// 使用 Argon2id 哈希密码并存入 settings 表
 pub async fn set_password(db: &DatabaseConnection, password: &str) -> Result<()> {
-    let salt = SaltString::generate(&mut OsRng);
+    let mut salt_bytes = [0u8; 16];
+    rand::rng().fill_bytes(&mut salt_bytes);
+    let salt = SaltString::encode_b64(&salt_bytes).map_err(|e| {
+        anyhow::Error::from(crate::error::AppError::code_with_args(
+            "PASSWORD_HASH_FAILED",
+            vec![e.to_string()],
+        ))
+    })?;
     let argon2 = Argon2::default();
     let hash = argon2
         .hash_password(password.as_bytes(), &salt)

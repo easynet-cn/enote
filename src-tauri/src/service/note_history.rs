@@ -16,7 +16,7 @@
 //! - 操作时的笔记元信息（标题、笔记本、标签）
 
 use sea_orm::{
-    ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect,
+    ColumnTrait, DatabaseConnection, EntityTrait, ExprTrait, QueryFilter, QueryOrder, QuerySelect,
     prelude::Expr, sea_query::Asterisk,
 };
 

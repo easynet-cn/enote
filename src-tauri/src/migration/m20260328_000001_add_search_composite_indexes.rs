@@ -24,7 +24,7 @@ impl MigrationTrait for Migration {
                 ).await?;
             }
             sea_orm::DatabaseBackend::MySql => {
-                let has_idx1: Vec<sea_orm::QueryResult> = db.query_all(sea_orm::Statement::from_string(
+                let has_idx1: Vec<sea_orm::QueryResult> = db.query_all_raw(sea_orm::Statement::from_string(
                     backend,
                     "SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'note' AND index_name = 'idx_note_search_composite' LIMIT 1".to_owned(),
                 )).await?;
@@ -34,7 +34,7 @@ impl MigrationTrait for Migration {
                     ).await?;
                 }
 
-                let has_idx2: Vec<sea_orm::QueryResult> = db.query_all(sea_orm::Statement::from_string(
+                let has_idx2: Vec<sea_orm::QueryResult> = db.query_all_raw(sea_orm::Statement::from_string(
                     backend,
                     "SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'note' AND index_name = 'idx_note_deleted_update' LIMIT 1".to_owned(),
                 )).await?;
@@ -52,6 +52,7 @@ impl MigrationTrait for Migration {
                     "CREATE INDEX IF NOT EXISTS idx_note_deleted_update ON note (deleted_at, update_time DESC)"
                 ).await?;
             }
+            _ => {}
         }
 
         Ok(())

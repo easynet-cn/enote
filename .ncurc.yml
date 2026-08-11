@@ -1,0 +1,10 @@
+# ncu (npm-check-updates) 配置文件
+# https://github.com/raineorshine/npm-check-updates#configuration-files
+#
+# 忽略以下包的升级：
+# - typescript: TypeScript 7.0 使用 Go 原生编译器，移除了 programmatic API，
+#   vue-tsc 依赖的 typescript/lib/tsc 子路径不再导出，导致构建失败。
+#   需等待 vue-tsc 支持 TS 7（预计 TypeScript 7.1 恢复 programmatic API）。
+#   相关 issue: https://github.com/vuejs/language-tools/issues/5381
+reject:
+  - typescript

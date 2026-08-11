@@ -218,13 +218,13 @@ pub fn read_index(app_data_dir: &Path) -> Result<ProfileIndex> {
         return Ok(ProfileIndex::default());
     }
     let content = fs::read_to_string(&path).context("Failed to read profiles.yml")?;
-    serde_yaml::from_str(&content).context("Failed to parse profiles.yml")
+    yaml_serde::from_str(&content).context("Failed to parse profiles.yml")
 }
 
 /// 保存 profile 索引
 pub fn save_index(app_data_dir: &Path, index: &ProfileIndex) -> Result<()> {
     let path = index_file_path(app_data_dir);
-    let content = serde_yaml::to_string(index).context("Failed to serialize profiles.yml")?;
+    let content = yaml_serde::to_string(index).context("Failed to serialize profiles.yml")?;
     fs::write(&path, content).context("Failed to write profiles.yml")?;
     Ok(())
 }
@@ -328,7 +328,7 @@ pub fn read_profile(app_data_dir: &Path, profile_id: &str) -> Result<ProfileConf
     let path = profile_file_path(app_data_dir, profile_id);
     let content = fs::read_to_string(&path)
         .with_context(|| format!("Failed to read profile file: {:?}", path))?;
-    serde_yaml::from_str(&content)
+    yaml_serde::from_str(&content)
         .with_context(|| format!("Failed to parse profile file: {:?}", path))
 }
 
@@ -336,7 +336,7 @@ pub fn read_profile(app_data_dir: &Path, profile_id: &str) -> Result<ProfileConf
 pub fn save_profile(app_data_dir: &Path, profile_id: &str, config: &ProfileConfig) -> Result<()> {
     ensure_profiles_dir(app_data_dir)?;
     let path = profile_file_path(app_data_dir, profile_id);
-    let content = serde_yaml::to_string(config).context("Failed to serialize profile config")?;
+    let content = yaml_serde::to_string(config).context("Failed to serialize profile config")?;
     fs::write(&path, content).context("Failed to write profile file")?;
     info!("Profile saved: {:?}", path);
     Ok(())
