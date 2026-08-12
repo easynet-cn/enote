@@ -2,9 +2,9 @@
 
 **Software Name:** ENote Intelligent Note Management System
 
-**Version:** V1.1.0
+**Version:** V1.2.6
 
-**Date:** March 2026
+**Date:** August 2026
 
 ---
 
@@ -110,8 +110,12 @@
   - [14.10 System Maintenance (Cross-Profile Sync)](#1410-system-maintenance-cross-profile-sync)
   - [14.11 Editor Font Size](#1411-editor-font-size)
   - [14.12 Profile Editing](#1412-profile-editing)
+  - [14.13 Screen Saver Settings](#1413-screen-saver-settings)
 - 15. Command Palette
 - 16. System Tray
+  - [16.1 Basic Behavior](#161-basic-behavior)
+  - [16.2 Tray Menu](#162-tray-menu)
+  - [16.3 Countdown Display](#163-countdown-display)
 - 17. Keyboard Shortcuts
 - 18. Status Bar Information
 - 19. Application Startup and Initialization
@@ -152,6 +156,10 @@
   - [24.2 Manual Update Check](#242-manual-update-check)
   - [24.3 Download and Install](#243-download-and-install)
 - Appendix A: Changelog
+
+---
+
+*This manual is based on ENote Intelligent Note Management System V1.2.6. Please refer to the actual software for any feature updates.*
 
 ---
 
@@ -302,6 +310,7 @@ ENote Intelligent Note Management System
 │   ├── Language Switching (Chinese / English)
 │   ├── Automatic Backup Configuration
 │   ├── Security Settings (Lock Screen Password / Timeout Lock / Minimize Lock)
+│   ├── Eye Care Screen Saver (scheduled rest / custom appearance / tray countdown)
 │   └── MCP Settings (Master Switch / Individual Tool Switches)
 ├── MCP (AI Tool Integration)
 │   ├── Note CRUD (Search / Get / Create / Update / Delete)
@@ -312,9 +321,10 @@ ENote Intelligent Note Management System
 │   └── Operation Source Tracking (History Record Annotation)
 ├── Command Palette (Ctrl+P Quick Actions)
 ├── System Tray
-│   ├── Minimize to Tray
-│   ├── Tray Menu (Show Window / Exit)
-│   └── Click to Toggle Window Visibility
+│   ├── Minimize to tray
+│   ├── Tray menu (Show window / Pause eye care / Reset countdown / Stop eye care / Quit)
+│   ├── Click to toggle window visibility
+│   └── Menu bar countdown display (macOS)
 └── Application Startup and Initialization
     ├── Command-Line Configuration File (--config)
     ├── Auto-Create Configuration and Database
@@ -1294,6 +1304,42 @@ Click "View Details" in the "System Maintenance" section to open the sync histor
 - **Delete Record:** Delete a single sync record and its details.
 - **Clear All Records:** Remove all historical sync records.
 
+### 14.13 Screen Saver Settings
+
+ENote includes an eye care screen saver feature that automatically activates a full-screen rest interface after a period of continuous use, reminding users to rest their eyes.
+
+**Default state:** Eye care screen saver is enabled by default, with a 60-minute idle trigger time and 5-minute screen saver duration.
+
+In the "Screen Saver" area of the settings dialog, the following options can be configured:
+
+**Timer settings:**
+
+| Option | Description |
+|--------|-------------|
+| **Enable Screen Saver** | Toggle switch to enable or disable the eye care screen saver. When enabled, idle countdown starts automatically on app launch |
+| **Idle Trigger Time** | Dropdown to select idle duration before screen saver activates: 30 minutes, 45 minutes, 60 minutes, 90 minutes, 120 minutes |
+| **Screen Saver Duration** | Dropdown to select screen saver duration: 3 minutes, 5 minutes, 10 minutes, 15 minutes, Unlimited (manual exit required) |
+
+**Screen saver appearance:**
+
+| Option | Description |
+|--------|-------------|
+| **Background Color** | Full-screen background color, default is dark blue-gray (#1a1a2e), low blue light soothing tone |
+| **Background Image** | Optional, click "Select Image" to upload a custom background (supports PNG/JPG/WebP/GIF/BMP), click "Clear Image" to restore solid color |
+| **Display Text** | Prompt text displayed in the center of the screen saver, default is "Please rest your eyes" |
+| **Text Color** | Prompt text color, default is soft warm white (#e0e0e0) |
+| **Font Size** | Prompt text size, range 24-96px, default 48px |
+
+**Screen saver behavior:**
+
+- **Idle countdown:** After app launch (if screen saver is enabled), countdown starts automatically, with remaining time displayed next to the tray icon.
+- **Screen saver activation:** When countdown reaches zero, a full-screen screen saver overlay is displayed showing the rest prompt and (if duration is set) a rest countdown.
+- **Auto exit:** If a finite duration is set, the screen saver automatically exits when the duration expires, and the idle countdown restarts.
+- **Manual exit:** Click the "Exit Rest" button on the screen saver interface to end the screen saver early.
+- **Tray control:** Pause/resume/reset/stop the screen saver countdown via the system tray menu, see 16. System Tray.
+
+> **Tip:** Screen saver settings take effect immediately without restarting the app. Background images are saved in the app data directory and do not affect note data.
+
 ---
 
 ## 15. Command Palette
@@ -1334,22 +1380,57 @@ Commands are displayed grouped by category for quick reference. Shortcut text di
 
 ## 16. System Tray
 
-ENote supports minimizing to the system tray, allowing the application to continue running in the background after the window is closed.
+ENote supports minimizing to the system tray, allowing the application to continue running in the background after the window is closed. The system tray also integrates eye care screen saver quick controls.
 
-**Basic Behavior:**
+### 16.1 Basic Behavior
 
 - **Close Window:** When clicking the window close button, the window is hidden to the system tray rather than exiting the application. If there are unsaved changes, a confirmation dialog will appear first.
 - **Tray Icon:** While the application is running, an ENote icon is displayed in the system notification area (taskbar tray area).
 - **Click Tray Icon:** Single-click the tray icon to quickly toggle the window between shown and hidden states.
 
-**Tray Right-Click Menu:**
+### 16.2 Tray Menu
+
+Right-click the tray icon to show the following menu:
 
 | Menu Item | Description |
 |-----------|-------------|
+| Pause Eye Care | Pause the idle countdown (shows "Resume Eye Care" when paused, click to resume) |
+| Reset Countdown | Reset the idle countdown to the initial value and restart timing |
+| Stop Eye Care | Completely stop the eye care screen saver (must re-enable in settings to resume) |
 | Show Window | Show and focus the main application window |
-| Exit | Completely exit the application |
+| Quit | Completely exit the application |
 
-> **Note:** The application is only truly closed through the "Exit" option in the tray menu or by using system methods to force-quit. Simply closing the window only hides it to the tray; background functions such as automatic backup continue to run normally.
+> **Note:** The application is only truly closed through the "Quit" option in the tray menu or by using system methods to force-quit. Simply closing the window only hides it to the tray; background functions such as automatic backup and eye care screen saver continue to run normally.
+
+### 16.3 Countdown Display
+
+When the eye care screen saver is enabled, the system tray displays real-time countdown information:
+
+**macOS menu bar:**
+
+- Remaining time is displayed directly next to the tray icon (using the system title feature)
+- Under 1 hour: `MM:SS` format (e.g., `59:30`)
+- 1 hour or above: `H:MM:SS` format (e.g., `1:00:00`)
+
+**All platforms (mouse hover tooltip):**
+
+- Idle countdown: `ENote - MM:SS` (e.g., `ENote - 59:30`)
+- Paused: `ENote - Paused`
+- Screen saver active (with duration): `ENote - Resting MM:SS`
+- Screen saver active (unlimited): `ENote - Resting`
+- Disabled: `ENote`
+
+**Time format examples:**
+
+| Remaining Time | Menu Bar | Tooltip |
+|---------------|----------|---------|
+| 90 minutes (5400s) | `1:30:00` | `ENote - 1:30:00` |
+| 60 minutes (3600s) | `59:59` | `ENote - 59:59` |
+| 5 minutes (300s) | `05:00` | `ENote - 05:00` |
+| Paused | `Paused` | `ENote - Paused` |
+| Resting (3 min remaining) | `03:00` | `ENote - Resting 03:00` |
+
+> **Tip:** The countdown updates every second. To adjust the idle trigger time or screen saver duration, configure in the "Screen Saver" area of the settings dialog, see [14.13 Screen Saver Settings](#1413-screen-saver-settings).
 
 ---
 
@@ -2150,6 +2231,17 @@ After clicking "Update Now":
 
 | Version | Date | Changes |
 |---------|------|---------|
+| V1.2.6 | August 2026 | Eye care screen saver and dependency optimization |
+| | | **New features:** |
+| | | - Eye care screen saver: scheduled forced rest to protect eyesight. Supports custom idle trigger time (30-120 minutes), screen saver duration (3-15 minutes or unlimited) |
+| | | - Screen saver appearance customization: background color, background image, display text, text color and font size all configurable |
+| | | - System tray countdown: macOS menu bar displays remaining time in real-time, all platforms show tooltip on hover |
+| | | - Tray quick controls: pause/resume, reset countdown, stop eye care without opening settings |
+| | | - Screen saver enabled by default: 60-minute idle countdown and 5-minute screen saver duration start automatically on app launch |
+| | | **Optimizations:** |
+| | | - Dependency reduction: removed dirs (archived) and hex (5 years unmaintained) external dependencies, replaced with built-in utility functions |
+| | | - Initialization order optimization: ensure system tray is created before starting screen saver timer to prevent tooltip update failures |
+| | | - Adaptive time format: displays MM:SS under 1 hour, automatically switches to H:MM:SS for 1 hour or above |
 | V1.1.0 | March 2026 | New Features, Performance Optimization, and UX Enhancement |
 | | | **New Features:** |
 | | | - Note Sorting: Sort by title, creation time, or update time with ascending/descending toggle |
@@ -2282,4 +2374,4 @@ After clicking "Update Now":
 
 ---
 
-*This manual is based on ENote Intelligent Note Management System V1.1.0. Please refer to the actual software for any feature updates.*
+*This manual is based on ENote Intelligent Note Management System V1.2.6. Please refer to the actual software for any feature updates.*

@@ -2,9 +2,9 @@
 
 **Software Name:** ENote Intelligent Note Management System
 
-**Version:** V1.1.0
+**Version:** V1.2.6
 
-**Date:** March 2026
+**Date:** August 2026
 
 ---
 
@@ -110,8 +110,12 @@
   - [14.10 System Maintenance (Cross-Profile Sync)](14-settings.md#1410-system-maintenance-cross-profile-sync)
   - [14.11 Editor Font Size](14-settings.md#1411-editor-font-size)
   - [14.12 Profile Editing](14-settings.md#1412-profile-editing)
+  - [14.13 Screen Saver Settings](14-settings.md#1413-screen-saver-settings)
 - [15. Command Palette](15-command-palette.md)
 - [16. System Tray](16-system-tray.md)
+  - [16.1 Basic Behavior](16-system-tray.md#161-basic-behavior)
+  - [16.2 Tray Menu](16-system-tray.md#162-tray-menu)
+  - [16.3 Countdown Display](16-system-tray.md#163-countdown-display)
 - [17. Keyboard Shortcuts](17-shortcuts.md)
 - [18. Status Bar Information](18-status-bar.md)
 - [19. Application Startup and Initialization](19-startup.md)
@@ -152,3 +156,7 @@
   - [24.2 Manual Update Check](24-auto-update.md#242-manual-update-check)
   - [24.3 Download and Install](24-auto-update.md#243-download-and-install)
 - [Appendix A: Changelog](appendix-changelog.md)
+
+---
+
+*This manual is based on ENote Intelligent Note Management System V1.2.6. Please refer to the actual software for any feature updates.*

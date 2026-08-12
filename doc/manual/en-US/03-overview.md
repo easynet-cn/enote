@@ -77,6 +77,7 @@ ENote Intelligent Note Management System
 │   ├── Language Switching (Chinese / English)
 │   ├── Automatic Backup Configuration
 │   ├── Security Settings (Lock Screen Password / Timeout Lock / Minimize Lock)
+│   ├── Eye Care Screen Saver (scheduled rest / custom appearance / tray countdown)
 │   └── MCP Settings (Master Switch / Individual Tool Switches)
 ├── MCP (AI Tool Integration)
 │   ├── Note CRUD (Search / Get / Create / Update / Delete)
@@ -87,9 +88,10 @@ ENote Intelligent Note Management System
 │   └── Operation Source Tracking (History Record Annotation)
 ├── Command Palette (Ctrl+P Quick Actions)
 ├── System Tray
-│   ├── Minimize to Tray
-│   ├── Tray Menu (Show Window / Exit)
-│   └── Click to Toggle Window Visibility
+│   ├── Minimize to tray
+│   ├── Tray menu (Show window / Pause eye care / Reset countdown / Stop eye care / Quit)
+│   ├── Click to toggle window visibility
+│   └── Menu bar countdown display (macOS)
 └── Application Startup and Initialization
     ├── Command-Line Configuration File (--config)
     ├── Auto-Create Configuration and Database

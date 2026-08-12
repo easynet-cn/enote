@@ -232,3 +232,39 @@ Click "View Details" in the "System Maintenance" section to open the sync histor
 - **Export Log:** Export the sync record as a JSON file for troubleshooting.
 - **Delete Record:** Delete a single sync record and its details.
 - **Clear All Records:** Remove all historical sync records.
+
+### 14.13 Screen Saver Settings
+
+ENote includes an eye care screen saver feature that automatically activates a full-screen rest interface after a period of continuous use, reminding users to rest their eyes.
+
+**Default state:** Eye care screen saver is enabled by default, with a 60-minute idle trigger time and 5-minute screen saver duration.
+
+In the "Screen Saver" area of the settings dialog, the following options can be configured:
+
+**Timer settings:**
+
+| Option | Description |
+|--------|-------------|
+| **Enable Screen Saver** | Toggle switch to enable or disable the eye care screen saver. When enabled, idle countdown starts automatically on app launch |
+| **Idle Trigger Time** | Dropdown to select idle duration before screen saver activates: 30 minutes, 45 minutes, 60 minutes, 90 minutes, 120 minutes |
+| **Screen Saver Duration** | Dropdown to select screen saver duration: 3 minutes, 5 minutes, 10 minutes, 15 minutes, Unlimited (manual exit required) |
+
+**Screen saver appearance:**
+
+| Option | Description |
+|--------|-------------|
+| **Background Color** | Full-screen background color, default is dark blue-gray (#1a1a2e), low blue light soothing tone |
+| **Background Image** | Optional, click "Select Image" to upload a custom background (supports PNG/JPG/WebP/GIF/BMP), click "Clear Image" to restore solid color |
+| **Display Text** | Prompt text displayed in the center of the screen saver, default is "Please rest your eyes" |
+| **Text Color** | Prompt text color, default is soft warm white (#e0e0e0) |
+| **Font Size** | Prompt text size, range 24-96px, default 48px |
+
+**Screen saver behavior:**
+
+- **Idle countdown:** After app launch (if screen saver is enabled), countdown starts automatically, with remaining time displayed next to the tray icon.
+- **Screen saver activation:** When countdown reaches zero, a full-screen screen saver overlay is displayed showing the rest prompt and (if duration is set) a rest countdown.
+- **Auto exit:** If a finite duration is set, the screen saver automatically exits when the duration expires, and the idle countdown restarts.
+- **Manual exit:** Click the "Exit Rest" button on the screen saver interface to end the screen saver early.
+- **Tray control:** Pause/resume/reset/stop the screen saver countdown via the system tray menu, see [16. System Tray](16-system-tray.md).
+
+> **Tip:** Screen saver settings take effect immediately without restarting the app. Background images are saved in the app data directory and do not affect note data.

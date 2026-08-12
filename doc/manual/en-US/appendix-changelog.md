@@ -2,6 +2,17 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| V1.2.6 | August 2026 | Eye care screen saver and dependency optimization |
+| | | **New features:** |
+| | | - Eye care screen saver: scheduled forced rest to protect eyesight. Supports custom idle trigger time (30-120 minutes), screen saver duration (3-15 minutes or unlimited) |
+| | | - Screen saver appearance customization: background color, background image, display text, text color and font size all configurable |
+| | | - System tray countdown: macOS menu bar displays remaining time in real-time, all platforms show tooltip on hover |
+| | | - Tray quick controls: pause/resume, reset countdown, stop eye care without opening settings |
+| | | - Screen saver enabled by default: 60-minute idle countdown and 5-minute screen saver duration start automatically on app launch |
+| | | **Optimizations:** |
+| | | - Dependency reduction: removed dirs (archived) and hex (5 years unmaintained) external dependencies, replaced with built-in utility functions |
+| | | - Initialization order optimization: ensure system tray is created before starting screen saver timer to prevent tooltip update failures |
+| | | - Adaptive time format: displays MM:SS under 1 hour, automatically switches to H:MM:SS for 1 hour or above |
 | V1.1.0 | March 2026 | New Features, Performance Optimization, and UX Enhancement |
 | | | **New Features:** |
 | | | - Note Sorting: Sort by title, creation time, or update time with ascending/descending toggle |
@@ -134,4 +145,4 @@
 
 ---
 
-*This manual is based on ENote Intelligent Note Management System V1.1.0. Please refer to the actual software for any feature updates.*
+*This manual is based on ENote Intelligent Note Management System V1.2.6. Please refer to the actual software for any feature updates.*
