@@ -36,7 +36,7 @@ fn ensure_attachments_dir(app_data_dir: &Path) -> Result<PathBuf> {
 fn compute_sha256(data: &[u8]) -> String {
     let mut hasher = Sha256::new();
     hasher.update(data);
-    hex::encode(hasher.finalize())
+    crate::util::to_hex(&hasher.finalize())
 }
 
 /// 保存附件文件并创建数据库记录

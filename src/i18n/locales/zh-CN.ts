@@ -807,6 +807,23 @@ export default {
     lockTimeoutNone: '仅启动时',
     lockTimeoutMinutes: '{n} 分钟无操作',
     lockOnMinimize: '最小化时锁定',
+    // 屏幕保护
+    screenSaver: '屏幕保护',
+    screenSaverEnabled: '启用屏保',
+    screenSaverEnabledDesc: '定时强制休息，保护视力',
+    screenSaverIdleTime: '空闲触发时间',
+    screenSaverDuration: '屏保持续时长',
+    screenSaverDurationUnlimited: '无限',
+    screenSaverMinutes: '{n} 分钟',
+    screenSaverBgColor: '屏保底色',
+    screenSaverBgImage: '背景图片',
+    screenSaverText: '显示文字',
+    screenSaverTextColor: '文字颜色',
+    screenSaverFontSize: '文字字号',
+    screenSaverSelectImage: '选择图片',
+    screenSaverClearImage: '清除图片',
+    screenSaverImageSet: '背景图片已设置',
+    screenSaverImageFailed: '设置背景图片失败',
     setPassword: '设置密码',
     changePassword: '修改密码',
     removePassword: '移除密码',
@@ -855,6 +872,13 @@ export default {
     unlock: '解锁',
     incorrectPassword: '密码错误，请重试',
     useBiometric: '使用生物识别',
+  },
+
+  // 屏保
+  screenSaver: {
+    remaining: '剩余时间',
+    exit: '退出',
+    tipExit: '按 ESC 或点击任意位置可提前结束',
   },
 
   // 回收站

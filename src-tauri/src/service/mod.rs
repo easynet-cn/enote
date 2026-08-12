@@ -124,3 +124,9 @@ pub mod sync_log;
 ///
 /// 通过 HTTP API 连接远程 ENote 服务器
 pub mod enote_server;
+
+/// 屏保服务模块
+///
+/// 提供护眼屏保的计时器管理，包括空闲倒计时、屏保持续倒计时、
+/// 暂停/继续/重置/退出屏保等功能
+pub mod screen_saver;

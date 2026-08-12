@@ -100,6 +100,11 @@ fn zh_cn_messages() -> HashMap<String, String> {
     // 系统托盘
     messages.insert("tray.show".to_string(), "显示窗口".to_string());
     messages.insert("tray.quit".to_string(), "退出".to_string());
+    messages.insert("tray.ssPause".to_string(), "暂停护眼".to_string());
+    messages.insert("tray.ssReset".to_string(), "重置倒计时".to_string());
+    messages.insert("tray.ssStop".to_string(), "停止护眼".to_string());
+    messages.insert("tray.ssPaused".to_string(), "已暂停".to_string());
+    messages.insert("tray.ssResting".to_string(), "休息中".to_string());
 
     // 帮助菜单
     messages.insert("help.menuTitle".to_string(), "帮助".to_string());
@@ -247,6 +252,11 @@ fn en_us_messages() -> HashMap<String, String> {
     // System tray
     messages.insert("tray.show".to_string(), "Show Window".to_string());
     messages.insert("tray.quit".to_string(), "Quit".to_string());
+    messages.insert("tray.ssPause".to_string(), "Pause Eye Care".to_string());
+    messages.insert("tray.ssReset".to_string(), "Reset Countdown".to_string());
+    messages.insert("tray.ssStop".to_string(), "Stop Eye Care".to_string());
+    messages.insert("tray.ssPaused".to_string(), "Paused".to_string());
+    messages.insert("tray.ssResting".to_string(), "Resting".to_string());
 
     // Help menu
     messages.insert("help.menuTitle".to_string(), "Help".to_string());

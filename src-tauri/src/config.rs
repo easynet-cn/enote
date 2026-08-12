@@ -182,7 +182,7 @@ mcp:
 
         // 展开 ~ 为用户主目录
         if url.contains("~/")
-            && let Some(home) = dirs::home_dir()
+            && let Some(home) = std::env::home_dir()
         {
             let home_str = home.to_string_lossy();
             url = url.replace("~", &home_str);

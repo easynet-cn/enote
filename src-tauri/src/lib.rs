@@ -40,6 +40,7 @@ pub mod i18n; // 国际化支持（必须在 config 之前声明）
 pub mod migration; // 数据库迁移
 pub mod model; // 数据传输对象（DTO）
 pub mod service; // 业务逻辑服务层
+pub mod util; // 工具函数（data_dir / to_hex）
 
 /// 移动端入口（无参数）
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -50,7 +51,7 @@ pub fn run() {
 /// 桌面端入口（支持配置文件路径参数）
 pub fn run_with_config(config_path: Option<String>) {
     // 初始化 tracing 日志系统（三层：stdout + 全量文件 + error 单独文件）
-    let log_dir = dirs::data_dir()
+    let log_dir = util::data_dir()
         .unwrap_or_else(|| std::path::PathBuf::from("."))
         .join("net.easycloudcn.enote")
         .join("logs");
@@ -246,6 +247,16 @@ pub fn run_with_config(config_path: Option<String>) {
             command::open_attachment,
             command::get_attachment_stats,
             command::cleanup_orphan_attachments,
+            // 屏保相关命令
+            command::ss_start,
+            command::ss_stop,
+            command::ss_pause,
+            command::ss_resume,
+            command::ss_reset,
+            command::ss_exit,
+            command::ss_update_settings,
+            command::ss_get_state,
+            command::ss_toggle_pause,
         ])
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| {
@@ -296,7 +307,7 @@ async fn setup_normal_mode(
     app: &mut tauri::App,
     config_path: Option<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let handle = app.handle();
+    let handle = app.handle().clone();
     let app_data_dir = handle.path().app_data_dir()?;
 
     let (configuration, database_connection, active_profile_id, encryption_key): (
@@ -306,7 +317,7 @@ async fn setup_normal_mode(
         Option<String>,
     ) = if let Some(ref _config_path) = config_path {
         // 兼容旧模式：使用 application.yml
-        let configuration = match config::Configuration::new(handle, config_path.as_deref()) {
+        let configuration = match config::Configuration::new(&handle, config_path.as_deref()) {
             Ok(config) => config,
             Err(e) => {
                 error!("Config load failed: {:#}", e);
@@ -453,12 +464,19 @@ async fn setup_normal_mode(
 
     app.manage(app_state);
 
+    // 初始化屏保服务（先注册，计时器循环在托盘创建后启动）
+    let screen_saver = Arc::new(service::screen_saver::ScreenSaverService::new());
+    app.manage(screen_saver.clone());
+
     // 设置应用菜单和系统托盘（仅桌面端）
     #[cfg(feature = "desktop")]
     {
         setup_app_menu(app)?;
         setup_tray(app)?;
     }
+
+    // 托盘创建后再启动计时器循环，确保 tooltip 更新能找到 tray
+    screen_saver.start_timer_loop(handle.clone());
 
     Ok(())
 }
@@ -470,7 +488,7 @@ async fn setup_wizard_mode(app: &mut tauri::App) -> Result<(), Box<dyn std::erro
 
 /// 创建向导/选择模式的 AppState（无数据库连接）
 async fn setup_wizard_mode_state(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-    let handle = app.handle();
+    let handle = app.handle().clone();
     let app_data_dir = handle.path().app_data_dir()?;
 
     let app_state = Arc::new(AppState {
@@ -485,12 +503,19 @@ async fn setup_wizard_mode_state(app: &mut tauri::App) -> Result<(), Box<dyn std
 
     app.manage(app_state);
 
+    // 初始化屏保服务（先注册，计时器循环在托盘创建后启动）
+    let screen_saver = Arc::new(service::screen_saver::ScreenSaverService::new());
+    app.manage(screen_saver.clone());
+
     // 设置应用菜单和系统托盘（仅桌面端）
     #[cfg(feature = "desktop")]
     {
         setup_app_menu(app)?;
         setup_tray(app)?;
     }
+
+    // 托盘创建后再启动计时器循环，确保 tooltip 更新能找到 tray
+    screen_saver.start_timer_loop(handle.clone());
 
     Ok(())
 }
@@ -564,12 +589,25 @@ fn setup_app_menu(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
 /// 设置系统托盘（仅桌面端编译）
 #[cfg(feature = "desktop")]
 fn setup_tray(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-    let show_item = MenuItemBuilder::with_id("show", i18n::t_simple("tray.show")).build(app)?;
-    let quit_item = MenuItemBuilder::with_id("quit", i18n::t_simple("tray.quit")).build(app)?;
-    let separator = PredefinedMenuItem::separator(app)?;
+    // 屏保菜单项
+    let ss_pause_item =
+        MenuItemBuilder::with_id("ss-pause", t_simple("tray.ssPause")).build(app)?;
+    let ss_reset_item =
+        MenuItemBuilder::with_id("ss-reset", t_simple("tray.ssReset")).build(app)?;
+    let ss_stop_item =
+        MenuItemBuilder::with_id("ss-stop", t_simple("tray.ssStop")).build(app)?;
+
+    let show_item = MenuItemBuilder::with_id("show", t_simple("tray.show")).build(app)?;
+    let quit_item = MenuItemBuilder::with_id("quit", t_simple("tray.quit")).build(app)?;
+    let separator1 = PredefinedMenuItem::separator(app)?;
+    let separator2 = PredefinedMenuItem::separator(app)?;
     let tray_menu = MenuBuilder::new(app)
+        .item(&ss_pause_item)
+        .item(&ss_reset_item)
+        .item(&ss_stop_item)
+        .item(&separator1)
         .item(&show_item)
-        .item(&separator)
+        .item(&separator2)
         .item(&quit_item)
         .build()?;
 
@@ -578,11 +616,45 @@ fn setup_tray(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         Box::<dyn std::error::Error>::from("Default window icon not found")
     })?;
 
-    TrayIconBuilder::new()
+    TrayIconBuilder::with_id("main")
         .icon(tray_icon)
         .tooltip("ENote")
         .menu(&tray_menu)
         .on_menu_event(|app_handle, event| match event.id().as_ref() {
+            "ss-pause" => {
+                // 暂停/继续切换
+                let handle = app_handle.clone();
+                tauri::async_runtime::spawn(async move {
+                    let screen_saver = handle.state::<Arc<service::screen_saver::ScreenSaverService>>();
+                    let state = screen_saver.get_state().await;
+                    use service::screen_saver::TimerState;
+                    match state.timer_state {
+                        TimerState::Running => {
+                            screen_saver.pause().await;
+                        }
+                        TimerState::Paused => {
+                            screen_saver.resume().await;
+                        }
+                        _ => {}
+                    }
+                });
+            }
+            "ss-reset" => {
+                let handle = app_handle.clone();
+                tauri::async_runtime::spawn(async move {
+                    let screen_saver = handle.state::<Arc<service::screen_saver::ScreenSaverService>>();
+                    screen_saver.reset().await;
+                });
+            }
+            "ss-stop" => {
+                let handle = app_handle.clone();
+                tauri::async_runtime::spawn(async move {
+                    let screen_saver = handle.state::<Arc<service::screen_saver::ScreenSaverService>>();
+                    screen_saver.stop().await;
+                    // 通知前端同步禁用
+                    let _ = handle.emit("ss-disabled", ());
+                });
+            }
             "show" => {
                 if let Some(window) = app_handle.get_webview_window("main") {
                     let _ = window.show();

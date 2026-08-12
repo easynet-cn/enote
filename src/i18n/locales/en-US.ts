@@ -811,6 +811,23 @@ export default {
     lockTimeoutNone: 'On startup only',
     lockTimeoutMinutes: 'After {n} minutes',
     lockOnMinimize: 'Lock on minimize',
+    // Screen Saver
+    screenSaver: 'Screen Saver',
+    screenSaverEnabled: 'Enable Screen Saver',
+    screenSaverEnabledDesc: 'Forced rest to protect your eyes',
+    screenSaverIdleTime: 'Idle Trigger Time',
+    screenSaverDuration: 'Screen Saver Duration',
+    screenSaverDurationUnlimited: 'Unlimited',
+    screenSaverMinutes: '{n} minutes',
+    screenSaverBgColor: 'Background Color',
+    screenSaverBgImage: 'Background Image',
+    screenSaverText: 'Display Text',
+    screenSaverTextColor: 'Text Color',
+    screenSaverFontSize: 'Font Size',
+    screenSaverSelectImage: 'Select Image',
+    screenSaverClearImage: 'Clear Image',
+    screenSaverImageSet: 'Background image set',
+    screenSaverImageFailed: 'Failed to set background image',
     setPassword: 'Set Password',
     changePassword: 'Change Password',
     removePassword: 'Remove Password',
@@ -859,6 +876,13 @@ export default {
     unlock: 'Unlock',
     incorrectPassword: 'Incorrect password, please try again',
     useBiometric: 'Use biometric',
+  },
+
+  // Screen Saver
+  screenSaver: {
+    remaining: 'Remaining',
+    exit: 'Exit',
+    tipExit: 'Press ESC or click anywhere to exit early',
   },
 
   // Trash

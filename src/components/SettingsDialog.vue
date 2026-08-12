@@ -57,6 +57,19 @@
         @save="saveSettings"
       />
 
+      <!-- 屏保设置 -->
+      <SettingsScreenSaver
+        v-model:enabled="screenSaverEnabled"
+        v-model:idle-timeout="screenSaverIdleTimeout"
+        v-model:duration="screenSaverDuration"
+        v-model:bg-color="screenSaverBgColor"
+        v-model:bg-image="screenSaverBgImage"
+        v-model:text="screenSaverText"
+        v-model:text-color="screenSaverTextColor"
+        v-model:font-size="screenSaverFontSize"
+        @save="saveSettings"
+      />
+
       <!-- MCP 设置 -->
       <SettingsMcp
         v-model:enabled="mcpEnabled"
@@ -179,6 +192,7 @@ import SettingsShortcuts from './settings/SettingsShortcuts.vue'
 import SettingsBackup from './settings/SettingsBackup.vue'
 import SettingsCloudBackup from './settings/SettingsCloudBackup.vue'
 import SettingsSecurity from './settings/SettingsSecurity.vue'
+import SettingsScreenSaver from './settings/SettingsScreenSaver.vue'
 import SettingsMcp from './settings/SettingsMcp.vue'
 import { settingsApi } from '../api/note'
 import { initLogger, setLogLevel } from '../utils/logger'
@@ -225,6 +239,16 @@ const cloudBackupRetention = ref('10')
 const currentLockMode = ref<'none' | 'password' | 'biometric'>('none')
 const lockTimeoutValue = ref('0')
 const lockOnMinimizeEnabled = ref(false)
+
+// 屏保
+const screenSaverEnabled = ref(true)
+const screenSaverIdleTimeout = ref('60')
+const screenSaverDuration = ref('5')
+const screenSaverBgColor = ref('#1a1a2e')
+const screenSaverBgImage = ref('')
+const screenSaverText = ref('请休息一下眼睛')
+const screenSaverTextColor = ref('#e0e0e0')
+const screenSaverFontSize = ref('48')
 
 // MCP
 const mcpEnabled = ref(false)
@@ -280,6 +304,14 @@ const saveSettings = async () => {
       lockMode: currentLockMode.value,
       lockTimeout: lockTimeoutValue.value,
       lockOnMinimize: lockOnMinimizeEnabled.value ? '1' : '0',
+      screenSaverEnabled: screenSaverEnabled.value ? '1' : '0',
+      screenSaverIdleTimeout: screenSaverIdleTimeout.value,
+      screenSaverDuration: screenSaverDuration.value,
+      screenSaverBgColor: screenSaverBgColor.value,
+      screenSaverBgImage: screenSaverBgImage.value,
+      screenSaverText: screenSaverText.value,
+      screenSaverTextColor: screenSaverTextColor.value,
+      screenSaverFontSize: screenSaverFontSize.value,
       mcpEnabled: mcpEnabled.value ? '1' : '0',
       mcpEnabledTools: enabledTools,
       frontendLogLevel: frontendLogLevel.value,
@@ -348,6 +380,15 @@ const loadSettings = async () => {
     lockTimeoutValue.value = settings.lockTimeout || '0'
     lockOnMinimizeEnabled.value = settings.lockOnMinimize === '1'
     securityRef.value?.initHasPassword(!!settings.lockPasswordHash)
+
+    screenSaverEnabled.value = settings.screenSaverEnabled !== '0'
+    screenSaverIdleTimeout.value = settings.screenSaverIdleTimeout || '60'
+    screenSaverDuration.value = settings.screenSaverDuration || '5'
+    screenSaverBgColor.value = settings.screenSaverBgColor || '#1a1a2e'
+    screenSaverBgImage.value = settings.screenSaverBgImage || ''
+    screenSaverText.value = settings.screenSaverText ?? '请休息一下眼睛'
+    screenSaverTextColor.value = settings.screenSaverTextColor || '#e0e0e0'
+    screenSaverFontSize.value = settings.screenSaverFontSize || '48'
 
     if (settings.frontendLogLevel) {
       frontendLogLevel.value = settings.frontendLogLevel

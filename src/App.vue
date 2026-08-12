@@ -155,6 +155,9 @@
     <!-- 快捷命令面板 -->
     <CommandPalette v-model="commandPaletteVisible" :commands="paletteCommands" />
 
+    <!-- 屏保 -->
+    <ScreenSaver />
+
     <!-- 锁屏 -->
     <LockScreen :visible="isLocked" @unlocked="unlock" />
 
@@ -182,6 +185,7 @@ import { useNotes } from './composables/useNotes'
 import { useKeyboardShortcuts } from './composables/useKeyboardShortcuts'
 import { useShortcutSettings } from './composables/useShortcutSettings'
 import { useLockScreen } from './composables/useLockScreen'
+import { useScreenSaver } from './composables/useScreenSaver'
 import { useAppStore } from './stores/app'
 import AppSidebar from './components/AppSidebar.vue'
 import NoteList from './components/NoteList.vue'
@@ -227,6 +231,7 @@ const CommandPalette = defineAsyncComponent(() => import('./components/CommandPa
 const TemplateDialog = defineAsyncComponent(() => import('./components/TemplateDialog.vue'))
 const LogDialog = defineAsyncComponent(() => import('./components/LogDialog.vue'))
 const LockScreen = defineAsyncComponent(() => import('./components/LockScreen.vue'))
+const ScreenSaver = defineAsyncComponent(() => import('./components/ScreenSaver.vue'))
 const UpdateChecker = defineAsyncComponent(() => import('./components/UpdateChecker.vue'))
 
 const { t } = useI18n()
@@ -340,6 +345,9 @@ const onEditProfile = async (profileId: string) => {
 
 // 锁屏
 const { isLocked, lock, unlock, checkStartupLock, setupMinimizeListener } = useLockScreen()
+
+// 屏保
+const { checkStartup: checkScreenSaverStartup } = useScreenSaver()
 
 // 折叠状态
 const sidebarCollapsed = ref(false)
@@ -888,6 +896,9 @@ const enterMainMode = async () => {
   // 检查启动锁屏
   await checkStartupLock()
   setupMinimizeListener()
+
+  // 初始化屏保
+  await checkScreenSaverStartup()
 }
 
 const initApp = async () => {
