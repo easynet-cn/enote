@@ -246,7 +246,7 @@ const screenSaverIdleTimeout = ref('60')
 const screenSaverDuration = ref('5')
 const screenSaverBgColor = ref('#1a1a2e')
 const screenSaverBgImage = ref('')
-const screenSaverText = ref('请休息一下眼睛')
+const screenSaverText = ref(t('screenSaver.defaultText'))
 const screenSaverTextColor = ref('#e0e0e0')
 const screenSaverFontSize = ref('48')
 
@@ -386,7 +386,7 @@ const loadSettings = async () => {
     screenSaverDuration.value = settings.screenSaverDuration || '5'
     screenSaverBgColor.value = settings.screenSaverBgColor || '#1a1a2e'
     screenSaverBgImage.value = settings.screenSaverBgImage || ''
-    screenSaverText.value = settings.screenSaverText ?? '请休息一下眼睛'
+    screenSaverText.value = settings.screenSaverText ?? t('screenSaver.defaultText')
     screenSaverTextColor.value = settings.screenSaverTextColor || '#e0e0e0'
     screenSaverFontSize.value = settings.screenSaverFontSize || '48'
 

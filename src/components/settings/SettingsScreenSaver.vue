@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { open } from '@tauri-apps/plugin-dialog'
 import { readFile } from '@tauri-apps/plugin-fs'
@@ -16,6 +16,15 @@ const { setEnabled, updateTimerSettings } = useScreenSaver()
 const enabledModel = defineModel<boolean>('enabled', { required: true })
 const idleTimeoutModel = defineModel<string>('idleTimeout', { required: true })
 const durationModel = defineModel<string>('duration', { required: true })
+
+// 本地同步缓存：defineModel 在 @change 中读取时可能因 prop 传播延迟返回旧值，
+// 用 watchEffect 同步追踪，确保 handler 中总能读到最新值
+const currentIdleTimeout = ref(idleTimeoutModel.value)
+const currentDuration = ref(durationModel.value)
+watchEffect(() => {
+  currentIdleTimeout.value = idleTimeoutModel.value
+  currentDuration.value = durationModel.value
+})
 const bgColorModel = defineModel<string>('bgColor', { required: true })
 const bgImageModel = defineModel<string>('bgImage', { required: true })
 const textModel = defineModel<string>('text', { required: true })
@@ -50,18 +59,20 @@ const toggleEnabled = async () => {
   emit('save')
 }
 
-// 空闲触发时间变更：通知 Rust 后端更新设置
-const handleIdleTimeoutChange = async () => {
-  const minutes = parseInt(idleTimeoutModel.value)
-  const durationMinutes = parseInt(durationModel.value)
+// 空闲触发时间变更：事件值用于本字段，本地缓存读另一字段，避免 defineModel 传播延迟
+const handleIdleTimeoutChange = async (value: string | number) => {
+  const minutes = parseInt(String(value))
+  currentIdleTimeout.value = String(value) // 立即同步，供 handleDurationChange 读取
+  const durationMinutes = parseInt(currentDuration.value)
   await updateTimerSettings(minutes, durationMinutes)
   emit('save')
 }
 
-// 持续时长变更：通知 Rust 后端更新设置
-const handleDurationChange = async () => {
-  const minutes = parseInt(idleTimeoutModel.value)
-  const durationMinutes = parseInt(durationModel.value)
+// 持续时长变更：事件值用于本字段，本地缓存读另一字段，避免 defineModel 传播延迟
+const handleDurationChange = async (value: string | number) => {
+  const minutes = parseInt(currentIdleTimeout.value)
+  const durationMinutes = parseInt(String(value))
+  currentDuration.value = String(value) // 立即同步，供 handleIdleTimeoutChange 读取
   await updateTimerSettings(minutes, durationMinutes)
   emit('save')
 }

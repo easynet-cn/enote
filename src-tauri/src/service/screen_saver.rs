@@ -10,7 +10,7 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 use tokio::sync::RwLock;
 use tracing::{info, warn};
 
@@ -114,11 +114,17 @@ impl ScreenSaverService {
     }
 
     /// 退出屏保，重新开始空闲倒计时
-    pub async fn exit_screen_saver(&self) {
+    ///
+    /// 由前端屏保窗口的退出按钮或 Esc 键调用。
+    /// 修改后端状态、发射 ss-deactivate 事件、隐藏屏保窗口。
+    pub async fn exit_screen_saver(&self, app_handle: &AppHandle) {
         let mut state = self.state.write().await;
         state.timer_state = TimerState::Running;
         state.idle_remaining = state.idle_timeout;
         state.duration_remaining = 0;
+        drop(state); // 释放锁后再 emit，避免回调中死锁
+        let _ = app_handle.emit("ss-deactivate", ());
+        hide_screen_saver_window(app_handle);
         info!("Screen saver exited, idle countdown restarted");
     }
 
@@ -157,44 +163,61 @@ impl ScreenSaverService {
             loop {
                 interval.tick().await;
                 tick += 1;
-                let mut s = state.write().await;
 
-                match s.timer_state {
-                    TimerState::Running => {
-                        if s.idle_remaining > 0 {
-                            s.idle_remaining -= 1;
-                        }
-                        if s.idle_remaining == 0 {
-                            // 激活屏保
-                            s.timer_state = TimerState::ScreenSaver;
-                            s.duration_remaining = s.duration;
-                            let _ = app_handle.emit("ss-activate", ());
-                            info!("Screen saver activated");
-                        }
-                    }
-                    TimerState::ScreenSaver => {
-                        if s.duration > 0 {
-                            if s.duration_remaining > 0 {
-                                s.duration_remaining -= 1;
+                // 在锁内更新状态，收集需要在锁外执行的操作
+                // 避免 emit/窗口操作触发回调时死锁
+                let (tick_state, do_activate, do_deactivate) = {
+                    let mut s = state.write().await;
+                    let mut activate = false;
+                    let mut deactivate = false;
+
+                    match s.timer_state {
+                        TimerState::Running => {
+                            if s.idle_remaining > 0 {
+                                s.idle_remaining -= 1;
                             }
-                            if s.duration_remaining == 0 {
-                                // 自动退出屏保
-                                s.timer_state = TimerState::Running;
-                                s.idle_remaining = s.idle_timeout;
-                                let _ = app_handle.emit("ss-deactivate", ());
-                                info!("Screen saver auto-deactivated");
+                            if s.idle_remaining == 0 {
+                                s.timer_state = TimerState::ScreenSaver;
+                                s.duration_remaining = s.duration;
+                                activate = true;
                             }
                         }
-                        // duration == 0 表示无限屏保，不自动退出
+                        TimerState::ScreenSaver => {
+                            if s.duration > 0 {
+                                if s.duration_remaining > 0 {
+                                    s.duration_remaining -= 1;
+                                }
+                                if s.duration_remaining == 0 {
+                                    s.timer_state = TimerState::Running;
+                                    s.idle_remaining = s.idle_timeout;
+                                    deactivate = true;
+                                }
+                            }
+                            // duration == 0 表示无限屏保，不自动退出
+                        }
+                        TimerState::Paused | TimerState::Disabled => {}
                     }
-                    TimerState::Paused | TimerState::Disabled => {}
+
+                    (s.clone(), activate, deactivate)
+                }; // 写锁在此释放
+
+                // 在锁外执行事件发射和窗口操作（可能触发回调，避免死锁）
+                if do_activate {
+                    let _ = app_handle.emit("ss-activate", ());
+                    show_screen_saver_window(&app_handle);
+                    info!("Screen saver activated");
+                }
+                if do_deactivate {
+                    let _ = app_handle.emit("ss-deactivate", ());
+                    hide_screen_saver_window(&app_handle);
+                    info!("Screen saver auto-deactivated");
                 }
 
                 // 发送 tick 事件给前端
-                let _ = app_handle.emit("ss-tick", s.clone());
+                let _ = app_handle.emit("ss-tick", &tick_state);
 
                 // 更新托盘 tooltip 和 title
-                update_tray(&app_handle, &s, tick);
+                update_tray(&app_handle, &tick_state, tick);
             }
         });
     }
@@ -276,6 +299,124 @@ fn update_tray(app_handle: &AppHandle, state: &ScreenSaverState, tick: u64) {
     if let Err(e) = title_result {
         // Windows 上 set_title 不支持，仅记录 debug 日志
         tracing::debug!("Failed to set tray title: {}", e);
+    }
+}
+
+/// 屏保窗口 label 前缀
+const SS_WINDOW_PREFIX: &str = "screen-saver-";
+
+/// 创建屏保窗口（全屏置顶覆盖所有显示器）
+///
+/// 为每个显示器动态创建一个无边框窗口：
+/// - 先以普通窗口定位到目标显示器，再调用 set_fullscreen 进入全屏
+/// - 物理像素通过 scale_factor 转换为逻辑像素，确保跨 DPI 准确定位
+/// - 主显示器（index 0）：加载完整屏保 UI（含文字、倒计时、退出按钮）
+/// - 其他显示器：仅显示纯色背景
+fn show_screen_saver_window(app_handle: &AppHandle) {
+    // 先清理可能残留的旧窗口
+    destroy_all_screen_saver_windows(app_handle);
+
+    let monitors = match app_handle.available_monitors() {
+        Ok(monitors) if !monitors.is_empty() => monitors,
+        Ok(_) => {
+            warn!("No monitors detected, cannot create screen saver windows");
+            return;
+        }
+        Err(e) => {
+            warn!("Failed to list monitors: {}", e);
+            return;
+        }
+    };
+
+    for (i, monitor) in monitors.iter().enumerate() {
+        let label = format!("{}{}", SS_WINDOW_PREFIX, i);
+        let url = if i == 0 {
+            // 主显示器：完整屏保 UI
+            WebviewUrl::App("index.html?mode=screensaver".into())
+        } else {
+            // 其他显示器：纯色背景（通过 URL 参数区分）
+            WebviewUrl::App(
+                format!(
+                    "index.html?mode=screensaver&monitor={}",
+                    i
+                )
+                .into(),
+            )
+        };
+
+        // 物理像素 → 逻辑像素（P0 修复）
+        let scale = monitor.scale_factor();
+        let pos = monitor.position();
+        let size = monitor.size();
+        let logical_x = pos.x as f64 / scale;
+        let logical_y = pos.y as f64 / scale;
+        let logical_w = size.width as f64 / scale;
+        let logical_h = size.height as f64 / scale;
+
+        // P1 修复：先创建普通窗口定位到目标显示器，不直接 fullscreen
+        // P2 修复：build 后监听 ScaleFactorChanged 事件，DPI 变化时记录日志
+        match WebviewWindowBuilder::new(app_handle, &label, url)
+            .title("")
+            .decorations(false)
+            .always_on_top(true)
+            .skip_taskbar(true)
+            .resizable(false)
+            .position(logical_x, logical_y)
+            .inner_size(logical_w, logical_h)
+            .build()
+        {
+            Ok(window) => {
+                // 窗口创建后再进入全屏（确保定位到正确显示器后再由 OS 接管）
+                let _ = window.set_fullscreen(true);
+                let _ = window.set_focus();
+
+                // P2: 监听 DPI 缩放变化
+                let ss_label = label.clone();
+                window.on_window_event(move |event: &WindowEvent| {
+                    if let WindowEvent::ScaleFactorChanged { .. } = event {
+                        info!(
+                            "Scale factor changed on '{}', screen saver windows may need rebuild",
+                            ss_label
+                        );
+                    }
+                });
+
+                info!(
+                    "Screen saver window '{}' created on monitor {} (logical {:.0}x{:.0} at {:.0},{:.0}, scale={:.1})",
+                    label, i, logical_w, logical_h, logical_x, logical_y, scale
+                );
+            }
+            Err(e) => {
+                warn!("Failed to create screen saver window '{}': {}", label, e);
+            }
+        }
+    }
+}
+
+/// 销毁所有屏保窗口
+fn hide_screen_saver_window(app_handle: &AppHandle) {
+    destroy_all_screen_saver_windows(app_handle);
+}
+
+/// 遍历关闭并销毁所有 `screen-saver-*` 窗口
+fn destroy_all_screen_saver_windows(app_handle: &AppHandle) {
+    let labels: Vec<String> = app_handle
+        .webview_windows()
+        .keys()
+        .filter(|k| k.starts_with(SS_WINDOW_PREFIX))
+        .cloned()
+        .collect();
+
+    for label in &labels {
+        if let Some(window) = app_handle.get_webview_window(label) {
+            // 先退出全屏（macOS 需要先退出全屏 Space 再关闭）
+            #[cfg(target_os = "macos")]
+            {
+                let _ = window.set_fullscreen(false);
+            }
+            let _ = window.close();
+            info!("Screen saver window '{}' closed", label);
+        }
     }
 }
 

@@ -9,7 +9,8 @@
   ],
   "windows": [
     "main",
-    "note-*"
+    "note-*",
+    "screen-saver-*"
   ],
   "permissions": [
     "core:default",

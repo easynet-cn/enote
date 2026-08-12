@@ -63,9 +63,10 @@ pub async fn ss_reset(
 /// 退出屏保，重新开始空闲倒计时
 #[tauri::command]
 pub async fn ss_exit(
+    app_handle: tauri::AppHandle,
     screen_saver: tauri::State<'_, Arc<ScreenSaverService>>,
 ) -> Result<(), AppError> {
-    screen_saver.exit_screen_saver().await;
+    screen_saver.exit_screen_saver(&app_handle).await;
     Ok(())
 }
 

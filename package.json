@@ -1,7 +1,7 @@
 {
   "name": "enote",
   "private": true,
-  "version": "1.2.6",
+  "version": "1.2.7",
   "packageManager": "pnpm@11.21.0",
   "type": "module",
   "scripts": {

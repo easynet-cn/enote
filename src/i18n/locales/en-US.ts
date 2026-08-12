@@ -883,6 +883,7 @@ export default {
     remaining: 'Remaining',
     exit: 'Exit',
     tipExit: 'Press ESC or click anywhere to exit early',
+    defaultText: 'Please rest your eyes',
   },
 
   // Trash

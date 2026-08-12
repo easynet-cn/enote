@@ -879,6 +879,7 @@ export default {
     remaining: '剩余时间',
     exit: '退出',
     tipExit: '按 ESC 或点击任意位置可提前结束',
+    defaultText: '请休息一下眼睛',
   },
 
   // 回收站

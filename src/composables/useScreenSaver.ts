@@ -2,28 +2,38 @@ import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import { settingsApi } from '../api/note'
+import i18n from '../i18n'
 
 // 专业默认值（基于护眼人体工学建议）
 // 内部全部使用秒为单位
+// 提示文字默认值根据语言环境动态获取
+function getDefaultText(): string {
+  return i18n.global.t('screenSaver.defaultText')
+}
+
 const DEFAULTS = {
   enabled: true, // 默认开启护眼屏保
   idleTimeout: 3600, // 3600 秒 = 60 分钟空闲触发
   duration: 300, // 300 秒 = 5 分钟屏保持续
   bgColor: '#1a1a2e', // 深蓝灰底色（低蓝光、舒缓）
   bgImage: '', // 默认无背景图
-  text: '请休息一下眼睛', // 默认提示文字
   textColor: '#e0e0e0', // 柔和暖白文字
   fontSize: 48, // 大字号，远距离可读
 }
 
+// 检测是否运行在屏保独立窗口中
+// 屏保窗口的 URL 为 index.html?mode=screensaver
+const isStandaloneWindow = new URLSearchParams(window.location.search).get('mode') === 'screensaver'
+
 // 模块级单例状态
-const isScreenSaverActive = ref(false)
+// 屏保窗口中默认 active（窗口仅在屏保激活时显示）
+const isScreenSaverActive = ref(isStandaloneWindow)
 const enabled = ref(DEFAULTS.enabled)
 const idleTimeout = ref(DEFAULTS.idleTimeout) // 秒
 const duration = ref(DEFAULTS.duration) // 秒
 const bgColor = ref(DEFAULTS.bgColor)
 const bgImage = ref(DEFAULTS.bgImage)
-const text = ref(DEFAULTS.text)
+const text = ref(getDefaultText())
 const textColor = ref(DEFAULTS.textColor)
 const fontSize = ref(DEFAULTS.fontSize)
 
@@ -31,6 +41,9 @@ const fontSize = ref(DEFAULTS.fontSize)
 const timerState = ref<'running' | 'paused' | 'screensaver' | 'disabled'>('disabled')
 const idleRemaining = ref(0)
 const durationRemaining = ref(0)
+
+// 防止 deactivate() 重复调用
+let isDeactivating = false
 
 const unlistenFns: UnlistenFn[] = []
 let listenersInitialized = false
@@ -98,7 +111,7 @@ async function loadSettings() {
     duration.value = durationMinutes * 60
     bgColor.value = settings.screenSaverBgColor || DEFAULTS.bgColor
     bgImage.value = settings.screenSaverBgImage || DEFAULTS.bgImage
-    text.value = settings.screenSaverText ?? DEFAULTS.text
+    text.value = settings.screenSaverText ?? getDefaultText()
     textColor.value = settings.screenSaverTextColor || DEFAULTS.textColor
     fontSize.value = parseInt(settings.screenSaverFontSize || String(DEFAULTS.fontSize))
   } catch {
@@ -110,6 +123,24 @@ async function loadSettings() {
 async function checkStartup() {
   await initListeners()
   await loadSettings()
+  // 屏保独立窗口：查询后端当前状态，立即同步倒计时
+  if (isStandaloneWindow) {
+    try {
+      const state = await invoke<{
+        timerState: string
+        idleRemaining: number
+        idleTimeout: number
+        duration: number
+        durationRemaining: number
+      }>('ss_get_state')
+      timerState.value = state.timerState as typeof timerState.value
+      idleRemaining.value = state.idleRemaining
+      durationRemaining.value = state.durationRemaining
+    } catch {
+      // 查询失败时保持默认值，ss-tick 事件会随后更新
+    }
+    return
+  }
   if (enabled.value) {
     await invoke('ss_start', {
       idleTimeout: idleTimeout.value,
@@ -156,9 +187,15 @@ async function reset() {
   await invoke('ss_reset')
 }
 
-/** 退出屏保，重新开始空闲倒计时 */
+/** 退出屏保，重新开始空闲倒计时（防重入） */
 async function deactivate() {
-  await invoke('ss_exit')
+  if (isDeactivating) return
+  isDeactivating = true
+  try {
+    await invoke('ss_exit')
+  } finally {
+    isDeactivating = false
+  }
 }
 
 /** 重启屏保（设置变更后调用） */
@@ -177,6 +214,7 @@ export function useScreenSaver() {
   return {
     // 状态
     isScreenSaverActive,
+    isStandaloneWindow,
     enabled,
     idleTimeout,
     duration,

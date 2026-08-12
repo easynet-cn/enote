@@ -1,169 +1,179 @@
 <template>
-  <!-- 加载中 -->
-  <Transition name="fade">
-    <div v-if="appMode === 'loading'" class="loading-screen">
-      <NotebookPen class="loading-icon" :stroke-width="1.5" />
-      <div class="loading-spinner" />
-      <span class="loading-text">{{ t('common.loading') }}</span>
-    </div>
-  </Transition>
+  <!-- 屏保独立窗口模式 -->
+  <!-- 辅助显示器：仅显示纯色背景，无 UI 元素 -->
+  <div v-if="isScreenSaverWindow && isSecondaryMonitor" class="screensaver-secondary-bg" />
 
-  <!-- 设置向导模式 -->
-  <SetupWizard
-    v-if="appMode === 'setup'"
-    :show-back="hasExistingProfiles"
-    :edit-profile="editProfileData"
-    @complete="onSetupComplete"
-    @back="onSetupBack"
-  />
+  <!-- 主显示器屏保窗口：完整屏保 UI -->
+  <ScreenSaver v-else-if="isScreenSaverWindow" />
 
-  <!-- Profile 选择模式 -->
-  <ProfileSelector
-    v-else-if="appMode === 'select'"
-    :show-close="canCloseSelector"
-    @create="onCreateProfile"
-    @edit="onEditProfile"
-    @connected="onSetupComplete"
-    @close="returnToMain"
-  />
-
-  <!-- 主应用 -->
-  <div v-else class="flex h-screen bg-surface-alt relative overflow-hidden">
-    <!-- 侧边栏遮罩（手机/平板覆盖层模式） -->
-    <Transition name="sidebar-overlay">
-      <div v-if="sidebarOverlayVisible" class="sidebar-overlay" @click="closeSidebar" />
+  <!-- 正常应用模式 -->
+  <template v-else>
+    <!-- 加载中 -->
+    <Transition name="fade">
+      <div v-if="appMode === 'loading'" class="loading-screen">
+        <NotebookPen class="loading-icon" :stroke-width="1.5" />
+        <div class="loading-spinner" />
+        <span class="loading-text">{{ t('common.loading') }}</span>
+      </div>
     </Transition>
 
-    <!-- 侧边栏组件 -->
-    <div :class="sidebarContainerClass">
-      <AppSidebar
-        :mobile="isMobileLayout"
-        :overlay="!isDesktopLayout"
-        :notebooks="notebooks"
-        :tags="tags"
-        :active-notebook="activeNotebook"
-        :active-tag="activeTag"
-        :active-note="activeNote"
-        :collapsed="isDesktopLayout ? sidebarCollapsed : false"
-        @set-active-notebook="handleSelectNotebook"
-        @set-active-tag="handleSelectTag"
-        @create-new-note="handleCreateNote"
-        @save-notebook="saveNotebook"
-        @delete-notebook="deleteNotebook"
-        @save-tag="saveTag"
-        @delete-tag="deleteTag"
-        @toggle-collapse="sidebarCollapsed = !sidebarCollapsed"
-        @open-import="importDialogVisible = true"
-        @open-backup="backupDialogVisible = true"
-        @open-settings="settingsDialogVisible = true"
-        @open-trash="trashDialogVisible = true"
-        @reorder-notebooks="handleReorderNotebooks"
-        @reorder-tags="handleReorderTags"
-        @open-templates="templateDialogVisible = true"
-        @close-overlay="closeSidebar"
-      />
-    </div>
+    <!-- 设置向导模式 -->
+    <SetupWizard
+      v-if="appMode === 'setup'"
+      :show-back="hasExistingProfiles"
+      :edit-profile="editProfileData"
+      @complete="onSetupComplete"
+      @back="onSetupBack"
+    />
 
-    <!-- 笔记列表组件 -->
-    <div :class="noteListContainerClass">
-      <NoteList
-        :notebooks="notebooks"
-        :notes="notes"
-        :active-notebook="activeNotebook"
-        :active-note="activeNote"
-        :collapsed="isDesktopLayout ? noteListCollapsed : false"
-        :mobile="isMobileLayout"
-        :layout="layout"
-        v-model:current-page="notePageIndex"
-        v-model:page-size="notePageSize"
-        v-model:total="noteTotal"
-        v-model:query="query"
-        v-model:width="noteListWidth"
-        @set-active-note="handleSelectNote"
-        @update-search-query="handleUpdateSearchQuery"
-        @size-change="handleNoteSizeChange"
-        @current-change="handleNoteCurrentChange"
-        @toggle-collapse="handleNoteListToggle"
-        @toggle-pin="handleTogglePin"
-        @toggle-star="handleToggleStar"
-        @open-sidebar="openSidebar"
-      />
-    </div>
+    <!-- Profile 选择模式 -->
+    <ProfileSelector
+      v-else-if="appMode === 'select'"
+      :show-close="canCloseSelector"
+      @create="onCreateProfile"
+      @edit="onEditProfile"
+      @connected="onSetupComplete"
+      @close="returnToMain"
+    />
 
-    <!-- 编辑器组件 -->
-    <div :class="editorContainerClass">
-      <ErrorBoundary>
-        <NoteEditor
-          v-model:history-data="histories"
-          v-model:current-page="historyPageIndex"
-          v-model:page-size="historyPageSize"
-          v-model:total="historyTotal"
+    <!-- 主应用 -->
+    <div v-else class="flex h-screen bg-surface-alt relative overflow-hidden">
+      <!-- 侧边栏遮罩（手机/平板覆盖层模式） -->
+      <Transition name="sidebar-overlay">
+        <div v-if="sidebarOverlayVisible" class="sidebar-overlay" @click="closeSidebar" />
+      </Transition>
+
+      <!-- 侧边栏组件 -->
+      <div :class="sidebarContainerClass">
+        <AppSidebar
+          :mobile="isMobileLayout"
+          :overlay="!isDesktopLayout"
           :notebooks="notebooks"
           :tags="tags"
-          :active-note="activeNoteData"
-          :edit-mode="editMode"
-          :history-loading="historyLoading"
+          :active-notebook="activeNotebook"
+          :active-tag="activeTag"
+          :active-note="activeNote"
+          :collapsed="isDesktopLayout ? sidebarCollapsed : false"
+          @set-active-notebook="handleSelectNotebook"
+          @set-active-tag="handleSelectTag"
+          @create-new-note="handleCreateNote"
+          @save-notebook="saveNotebook"
+          @delete-notebook="deleteNotebook"
+          @save-tag="saveTag"
+          @delete-tag="deleteTag"
+          @toggle-collapse="sidebarCollapsed = !sidebarCollapsed"
+          @open-import="importDialogVisible = true"
+          @open-backup="backupDialogVisible = true"
+          @open-settings="settingsDialogVisible = true"
+          @open-trash="trashDialogVisible = true"
+          @reorder-notebooks="handleReorderNotebooks"
+          @reorder-tags="handleReorderTags"
+          @open-templates="templateDialogVisible = true"
+          @close-overlay="closeSidebar"
+        />
+      </div>
+
+      <!-- 笔记列表组件 -->
+      <div :class="noteListContainerClass">
+        <NoteList
+          :notebooks="notebooks"
+          :notes="notes"
+          :active-notebook="activeNotebook"
+          :active-note="activeNote"
+          :collapsed="isDesktopLayout ? noteListCollapsed : false"
           :mobile="isMobileLayout"
           :layout="layout"
-          @save-note="saveNote"
-          @cancel-edit="cancelEdit"
-          @delete-note="deleteNote"
-          @toggle-edit-mode="editMode = !editMode"
-          @update-note-title="updateNoteTitle"
-          @update-note-content="updateNoteContent"
-          @update-note-content-type="updateNoteContentType"
-          @update-note-setting="
-            (notebookId, tagIds, mcpAccess) =>
-              updateNoteSetting(notebookId, tagIds, tags, mcpAccess)
-          "
-          @open="openHistoryDialog"
-          @size-change="handleNoteHistorySizeChange"
-          @current-change="handleNoteHistoryCurrentChange"
-          @save-as-template="handleSaveAsTemplate"
-          @back="handleEditorBack"
+          v-model:current-page="notePageIndex"
+          v-model:page-size="notePageSize"
+          v-model:total="noteTotal"
+          v-model:query="query"
+          v-model:width="noteListWidth"
+          @set-active-note="handleSelectNote"
+          @update-search-query="handleUpdateSearchQuery"
+          @size-change="handleNoteSizeChange"
+          @current-change="handleNoteCurrentChange"
+          @toggle-collapse="handleNoteListToggle"
+          @toggle-pin="handleTogglePin"
+          @toggle-star="handleToggleStar"
+          @open-sidebar="openSidebar"
         />
-      </ErrorBoundary>
+      </div>
+
+      <!-- 编辑器组件 -->
+      <div :class="editorContainerClass">
+        <ErrorBoundary>
+          <NoteEditor
+            v-model:history-data="histories"
+            v-model:current-page="historyPageIndex"
+            v-model:page-size="historyPageSize"
+            v-model:total="historyTotal"
+            :notebooks="notebooks"
+            :tags="tags"
+            :active-note="activeNoteData"
+            :edit-mode="editMode"
+            :history-loading="historyLoading"
+            :mobile="isMobileLayout"
+            :layout="layout"
+            @save-note="saveNote"
+            @cancel-edit="cancelEdit"
+            @delete-note="deleteNote"
+            @toggle-edit-mode="editMode = !editMode"
+            @update-note-title="updateNoteTitle"
+            @update-note-content="updateNoteContent"
+            @update-note-content-type="updateNoteContentType"
+            @update-note-setting="
+              (notebookId, tagIds, mcpAccess) =>
+                updateNoteSetting(notebookId, tagIds, tags, mcpAccess)
+            "
+            @open="openHistoryDialog"
+            @size-change="handleNoteHistorySizeChange"
+            @current-change="handleNoteHistoryCurrentChange"
+            @save-as-template="handleSaveAsTemplate"
+            @back="handleEditorBack"
+          />
+        </ErrorBoundary>
+      </div>
+
+      <!-- 导入对话框 -->
+      <ImportDialog
+        v-model="importDialogVisible"
+        :notebooks="notebooks"
+        :tags="tags"
+        @imported="refreshAllData"
+      />
+
+      <!-- 数据备份对话框 -->
+      <BackupDialog v-model="backupDialogVisible" @imported="refreshAllData" />
+
+      <!-- 设置对话框 -->
+      <SettingsDialog
+        v-model="settingsDialogVisible"
+        @switch-profile="switchToProfileSelector"
+        @backup-settings-changed="restartAutoBackup"
+      />
+
+      <!-- 回收站对话框 -->
+      <TrashDialog v-model="trashDialogVisible" @restored="refreshAllData" />
+
+      <!-- 模板对话框 -->
+      <TemplateDialog v-model="templateDialogVisible" @use-template="handleUseTemplate" />
+
+      <!-- 日志管理对话框 -->
+      <LogDialog v-model="logDialogVisible" />
+
+      <!-- 快捷命令面板 -->
+      <CommandPalette v-model="commandPaletteVisible" :commands="paletteCommands" />
+
+      <!-- 屏保 -->
+      <ScreenSaver />
+
+      <!-- 锁屏 -->
+      <LockScreen :visible="isLocked" @unlocked="unlock" />
+
+      <!-- 自动更新检查 -->
+      <UpdateChecker ref="updateCheckerRef" />
     </div>
-
-    <!-- 导入对话框 -->
-    <ImportDialog
-      v-model="importDialogVisible"
-      :notebooks="notebooks"
-      :tags="tags"
-      @imported="refreshAllData"
-    />
-
-    <!-- 数据备份对话框 -->
-    <BackupDialog v-model="backupDialogVisible" @imported="refreshAllData" />
-
-    <!-- 设置对话框 -->
-    <SettingsDialog
-      v-model="settingsDialogVisible"
-      @switch-profile="switchToProfileSelector"
-      @backup-settings-changed="restartAutoBackup"
-    />
-
-    <!-- 回收站对话框 -->
-    <TrashDialog v-model="trashDialogVisible" @restored="refreshAllData" />
-
-    <!-- 模板对话框 -->
-    <TemplateDialog v-model="templateDialogVisible" @use-template="handleUseTemplate" />
-
-    <!-- 日志管理对话框 -->
-    <LogDialog v-model="logDialogVisible" />
-
-    <!-- 快捷命令面板 -->
-    <CommandPalette v-model="commandPaletteVisible" :commands="paletteCommands" />
-
-    <!-- 屏保 -->
-    <ScreenSaver />
-
-    <!-- 锁屏 -->
-    <LockScreen :visible="isLocked" @unlocked="unlock" />
-
-    <!-- 自动更新检查 -->
-    <UpdateChecker ref="updateCheckerRef" />
-  </div>
+  </template>
 </template>
 
 <script setup lang="ts">
@@ -935,7 +945,23 @@ const initApp = async () => {
   await enterMainMode()
 }
 
-onMounted(() => initApp())
+// 检测是否运行在屏保独立窗口中
+const isScreenSaverWindow =
+  new URLSearchParams(window.location.search).get('mode') === 'screensaver'
+
+// 辅助显示器：URL 中带有 monitor=N（N > 0）参数
+// 仅显示纯色背景，不加载屏保 UI 组件
+const monitorIdx = parseInt(new URLSearchParams(window.location.search).get('monitor') || '0')
+const isSecondaryMonitor = isScreenSaverWindow && monitorIdx > 0
+
+// 屏保窗口：仅初始化屏保，跳过数据库等全部初始化
+onMounted(() => {
+  if (isScreenSaverWindow) {
+    checkScreenSaverStartup()
+    return
+  }
+  initApp()
+})
 
 onUnmounted(() => {
   if (autoBackupTimer) {
@@ -993,5 +1019,15 @@ onUnmounted(() => {
 
 .fade-leave-to {
   opacity: 0;
+}
+</style>
+
+<style>
+/* 辅助显示器屏保背景（非 scoped，确保独立窗口生效） */
+.screensaver-secondary-bg {
+  position: fixed;
+  inset: 0;
+  background-color: #1a1a2e;
+  z-index: 99999;
 }
 </style>
