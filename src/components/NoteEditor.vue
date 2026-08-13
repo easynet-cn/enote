@@ -264,7 +264,10 @@ const createEditor = async (contentType: ContentType, content: string) => {
   editor.value = new Editor({
     extensions,
     content,
-    editable: false,
+    // 竞态修复：用当前 editMode 状态初始化，而非硬编码 false
+    // createEditor 是异步的，editMode watch 可能在编辑器创建前已触发，
+    // 导致 setEditable(true) 成为空操作，编辑器最终保持不可编辑
+    editable: props.editMode,
     editorProps: {
       attributes: {
         autocapitalize: 'off',
@@ -284,6 +287,20 @@ const createEditor = async (contentType: ContentType, content: string) => {
       updateTocItems()
     },
   })
+
+  // 竞态修复：编辑器创建完成后，若 editMode 已为 true（watch 已提前触发），
+  // 补充执行焦点逻辑（watch 中因 editor 不存在而跳过的部分）
+  if (props.editMode) {
+    if (editModeFocusTimer) clearTimeout(editModeFocusTimer)
+    editModeFocusTimer = setTimeout(() => {
+      editModeFocusTimer = null
+      if (isNewNote.value) {
+        titleBarRef.value?.focus()
+      } else {
+        editor.value?.commands.focus('start')
+      }
+    }, 100)
+  }
 }
 
 // 初始化编辑器
@@ -389,8 +406,7 @@ const toggleToc = () => {
 const updateTocItems = () => {
   if (!editor.value) return
   const storage = (editor.value.storage as unknown as Record<string, unknown>).tableOfContents as
-    | { items: typeof tocItems.value }
-    | undefined
+    { items: typeof tocItems.value } | undefined
   if (storage) {
     tocItems.value = storage.items
   }
