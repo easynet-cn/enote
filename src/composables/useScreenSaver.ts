@@ -64,8 +64,26 @@ async function initListeners() {
   listenersInitialized = true
 
   unlistenFns.push(
-    await listen('ss-activate', () => {
+    await listen('ss-activate', async () => {
       isScreenSaverActive.value = true
+      // 缓存窗口复用时，onMounted 不再触发
+      // 需要主动查询后端最新状态，确保 durationRemaining 正确
+      if (isStandaloneWindow) {
+        try {
+          const state = await invoke<{
+            timerState: string
+            idleRemaining: number
+            idleTimeout: number
+            duration: number
+            durationRemaining: number
+          }>('ss_get_state')
+          timerState.value = state.timerState as typeof timerState.value
+          idleRemaining.value = state.idleRemaining
+          durationRemaining.value = state.durationRemaining
+        } catch {
+          // 查询失败时保持当前值，ss-tick 事件会随后更新
+        }
+      }
     }),
   )
 

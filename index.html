@@ -20,6 +20,13 @@
       background: #ffffff;
       z-index: 9999;
     }
+    /* 屏保窗口的加载屏使用深色背景，避免白色闪烁 */
+    body.ss-window #app-loading {
+      background: #1a1a2e;
+    }
+    html.ss-window, body.ss-window {
+      background-color: #1a1a2e;
+    }
 
     .loading-icon {
       width: 48px;
@@ -63,6 +70,13 @@
 </head>
 
 <body>
+  <script>
+    // 屏保独立窗口：立即设置深色背景，避免 WebView 重绘时的白色闪烁
+    if (new URLSearchParams(window.location.search).get('mode') === 'screensaver') {
+      document.documentElement.classList.add('ss-window');
+      document.body.classList.add('ss-window');
+    }
+  </script>
   <div id="app">
     <!-- 内联加载屏：Vue 挂载时自动替换 -->
     <div id="app-loading">

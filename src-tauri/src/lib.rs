@@ -16,7 +16,7 @@ use sea_orm_migration::MigratorTrait;
 use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder};
 #[cfg(feature = "desktop")]
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder};
-use tauri::{Emitter, Manager};
+use tauri::{Emitter, Manager, RunEvent};
 use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 use tracing::{error, info};
 use tracing_subscriber::Layer;
@@ -258,12 +258,26 @@ pub fn run_with_config(config_path: Option<String>) {
             command::ss_get_state,
             command::ss_toggle_pause,
         ])
-        .run(tauri::generate_context!())
+        .build(tauri::generate_context!())
         .unwrap_or_else(|e| {
             error!("Application start failed: {:#}", e);
             eprintln!("{}: {}", t_simple("error.appStartFailed"), e);
             std::process::exit(1);
+        })
+        .run(|app_handle, event| {
+            handle_run_event(app_handle, &event);
         });
+}
+
+/// RunEvent 处理闭包：应用退出时清理屏保窗口
+///
+/// 单独提取为函数，供 `.run()` 的闭包参数调用。
+fn handle_run_event(app: &tauri::AppHandle, event: &RunEvent) {
+    if let RunEvent::ExitRequested { .. } = event {
+        let screen_saver = app.state::<std::sync::Arc<service::screen_saver::ScreenSaverService>>();
+        screen_saver.cleanup_windows(app);
+        info!("Screen saver windows cleaned up on exit");
+    }
 }
 
 /// 移动端首次启动时自动创建默认 SQLite profile
