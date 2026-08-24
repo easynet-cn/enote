@@ -60,7 +60,7 @@ zip = "8.6"
 # Utilities
 chrono = "0.4"
 config = "0.15"
-uuid = { version = "1.24", features = ["v4"] }
+uuid = { version = "1.25", features = ["v4"] }
 sys-locale = "0.3"
 keyring = { version = "4.1", features = ["apple-native-keyring-store", "windows-native-keyring-store", "dbus-secret-service-keyring-store"] }
 
