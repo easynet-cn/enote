@@ -62,7 +62,7 @@ chrono = "0.4"
 config = "0.15"
 uuid = { version = "1.26", features = ["v4"] }
 sys-locale = "0.3"
-keyring = { version = "4.1", features = ["apple-native-keyring-store", "windows-native-keyring-store", "dbus-secret-service-keyring-store"] }
+keyring = { version = "4.2", features = ["apple-native-keyring-store", "windows-native-keyring-store", "dbus-secret-service-keyring-store"] }
 
 # HTTP Client
 reqwest = { version = "0.13", default-features = false, features = ["json", "multipart", "rustls", "form"] }
