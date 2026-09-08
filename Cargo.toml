@@ -22,7 +22,7 @@ tauri-plugin-os = "2.3"
 # Serde
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-serde_with = "3.22"
+serde_with = "3.23"
 yaml_serde = "0.10"
 
 # Database（基础仅 SQLite，MySQL/PG 由 desktop feature 启用）
