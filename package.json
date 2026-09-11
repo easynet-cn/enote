@@ -21,7 +21,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@lucide/vue": "^1.43.0",
+    "@lucide/vue": "^1.44.0",
     "@tauri-apps/api": "^2.11.1",
     "@tauri-apps/plugin-dialog": "^2.7.3",
     "@tauri-apps/plugin-fs": "^2.5.2",
@@ -92,11 +92,11 @@
     "eslint-plugin-vue": "^10.11.0",
     "husky": "^9.1.7",
     "jsdom": "^30.0.1",
-    "lint-staged": "^17.5.0",
+    "lint-staged": "^17.5.1",
     "prettier": "^3.9.6",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.3",
-    "vite": "^8.2.2",
+    "vite": "^8.3.0",
     "vitest": "^5.0.0",
     "vue-tsc": "^3.3.11"
   }
