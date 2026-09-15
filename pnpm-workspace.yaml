@@ -1,2 +1,2 @@
-minimumReleaseAgeExclude: []
+minimumReleaseAgeExclude: [ '@lucide/vue@1.46.0', '@vitejs/plugin-vue@6.0.9' ]
 minimumReleaseAgeExcludePrune: true
