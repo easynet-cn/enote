@@ -26,6 +26,10 @@ struct IdMaps {
     tag: HashMap<i64, i64>,
     #[allow(dead_code)]
     note: HashMap<i64, i64>,
+    /// 待办清单 ID 映射（todo.list_id 引用 todo_list.id）
+    todo_list: HashMap<i64, i64>,
+    /// 待办 ID 映射（todo.parent_id 自引用，需重映射）
+    todo: HashMap<i64, i64>,
 }
 
 impl IdMaps {
@@ -34,6 +38,8 @@ impl IdMaps {
             notebook: HashMap::new(),
             tag: HashMap::new(),
             note: HashMap::new(),
+            todo_list: HashMap::new(),
+            todo: HashMap::new(),
         }
     }
 }
@@ -241,6 +247,13 @@ pub async fn sync_to_profile(
         entity::notebook::Entity::delete_many().exec(&txn).await?;
         if options.scope.templates {
             entity::note_template::Entity::delete_many()
+                .exec(&txn)
+                .await?;
+        }
+        if options.scope.todos {
+            // 先删待办（引用清单），再删清单
+            entity::todo::Entity::delete_many().exec(&txn).await?;
+            entity::todo_list::Entity::delete_many()
                 .exec(&txn)
                 .await?;
         }
@@ -755,6 +768,60 @@ pub async fn sync_to_profile(
                 1,
                 &t("sync.progress.settings", &[]),
             );
+        }
+    }
+
+    // 4g. 同步待办清单与待办
+    if options.scope.todos {
+        // 先同步清单（todo.list_id 依赖 todo_list.id）
+        let source_lists = entity::todo_list::Entity::find().all(source_db).await?;
+        for (i, l) in source_lists.iter().enumerate() {
+            let source_id = l.id;
+            let synced_at = Local::now().naive_local();
+            let dto = crate::model::TodoList::from(l.clone());
+            match crate::service::todo::create_list(&target_db, &dto).await {
+                Ok(created) => {
+                    id_maps.todo_list.insert(source_id, created.id);
+                    sync_log::add_detail(source_db, log_id, "todo_list", source_id, Some(created.id), &l.name, "success", None, synced_at).await?;
+                    success += 1;
+                }
+                Err(e) => {
+                    sync_log::add_detail(source_db, log_id, "todo_list", source_id, None, &l.name, "failed", Some(&e.to_string()), synced_at).await?;
+                    failed += 1;
+                }
+            }
+            total += 1;
+            emit_progress(app_handle, log_id, "sync", "todo_list", i as u32 + 1, source_lists.len() as u32, &l.name);
+        }
+
+        // 再同步待办：先顶级（parent_id = 0）后子任务，便于重映射 parent_id
+        let mut source_todos = entity::todo::Entity::find().all(source_db).await?;
+        source_todos.sort_by_key(|item| item.parent_id);
+        for (i, t) in source_todos.iter().enumerate() {
+            let source_id = t.id;
+            let synced_at = Local::now().naive_local();
+            let mut dto = crate::model::Todo::from(t.clone());
+            dto.id = 0;
+            dto.list_id = dto.list_id.and_then(|id| id_maps.todo_list.get(&id).copied());
+            dto.note_id = dto.note_id.and_then(|id| id_maps.note.get(&id).copied());
+            dto.parent_id = if t.parent_id == 0 {
+                0
+            } else {
+                id_maps.todo.get(&t.parent_id).copied().unwrap_or(0)
+            };
+            match crate::service::todo::create(&target_db, &dto).await {
+                Ok(created) => {
+                    id_maps.todo.insert(source_id, created.id);
+                    sync_log::add_detail(source_db, log_id, "todo", source_id, Some(created.id), &t.title, "success", None, synced_at).await?;
+                    success += 1;
+                }
+                Err(e) => {
+                    sync_log::add_detail(source_db, log_id, "todo", source_id, None, &t.title, "failed", Some(&e.to_string()), synced_at).await?;
+                    failed += 1;
+                }
+            }
+            total += 1;
+            emit_progress(app_handle, log_id, "sync", "todo", i as u32 + 1, source_todos.len() as u32, &t.title);
         }
     }
 

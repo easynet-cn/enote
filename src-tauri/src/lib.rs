@@ -93,6 +93,7 @@ pub fn run_with_config(config_path: Option<String>) {
         .plugin(tauri_plugin_shell::init()) // Shell 命令执行
         .plugin(tauri_plugin_dialog::init()) // 文件对话框
         .plugin(tauri_plugin_updater::Builder::new().build()) // 自动更新
+        .plugin(tauri_plugin_notification::init()) // 系统通知（待办提醒）
         .plugin(tauri_plugin_process::init()) // 进程管理（重启）
         // 应用初始化设置
         .setup(|app| {
@@ -247,6 +248,27 @@ pub fn run_with_config(config_path: Option<String>) {
             command::open_attachment,
             command::get_attachment_stats,
             command::cleanup_orphan_attachments,
+            // 待办相关命令
+            command::search_todos,
+            command::find_todo,
+            command::create_todo,
+            command::update_todo,
+            command::toggle_todo,
+            command::delete_todo,
+            command::restore_todo,
+            command::permanent_delete_todo,
+            command::empty_todo_trash,
+            command::find_all_todo_lists,
+            command::create_todo_list,
+            command::update_todo_list,
+            command::delete_todo_list,
+            command::reorder_todos,
+            command::find_todo_tags,
+            command::set_todo_tags,
+            command::batch_toggle_todos,
+            command::batch_delete_todos,
+            command::batch_move_todos,
+            command::todo_stats,
             // 屏保相关命令
             command::ss_start,
             command::ss_stop,
@@ -476,7 +498,54 @@ async fn setup_normal_mode(
         settings_cache: tokio::sync::RwLock::new(None),
     });
 
-    app.manage(app_state);
+    app.manage(app_state.clone());
+
+    // 启动待办提醒定时检查
+    //
+    // 每分钟扫描一次到期的待办提醒，发送系统通知后标记为已提醒。
+    // 该任务跟随应用生命周期（应用打开时运行，关闭即停止），不常驻后台。
+    {
+        let reminder_handle = handle.clone();
+        let reminder_state = app_state.clone();
+        tokio::spawn(async move {
+            use tauri_plugin_notification::NotificationExt;
+
+            let mut interval = tokio::time::interval(std::time::Duration::from_secs(60));
+            loop {
+                interval.tick().await;
+
+                let db = match reminder_state.database_connection.read().await.clone() {
+                    Some(db) => db,
+                    None => continue,
+                };
+
+                let pending = match service::todo::find_pending_reminders(&db).await {
+                    Ok(list) => list,
+                    Err(e) => {
+                        tracing::warn!("Failed to query pending todo reminders: {:#}", e);
+                        continue;
+                    }
+                };
+
+                for todo in pending {
+                    let body = todo.title.clone();
+                    if let Err(e) = reminder_handle
+                        .notification()
+                        .builder()
+                        .title("ENote")
+                        .body(&body)
+                        .show()
+                    {
+                        tracing::warn!("Failed to show todo reminder notification: {:#}", e);
+                        continue;
+                    }
+                    if let Err(e) = service::todo::mark_reminded(&db, todo.id).await {
+                        tracing::warn!("Failed to mark todo as reminded: {:#}", e);
+                    }
+                }
+            }
+        });
+    }
 
     // 初始化屏保服务（先注册，计时器循环在托盘创建后启动）
     let screen_saver = Arc::new(service::screen_saver::ScreenSaverService::new());

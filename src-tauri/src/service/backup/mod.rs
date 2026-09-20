@@ -16,7 +16,7 @@ use chrono::NaiveDateTime;
 use sea_orm::*;
 use tracing::info;
 
-use crate::entity::{note, note_history, note_tags, notebook, tag};
+use crate::entity::{note, note_history, note_tags, notebook, tag, todo, todo_list};
 
 /// 分页批次大小
 pub(super) const BATCH_SIZE: u64 = 500;
@@ -33,6 +33,8 @@ pub(super) struct BackupData {
     pub notes: Vec<note::Model>,
     pub note_tags: Vec<note_tags::Model>,
     pub note_histories: Vec<note_history::Model>,
+    pub todo_lists: Vec<todo_list::Model>,
+    pub todos: Vec<todo::Model>,
 }
 
 // ============================================================================
@@ -52,12 +54,31 @@ pub(super) fn escape_sql(s: &str) -> String {
     format!("'{}'", s.replace('\'', "''"))
 }
 
+/// 格式化可选时间为 SQL 字面量（None 输出 NULL）
+pub(super) fn format_opt_dt(dt: &Option<NaiveDateTime>) -> String {
+    match dt {
+        Some(d) => escape_sql(&format_dt(d)),
+        None => "NULL".to_string(),
+    }
+}
+
+/// 格式化可选整数为 SQL 字面量（None 输出 NULL）
+pub(super) fn format_opt_i64(v: &Option<i64>) -> String {
+    match v {
+        Some(n) => n.to_string(),
+        None => "NULL".to_string(),
+    }
+}
+
 pub(super) async fn clear_tables(txn: &impl ConnectionTrait) -> anyhow::Result<()> {
     note_tags::Entity::delete_many().exec(txn).await?;
     note_history::Entity::delete_many().exec(txn).await?;
     note::Entity::delete_many().exec(txn).await?;
     tag::Entity::delete_many().exec(txn).await?;
     notebook::Entity::delete_many().exec(txn).await?;
+    // 待办：先删 todo（引用 todo_list），再删 todo_list
+    todo::Entity::delete_many().exec(txn).await?;
+    todo_list::Entity::delete_many().exec(txn).await?;
     Ok(())
 }
 
@@ -163,6 +184,56 @@ pub(super) async fn restore_data(
             })
             .collect();
         note_history::Entity::insert_many(models).exec(txn).await?;
+    }
+
+    // 批量插入 todo_lists
+    if !data.todo_lists.is_empty() {
+        let models: Vec<todo_list::ActiveModel> = data
+            .todo_lists
+            .iter()
+            .map(|m| todo_list::ActiveModel {
+                id: Set(m.id),
+                name: Set(m.name.clone()),
+                icon: Set(m.icon.clone()),
+                color: Set(m.color.clone()),
+                sort_order: Set(m.sort_order),
+                mcp_access: Set(m.mcp_access),
+                create_time: Set(m.create_time),
+                update_time: Set(m.update_time),
+            })
+            .collect();
+        todo_list::Entity::insert_many(models).exec(txn).await?;
+    }
+
+    // 批量插入 todos
+    for chunk in data.todos.chunks(500) {
+        let models: Vec<todo::ActiveModel> = chunk
+            .iter()
+            .map(|m| todo::ActiveModel {
+                id: Set(m.id),
+                title: Set(m.title.clone()),
+                description: Set(m.description.clone()),
+                is_completed: Set(m.is_completed),
+                priority: Set(m.priority),
+                due_date: Set(m.due_date),
+                completed_at: Set(m.completed_at),
+                list_id: Set(m.list_id),
+                sort_order: Set(m.sort_order),
+                create_time: Set(m.create_time),
+                update_time: Set(m.update_time),
+                deleted_at: Set(m.deleted_at),
+                start_date: Set(m.start_date),
+                remind_at: Set(m.remind_at),
+                is_reminded: Set(m.is_reminded),
+                parent_id: Set(m.parent_id),
+                note_id: Set(m.note_id),
+                recurrence_type: Set(m.recurrence_type),
+                recurrence_interval: Set(m.recurrence_interval),
+                recurrence_end_date: Set(m.recurrence_end_date),
+                mcp_access: Set(m.mcp_access),
+            })
+            .collect();
+        todo::Entity::insert_many(models).exec(txn).await?;
     }
 
     Ok(())

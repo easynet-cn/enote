@@ -33,6 +33,9 @@
     "core:tray:allow-set-icon",
     "updater:default",
     "process:default",
-    "os:default"
+    "os:default",
+    "notification:default",
+    "notification:allow-notify",
+    "notification:allow-request-permission"
   ]
 }

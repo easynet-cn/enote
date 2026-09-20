@@ -40,6 +40,7 @@ mod m20260330_000001_create_note_attachment_table;
 mod m20260330_000002_add_note_starred;
 mod m20260331_000001_fix_note_fts_triggers;
 mod m20260401_000001_add_attachment_hash;
+mod m20260916_000001_create_todo_table;
 
 /// 数据库迁移器
 ///
@@ -77,6 +78,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20260330_000002_add_note_starred::Migration),
             Box::new(m20260331_000001_fix_note_fts_triggers::Migration),
             Box::new(m20260401_000001_add_attachment_hash::Migration),
+            Box::new(m20260916_000001_create_todo_table::Migration),
         ]
     }
 }

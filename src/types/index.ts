@@ -235,6 +235,122 @@ export interface AttachmentStats {
 }
 
 // ============================================================================
+// 待办相关类型
+// ============================================================================
+
+/** 待办优先级 */
+export enum TodoPriority {
+  /** 无 */
+  None = 0,
+  /** 低 */
+  Low = 1,
+  /** 中 */
+  Medium = 2,
+  /** 高 */
+  High = 3,
+}
+
+/**
+ * 待办视图类型
+ *
+ * `quadrant` 为前端四象限分组展示，后端不做过滤（等同于 all）
+ */
+export type TodoView = 'all' | 'today' | 'planned' | 'overdue' | 'quadrant'
+
+/** 待办重复类型 */
+export enum TodoRecurrence {
+  /** 不重复 */
+  None = 0,
+  /** 每天 */
+  Daily = 1,
+  /** 每周 */
+  Weekly = 2,
+  /** 每月 */
+  Monthly = 3,
+  /** 每年 */
+  Yearly = 4,
+}
+
+/** 待办 */
+export interface Todo {
+  id: number
+  title: string
+  description: string
+  /** 是否已完成：0 = 未完成，1 = 已完成 */
+  isCompleted: number
+  /** 优先级：0 = 无，1 = 低，2 = 中，3 = 高 */
+  priority: number
+  dueDate: string | null
+  completedAt: string | null
+  /** 所属清单 ID，null 表示未归类 */
+  listId: number | null
+  sortOrder: number
+  createTime: string | null
+  updateTime: string | null
+  /** 软删除时间，null 表示未删除 */
+  deletedAt: string | null
+  // ↓ P1 字段
+  startDate: string | null
+  remindAt: string | null
+  /** 是否已提醒：0 = 未提醒，1 = 已提醒 */
+  isReminded: number
+  /** 父待办 ID，0 表示无父待办 */
+  parentId: number
+  noteId: number | null
+  /** 重复类型：0 = 不重复，1 = 每天，2 = 每周，3 = 每月，4 = 每年 */
+  recurrenceType: number
+  recurrenceInterval: number
+  recurrenceEndDate: string | null
+  /** MCP 访问控制：0=继承, 1=读写, 2=只读, 3=禁止 */
+  mcpAccess: number
+}
+
+/** 待办清单 */
+export interface TodoList {
+  id: number
+  name: string
+  icon: string
+  color: string
+  sortOrder: number
+  /** MCP 访问控制：0=继承, 1=读写, 2=只读, 3=禁止 */
+  mcpAccess: number
+  createTime: string | null
+  updateTime: string | null
+}
+
+/** 待办查询参数 */
+export interface TodoSearchParam {
+  keyword: string
+  listId: number | null
+  /** 标签 ID 过滤（通过 todo_tags 关联表） */
+  tagId: number | null
+  /** 完成状态过滤：null = 全部，true = 已完成，false = 未完成 */
+  completed: boolean | null
+  view: TodoView
+  priority: number | null
+  /** 是否只查询回收站（已软删除） */
+  deleted: boolean
+  sortField: string
+  sortOrder: string
+}
+
+/** 待办统计信息 */
+export interface TodoStats {
+  /** 总数（不含回收站） */
+  totalCount: number
+  /** 已完成数 */
+  completedCount: number
+  /** 未完成数 */
+  pendingCount: number
+  /** 今日到期（未完成） */
+  todayCount: number
+  /** 已过期（未完成） */
+  overdueCount: number
+  /** 完成率（0-100） */
+  completionRate: number
+}
+
+// ============================================================================
 // Profile / Setup 相关类型
 // ============================================================================
 
@@ -324,6 +440,7 @@ export interface SyncScope {
   notes: boolean
   noteHistories: boolean
   templates: boolean
+  todos: boolean
   settings: boolean
 }
 

@@ -26,7 +26,7 @@ use crate::{
         AppLog, AppLogSearchParam, AttachmentStats, LogFileInfo, Note, NoteAttachment, NoteHistory,
         NoteHistorySearchPageParam, NoteLink, NoteSearchPageParam, NoteStatsResult, NoteTemplate,
         Notebook, OperateSource, PageParam, PageResult, SyncLog, SyncLogDetail, SyncOptions,
-        SyncPreview, Tag,
+        SyncPreview, Tag, Todo, TodoList, TodoSearchParam, TodoStats,
     },
     service,
     service::enote_server::EnoteServerClient,
@@ -68,6 +68,7 @@ mod screen_saver;
 mod settings;
 mod sync;
 mod tag;
+mod todo;
 
 pub use app_log::*;
 pub use backup::*;
@@ -80,3 +81,4 @@ pub use screen_saver::*;
 pub use settings::*;
 pub use sync::*;
 pub use tag::*;
+pub use todo::*;

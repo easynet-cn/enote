@@ -13,3 +13,6 @@ pub use super::settings::Entity as Settings;
 pub use super::sync_log::Entity as SyncLog;
 pub use super::sync_log_detail::Entity as SyncLogDetail;
 pub use super::tag::Entity as Tag;
+pub use super::todo::Entity as Todo;
+pub use super::todo_list::Entity as TodoList;
+pub use super::todo_tags::Entity as TodoTags;

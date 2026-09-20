@@ -109,6 +109,10 @@
             {{ t('sync.scopeTemplates') }}
           </label>
           <label class="flex items-center gap-1.5 text-sm text-content">
+            <input type="checkbox" v-model="scope.todos" />
+            {{ t('sync.scopeTodos') }}
+          </label>
+          <label class="flex items-center gap-1.5 text-sm text-content">
             <input type="checkbox" v-model="scope.settings" />
             {{ t('sync.scopeSettings') }}
           </label>
@@ -257,6 +261,7 @@ const scope = ref<SyncScope>({
   notes: true,
   noteHistories: false,
   templates: false,
+  todos: false,
   settings: false,
 })
 const autoBackup = ref(true)
@@ -290,6 +295,7 @@ const canSync = computed(() => {
       scope.value.notes ||
       scope.value.noteHistories ||
       scope.value.templates ||
+      scope.value.todos ||
       scope.value.settings)
   )
 })
@@ -321,6 +327,8 @@ const progressSteps = computed(() => {
       active: false,
       count: '',
     },
+    { key: 'todo_list', label: t('sync.scopeTodoLists'), done: false, active: false, count: '' },
+    { key: 'todo', label: t('sync.scopeTodos'), done: false, active: false, count: '' },
     { key: 'settings', label: t('sync.scopeSettings'), done: false, active: false, count: '' },
   ]
 

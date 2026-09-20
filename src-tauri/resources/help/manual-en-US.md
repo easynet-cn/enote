@@ -1625,7 +1625,9 @@ In ENote's settings panel (Section 14.5), enable the MCP master switch and turn 
 
 ### 20.3 Available Tools
 
-The MCP Server provides the following 10 tools:
+The MCP Server provides the following 19 tools, in two categories: notes and todos.
+
+**Note tools (10)**
 
 | Tool Name | Description | Type | Access Control |
 |-----------|-------------|------|----------------|
@@ -1639,6 +1641,20 @@ The MCP Server provides the following 10 tools:
 | `list_tags` | List all tags (includes AI access permission field) | Read | Metadata always visible |
 | `create_tag` | Create a new tag | Write | -- |
 | `note_stats` | Get note statistics (total count and per-notebook counts) | Read | -- |
+
+**Todo tools (9)**
+
+| Tool Name | Description | Type | Access Control |
+|-----------|-------------|------|----------------|
+| `search_todos` | Search todos with keyword, list, tag, completion status, and view (today/planned/overdue) filtering; returns paginated results | Read | Automatically filters "Deny" todos |
+| `get_todo` | Get details of a specified todo (including priority, due date, list, linked note) | Read | Checks read permission |
+| `create_todo` | Create a todo; can specify priority, due date, list, tags, and linked note | Write | Checks write permission on target list |
+| `update_todo` | Update an existing todo's title, notes, priority, due date, list, or tags | Write | Checks write permission on the todo |
+| `complete_todo` | Toggle a todo's completion status (repeating todos roll over to the next cycle) | Write | Checks write permission on the todo |
+| `delete_todo` | Delete a todo (moves to trash; can be restored in the app) | Write | Checks write permission on the todo |
+| `list_todo_lists` | List all todo lists (includes AI access permission field) | Read | Metadata always visible |
+| `create_todo_list` | Create a new todo list | Write | -- |
+| `todo_stats` | Get todo statistics (total, completed, pending, due today, overdue, completion rate) | Read | -- |
 
 > **Security Note:** Dangerous operations such as permanent deletion, emptying the trash, and encryption/decryption are not exposed through MCP, preventing AI tools from accidentally causing data loss.
 
@@ -1671,7 +1687,7 @@ Changes to MCP switches in the settings panel take effect immediately -- after a
 
 #### 20.4.2 Data-Level Access Control (mcp_access)
 
-Notebooks, tags, and notes each have an "AI Access Permission" (`mcp_access`) field supporting four levels:
+Notebooks, tags, notes, as well as todos and todo lists, each have an "AI Access Permission" (`mcp_access`) field supporting four levels:
 
 | Value | Name | Meaning |
 |-------|------|---------|
@@ -1700,6 +1716,27 @@ For a note, the effective permission is resolved by the following priority from 
 | Read-Only | -- | Deny | **Deny** | Note explicitly overrides, tightening the upper-level restriction |
 | Read-Write | -- | Read-Write (encrypted note) | **Deny** | Encrypted notes are always denied, cannot be overridden |
 
+**Todo permission resolution rules:**
+
+For a todo, the effective permission is resolved by the following priority from highest to lowest:
+
+1. **Linked Note -> Cascading Deny:** If a todo links to a note (via "Linked Note") whose permission resolves to "Deny", the todo is **also denied**. This is a safety-first rule and **cannot** be overridden by the todo's own setting (to prevent a todo from revealing the existence of a denied note).
+2. **Todo's Own Setting:** If the todo's AI access permission is not "Inherit", the todo's own setting is used (may relax or tighten upper-level restrictions).
+3. **Tag Settings:** Among the todo's associated tags, the **most restrictive** permission among all non-"Inherit" tags is used (todos share the same tag system as notes).
+4. **List Setting:** If all of the above are "Inherit", the todo list's setting is used. If both tags and the list have non-"Inherit" settings, the more restrictive of the two is used.
+5. **Default Read-Write:** If all levels are "Inherit", read-write access is allowed by default.
+
+**Examples:**
+
+| Linked Note | List Setting | Tag Setting | Todo Setting | Effective Permission | Explanation |
+|-------------|--------------|-------------|--------------|---------------------|-------------|
+| Deny | Read-Write | Inherit | Read-Write | **Deny** | Linked note cascades deny, takes precedence over everything |
+| Allowed | Read-Write | Read-Only | Inherit | **Read-Only** | Inherits tag restriction |
+| None | Deny | Read-Write | Inherit | **Deny** | List and tag take the more restrictive value |
+| None | Read-Write | None | Deny | **Deny** | Todo explicitly tightens |
+
+> **Note:** Set a todo's permission in the todo edit dialog; set a list's permission when creating the list.
+
 **Metadata Visibility Note:** `list_notebooks` and `list_tags` always return all entries (including the `mcpAccess` field). The AI can see notebook and tag names and permission markers but cannot access the content of denied notes.
 
 **Access Control Behavior for Each MCP Tool:**
@@ -1714,6 +1751,15 @@ For a note, the effective permission is resolved by the following priority from 
 | `list_notebooks` | Returns all notebooks (including `mcpAccess` field), no filtering |
 | `list_tags` | Returns all tags (including `mcpAccess` field), no filtering |
 | `note_stats` | Normal statistics (counts may include denied notes) |
+| `search_todos` | Search results automatically filter out "Deny" todos; "Read-Only" todos are returned normally |
+| `get_todo` | Checks read permission; "Deny" todos return a rejection message |
+| `create_todo` | Checks write permission on the target list; "Read-Only" or "Deny" lists do not allow creation |
+| `update_todo` | Checks write permission; "Read-Only" or "Deny" todos are rejected for updates |
+| `complete_todo` | Checks write permission; "Read-Only" or "Deny" todos are rejected for toggling |
+| `delete_todo` | Checks write permission; "Read-Only" or "Deny" todos are rejected for deletion |
+| `list_todo_lists` | Returns all todo lists (including `mcpAccess` field), no filtering |
+| `create_todo_list` | Creates a new list; not affected by todo data-level permissions |
+| `todo_stats` | Normal statistics (counts may include denied todos) |
 
 #### 20.4.4 Setting AI Access Permissions
 

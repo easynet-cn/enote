@@ -193,6 +193,123 @@
         </ul>
       </div>
 
+      <!-- 待办区块：智能视图与清单（点击后主界面切换到待办视图） -->
+      <div class="flex-1 min-h-0 flex flex-col border-t border-edge">
+        <div class="flex justify-between items-center px-4 pt-4 pb-2 shrink-0">
+          <h2 class="text-sm font-semibold text-content-secondary uppercase tracking-wider">
+            {{ t('todo.title') }}
+          </h2>
+          <button
+            class="p-0.5 text-content-secondary hover:text-content cursor-pointer"
+            :title="t('todo.newList')"
+            :aria-label="t('todo.newList')"
+            @click="newListDialog = true"
+          >
+            <Plus class="w-4 h-4" aria-hidden="true" />
+          </button>
+        </div>
+
+        <ul
+          class="space-y-1 flex-1 overflow-y-auto px-4 pb-2"
+          role="listbox"
+          :aria-label="t('todo.title')"
+        >
+          <!-- 智能视图 -->
+          <li
+            v-for="v in todoViews"
+            :key="v.key"
+            role="option"
+            tabindex="0"
+            :aria-selected="!todoStore.deleted && todoStore.view === v.key"
+            :class="['sidebar-item', { active: !todoStore.deleted && todoStore.view === v.key }]"
+            @click="$emit('todoView', v.key)"
+            @keydown.enter="$emit('todoView', v.key)"
+          >
+            <div class="flex items-center">
+              <component :is="v.icon" class="w-4 h-4 mr-3 text-content-secondary" />
+              <span class="flex-1">{{ v.label }}</span>
+            </div>
+          </li>
+
+          <!-- 待办回收站 -->
+          <li
+            role="option"
+            tabindex="0"
+            :aria-selected="todoStore.deleted"
+            :class="['sidebar-item', { active: todoStore.deleted }]"
+            @click="$emit('todoTrash')"
+            @keydown.enter="$emit('todoTrash')"
+          >
+            <div class="flex items-center">
+              <Trash2 class="w-4 h-4 mr-3 text-content-secondary" />
+              <span class="flex-1">{{ t('todo.viewTrash') }}</span>
+            </div>
+          </li>
+
+          <!-- 清单 -->
+          <li class="px-3 pt-3 pb-1 text-xs text-content-secondary" aria-hidden="true">
+            {{ t('todo.listTitle') }}
+          </li>
+          <li
+            role="option"
+            tabindex="0"
+            :aria-selected="!todoStore.deleted && todoStore.activeListId === null"
+            :class="[
+              'sidebar-item',
+              { active: !todoStore.deleted && todoStore.activeListId === null },
+            ]"
+            @click="$emit('todoList', null)"
+            @keydown.enter="$emit('todoList', null)"
+          >
+            <div class="flex items-center">
+              <Inbox class="w-4 h-4 mr-3 text-content-secondary" />
+              <span class="flex-1">{{ t('todo.unassigned') }}</span>
+            </div>
+          </li>
+          <li
+            v-for="list in todoStore.lists"
+            :key="list.id"
+            role="option"
+            tabindex="0"
+            :aria-selected="todoStore.activeListId === list.id"
+            :class="['sidebar-item', { active: todoStore.activeListId === list.id }]"
+            @click="$emit('todoList', list.id)"
+            @keydown.enter="$emit('todoList', list.id)"
+          >
+            <div class="flex items-center">
+              <span
+                v-if="list.color"
+                class="w-2 h-2 rounded-full mr-3 shrink-0"
+                :style="{ backgroundColor: list.color }"
+              />
+              <span v-else class="w-2 h-2 mr-3 shrink-0" aria-hidden="true" />
+              <span class="flex-1 truncate">{{ list.name }}</span>
+            </div>
+          </li>
+
+          <!-- 标签筛选（复用笔记标签体系） -->
+          <template v-if="tags.length > 0">
+            <li class="px-3 pt-3 pb-1 text-xs text-content-secondary" aria-hidden="true">
+              {{ t('todo.tags') }}
+            </li>
+            <li
+              v-for="tag in tags"
+              :key="`todo-tag-${tag.id}`"
+              role="option"
+              tabindex="0"
+              :aria-selected="todoStore.activeTagId === Number(tag.id)"
+              :class="['sidebar-item', { active: todoStore.activeTagId === Number(tag.id) }]"
+              @click="$emit('todoTag', Number(tag.id))"
+              @keydown.enter="$emit('todoTag', Number(tag.id))"
+            >
+              <div class="flex items-center">
+                <span class="flex-1 truncate">{{ tag.name }}</span>
+              </div>
+            </li>
+          </template>
+        </ul>
+      </div>
+
       <!-- 底部工具区域 -->
       <div class="h-12 px-4 border-t border-edge flex items-center gap-2">
         <Tooltip :content="t('sidebar.importNotes')" placement="top">
@@ -225,6 +342,14 @@
             @click="$emit('openTrash')"
           >
             <Trash2 class="w-4 h-4" />
+          </button>
+        </Tooltip>
+        <Tooltip :content="t('todo.title')" placement="top">
+          <button
+            class="flex items-center justify-center p-1.5 text-content-secondary hover:bg-surface-dim rounded-lg transition-colors cursor-pointer"
+            @click="$emit('openTodos')"
+          >
+            <ListTodo class="w-4 h-4" />
           </button>
         </Tooltip>
         <Tooltip :content="t('common.settings')" placement="top">
@@ -408,6 +533,40 @@
     </template>
   </Dialog>
 
+  <!-- 新建待办清单弹窗 -->
+  <Dialog v-model="newListDialog" :title="t('todo.newList')" :width="420">
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-content-secondary mb-1">
+          {{ t('todo.listName') }}
+        </label>
+        <input
+          v-model="newListName"
+          type="text"
+          class="w-full px-3 py-2 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          @keyup.enter="submitNewList"
+        />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-content-secondary mb-1">
+          {{ t('settings.mcpAccess') }}
+        </label>
+        <AppSelect
+          v-model="newListMcpAccess"
+          :options="mcpAccessOptions"
+          size="md"
+          class="w-full"
+        />
+      </div>
+    </div>
+    <template #footer>
+      <div class="flex justify-end gap-3">
+        <Button type="secondary" @click="newListDialog = false">{{ t('common.cancel') }}</Button>
+        <Button type="primary" @click="submitNewList">{{ t('common.save') }}</Button>
+      </div>
+    </template>
+  </Dialog>
+
   <!-- 删除笔记本确认弹窗 -->
   <ConfirmDialog
     v-model="deleteNotebookConfirm"
@@ -443,6 +602,12 @@ import {
   LayoutTemplate,
   Shield,
   X,
+  ListTodo,
+  Calendar,
+  CalendarClock,
+  AlertCircle,
+  LayoutGrid,
+  Inbox,
 } from '@lucide/vue'
 import {
   Button,
@@ -458,9 +623,10 @@ import {
 import type { AppSelectOption } from './ui'
 import NotebookTreeItem from './NotebookTreeItem.vue'
 import { iconComponents } from './ui/icons'
-import type { ShowNotebook, ShowTag } from '../types'
+import type { ShowNotebook, ShowTag, TodoView } from '../types'
 import { McpAccess } from '../types'
 import { useAppStore } from '../stores/app'
+import { useTodoStore } from '../stores/todos'
 import { computed, reactive, ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Sortable from 'sortablejs'
@@ -549,6 +715,11 @@ const emit = defineEmits<{
   openBackup: []
   openSettings: []
   openTrash: []
+  openTodos: []
+  todoView: [view: TodoView]
+  todoTrash: []
+  todoList: [listId: number | null]
+  todoTag: [tagId: number | null]
   reorderNotebooks: [orders: [string, number][]]
   reorderTags: [orders: [string, number][]]
   openTemplates: []
@@ -591,6 +762,30 @@ const mcpAccessOptions = computed<AppSelectOption[]>(() => [
   { label: t('settings.mcpAccessReadOnly'), value: 2 },
   { label: t('settings.mcpAccessDeny'), value: 3 },
 ])
+
+// -------------------- 待办导航 --------------------
+const todoStore = useTodoStore()
+
+const todoViews = computed(() => [
+  { key: 'all' as TodoView, label: t('todo.viewAll'), icon: ListTodo },
+  { key: 'today' as TodoView, label: t('todo.viewToday'), icon: Calendar },
+  { key: 'planned' as TodoView, label: t('todo.viewPlanned'), icon: CalendarClock },
+  { key: 'overdue' as TodoView, label: t('todo.viewOverdue'), icon: AlertCircle },
+  { key: 'quadrant' as TodoView, label: t('todo.quadrant'), icon: LayoutGrid },
+])
+
+const newListDialog = ref(false)
+const newListName = ref('')
+const newListMcpAccess = ref(0)
+
+const submitNewList = async () => {
+  const name = newListName.value.trim()
+  if (!name) return
+  await todoStore.createList(name, newListMcpAccess.value)
+  newListName.value = ''
+  newListMcpAccess.value = 0
+  newListDialog.value = false
+}
 
 const handleNotebookToggle = (id: string) => {
   store.toggleNotebookExpand(id)

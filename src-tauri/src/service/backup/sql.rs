@@ -3,8 +3,10 @@ use std::io::{BufWriter, Write};
 use sea_orm::*;
 use tracing::info;
 
-use super::{BATCH_SIZE, DT_FMT, clear_tables, escape_sql, format_dt};
-use crate::entity::{note, note_history, note_tags, notebook, tag};
+use super::{
+    BATCH_SIZE, DT_FMT, clear_tables, escape_sql, format_dt, format_opt_dt, format_opt_i64,
+};
+use crate::entity::{note, note_history, note_tags, notebook, tag, todo, todo_list};
 
 pub async fn export_sql(db: &DatabaseConnection, path: &str) -> anyhow::Result<()> {
     let file = std::fs::File::create(path)?;
@@ -107,6 +109,58 @@ pub async fn export_sql(db: &DatabaseConnection, path: &str) -> anyhow::Result<(
             )?;
         }
     }
+
+    // todo_list（小表，直接全量）
+    writeln!(w, "-- Table: todo_list")?;
+    for m in todo_list::Entity::find().all(db).await? {
+        writeln!(
+            w,
+            "INSERT INTO todo_list (id, name, icon, color, sort_order, mcp_access, create_time, update_time) VALUES ({}, {}, {}, {}, {}, {}, {}, {});",
+            m.id,
+            escape_sql(&m.name),
+            escape_sql(&m.icon),
+            escape_sql(&m.color),
+            m.sort_order,
+            m.mcp_access,
+            escape_sql(&format_dt(&m.create_time)),
+            escape_sql(&format_dt(&m.update_time)),
+        )?;
+    }
+    writeln!(w)?;
+
+    // todo（分页流式写入）
+    writeln!(w, "-- Table: todo")?;
+    let mut paginator = todo::Entity::find().paginate(db, BATCH_SIZE);
+    while let Some(batch) = paginator.fetch_and_next().await? {
+        for m in &batch {
+            writeln!(
+                w,
+                "INSERT INTO todo (id, title, description, is_completed, priority, due_date, completed_at, list_id, sort_order, create_time, update_time, deleted_at, start_date, remind_at, is_reminded, parent_id, note_id, recurrence_type, recurrence_interval, recurrence_end_date, mcp_access) VALUES ({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});",
+                m.id,
+                escape_sql(&m.title),
+                escape_sql(&m.description),
+                m.is_completed,
+                m.priority,
+                format_opt_dt(&m.due_date),
+                format_opt_dt(&m.completed_at),
+                format_opt_i64(&m.list_id),
+                m.sort_order,
+                escape_sql(&format_dt(&m.create_time)),
+                escape_sql(&format_dt(&m.update_time)),
+                format_opt_dt(&m.deleted_at),
+                format_opt_dt(&m.start_date),
+                format_opt_dt(&m.remind_at),
+                m.is_reminded,
+                m.parent_id,
+                format_opt_i64(&m.note_id),
+                m.recurrence_type,
+                m.recurrence_interval,
+                format_opt_dt(&m.recurrence_end_date),
+                m.mcp_access,
+            )?;
+        }
+    }
+    writeln!(w)?;
 
     w.flush()?;
     info!("SQL backup export completed: {}", path);

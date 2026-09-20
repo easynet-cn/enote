@@ -947,6 +947,206 @@ pub struct AttachmentStats {
 }
 
 // ============================================================================
+// 待办相关
+// ============================================================================
+
+/// 待办数据传输对象
+#[serde_as]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Todo {
+    pub id: i64,
+    pub title: String,
+    /// 备注（text 列，MySQL 下无 DEFAULT，业务层保证赋值）
+    pub description: String,
+    /// 是否已完成：0 = 未完成，1 = 已完成
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub is_completed: i32,
+    /// 优先级：0 = 无，1 = 低，2 = 中，3 = 高
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub priority: i32,
+    #[serde(
+        serialize_with = "serialize_option_dt",
+        deserialize_with = "deserialize_option_dt"
+    )]
+    pub due_date: Option<NaiveDateTime>,
+    #[serde(
+        serialize_with = "serialize_option_dt",
+        deserialize_with = "deserialize_option_dt"
+    )]
+    pub completed_at: Option<NaiveDateTime>,
+    /// 所属清单 ID，NULL 表示未归类
+    pub list_id: Option<i64>,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub sort_order: i32,
+    #[serde(
+        serialize_with = "serialize_option_dt",
+        deserialize_with = "deserialize_option_dt"
+    )]
+    pub create_time: Option<NaiveDateTime>,
+    #[serde(
+        serialize_with = "serialize_option_dt",
+        deserialize_with = "deserialize_option_dt"
+    )]
+    pub update_time: Option<NaiveDateTime>,
+    /// 软删除时间，NULL 表示未删除
+    #[serde(
+        serialize_with = "serialize_option_dt",
+        deserialize_with = "deserialize_option_dt"
+    )]
+    pub deleted_at: Option<NaiveDateTime>,
+    // ↓ P1 字段
+    #[serde(
+        serialize_with = "serialize_option_dt",
+        deserialize_with = "deserialize_option_dt"
+    )]
+    pub start_date: Option<NaiveDateTime>,
+    #[serde(
+        serialize_with = "serialize_option_dt",
+        deserialize_with = "deserialize_option_dt"
+    )]
+    pub remind_at: Option<NaiveDateTime>,
+    /// 是否已提醒：0 = 未提醒，1 = 已提醒
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub is_reminded: i32,
+    /// 父待办 ID，0 表示无父待办
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub parent_id: i64,
+    pub note_id: Option<i64>,
+    /// 重复类型：0 = 不重复，1 = 每天，2 = 每周，3 = 每月，4 = 每年
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub recurrence_type: i32,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub recurrence_interval: i32,
+    #[serde(
+        serialize_with = "serialize_option_dt",
+        deserialize_with = "deserialize_option_dt"
+    )]
+    pub recurrence_end_date: Option<NaiveDateTime>,
+    /// MCP 访问控制：0=继承, 1=读写, 2=只读, 3=禁止
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub mcp_access: i32,
+}
+
+impl From<entity::todo::Model> for Todo {
+    fn from(value: entity::todo::Model) -> Self {
+        Self {
+            id: value.id,
+            title: value.title,
+            description: value.description,
+            is_completed: value.is_completed,
+            priority: value.priority,
+            due_date: value.due_date,
+            completed_at: value.completed_at,
+            list_id: value.list_id,
+            sort_order: value.sort_order,
+            create_time: Some(value.create_time),
+            update_time: Some(value.update_time),
+            deleted_at: value.deleted_at,
+            start_date: value.start_date,
+            remind_at: value.remind_at,
+            is_reminded: value.is_reminded,
+            parent_id: value.parent_id,
+            note_id: value.note_id,
+            recurrence_type: value.recurrence_type,
+            recurrence_interval: value.recurrence_interval,
+            recurrence_end_date: value.recurrence_end_date,
+            mcp_access: value.mcp_access,
+        }
+    }
+}
+
+/// 待办清单数据传输对象
+#[serde_as]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct TodoList {
+    pub id: i64,
+    pub name: String,
+    /// 图标标识
+    pub icon: String,
+    /// 主题色
+    pub color: String,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub sort_order: i32,
+    /// MCP 访问控制：0=继承, 1=读写, 2=只读, 3=禁止
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub mcp_access: i32,
+    #[serde(
+        serialize_with = "serialize_option_dt",
+        deserialize_with = "deserialize_option_dt"
+    )]
+    pub create_time: Option<NaiveDateTime>,
+    #[serde(
+        serialize_with = "serialize_option_dt",
+        deserialize_with = "deserialize_option_dt"
+    )]
+    pub update_time: Option<NaiveDateTime>,
+}
+
+impl From<entity::todo_list::Model> for TodoList {
+    fn from(value: entity::todo_list::Model) -> Self {
+        Self {
+            id: value.id,
+            name: value.name,
+            icon: value.icon,
+            color: value.color,
+            sort_order: value.sort_order,
+            mcp_access: value.mcp_access,
+            create_time: Some(value.create_time),
+            update_time: Some(value.update_time),
+        }
+    }
+}
+
+/// 待办查询参数
+#[serde_as]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct TodoSearchParam {
+    /// 关键字（匹配标题和备注）
+    pub keyword: String,
+    /// 清单 ID 过滤
+    pub list_id: Option<i64>,
+    /// 标签 ID 过滤（通过 todo_tags 关联表）
+    pub tag_id: Option<i64>,
+    /// 完成状态过滤：None = 全部，Some(true) = 已完成，Some(false) = 未完成
+    pub completed: Option<bool>,
+    /// 视图类型：all = 全部，today = 今天，planned = 计划，overdue = 已过期
+    pub view: String,
+    /// 优先级过滤
+    pub priority: Option<i32>,
+    /// 是否只查询回收站（已软删除）
+    pub deleted: bool,
+    /// 排序字段：manual = 手动，dueDate = 截止日期，priority = 优先级，createTime = 创建时间
+    pub sort_field: String,
+    /// 排序方向：asc / desc
+    pub sort_order: String,
+    /// 页码，从 1 开始（仅 search_page 使用，非法值回退为 1）
+    pub page_index: i32,
+    /// 每页数量（仅 search_page 使用，非法值回退为 20，上限 50）
+    pub page_size: i32,
+}
+
+/// 待办统计信息
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TodoStats {
+    /// 待办总数（不含回收站）
+    pub total_count: u64,
+    /// 已完成数
+    pub completed_count: u64,
+    /// 未完成数
+    pub pending_count: u64,
+    /// 今日到期（未完成）
+    pub today_count: u64,
+    /// 已过期（未完成）
+    pub overdue_count: u64,
+    /// 完成率（百分比 0-100）
+    pub completion_rate: f64,
+}
+
+// ============================================================================
 // 跨 Profile 同步相关
 // ============================================================================
 
@@ -975,6 +1175,8 @@ pub struct SyncScope {
     pub note_histories: bool,
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub templates: bool,
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub todos: bool,
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub settings: bool,
 }

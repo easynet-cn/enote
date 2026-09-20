@@ -66,6 +66,11 @@
           @open-backup="backupDialogVisible = true"
           @open-settings="settingsDialogVisible = true"
           @open-trash="trashDialogVisible = true"
+          @open-todos="openTodos"
+          @todo-view="handleTodoView"
+          @todo-trash="handleTodoTrash"
+          @todo-list="handleTodoList"
+          @todo-tag="handleTodoTag"
           @reorder-notebooks="handleReorderNotebooks"
           @reorder-tags="handleReorderTags"
           @open-templates="templateDialogVisible = true"
@@ -73,9 +78,11 @@
         />
       </div>
 
-      <!-- 笔记列表组件 -->
+      <!-- 笔记列表组件（待办视图时切换为待办列表） -->
       <div :class="noteListContainerClass">
+        <TodoPanel v-if="mainView === 'todos'" @close="backToNotes" />
         <NoteList
+          v-else
           :notebooks="notebooks"
           :notes="notes"
           :active-notebook="activeNotebook"
@@ -99,10 +106,12 @@
         />
       </div>
 
-      <!-- 编辑器组件 -->
+      <!-- 编辑器组件（待办视图时切换为待办详情） -->
       <div :class="editorContainerClass">
         <ErrorBoundary>
+          <TodoDetail v-if="mainView === 'todos'" />
           <NoteEditor
+            v-else
             v-model:history-data="histories"
             v-model:current-page="historyPageIndex"
             v-model:page-size="historyPageSize"
@@ -197,6 +206,7 @@ import { useShortcutSettings } from './composables/useShortcutSettings'
 import { useLockScreen } from './composables/useLockScreen'
 import { useScreenSaver } from './composables/useScreenSaver'
 import { useAppStore } from './stores/app'
+import { useTodoStore } from './stores/todos'
 import AppSidebar from './components/AppSidebar.vue'
 import NoteList from './components/NoteList.vue'
 import NoteEditor from './components/NoteEditor.vue'
@@ -210,7 +220,7 @@ import { showError, parseError } from './utils/errorHandler'
 import { exportAsPdf } from './utils/export'
 import { usePlatform } from './composables/usePlatform'
 import type { PaletteCommand } from './components/CommandPalette.vue'
-import type { ProfileConfig } from './types'
+import type { ProfileConfig, TodoView } from './types'
 import {
   Plus,
   Save,
@@ -243,6 +253,8 @@ const LogDialog = defineAsyncComponent(() => import('./components/LogDialog.vue'
 const LockScreen = defineAsyncComponent(() => import('./components/LockScreen.vue'))
 const ScreenSaver = defineAsyncComponent(() => import('./components/ScreenSaver.vue'))
 const UpdateChecker = defineAsyncComponent(() => import('./components/UpdateChecker.vue'))
+const TodoPanel = defineAsyncComponent(() => import('./components/TodoPanel.vue'))
+const TodoDetail = defineAsyncComponent(() => import('./components/TodoDetail.vue'))
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -258,6 +270,10 @@ const {
 
 // 移动端导航状态
 const mobileView = ref<'sidebar' | 'list' | 'editor'>('list')
+
+/** 主区视图：笔记 / 待办（方案 A：待办融入主界面，不再使用全屏覆盖层） */
+const mainView = ref<'notes' | 'todos'>('notes')
+const todoStore = useTodoStore()
 
 // 侧边栏覆盖层（手机/平板模式）
 const sidebarVisible = ref(false)
@@ -373,6 +389,54 @@ const settingsDialogVisible = ref(false)
 const trashDialogVisible = ref(false)
 // 模板对话框
 const templateDialogVisible = ref(false)
+
+// -------------------- 待办视图切换 --------------------
+/** 切换导航并展示待办主视图（TodoPanel 挂载时会自动加载清单与统计） */
+const switchToTodos = async (apply: () => void) => {
+  apply()
+  mainView.value = 'todos'
+  await todoStore.loadTodos()
+  await todoStore.loadStats()
+}
+
+const handleTodoView = async (view: TodoView) => {
+  await switchToTodos(() => {
+    todoStore.deleted = false
+    todoStore.setView(view)
+  })
+}
+
+const handleTodoTrash = async () => {
+  await switchToTodos(() => {
+    todoStore.deleted = true
+    todoStore.setView('all')
+  })
+}
+
+const handleTodoList = async (listId: number | null) => {
+  await switchToTodos(() => {
+    todoStore.setActiveList(listId)
+  })
+}
+
+const handleTodoTag = async (tagId: number | null) => {
+  await switchToTodos(() => {
+    todoStore.setActiveTag(tagId)
+  })
+}
+
+/** 底部工具条入口：直接打开待办（全部视图） */
+const openTodos = async () => {
+  mainView.value = 'todos'
+  await todoStore.loadLists()
+  await todoStore.loadTodos()
+  await todoStore.loadStats()
+}
+
+/** 从待办返回笔记视图 */
+const backToNotes = () => {
+  mainView.value = 'notes'
+}
 // 命令面板
 const commandPaletteVisible = ref(false)
 // 日志管理对话框
@@ -491,23 +555,27 @@ const handleToggleStar = async (noteId: string) => {
 // ============================================================================
 
 const handleSelectNotebook = (id: string) => {
+  mainView.value = 'notes'
   setActiveNotebook(id)
   closeSidebar()
   if (isMobileLayout.value) mobileView.value = 'list'
 }
 
 const handleSelectTag = (id: string) => {
+  mainView.value = 'notes'
   setActiveTag(id)
   closeSidebar()
   if (isMobileLayout.value) mobileView.value = 'list'
 }
 
 const handleSelectNote = (id: string) => {
+  mainView.value = 'notes'
   setActiveNote(id)
   if (isMobileLayout.value) mobileView.value = 'editor'
 }
 
 const handleCreateNote = () => {
+  mainView.value = 'notes'
   createNewNote()
   closeSidebar()
   if (isMobileLayout.value) mobileView.value = 'editor'

@@ -24,6 +24,9 @@ serde_json.workspace = true
 sea-orm = { workspace = true, features = ["sqlx-sqlite", "runtime-tokio"] }
 sea-orm-migration = { workspace = true, features = ["runtime-tokio", "sqlx-sqlite"] }
 
+# 时间
+chrono.workspace = true
+
 # Async
 tokio.workspace = true
 

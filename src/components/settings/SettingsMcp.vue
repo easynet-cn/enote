@@ -22,6 +22,15 @@ const mcpTools = computed(() => [
   { key: 'list_tags', label: t('settings.mcpToolListTags') },
   { key: 'create_tag', label: t('settings.mcpToolCreateTag') },
   { key: 'note_stats', label: t('settings.mcpToolNoteStats') },
+  { key: 'search_todos', label: t('settings.mcpToolSearchTodos') },
+  { key: 'get_todo', label: t('settings.mcpToolGetTodo') },
+  { key: 'create_todo', label: t('settings.mcpToolCreateTodo') },
+  { key: 'update_todo', label: t('settings.mcpToolUpdateTodo') },
+  { key: 'complete_todo', label: t('settings.mcpToolCompleteTodo') },
+  { key: 'delete_todo', label: t('settings.mcpToolDeleteTodo') },
+  { key: 'list_todo_lists', label: t('settings.mcpToolListTodoLists') },
+  { key: 'create_todo_list', label: t('settings.mcpToolCreateTodoList') },
+  { key: 'todo_stats', label: t('settings.mcpToolTodoStats') },
 ])
 
 const toggleMcpEnabled = () => {

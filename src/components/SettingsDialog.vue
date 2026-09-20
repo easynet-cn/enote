@@ -251,6 +251,28 @@ const screenSaverTextColor = ref('#e0e0e0')
 const screenSaverFontSize = ref('48')
 
 // MCP
+/** 全部内置 MCP 工具（需与后端 DEFAULT_TOOLS 保持一致） */
+const ALL_MCP_TOOLS = [
+  'search_notes',
+  'get_note',
+  'create_note',
+  'update_note',
+  'delete_note',
+  'list_notebooks',
+  'create_notebook',
+  'list_tags',
+  'create_tag',
+  'note_stats',
+  'search_todos',
+  'get_todo',
+  'create_todo',
+  'update_todo',
+  'complete_todo',
+  'delete_todo',
+  'list_todo_lists',
+  'create_todo_list',
+  'todo_stats',
+]
 const mcpEnabled = ref(false)
 const mcpToolEnabled = ref<Record<string, boolean>>({
   search_notes: true,
@@ -263,6 +285,15 @@ const mcpToolEnabled = ref<Record<string, boolean>>({
   list_tags: true,
   create_tag: true,
   note_stats: true,
+  search_todos: true,
+  get_todo: true,
+  create_todo: true,
+  update_todo: true,
+  complete_todo: true,
+  delete_todo: true,
+  list_todo_lists: true,
+  create_todo_list: true,
+  todo_stats: true,
 })
 
 // 日志
@@ -314,6 +345,8 @@ const saveSettings = async () => {
       screenSaverFontSize: screenSaverFontSize.value,
       mcpEnabled: mcpEnabled.value ? '1' : '0',
       mcpEnabledTools: enabledTools,
+      // 记录本次保存时已知的工具全集，供升级后自动启用新增工具
+      mcpKnownTools: ALL_MCP_TOOLS.join(','),
       frontendLogLevel: frontendLogLevel.value,
     })
     setLogLevel(frontendLogLevel.value)
