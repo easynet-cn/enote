@@ -6,17 +6,31 @@ declare const __IS_MOBILE__: boolean
 
 const tauriMobile = __IS_MOBILE__
 
-// 运行时窗口宽度响应式检测（单例共享）
+// 运行时窗口尺寸响应式检测（单例共享）
 const windowWidth = ref(window.innerWidth)
+const windowHeight = ref(window.innerHeight)
+
+/**
+ * 将实测视口高度同步到 CSS 变量 `--app-height`。
+ * Tauri/WebView 在窗口最大化时 `100vh` 可能滞后于实际高度，
+ * 导致主界面底部留白，因此用 JS 实测值兜底。
+ */
+const syncAppHeight = () => {
+  document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`)
+}
 
 let resizeTimer: ReturnType<typeof setTimeout> | null = null
 const handleResize = () => {
   if (resizeTimer) clearTimeout(resizeTimer)
   resizeTimer = setTimeout(() => {
     windowWidth.value = window.innerWidth
+    windowHeight.value = window.innerHeight
+    syncAppHeight()
   }, 100)
 }
 window.addEventListener('resize', handleResize)
+// 初始化时立即同步，避免首屏或最大化后未触发 resize 时高度为 0
+syncAppHeight()
 
 export type LayoutMode = 'mobile' | 'tablet' | 'desktop'
 
@@ -69,6 +83,7 @@ export function usePlatform() {
     isTabletLayout,
     isDesktopLayout,
     windowWidth,
+    windowHeight,
     setLayoutOverride,
   }
 }

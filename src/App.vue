@@ -37,7 +37,7 @@
     />
 
     <!-- 主应用 -->
-    <div v-else class="flex h-screen bg-surface-alt relative overflow-hidden">
+    <div v-else class="flex app-shell bg-surface-alt relative overflow-hidden">
       <!-- 侧边栏遮罩（手机/平板覆盖层模式） -->
       <Transition name="sidebar-overlay">
         <div v-if="sidebarOverlayVisible" class="sidebar-overlay" @click="closeSidebar" />

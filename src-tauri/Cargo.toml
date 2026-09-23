@@ -90,4 +90,4 @@ chrono.workspace = true
 config.workspace = true
 uuid.workspace = true
 sys-locale.workspace = true
-tauri-plugin-os = "2.3"
+tauri-plugin-os.workspace = true

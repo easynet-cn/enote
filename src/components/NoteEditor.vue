@@ -5,6 +5,14 @@
       role="main"
       :aria-label="t('aria.noteEditor')"
     >
+      <!-- 未选中笔记时的空态（避免窗口最大化后右侧一片空白） -->
+      <div
+        v-if="!activeNote"
+        class="flex-1 flex items-center justify-center px-6 text-sm text-content-secondary text-center"
+      >
+        {{ t('editor.noNoteSelected') }}
+      </div>
+
       <!-- TipTap 编辑器工具栏（始终显示） -->
       <div v-if="activeNote">
         <TiptapToolbar

@@ -201,6 +201,19 @@ html {
   scroll-behavior: smooth;
 }
 
+/* 让主应用外壳能够撑满视口 */
+html,
+body,
+#app {
+  height: 100%;
+}
+
+/* 主应用外壳：优先使用 JS 同步的实测视口高度，
+   规避 Tauri 窗口最大化时 100vh 更新滞后导致的底部留白 */
+.app-shell {
+  height: var(--app-height, 100vh);
+}
+
 /* 移动端安全区域适配 */
 body {
   padding-top: env(safe-area-inset-top);

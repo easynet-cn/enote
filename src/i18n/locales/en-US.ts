@@ -170,6 +170,7 @@ export default {
     selectNotebook: 'Select Notebook',
     selectTags: 'Select Tags',
     noTags: 'No tags available',
+    noNoteSelected: 'Select a note on the left to start editing',
     deleteNoteConfirm: {
       title: 'Delete Note',
       message: 'Are you sure you want to delete this note? This action cannot be undone.',

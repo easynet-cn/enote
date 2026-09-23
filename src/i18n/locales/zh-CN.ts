@@ -167,6 +167,7 @@ export default {
     selectNotebook: '选择笔记本',
     selectTags: '选择标签',
     noTags: '暂无标签',
+    noNoteSelected: '从左侧选择一篇笔记开始编辑',
     deleteNoteConfirm: {
       title: '删除笔记',
       message: '确定要删除这条笔记吗？此操作不可恢复。',
