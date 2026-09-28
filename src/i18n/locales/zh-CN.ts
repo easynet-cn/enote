@@ -256,6 +256,7 @@ export default {
       horizontalLayout: '左右布局',
       edit: '编辑',
       save: '保存',
+      finish: '完成',
       cancel: '取消',
       settings: '设置',
       export: '导出',

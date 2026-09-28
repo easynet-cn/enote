@@ -259,6 +259,7 @@ export default {
       horizontalLayout: 'Horizontal layout',
       edit: 'Edit',
       save: 'Save',
+      finish: 'Finish',
       cancel: 'Cancel',
       settings: 'Settings',
       export: 'Export',

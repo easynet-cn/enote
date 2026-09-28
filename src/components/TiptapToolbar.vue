@@ -170,6 +170,7 @@
         :edit-mode="editMode"
         @edit="emit('edit')"
         @save="emit('save')"
+        @finish="emit('finish')"
         @cancel="emit('cancel')"
         @delete="emit('delete')"
         @settings="emit('settings')"
@@ -250,6 +251,7 @@ const emit = defineEmits<{
   'toggle-toc': []
   edit: []
   save: []
+  finish: []
   cancel: []
   delete: []
   settings: []

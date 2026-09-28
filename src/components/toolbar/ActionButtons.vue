@@ -22,6 +22,17 @@
       </button>
     </Tooltip>
 
+    <!-- 完成按钮（编辑模式显示）：退出编辑态，不丢弃内容 -->
+    <Tooltip v-if="editMode" :content="t('editor.toolbarTooltip.finish')" placement="bottom">
+      <button
+        class="action-btn action-btn-secondary"
+        @click="emit('finish')"
+        :aria-label="t('editor.toolbarTooltip.finish')"
+      >
+        <CircleCheck class="w-4 h-4" />
+      </button>
+    </Tooltip>
+
     <!-- 取消按钮（编辑模式显示） -->
     <Tooltip v-if="editMode" :content="t('editor.toolbarTooltip.cancel')" placement="bottom">
       <button
@@ -111,6 +122,7 @@ import {
   Pencil,
   Check,
   X,
+  CircleCheck,
   Settings,
   Download,
   History,
@@ -128,6 +140,7 @@ defineProps<{
 const emit = defineEmits<{
   edit: []
   save: []
+  finish: []
   cancel: []
   delete: []
   settings: []

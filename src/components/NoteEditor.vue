@@ -29,6 +29,7 @@
           @toggle-toc="toggleToc"
           @edit="handleEdit"
           @save="handleSave"
+          @finish="emit('finishEdit')"
           @cancel="handleCancel"
           @delete="handleDelete"
           @settings="handleSettings"
@@ -47,6 +48,7 @@
         :layout="layout"
         @update-title="(val: string) => emit('updateNoteTitle', val)"
         @back="emit('back')"
+        @focus-content="handleFocusContent"
       />
 
       <!-- TipTap 编辑器 / Markdown 源码编辑器 -->
@@ -201,6 +203,7 @@ const emit = defineEmits<{
   cancelEdit: []
   deleteNote: []
   toggleEditMode: []
+  finishEdit: []
   updateNoteTitle: [title: string]
   updateNoteContent: [content: string]
   updateNoteContentType: [contentType: ContentType]
@@ -236,6 +239,11 @@ const markdownLayout = ref<MarkdownLayout>(MarkdownLayout.None)
 // 标题栏引用
 const titleBarRef = ref<InstanceType<typeof EditorTitleBar> | null>(null)
 
+// 从标题栏跳转到正文编辑区
+const handleFocusContent = () => {
+  editor.value?.commands.focus('start')
+}
+
 // Timer refs for cleanup
 let editModeFocusTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -263,8 +271,8 @@ const createEditor = async (contentType: ContentType, content: string) => {
   // 根据内容类型选择扩展：Markdown 模式使用 Markdown 扩展，富文本模式不使用
   const extensions =
     contentType === ContentType.Markdown
-      ? await getMarkdownExtensions()
-      : await getRichTextExtensions()
+      ? await getMarkdownExtensions(t('editor.noteContentPlaceholder'))
+      : await getRichTextExtensions(t('editor.noteContentPlaceholder'))
 
   // 异步加载后再次检查竞态
   if (requestId !== editorCreateRequestId) return
@@ -581,6 +589,7 @@ const handleSourceChange = () => {
   inset: 0;
   padding: 1rem 1rem;
   overflow-y: auto;
+  caret-color: var(--color-primary);
 }
 
 @media (min-width: 640px) {
@@ -704,6 +713,7 @@ const handleSourceChange = () => {
   height: 100%;
   padding: 1.5rem;
   border: none;
+  caret-color: var(--color-primary);
   outline: none;
   resize: none;
   font-family: var(--font-mono);

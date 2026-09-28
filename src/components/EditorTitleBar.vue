@@ -14,6 +14,8 @@
           ref="titleInput"
           :value="activeNote.title"
           @input="emit('updateTitle', ($event.target as HTMLInputElement).value)"
+          @keydown.enter.prevent="emit('focusContent')"
+          @keydown.down.prevent="emit('focusContent')"
           :placeholder="t('editor.noteTitlePlaceholder')"
           :readonly="!editMode"
           :aria-label="t('editor.noteTitle')"
@@ -45,6 +47,7 @@ const props = defineProps<Props>()
 const emit = defineEmits<{
   updateTitle: [title: string]
   back: []
+  focusContent: []
 }>()
 
 const titleInput = ref<HTMLInputElement | null>(null)

@@ -127,6 +127,7 @@
             @cancel-edit="cancelEdit"
             @delete-note="deleteNote"
             @toggle-edit-mode="editMode = !editMode"
+            @finish-edit="editMode = false"
             @update-note-title="updateNoteTitle"
             @update-note-content="updateNoteContent"
             @update-note-content-type="updateNoteContentType"

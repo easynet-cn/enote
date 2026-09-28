@@ -14,8 +14,8 @@ export function useNoteEditor() {
   const activeNoteData = computed(() => store.activeNoteData)
 
   // 设置活动笔记
-  const setActiveNote = (noteId: string) => {
-    store.setActiveNote(noteId)
+  const setActiveNote = (noteId: string, keepEditMode = false) => {
+    store.setActiveNote(noteId, keepEditMode)
   }
 
   // 创建新笔记
@@ -82,7 +82,8 @@ export function useNoteEditor() {
         }
 
         await refreshNotes()
-        setActiveNote(newNoteId)
+        // 保存后保留编辑态，避免"保存即退出编辑"导致继续编辑需重新点击编辑
+        setActiveNote(newNoteId, true)
       },
       {
         loading: i18n.global.t('composable.savingNote'),

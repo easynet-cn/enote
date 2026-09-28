@@ -40,9 +40,11 @@ export const useEditorStore = defineStore('editor', () => {
   })
 
   // ==================== Actions ====================
-  const setActiveNote = (noteId: string | null) => {
+  const setActiveNote = (noteId: string | null, keepEditMode = false) => {
     activeNote.value = noteId
-    editMode.value = false
+    if (!keepEditMode) {
+      editMode.value = false
+    }
 
     if (noteId) {
       const note = noteStore.getNoteById(noteId)
