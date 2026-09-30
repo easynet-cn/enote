@@ -38,6 +38,17 @@ A cross-platform desktop note-taking application built with Tauri, supporting ri
 - **Notebook Hierarchy** - Nested notebook tree with expand/collapse
 - **Profile Editing** - Edit existing database profile configurations
 
+### Todo Management
+- **Todos** - Create, edit, complete and delete todos with priority (None/Low/Medium/High) and due dates
+- **Lists** - Group todos into lists, including unassigned todos
+- **Reminders & Recurrence** - Set reminder times and repeat daily/weekly/monthly/yearly with an optional end date
+- **Subtasks** - Break a todo into subtasks
+- **Links & Tags** - Link todos to notes and attach tags
+- **View Filters** - All/Today/Planned/Overdue views plus a quadrant view by importance and urgency
+- **Batch Operations** - Batch complete, move to list and delete
+- **Statistics & Pomodoro** - Completion-rate statistics overview and a built-in 25-minute Pomodoro timer
+- **Todo Trash** - Soft delete with restore and permanent delete
+
 ### Security & Encryption
 - **Content Encryption** - AES-256-GCM transparent note content encryption, keys stored in OS keychain
 - **Note Encryption** - Per-note password protection
@@ -62,6 +73,7 @@ A cross-platform desktop note-taking application built with Tauri, supporting ri
 
 ### Interface & Experience
 - **Dark Mode** - Light/Dark/System theme switching
+- **Eye Care Screen Saver** - Timed forced breaks with configurable idle trigger and duration, customizable background and text, tray countdown and quick controls
 - **Multilingual** - Simplified Chinese and English
 - **System Tray** - Minimize to tray
 - **Multi-Window** - Open notes in separate windows

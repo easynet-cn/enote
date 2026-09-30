@@ -30,10 +30,12 @@ The currently selected note card is highlighted. Keyboard arrow keys can be used
 
 When creating a new note:
 1. The note is automatically assigned to the currently selected notebook.
-2. The editor enters editing mode, and the cursor is automatically placed in the title input field.
+2. The editor enters editing mode, and the cursor is automatically placed at the beginning of the title input field.
 3. The user needs to select the content type from the left side of the toolbar:
    - **Rich Text:** Use the WYSIWYG rich text editor.
    - **Markdown:** Use the Markdown syntax editor.
+
+After typing the title, press Enter or the Down arrow key to move the cursor to the beginning of the content area. When the content is empty, a placeholder hint is displayed so you can easily locate the cursor.
 
 > **Note:** The content type of a note cannot be changed after the first save.
 
@@ -51,7 +53,11 @@ When creating a new note:
 
 ### 6.4 Save a Note
 
-In editing mode, click the "Save" button (checkmark icon) on the right side of the toolbar or use the shortcut Ctrl+S (Cmd+S on macOS) to save the current note. After a successful save, the system displays a success notification, and the note automatically switches to read-only mode.
+In editing mode, click the "Save" button (checkmark icon) on the right side of the toolbar or use the shortcut Ctrl+S (Cmd+S on macOS) to save the current note. After a successful save, the system displays a success notification and the note content is written to the database.
+
+**The note stays in editing mode after saving**, so you can keep editing. Clicking "Save" again without making further changes will not write to the database again.
+
+To finish editing and return to read-only viewing mode, click the "Finish" button (circle-check icon) on the right side of the toolbar. This does not discard saved or unsaved content — it only exits editing mode.
 
 The system automatically records a history version for each save, enabling subsequent version tracking and content recovery.
 

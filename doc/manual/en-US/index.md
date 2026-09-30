@@ -2,7 +2,7 @@
 
 **Software Name:** ENote Intelligent Note Management System
 
-**Version:** V1.2.6
+**Version:** V1.3.1
 
 **Date:** August 2026
 
@@ -155,8 +155,20 @@
   - [24.1 Automatic Check on Startup](24-auto-update.md#241-automatic-check-on-startup)
   - [24.2 Manual Update Check](24-auto-update.md#242-manual-update-check)
   - [24.3 Download and Install](24-auto-update.md#243-download-and-install)
-- [Appendix A: Changelog](appendix-changelog.md)
+- [25. Todo Management](25-todo.md)
+  - [25.1 Opening Todos](25-todo.md#251-opening-todos)
+  - [25.2 Creating a Todo](25-todo.md#252-creating-a-todo)
+  - [25.3 Editing a Todo](25-todo.md#253-editing-a-todo)
+  - [25.4 Completing and Deleting Todos](25-todo.md#254-completing-and-deleting-todos)
+  - [25.5 Managing Lists](25-todo.md#255-managing-lists)
+  - [25.6 View Filters](25-todo.md#256-view-filters)
+  - [25.7 Quadrant View](25-todo.md#257-quadrant-view)
+  - [25.8 Search and Show Completed](25-todo.md#258-search-and-show-completed)
+  - [25.9 Batch Operations](25-todo.md#259-batch-operations)
+  - [25.10 Statistics Overview](25-todo.md#2510-statistics-overview)
+  - [25.11 Pomodoro Timer](25-todo.md#2511-pomodoro-timer)
+  - [25.12 Trash](25-todo.md#2512-trash)
 
 ---
 
-*This manual is based on ENote Intelligent Note Management System V1.2.6. Please refer to the actual software for any feature updates.*
+*This manual is based on ENote Intelligent Note Management System V1.3.1. Please refer to the actual software for any feature updates.*

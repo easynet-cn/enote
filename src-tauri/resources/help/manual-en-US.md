@@ -2,7 +2,7 @@
 
 **Software Name:** ENote Intelligent Note Management System
 
-**Version:** V1.2.6
+**Version:** V1.3.1
 
 **Date:** August 2026
 
@@ -155,11 +155,23 @@
   - [24.1 Automatic Check on Startup](#241-automatic-check-on-startup)
   - [24.2 Manual Update Check](#242-manual-update-check)
   - [24.3 Download and Install](#243-download-and-install)
-- Appendix A: Changelog
+- 25. Todo Management
+  - [25.1 Opening Todos](#251-opening-todos)
+  - [25.2 Creating a Todo](#252-creating-a-todo)
+  - [25.3 Editing a Todo](#253-editing-a-todo)
+  - [25.4 Completing and Deleting Todos](#254-completing-and-deleting-todos)
+  - [25.5 Managing Lists](#255-managing-lists)
+  - [25.6 View Filters](#256-view-filters)
+  - [25.7 Quadrant View](#257-quadrant-view)
+  - [25.8 Search and Show Completed](#258-search-and-show-completed)
+  - [25.9 Batch Operations](#259-batch-operations)
+  - [25.10 Statistics Overview](#2510-statistics-overview)
+  - [25.11 Pomodoro Timer](#2511-pomodoro-timer)
+  - [25.12 Trash](#2512-trash)
 
 ---
 
-*This manual is based on ENote Intelligent Note Management System V1.2.6. Please refer to the actual software for any feature updates.*
+*This manual is based on ENote Intelligent Note Management System V1.3.1. Please refer to the actual software for any feature updates.*
 
 ---
 
@@ -504,10 +516,12 @@ The currently selected note card is highlighted. Keyboard arrow keys can be used
 
 When creating a new note:
 1. The note is automatically assigned to the currently selected notebook.
-2. The editor enters editing mode, and the cursor is automatically placed in the title input field.
+2. The editor enters editing mode, and the cursor is automatically placed at the beginning of the title input field.
 3. The user needs to select the content type from the left side of the toolbar:
    - **Rich Text:** Use the WYSIWYG rich text editor.
    - **Markdown:** Use the Markdown syntax editor.
+
+After typing the title, press Enter or the Down arrow key to move the cursor to the beginning of the content area. When the content is empty, a placeholder hint is displayed so you can easily locate the cursor.
 
 > **Note:** The content type of a note cannot be changed after the first save.
 
@@ -525,7 +539,11 @@ When creating a new note:
 
 ### 6.4 Save a Note
 
-In editing mode, click the "Save" button (checkmark icon) on the right side of the toolbar or use the shortcut Ctrl+S (Cmd+S on macOS) to save the current note. After a successful save, the system displays a success notification, and the note automatically switches to read-only mode.
+In editing mode, click the "Save" button (checkmark icon) on the right side of the toolbar or use the shortcut Ctrl+S (Cmd+S on macOS) to save the current note. After a successful save, the system displays a success notification and the note content is written to the database.
+
+**The note stays in editing mode after saving**, so you can keep editing. Clicking "Save" again without making further changes will not write to the database again.
+
+To finish editing and return to read-only viewing mode, click the "Finish" button (circle-check icon) on the right side of the toolbar. This does not discard saved or unsaved content — it only exits editing mode.
 
 The system automatically records a history version for each save, enabling subsequent version tracking and content recovery.
 
@@ -2273,151 +2291,121 @@ After clicking "Update Now":
 
 ---
 
-## Appendix A: Changelog
+## 25. Todo Management
 
-| Version | Date | Changes |
-|---------|------|---------|
-| V1.2.6 | August 2026 | Eye care screen saver and dependency optimization |
-| | | **New features:** |
-| | | - Eye care screen saver: scheduled forced rest to protect eyesight. Supports custom idle trigger time (30-120 minutes), screen saver duration (3-15 minutes or unlimited) |
-| | | - Screen saver appearance customization: background color, background image, display text, text color and font size all configurable |
-| | | - System tray countdown: macOS menu bar displays remaining time in real-time, all platforms show tooltip on hover |
-| | | - Tray quick controls: pause/resume, reset countdown, stop eye care without opening settings |
-| | | - Screen saver enabled by default: 60-minute idle countdown and 5-minute screen saver duration start automatically on app launch |
-| | | **Optimizations:** |
-| | | - Dependency reduction: removed dirs (archived) and hex (5 years unmaintained) external dependencies, replaced with built-in utility functions |
-| | | - Initialization order optimization: ensure system tray is created before starting screen saver timer to prevent tooltip update failures |
-| | | - Adaptive time format: displays MM:SS under 1 hour, automatically switches to H:MM:SS for 1 hour or above |
-| V1.1.0 | March 2026 | New Features, Performance Optimization, and UX Enhancement |
-| | | **New Features:** |
-| | | - Note Sorting: Sort by title, creation time, or update time with ascending/descending toggle |
-| | | - Batch Operations: Multi-select notes for batch move to notebook and batch delete |
-| | | - Note Starring: Star/favorite notes for quick identification |
-| | | - File Attachments: Attach files to notes with local storage, drag-and-drop upload, and system file opener |
-| | | - Notebook Hierarchy: Nested notebook tree with expand/collapse, parent notebook selection in edit dialog |
-| | | - Code Block Language Selector: Quick language dropdown for syntax highlighting (25+ languages) |
-| | | - PDF Export: Export notes as PDF via system print dialog |
-| | | - HTML Export: Standalone HTML files with embedded styles, responsive design, and dark mode support |
-| | | - Print Support: Direct print from toolbar and command palette |
-| | | - Editor Font Size Setting: Configurable font size (12-20px) in appearance settings |
-| | | - Profile Editing: Edit existing database profile configurations without recreating |
-| | | **Performance Optimization:** |
-| | | - Trash Empty: Single transaction for batch deletion with individual history preservation |
-| | | - Settings Cache Write-Through: Merge updates into cache instead of invalidating |
-| | | - Reorder Transactions: Notebook/tag reorder operations wrapped in single transaction |
-| | | - Sync History Dedup: Skip duplicate history generation during cross-profile sync |
-| | | - History Cache: LRU cache (30s TTL) for note history pagination |
-| | | - Auto Backup Hot Reload: Backup timer resets when interval settings change |
-| | | **UX Enhancement:** |
-| | | - Editor Error Boundary: Graceful error recovery instead of white screen on editor crash |
-| | | - Title/Content Separator: Visual divider between note title and content area |
-| | | - Editor Focus: Auto-focus to title start (new note) or content start (existing note) on edit |
-| | | - Sidebar Layout: Notebooks and tags each occupy 50% height with independent scrolling |
-| | | - Floating Drawer Panel: Attachments and linked notes in right-side slide-in drawer with shadow overlay |
-| | | - SettingsDialog Split: Refactored into 5 modular sub-components |
-| | | **Security:** |
-| | | - Decryption Failure Protection: Returns placeholder text instead of leaking ciphertext |
-| | | - DB URL Sanitization: Database connection string passwords automatically masked in logs |
-| | | - Sanitization Tests: 8 new unit tests for log sanitization functions |
-| | | **i18n:** |
-| | | - Complete i18n audit: Fixed hardcoded strings in toolbar, tree items, and help components |
-| | | - Added missing tooltips on all icon-only buttons |
-| V1.0.0 | March 2026 | Auto Update and PostgreSQL Compatibility Fix |
-| | | - Auto Update: Automatic new version check on startup with download progress and one-click install/restart |
-| | | - Manual Update Check: Available from Help menu and Command Palette |
-| | | - Update Signature Verification: Based on Tauri Updater plugin with digital signature verification |
-| | | - GitHub Releases Distribution: Three-platform builds via GitHub Actions |
-| | | - PostgreSQL Compatibility Fix: All table primary keys unified to BIGINT, fixing int4/int8 type mismatch |
-| | | - Log Error Handling Enhancement: Diagnostic info logged via tracing when log writes fail |
-| | | - Clippy Warnings Cleared: All 36 Clippy warnings fixed |
-| V0.12.0 | March 2026 | Help System and Application Logs |
-| | | - Help System: Built-in searchable user manual with table of contents navigation and multilingual support |
-| | | - Application Logs: Database operation logs and file system logs with filtering, search, and cleanup |
-| | | - Sensitive Data Protection: Automatic log sanitization of passwords, keys, and other sensitive information |
-| | | - Frontend Logging Integration: Configurable frontend log level with async non-blocking recording |
-| | | - Performance Index Optimization: New composite search indexes for improved query performance |
-| V0.11.0 | March 2026 | Internationalization and Help Infrastructure |
-| | | - Complete internationalization: Backend error messages and prompts fully support Chinese and English |
-| | | - Help infrastructure: Resource file loading and manual rendering framework |
-| V0.10.0 | March 2026 | Responsive Layout and Shortcut Customization |
-| | | - Responsive Layout: Auto-adapts to Desktop (three-column), Tablet (two-column + sidebar overlay), Mobile (single-view fullscreen switching) |
-| | | - Layout Mode Settings: Manual layout mode selection (Auto/Desktop/Tablet/Mobile), persisted to settings |
-| | | - Shortcut Customization: 6 application-level shortcuts are customizable with recording, conflict detection, and reset |
-| | | - Shortcut Persistence: Custom shortcuts saved to database, effective after restart |
-| | | - Command Palette Enhancement: New "Switch Layout Mode" command, shortcut text updates in real time |
-| | | - View Transition Animations: Slide transitions for note list and editor in mobile mode |
-| | | - Mobile Dialog Adaptation: Dialogs become bottom sheets on small screens |
-| | | - Responsive Toolbar: Editor toolbar and action buttons auto-compact on small screens |
-| | | - Profile Hot-Switch: Switching database profiles no longer restarts the process, works in all environments |
-| | | - Feature Split: Rust compile features split into desktop (desktop UI) and db-full (DB drivers + Keychain) |
-| | | - Safe Area Adaptation: iOS safe area support (notch/home indicator) |
-| | | - Responsive Status Bar: Line/column info hidden on small screens, character count only |
-| V0.9.0 | March 2026 | Cross-Profile Sync and System Optimization |
-| | | - Cross-Profile Sync: Sync data to other profiles with Append/Overwrite modes |
-| | | - Cross-Database Sync: SQLite <-> MySQL <-> PostgreSQL in any direction, automatic encryption conversion |
-| | | - Sync History Management: Automatic per-record logging for each sync, with view/export/delete support |
-| | | - Pre-Sync Auto Backup: SQL/Excel/CSV formats, both source and target backed up |
-| | | - Streaming Backup Export: Large dataset export uses batched streaming to prevent OOM |
-| | | - Database Index Optimization: 5 new query indexes (tag filtering, bidirectional links, history, template sorting) |
-| | | - Startup Error Handling: Error dialog with retry/close on startup failure |
-| | | - Encryption Service Tests: 10 unit tests covering encrypt/decrypt core logic |
-| | | - Toolbar Refactoring: TiptapToolbar split into 8 independent sub-components |
-| | | - Note List Loading State: Skeleton feedback during search and pagination |
-| | | - Auto Backup Failure Notification: User notified on failure instead of silent ignore |
-| | | - CSS Variable Normalization: Overlays and shadows unified via CSS variables for dark mode consistency |
-| | | - Store Simplification: Removed redundant ID arrays, data derived directly from Map |
-| | | - Cargo Workspace Restructuring: Dependency versions unified at workspace level |
-| V0.8.0 | March 2026 | Multi-Profile Management and Content Security Enhancement |
-| | | - Setup Wizard: First-launch guided database connection setup for SQLite/MySQL/PostgreSQL |
-| | | - Multi-Profile Management: Support multiple database configurations with startup selection or auto-connect |
-| | | - OS Keychain Integration: Database passwords and encryption keys securely stored in OS keychain |
-| | | - Transparent Content Encryption: AES-256-GCM automatic note content encryption, keys never on disk |
-| | | - SSL/TLS Certificate Authentication: MySQL/PostgreSQL support certificate-based login |
-| | | - Wizard Language Switching: Setup wizard and profile selector support instant Chinese/English toggle |
-| | | - Profile Management Entry: New "Switch Profile" function in the Settings dialog |
-| V0.7.0 | March 2026 | MCP Integration and Template Enhancement |
-| | | - MCP Server: Built-in MCP protocol support; AI tools can operate on notes via stdio (10 tools) |
-| | | - MCP Access Control: Fine-grained control of each MCP tool's enable/disable in the settings panel |
-| | | - MCP Dynamic Tool List: `list_tools` only returns enabled tools |
-| | | - MCP Three-Layer Access Control: Notebook/Tag/Note-level AI access permissions (Inherit/Read-Write/Read-Only/Deny) |
-| | | - MCP Permission Resolution: Encrypted notes auto-denied, note-level priority, multi-tag takes strictest, notebook fallback |
-| | | - Operation Source Tracking: New "Operation Source" field in history records (User Operation / AI Tool) |
-| | | - Template Editor: Template management upgraded to two-level interface, supporting Rich Text and Markdown dual-mode template content editing |
-| | | - Configuration Enhancement: SQLite URL supports `~` path expansion, new `mcp.enabled` configuration option |
-| V0.6.0 | March 2026 | Third Batch Feature Release |
-| | | - Note Templates: Create/manage templates, quickly create notes from templates, save notes as templates |
-| | | - Template Access Optimization: Multiple entry points from sidebar bottom toolbar, command palette, and editor toolbar |
-| | | - System Tray: Minimize to tray, click tray icon to toggle window |
-| | | - Bidirectional Links: Establish links between notes, linked notes panel for display and management |
-| | | - Note Encryption: AES-256-GCM encryption for protecting note content |
-| | | - Multi-Window: Support opening notes in new windows |
-| | | - Lock Screen Security: Password protection (Argon2id hash), timeout auto-lock, minimize lock |
-| | | - Command-Line Configuration: Support --config parameter for specifying custom configuration file at startup |
-| V0.5.1 | March 2026 | Second Batch Feature Release |
-| | | - Smart Paste: Clean external HTML formatting, support screenshot paste |
-| | | - Command Palette: Ctrl+P for quick operations |
-| | | - FTS5 Full-Text Search: Trigram tokenization with Chinese substring matching support |
-| | | - Local Image Storage: Save images as local files, replacing Base64 inline |
-| | | - Automatic Backup: Scheduled SQL backup with automatic old backup cleanup |
-| V0.5.0 | March 2026 | First Batch Feature Release |
-| | | - Application Settings: Theme switching (Light/Dark/Follow System), language setting persistence |
-| | | - Dark Mode: Full dark theme support, semantic CSS variable system |
-| | | - Note Pinning: Pin/unpin notes, pinned notes placed at the top of the list |
-| | | - Trash: Soft delete notes, support restore/permanently delete/empty |
-| | | - Drag-and-Drop Sorting: Notebooks and tags support drag-to-reorder |
-| | | - Data Backup and Restore: Support SQL/Excel/CSV formats |
-| V0.4.0 | March 2026 | Initial Version Release |
-| | | - Notebook Management: Create, edit, delete, filter by notebook |
-| | | - Tag Management: Create, edit, delete, filter by tag, multi-tag association |
-| | | - Note Management: Create, edit, save, delete, search, note settings |
-| | | - Rich Text Editor: Text styles, heading levels, font family and size, alignment, lists, indentation, blockquotes, code blocks, links, images, tables, colors, find and replace, table of contents navigation, content block drag-and-drop, math formulas, image lazy loading |
-| | | - Markdown Editor: Source code editing, live preview, split-screen mode (horizontal/vertical), math formula rendering |
-| | | - History: Version tracking, content comparison view |
-| | | - Export: Word document, Markdown, Evernote ENEX, JSON, XML |
-| | | - Import: Evernote, Youdao Notes, Notion |
-| | | - Multilingual Support: Simplified Chinese, English |
-| | | - Database Support: SQLite (default), MySQL, PostgreSQL |
+ENote includes a built-in Todo feature for managing daily tasks. Todos support list grouping, priority, due dates, reminders, recurrence, subtasks, linked notes and tags, and come with a quadrant view, statistics overview and a Pomodoro timer to help you work efficiently.
 
----
+### 25.1 Opening Todos
 
-*This manual is based on ENote Intelligent Note Management System V1.2.6. Please refer to the actual software for any feature updates.*
+You can open the todo view in several ways:
+
+- **Sidebar:** Click any view under "Todo" (All / Today / Planned / Overdue / Quadrants), or a list or tag.
+- **Bottom toolbar:** Click the todo icon button in the bottom toolbar of the sidebar to open the "All" view directly.
+- **Back to notes:** In the todo view, click the close button in the top-right corner to return to the note view.
+
+When the todo view is active, the layout is:
+
+- **Left (the note list panel):** The todo list and the quick-add input.
+- **Right (the editor panel):** Details of the selected todo.
+
+### 25.2 Creating a Todo
+
+Type a title in the input at the top of the todo list and press Enter to create it quickly.
+
+To set more properties, click "Edit Todo" in the details panel and configure the following in the edit dialog:
+
+- **Title:** Required, cannot be empty.
+- **Notes:** Detailed description of the todo.
+- **Priority:** None / Low / Medium / High.
+- **Due date:** No due date, or a specific date. Todos due today show "Due today"; overdue todos show "Overdue".
+- **Reminder:** Set a reminder time for the todo.
+- **Repeat:** None / Daily / Weekly / Monthly / Yearly, with an optional "Every N periods" interval and a "Repeat until" end date.
+- **List:** Assign the todo to a list; unassigned todos appear under "Unassigned".
+- **Tags:** Attach one or more tags to the todo.
+- **Linked Note:** Link the todo to a note so you can jump from the task to the note details; choose "None" for no link.
+- **Subtask:** Add subtasks to the todo; the list shows the subtask count.
+
+### 25.3 Editing a Todo
+
+Select a todo in the left list to see its details in the right panel. Click "Edit Todo" to open the edit dialog, where you can modify all of the properties above and save.
+
+### 25.4 Completing and Deleting Todos
+
+- **Complete:** Click the checkbox in front of a todo to mark it as completed; click again to uncomplete it.
+- **Delete:** Deleted todos go to the todo trash, where they can be restored or permanently deleted.
+
+### 25.5 Managing Lists
+
+Lists are used to group todos:
+
+- **New list:** Click the "New List" button next to the "Lists" heading and enter a name.
+- **Switch list:** Click a list in the sidebar to show only the todos in that list; click "Unassigned" to show todos that are not in any list.
+- **Delete list:** Deleting a list does not delete its todos — they become "Unassigned".
+
+### 25.6 View Filters
+
+The sidebar provides several preset views for focusing on different scopes of tasks:
+
+| View | Description |
+|------|-------------|
+| All | Shows all pending and completed todos |
+| Today | Shows todos due today |
+| Planned | Shows todos that have a due date |
+| Overdue | Shows todos past their due date and not completed |
+| Quadrants | Groups todos by importance and urgency |
+| Trash | Shows deleted todos |
+
+### 25.7 Quadrant View
+
+The quadrant view classifies todos automatically along two dimensions:
+
+- **Urgent:** Not completed and the due date is today or earlier.
+- **Important:** Priority is "High".
+
+This produces four quadrants:
+
+- **Urgent & Important** (high priority and due today or overdue)
+- **Important, Not Urgent** (high priority and not yet due)
+- **Urgent, Not Important** (not high priority but due today or overdue)
+- **Neither** (not high priority and not yet due)
+
+### 25.8 Search and Show Completed
+
+- **Search:** Enter a keyword in the search box of the todo list to filter todos by title.
+- **Show completed:** Use the "Show completed" toggle to control whether completed todos appear in the list.
+
+### 25.9 Batch Operations
+
+Click the "Batch" button in the top-right corner of the list to enter batch mode and process several todos at once:
+
+- **Select All:** Select all todos in the current list.
+- **Mark Done:** Mark the selected todos as completed.
+- **Move to List:** Move the selected todos to a specified list.
+- **Delete:** Delete the selected todos.
+- **Exit Batch:** Exit batch mode and clear the selection.
+
+In batch mode the count of selected items ("N selected") is shown in real time.
+
+### 25.10 Statistics Overview
+
+Statistics are displayed above the todo list to help you track overall progress:
+
+- Total, Pending, Completed
+- Due Today, Overdue
+- Completion Rate (percentage)
+
+### 25.11 Pomodoro Timer
+
+The todo view includes a built-in Pomodoro timer to support focused work:
+
+- **Start Focus / Pause:** One focus session is 25 minutes by default and can be paused at any time.
+- **Reset:** Restore the timer to 25 minutes.
+- When the session ends, a notification appears: "Focus session finished, take a break".
+
+### 25.12 Trash
+
+Deleted todos go to the trash, where you can manage them:
+
+- **Restore:** Restore the todo to its original list.
+- **Delete Permanently:** Permanently delete the todo; this cannot be undone.
+- **Empty Trash:** Permanently delete all todos in the trash at once; this action cannot be undone.
