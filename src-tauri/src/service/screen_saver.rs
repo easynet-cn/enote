@@ -57,11 +57,14 @@ pub struct ScreenSaverState {
 
 /// 缓存的屏保窗口信息
 ///
-/// 跟踪屏保窗口 label，用于退出时 close 和 Destroyed 事件清理。
+/// 跟踪屏保窗口 label 与所属显示器指纹，用于退出时 close、Destroyed 事件清理，
+/// 以及显示器拓扑变化时判断哪些窗口已失效。
 #[derive(Debug, Clone)]
 struct CachedWindow {
     /// 窗口 label（如 "screen-saver-0"）
     label: String,
+    /// 所属显示器指纹（名称 + 分辨率 + 位置），用于拓扑变化时识别失效窗口
+    fingerprint: String,
 }
 
 /// 屏保服务
@@ -69,6 +72,17 @@ pub struct ScreenSaverService {
     state: Arc<RwLock<ScreenSaverState>>,
     /// 屏保窗口缓存（跟踪显示器指纹，Destroyed 事件自动清理）
     cached_windows: Arc<Mutex<Vec<CachedWindow>>>,
+    /// 是否正在退出屏保
+    ///
+    /// 退出期间窗口必然失焦，若仍执行"失焦自动拉回 set_focus()"会与 close() 打架，
+    /// 导致窗口被重新激活（表现为黑窗残留、点击退出无响应）。
+    /// 该标志置位后，Focused(false) 回调不再拉回焦点。
+    exiting: Arc<AtomicBool>,
+    /// 屏保激活期间是否需要重建窗口（新增显示器、拓扑变化）
+    ///
+    /// 窗口重建只能在异步上下文进行（创建流程含 await），
+    /// 因此由同步的窗口事件回调置位，再由计时器循环执行重建。
+    needs_rebuild: Arc<AtomicBool>,
 }
 
 impl ScreenSaverService {
@@ -83,6 +97,8 @@ impl ScreenSaverService {
                 duration_remaining: 0,
             })),
             cached_windows: Arc::new(Mutex::new(Vec::new())),
+            exiting: Arc::new(AtomicBool::new(false)),
+            needs_rebuild: Arc::new(AtomicBool::new(false)),
         }
     }
 
@@ -140,6 +156,9 @@ impl ScreenSaverService {
     /// 先 close() 销毁窗口，再 emit 通知前端。
     /// close() 是确定性销毁，不会有黑屏残留。
     pub async fn exit_screen_saver(&self, app_handle: &AppHandle) {
+        // 先置位退出标志，禁用"失焦自动拉回"，避免与 close() 打架导致黑窗残留
+        self.exiting.store(true, Ordering::SeqCst);
+
         let mut state = self.state.write().await;
         state.timer_state = TimerState::Running;
         state.idle_remaining = state.idle_timeout;
@@ -148,6 +167,8 @@ impl ScreenSaverService {
         // 先 close 窗口（确定性销毁，无黑屏），再 emit 通知前端
         close_screen_saver_windows(app_handle, &self.cached_windows);
         let _ = app_handle.emit("ss-deactivate", ());
+        // 窗口已销毁，复位标志，等待下次激活
+        self.exiting.store(false, Ordering::SeqCst);
         info!("Screen saver exited, idle countdown restarted");
     }
 
@@ -181,6 +202,8 @@ impl ScreenSaverService {
     pub fn start_timer_loop(&self, app_handle: AppHandle) {
         let state = self.state.clone();
         let cached_windows = self.cached_windows.clone();
+        let exiting = self.exiting.clone();
+        let needs_rebuild = self.needs_rebuild.clone();
         tokio::spawn(async move {
             let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(1));
             let mut tick: u64 = 0;
@@ -245,15 +268,35 @@ impl ScreenSaverService {
 
                     if has_monitors {
                         let _ = app_handle.emit("ss-activate", ());
-                        show_screen_saver_window(&app_handle, &cached_windows).await;
+                        // 激活前复位退出标志（恢复"失焦自动拉回"）
+                        exiting.store(false, Ordering::SeqCst);
+                        show_screen_saver_window(
+                            &app_handle,
+                            &cached_windows,
+                            &exiting,
+                            &needs_rebuild,
+                        )
+                        .await;
                     }
                     info!("Screen saver activated");
                 }
                 if do_deactivate {
-                    // 先 close 窗口，再 emit 通知前端
+                    // 先置位退出标志（禁用失焦拉回），再 close 窗口，避免与 close() 打架
+                    exiting.store(true, Ordering::SeqCst);
                     close_screen_saver_windows(&app_handle, &cached_windows);
                     let _ = app_handle.emit("ss-deactivate", ());
+                    exiting.store(false, Ordering::SeqCst);
                     info!("Screen saver auto-deactivated");
+                }
+
+                // 屏保激活期间显示器拓扑变化（新增显示器等）：重建窗口
+                if tick_state.timer_state == TimerState::ScreenSaver
+                    && needs_rebuild.load(Ordering::SeqCst)
+                {
+                    needs_rebuild.store(false, Ordering::SeqCst);
+                    info!("Rebuilding screen saver windows after monitor topology change");
+                    show_screen_saver_window(&app_handle, &cached_windows, &exiting, &needs_rebuild)
+                        .await;
                 }
 
                 // 发送 tick 事件给前端
@@ -396,6 +439,8 @@ const SS_SHOW_DELAY_MS: u64 = 300;
 async fn show_screen_saver_window(
     app_handle: &AppHandle,
     cached_windows: &Arc<Mutex<Vec<CachedWindow>>>,
+    exiting: &Arc<AtomicBool>,
+    needs_rebuild: &Arc<AtomicBool>,
 ) {
     let monitors = match app_handle.available_monitors() {
         Ok(monitors) if !monitors.is_empty() => monitors,
@@ -450,7 +495,8 @@ async fn show_screen_saver_window(
 
     // 对每个显示器创建新窗口（顺序创建，避免 monitor 引用生命周期问题）
     for (i, monitor) in monitors.iter().enumerate() {
-        create_and_cache_window(app_handle, i, monitor, cached_windows).await;
+        create_and_cache_window(app_handle, i, monitor, cached_windows, exiting, needs_rebuild)
+            .await;
     }
 }
 
@@ -464,6 +510,8 @@ async fn create_and_cache_window(
     monitor_index: usize,
     monitor: &Monitor,
     cached_windows: &Arc<Mutex<Vec<CachedWindow>>>,
+    exiting: &Arc<AtomicBool>,
+    needs_rebuild: &Arc<AtomicBool>,
 ) {
     let label = format!("{}{}", SS_WINDOW_PREFIX, monitor_index);
 
@@ -486,14 +534,17 @@ async fn create_and_cache_window(
         )
     };
 
-    // 物理像素 → 逻辑像素
+    // 显示器几何（物理像素）与指纹
     let scale = monitor.scale_factor();
     let pos = monitor.position();
     let size = monitor.size();
-    let logical_x = pos.x as f64 / scale;
-    let logical_y = pos.y as f64 / scale;
-    let logical_w = size.width as f64 / scale;
-    let logical_h = size.height as f64 / scale;
+    let fingerprint = monitor_fingerprint(monitor);
+    // 复制为自有值：await 之后若仍持有从 &Monitor 借出的引用，
+    // 会使 &Monitor 的借用跨越 await 点，而 Monitor 非 Sync，导致 future 非 Send
+    let mon_x = pos.x;
+    let mon_y = pos.y;
+    let mon_w = size.width;
+    let mon_h = size.height;
 
     match WebviewWindowBuilder::new(app_handle, &label, url)
         .title("")
@@ -501,12 +552,26 @@ async fn create_and_cache_window(
         .always_on_top(true)
         .skip_taskbar(true)
         .resizable(false)
-        .position(logical_x, logical_y)
-        .inner_size(logical_w, logical_h)
+        // 原生窗口背景色与屏保 UI 一致（#1a1a2e），
+        // 避免全屏进出、WebView 尚未绘制时露出黑色底
+        .background_color(tauri::window::Color(26, 26, 46, 255))
         .visible(false) // 隐藏创建，等 WebView 加载后再 show
         .build()
     {
         Ok(window) => {
+            // 直接使用物理坐标设置位置与尺寸。
+            // 混合 DPI 场景下（如主屏 2.0 + 外接屏 1.0），若把物理像素按各显示器
+            // 自身 scale 折算成"逻辑值"再交给 Tauri（其内部按主屏 scale 折算回去），
+            // 会产生倍数误差，导致外接屏窗口错位/尺寸错误（表现为屏保未铺满）。
+            let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
+                x: pos.x,
+                y: pos.y,
+            }));
+            let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
+                width: size.width,
+                height: size.height,
+            }));
+
             // 在不可见状态下进入全屏（用户看不到 Space 过渡动画）
             let _ = window.set_fullscreen(true);
 
@@ -514,9 +579,20 @@ async fn create_and_cache_window(
             let ss_label = label.clone();
             let cw_arc = cached_windows.clone();
             let app_h = app_handle.clone();
+            let exiting_flag = exiting.clone();
+            let needs_rebuild_flag = needs_rebuild.clone();
             window.on_window_event(move |event: &WindowEvent| {
                 match event {
                     WindowEvent::Focused(false) => {
+                        // 退出过程中不拉回焦点：否则会与 close() 打架，
+                        // 使窗口被重新激活，表现为黑窗残留、点击退出无响应
+                        if exiting_flag.load(Ordering::SeqCst) {
+                            tracing::debug!(
+                                "Screen saver window '{}' lost focus, skipping re-focus (exiting)",
+                                ss_label
+                            );
+                            return;
+                        }
                         // 屏保激活期间，窗口失焦时立即拉回焦点
                         // 阻止用户通过 Cmd+Tab 等方式切换到其他应用
                         // 注意：无法完全拦截 macOS 系统快捷键，但能保证切换后立即拉回
@@ -529,68 +605,90 @@ async fn create_and_cache_window(
                         }
                     }
                     WindowEvent::ScaleFactorChanged { .. } => {
-                        // 显示器配置变化（拔掉/插入显示器、DPI 变化）
-                        // 重新查询当前显示器，关闭已移除显示器上的窗口
-                        // 新增显示器暂不处理（下次屏保激活时自然创建）
+                        // 显示器配置变化（拔掉/插入显示器、分辨率或 DPI 变化）
+                        // 按"显示器指纹"比对，而非按序号：
+                        // 序号在拔插中间一台或改变排列顺序后会错位，导致窗口贴错显示器
                         info!(
                             "Scale factor changed on '{}', checking monitor topology",
                             ss_label
                         );
 
-                        // 获取当前仍存在的显示器
-                        let current_monitors = app_h.available_monitors().unwrap_or_default();
-                        let current_count = current_monitors.len();
+                        let current_monitors = match app_h.available_monitors() {
+                            Ok(m) => m,
+                            Err(e) => {
+                                warn!("Failed to list monitors on topology change: {}", e);
+                                Vec::new()
+                            }
+                        };
+                        // 当前所有显示器的指纹
+                        let current_fps: Vec<String> = current_monitors
+                            .iter()
+                            .map(monitor_fingerprint)
+                            .collect();
 
-                        // 检查缓存中的窗口，关闭对应显示器已不存在的
+                        // 关闭"所属显示器已不存在（或分辨率/位置已变化）"的窗口
                         let mut cached = cw_arc.lock().unwrap();
                         let before = cached.len();
                         let to_close: Vec<String> = cached
                             .iter()
-                            .filter_map(|cw| {
-                                // 从 label 提取显示器序号（如 "screen-saver-1" → 1）
-                                let idx: usize = match cw
-                                    .label
-                                    .strip_prefix(SS_WINDOW_PREFIX)
-                                    .and_then(|s| s.parse::<usize>().ok())
-                                {
-                                    Some(i) => i,
-                                    None => return None,
-                                };
-                                if idx < current_count {
-                                    None // 显示器仍存在
-                                } else {
-                                    Some(cw.label.clone()) // 显示器已移除
-                                }
-                            })
+                            .filter(|cw| !current_fps.contains(&cw.fingerprint))
+                            .map(|cw| cw.label.clone())
                             .collect();
 
-                        if !to_close.is_empty() {
-                            // 在锁外执行 close（避免回调中死锁）
-                            let labels_str = to_close.clone();
-                            // 先从缓存移除，再 close
-                            cached.retain(|cw| !to_close.contains(&cw.label));
-                            let after = cached.len();
-                            drop(cached);
+                        // 在锁外执行 close（避免回调中死锁）
+                        cached.retain(|cw| !to_close.contains(&cw.label));
+                        let after = cached.len();
+                        drop(cached);
 
-                            for label in &labels_str {
+                        if to_close.is_empty() {
+                            info!(
+                                "Monitor topology changed on '{}' but no windows need closing (current monitors: {})",
+                                ss_label,
+                                current_fps.len()
+                            );
+                        } else {
+                            for label in &to_close {
                                 if let Some(w) = app_h.get_webview_window(label) {
                                     match w.close() {
                                         Ok(()) => info!(
-                                            "Screen saver window '{}' closed (monitor removed, cache {} → {})",
+                                            "Screen saver window '{}' closed (monitor gone/changed, cache {} → {})",
                                             label, before, after
                                         ),
                                         Err(e) => warn!(
-                                            "Failed to close screen saver window '{}' on monitor removal: {}",
+                                            "Failed to close screen saver window '{}' on monitor change: {}",
                                             label, e
                                         ),
                                     }
                                 }
                             }
-                        } else {
+                        }
+
+                        // 新增显示器：屏保仍激活时立即为其补建窗口
+                        // （窗口创建是异步的，这里 spawn 到 tokio 运行时执行）
+                        let missing: Vec<usize> = current_monitors
+                            .iter()
+                            .enumerate()
+                            .filter(|(i, m)| {
+                                let fp = monitor_fingerprint(m);
+                                let owned = {
+                                    let c = cw_arc.lock().unwrap();
+                                    c.iter().any(|cw| cw.fingerprint == fp)
+                                };
+                                !owned && !app_h
+                                    .get_webview_window(&format!("{}{}", SS_WINDOW_PREFIX, i))
+                                    .is_some()
+                            })
+                            .map(|(i, _)| i)
+                            .collect();
+
+                        if !missing.is_empty() {
                             info!(
-                                "Monitor topology changed on '{}' but no windows need closing (current monitors: {})",
-                                ss_label, current_count
+                                "Monitor topology changed, scheduling rebuild for new monitor index(es): {:?}",
+                                missing
                             );
+                            // 置位重建标志，由计时器循环在异步上下文执行重建
+                            // （窗口创建流程含 await，且 Monitor 非 Sync，无法在此 spawn）
+                            needs_rebuild_flag.store(true, Ordering::SeqCst);
                         }
                     }
                     WindowEvent::Destroyed => {
@@ -616,17 +714,18 @@ async fn create_and_cache_window(
                 }
             });
 
-            // 加入缓存
+            // 加入缓存（记录显示器指纹，供拓扑变化时比对）
             {
                 let mut cached = cached_windows.lock().unwrap();
                 cached.push(CachedWindow {
                     label: label.clone(),
+                    fingerprint: fingerprint.clone(),
                 });
             }
 
             info!(
-                "Screen saver window '{}' created (hidden) on monitor {} (logical {:.0}x{:.0} at {:.0},{:.0}, scale={:.1}), waiting {}ms before show",
-                label, monitor_index, logical_w, logical_h, logical_x, logical_y, scale, SS_SHOW_DELAY_MS
+                "Screen saver window '{}' created (hidden) on monitor {} (physical {}x{} at {},{} scale={:.1}, fp={}), waiting {}ms before show",
+                label, monitor_index, size.width, size.height, pos.x, pos.y, scale, fingerprint, SS_SHOW_DELAY_MS
             );
 
             // 等待 WebView 加载 index.html（内联脚本同步设置 #1a1a2e 深色背景）
@@ -636,15 +735,38 @@ async fn create_and_cache_window(
             let _ = window.show();
             let _ = window.set_focus();
 
+            // 校验：打印窗口的实际几何，与显示器物理几何对照，
+            // 用于确认混合 DPI 下坐标换算是否正确（是否铺满目标显示器）
+            let actual_pos = window.outer_position().ok();
+            let actual_size = window.inner_size().ok();
             info!(
-                "Screen saver window '{}' shown after {}ms delay (monitor {})",
-                label, SS_SHOW_DELAY_MS, monitor_index
+                "Screen saver window '{}' shown after {}ms delay (monitor {}), actual pos={:?} size={:?} (target physical {}x{} at {},{})",
+                label,
+                SS_SHOW_DELAY_MS,
+                monitor_index,
+                actual_pos,
+                actual_size,
+                mon_w,
+                mon_h,
+                mon_x,
+                mon_y
             );
         }
         Err(e) => {
             warn!("Failed to create screen saver window '{}': {}", label, e);
         }
     }
+}
+
+/// 生成显示器指纹：名称 + 分辨率 + 位置（物理像素）
+///
+/// 用于识别"同一个显示器"，避免按序号判断在拔插/重排显示器时错位。
+/// 分辨率或位置变化（换分辨率、改变排列）也会产生新指纹，从而触发窗口重建。
+fn monitor_fingerprint(monitor: &Monitor) -> String {
+    let name = monitor.name().map(|s| s.as_str()).unwrap_or("unknown");
+    let pos = monitor.position();
+    let size = monitor.size();
+    format!("{}|{}x{}@{},{}", name, size.width, size.height, pos.x, pos.y)
 }
 
 /// 关闭所有屏保窗口（退出屏保时调用）
