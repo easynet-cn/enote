@@ -32,14 +32,8 @@ pub async fn delete_image(
 pub async fn find_all_templates(
     app_state: tauri::State<'_, Arc<AppState>>,
 ) -> Result<Vec<NoteTemplate>, AppError> {
-    if is_server_backend(&app_state).await {
-        let client = require_server(&app_state).await?;
-        return client.find_all_templates().await;
-    }
-    let db = require_db(&app_state).await?;
-    service::note_template::find_all(&db)
-        .await
-        .map_err(AppError::from)
+    let store = require_note_store(&app_state).await?;
+    store.find_all_templates().await
 }
 
 #[tauri::command]
@@ -48,14 +42,8 @@ pub async fn create_template(
     template: NoteTemplate,
 ) -> Result<Option<NoteTemplate>, AppError> {
     template.validate().map_err(AppError::from)?;
-    if is_server_backend(&app_state).await {
-        let client = require_server(&app_state).await?;
-        return client.create_template(&template).await;
-    }
-    let db = require_db(&app_state).await?;
-    service::note_template::create(&db, &template)
-        .await
-        .map_err(AppError::from)
+    let store = require_note_store(&app_state).await?;
+    store.create_template(&template).await
 }
 
 #[tauri::command]
@@ -64,14 +52,8 @@ pub async fn update_template(
     template: NoteTemplate,
 ) -> Result<Option<NoteTemplate>, AppError> {
     template.validate().map_err(AppError::from)?;
-    if is_server_backend(&app_state).await {
-        let client = require_server(&app_state).await?;
-        return client.update_template(&template).await;
-    }
-    let db = require_db(&app_state).await?;
-    service::note_template::update(&db, &template)
-        .await
-        .map_err(AppError::from)
+    let store = require_note_store(&app_state).await?;
+    store.update_template(&template).await
 }
 
 #[tauri::command]
@@ -79,14 +61,8 @@ pub async fn delete_template_by_id(
     app_state: tauri::State<'_, Arc<AppState>>,
     id: i64,
 ) -> Result<(), AppError> {
-    if is_server_backend(&app_state).await {
-        let client = require_server(&app_state).await?;
-        return client.delete_template_by_id(id).await;
-    }
-    let db = require_db(&app_state).await?;
-    service::note_template::delete_by_id(&db, id)
-        .await
-        .map_err(AppError::from)
+    let store = require_note_store(&app_state).await?;
+    store.delete_template_by_id(id).await
 }
 
 // ============================================================================
@@ -99,14 +75,8 @@ pub async fn find_note_links(
     app_state: tauri::State<'_, Arc<AppState>>,
     note_id: i64,
 ) -> Result<Vec<NoteLink>, AppError> {
-    if is_server_backend(&app_state).await {
-        let client = require_server(&app_state).await?;
-        return client.find_note_links(note_id).await;
-    }
-    let db = require_db(&app_state).await?;
-    service::note_link::find_links(&db, note_id)
-        .await
-        .map_err(AppError::from)
+    let store = require_note_store(&app_state).await?;
+    store.find_note_links(note_id).await
 }
 
 /// 创建笔记链接
@@ -116,16 +86,8 @@ pub async fn create_note_link(
     source_note_id: i64,
     target_note_id: i64,
 ) -> Result<(), AppError> {
-    if is_server_backend(&app_state).await {
-        let client = require_server(&app_state).await?;
-        return client
-            .create_note_link(source_note_id, target_note_id)
-            .await;
-    }
-    let db = require_db(&app_state).await?;
-    service::note_link::create_link(&db, source_note_id, target_note_id)
-        .await
-        .map_err(AppError::from)
+    let store = require_note_store(&app_state).await?;
+    store.create_note_link(source_note_id, target_note_id).await
 }
 
 /// 删除笔记链接
@@ -134,14 +96,8 @@ pub async fn delete_note_link(
     app_state: tauri::State<'_, Arc<AppState>>,
     link_id: i64,
 ) -> Result<(), AppError> {
-    if is_server_backend(&app_state).await {
-        let client = require_server(&app_state).await?;
-        return client.delete_note_link(link_id).await;
-    }
-    let db = require_db(&app_state).await?;
-    service::note_link::delete_link(&db, link_id)
-        .await
-        .map_err(AppError::from)
+    let store = require_note_store(&app_state).await?;
+    store.delete_note_link(link_id).await
 }
 
 /// 搜索可链接的笔记
@@ -151,14 +107,8 @@ pub async fn search_linkable_notes(
     note_id: i64,
     keyword: String,
 ) -> Result<Vec<NoteLink>, AppError> {
-    if is_server_backend(&app_state).await {
-        let client = require_server(&app_state).await?;
-        return client.search_linkable_notes(note_id, &keyword).await;
-    }
-    let db = require_db(&app_state).await?;
-    service::note_link::search_linkable_notes(&db, note_id, &keyword)
-        .await
-        .map_err(AppError::from)
+    let store = require_note_store(&app_state).await?;
+    store.search_linkable_notes(note_id, &keyword).await
 }
 
 // ============================================================================
@@ -247,23 +197,10 @@ pub async fn save_attachment(
     file_data: Vec<u8>,
     mime_type: String,
 ) -> Result<NoteAttachment, AppError> {
-    if is_server_backend(&app_state).await {
-        let client = require_server(&app_state).await?;
-        return client
-            .save_attachment(note_id, &file_name, &file_data, &mime_type)
-            .await;
-    }
-    let db = require_db(&app_state).await?;
-    service::attachment::save_attachment(
-        &db,
-        &app_state.app_data_dir,
-        note_id,
-        &file_name,
-        &file_data,
-        &mime_type,
-    )
-    .await
-    .map_err(AppError::from)
+    let store = require_note_store(&app_state).await?;
+    store
+        .save_attachment(note_id, &file_name, &file_data, &mime_type)
+        .await
 }
 
 /// 查询笔记附件列表
@@ -272,14 +209,8 @@ pub async fn find_attachments(
     app_state: tauri::State<'_, Arc<AppState>>,
     note_id: i64,
 ) -> Result<Vec<NoteAttachment>, AppError> {
-    if is_server_backend(&app_state).await {
-        let client = require_server(&app_state).await?;
-        return client.find_attachments(note_id).await;
-    }
-    let db = require_db(&app_state).await?;
-    service::attachment::find_by_note_id(&db, note_id)
-        .await
-        .map_err(AppError::from)
+    let store = require_note_store(&app_state).await?;
+    store.find_attachments(note_id).await
 }
 
 /// 删除附件
@@ -288,14 +219,8 @@ pub async fn delete_attachment(
     app_state: tauri::State<'_, Arc<AppState>>,
     id: i64,
 ) -> Result<(), AppError> {
-    if is_server_backend(&app_state).await {
-        let client = require_server(&app_state).await?;
-        return client.delete_attachment(id).await;
-    }
-    let db = require_db(&app_state).await?;
-    service::attachment::delete_by_id(&db, &app_state.app_data_dir, id)
-        .await
-        .map_err(AppError::from)
+    let store = require_note_store(&app_state).await?;
+    store.delete_attachment(id).await
 }
 
 /// 使用系统默认程序打开附件
@@ -332,14 +257,8 @@ pub async fn open_attachment(
 pub async fn get_attachment_stats(
     app_state: tauri::State<'_, Arc<AppState>>,
 ) -> Result<AttachmentStats, AppError> {
-    if is_server_backend(&app_state).await {
-        let client = require_server(&app_state).await?;
-        return client.get_attachment_stats().await;
-    }
-    let db = require_db(&app_state).await?;
-    service::attachment::get_stats(&db, &app_state.app_data_dir)
-        .await
-        .map_err(AppError::from)
+    let store = require_note_store(&app_state).await?;
+    store.get_attachment_stats().await
 }
 
 /// 清理孤立附件文件
@@ -347,14 +266,8 @@ pub async fn get_attachment_stats(
 pub async fn cleanup_orphan_attachments(
     app_state: tauri::State<'_, Arc<AppState>>,
 ) -> Result<u32, AppError> {
-    if is_server_backend(&app_state).await {
-        let client = require_server(&app_state).await?;
-        return client.cleanup_orphan_attachments().await;
-    }
-    let db = require_db(&app_state).await?;
-    service::attachment::cleanup_orphans(&db, &app_state.app_data_dir)
-        .await
-        .map_err(AppError::from)
+    let store = require_note_store(&app_state).await?;
+    store.cleanup_orphan_attachments().await
 }
 
 // ============================================================================

@@ -5,15 +5,8 @@ use super::*;
 pub async fn find_all_notebooks(
     app_state: tauri::State<'_, Arc<AppState>>,
 ) -> Result<Vec<Notebook>, AppError> {
-    if is_server_backend(&app_state).await {
-        let client = require_server(&app_state).await?;
-        return client.find_all_notebooks().await;
-    }
-    let db = require_db(&app_state).await?;
-    let notebooks = service::notebook::find_all(&db)
-        .await
-        .map_err(AppError::from)?;
-    Ok(notebooks)
+    let store = require_note_store(&app_state).await?;
+    store.find_all_notebooks().await
 }
 
 /// 创建笔记本
@@ -23,27 +16,8 @@ pub async fn create_notebook(
     notebook: Notebook,
 ) -> Result<Option<Notebook>, AppError> {
     notebook.validate().map_err(AppError::from)?;
-    if is_server_backend(&app_state).await {
-        let client = require_server(&app_state).await?;
-        return client.create_notebook(&notebook).await;
-    }
-    let db = require_db(&app_state).await?;
-    let result = service::notebook::create(&db, &notebook)
-        .await
-        .map_err(AppError::from)?;
-    if let Some(ref nb) = result {
-        let _ = service::app_log::log_action(
-            &db,
-            "notebook",
-            "create",
-            Some(&nb.id.to_string()),
-            Some(&nb.name),
-            &format!("Created notebook: {}", nb.name),
-            None,
-        )
-        .await;
-    }
-    Ok(result)
+    let store = require_note_store(&app_state).await?;
+    store.create_notebook(&notebook).await
 }
 
 /// 根据 ID 删除笔记本
@@ -52,25 +26,8 @@ pub async fn delete_notebook_by_id(
     app_state: tauri::State<'_, Arc<AppState>>,
     id: i64,
 ) -> Result<(), AppError> {
-    if is_server_backend(&app_state).await {
-        let client = require_server(&app_state).await?;
-        return client.delete_notebook_by_id(id).await;
-    }
-    let db = require_db(&app_state).await?;
-    service::notebook::delete_by_id(&db, id)
-        .await
-        .map_err(AppError::from)?;
-    let _ = service::app_log::log_action(
-        &db,
-        "notebook",
-        "delete",
-        Some(&id.to_string()),
-        None,
-        &format!("Deleted notebook id={}", id),
-        None,
-    )
-    .await;
-    Ok(())
+    let store = require_note_store(&app_state).await?;
+    store.delete_notebook_by_id(id).await
 }
 
 /// 更新笔记本
@@ -80,25 +37,6 @@ pub async fn update_notebook(
     notebook: Notebook,
 ) -> Result<Option<Notebook>, AppError> {
     notebook.validate().map_err(AppError::from)?;
-    if is_server_backend(&app_state).await {
-        let client = require_server(&app_state).await?;
-        return client.update_notebook(&notebook).await;
-    }
-    let db = require_db(&app_state).await?;
-    let result = service::notebook::update(&db, &notebook)
-        .await
-        .map_err(AppError::from)?;
-    if result.is_some() {
-        let _ = service::app_log::log_action(
-            &db,
-            "notebook",
-            "update",
-            Some(&notebook.id.to_string()),
-            Some(&notebook.name),
-            &format!("Updated notebook: {}", notebook.name),
-            None,
-        )
-        .await;
-    }
-    Ok(result)
+    let store = require_note_store(&app_state).await?;
+    store.update_notebook(&notebook).await
 }

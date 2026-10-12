@@ -25,7 +25,7 @@ use crate::{
     model::{
         AppLog, AppLogSearchParam, AttachmentStats, LogFileInfo, Note, NoteAttachment, NoteHistory,
         NoteHistorySearchPageParam, NoteLink, NoteSearchPageParam, NoteStatsResult, NoteTemplate,
-        Notebook, OperateSource, PageParam, PageResult, SyncLog, SyncLogDetail, SyncOptions,
+        Notebook, PageParam, PageResult, SyncLog, SyncLogDetail, SyncOptions,
         SyncPreview, Tag, Todo, TodoList, TodoSearchParam, TodoStats,
     },
     service,
@@ -55,6 +55,32 @@ pub(crate) async fn require_server(app_state: &AppState) -> Result<EnoteServerCl
         ProfileBackend::Server(client) => Ok(client.clone()),
         ProfileBackend::Database => Err(AppError::code("NOT_SERVER_BACKEND")),
     }
+}
+
+/// 从 AppState 获取当前笔记域存储后端（NoteStore 抽象层），未连接时返回明确错误。
+///
+/// `Arc<dyn NoteStore>` clone 为 O(1) 操作。
+pub(crate) async fn require_note_store(
+    app_state: &AppState,
+) -> Result<std::sync::Arc<dyn crate::store::NoteStore>, AppError> {
+    app_state
+        .note_store
+        .read()
+        .await
+        .clone()
+        .ok_or_else(|| AppError::code("DB_NOT_CONNECTED"))
+}
+
+/// 获取待办存储后端（Server 后端暂不支持，返回 TODO_NOT_SUPPORTED）
+pub(crate) async fn require_todo_store(
+    app_state: &AppState,
+) -> Result<std::sync::Arc<dyn crate::store::TodoStore>, AppError> {
+    app_state
+        .todo_store
+        .read()
+        .await
+        .clone()
+        .ok_or_else(|| AppError::code("DB_NOT_CONNECTED"))
 }
 
 mod app_log;

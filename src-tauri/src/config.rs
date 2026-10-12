@@ -336,6 +336,11 @@ pub struct AppState {
     pub database_connection: tokio::sync::RwLock<Option<DatabaseConnection>>,
     /// 当前活跃的后端类型（Database 或 Server）
     pub backend: tokio::sync::RwLock<ProfileBackend>,
+    /// 笔记域存储后端（NoteStore 抽象层），支持 Profile 热切换
+    /// 在 Profile 选择模式下为 None，待用户选择后通过 reconnect_profile 填充
+    pub note_store: tokio::sync::RwLock<Option<std::sync::Arc<dyn crate::store::NoteStore>>>,
+    /// 待办域存储后端（Server 后端暂不支持，为 None）
+    pub todo_store: tokio::sync::RwLock<Option<std::sync::Arc<dyn crate::store::TodoStore>>>,
     /// 应用数据目录（用于图片等文件存储）
     pub app_data_dir: PathBuf,
     /// 当前活跃的 profile ID，使用 RwLock 支持 Profile 热切换

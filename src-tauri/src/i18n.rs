@@ -49,6 +49,16 @@ fn zh_cn_messages() -> HashMap<String, String> {
         "数据库迁移失败，请检查数据库配置。\n\n错误详情：{}".to_string(),
     );
 
+    // 服务器相关错误
+    messages.insert(
+        "server.connection.failed.title".to_string(),
+        "服务器连接失败".to_string(),
+    );
+    messages.insert(
+        "server.connection.failed.message".to_string(),
+        "无法连接到远程服务器，请检查服务器地址和网络连接。\n\n错误详情：{}".to_string(),
+    );
+
     // 配置相关错误
     messages.insert(
         "config.load.failed.title".to_string(),
@@ -198,6 +208,17 @@ fn en_us_messages() -> HashMap<String, String> {
     messages.insert(
         "database.migration.failed.message".to_string(),
         "Database migration failed. Please check the database configuration.\n\nError details: {}"
+            .to_string(),
+    );
+
+    // Server related errors
+    messages.insert(
+        "server.connection.failed.title".to_string(),
+        "Server Connection Failed".to_string(),
+    );
+    messages.insert(
+        "server.connection.failed.message".to_string(),
+        "Failed to connect to the remote server. Please check the server URL and network connection.\n\nError details: {}"
             .to_string(),
     );
 

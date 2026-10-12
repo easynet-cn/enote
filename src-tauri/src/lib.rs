@@ -40,6 +40,7 @@ pub mod i18n; // 国际化支持（必须在 config 之前声明）
 pub mod migration; // 数据库迁移
 pub mod model; // 数据传输对象（DTO）
 pub mod service; // 业务逻辑服务层
+pub mod store; // 存储抽象层（NoteStore trait 及各后端实现）
 pub mod util; // 工具函数（data_dir / to_hex）
 
 /// 移动端入口（无参数）
@@ -346,11 +347,14 @@ async fn setup_normal_mode(
     let handle = app.handle().clone();
     let app_data_dir = handle.path().app_data_dir()?;
 
-    let (configuration, database_connection, active_profile_id, encryption_key): (
+    let (configuration, database_connection, active_profile_id, encryption_key, backend, note_store, todo_store): (
         config::Configuration,
         Option<sea_orm::DatabaseConnection>,
         String,
         Option<String>,
+        config::ProfileBackend,
+        Option<std::sync::Arc<dyn crate::store::NoteStore>>,
+        Option<std::sync::Arc<dyn crate::store::TodoStore>>,
     ) = if let Some(ref _config_path) = config_path {
         // 兼容旧模式：使用 application.yml
         let configuration = match config::Configuration::new(&handle, config_path.as_deref()) {
@@ -385,9 +389,20 @@ async fn setup_normal_mode(
 
         (
             configuration,
-            Some(database_connection),
+            Some(database_connection.clone()),
             String::new(),
             None,
+            config::ProfileBackend::Database,
+            Some(std::sync::Arc::new(crate::store::DatabaseStore::new(
+                database_connection.clone(),
+                None,
+                app_data_dir.clone(),
+            )) as std::sync::Arc<dyn crate::store::NoteStore>),
+            Some(std::sync::Arc::new(crate::store::DatabaseStore::new(
+                database_connection,
+                None,
+                app_data_dir.clone(),
+            )) as std::sync::Arc<dyn crate::store::TodoStore>),
         )
     } else {
         // Profile 模式
@@ -402,7 +417,15 @@ async fn setup_normal_mode(
         // 多 Profile + 非自动连接 → 延迟连接，等待用户在前端选择
         if !index.auto_connect && profiles.len() > 1 {
             info!("Multiple profiles without auto-connect, waiting for user selection");
-            (config::Configuration::default(), None, String::new(), None)
+            (
+                config::Configuration::default(),
+                None,
+                String::new(),
+                None,
+                config::ProfileBackend::Database,
+                None,
+                None,
+            )
         } else {
             let profile_id = if index.active.is_empty() {
                 // 没有活跃 profile，使用第一个
@@ -418,57 +441,120 @@ async fn setup_normal_mode(
 
             let profile_config = service::profile::read_profile(&app_data_dir, &profile_id)?;
 
-            // 从 Keychain 获取数据库密码（桌面端/db-full 模式 MySQL/PG 需要）
-            #[cfg(any(feature = "desktop", feature = "db-full"))]
-            let db_password = if profile_config.datasource.db_type != "sqlite"
-                && profile_config.datasource.auth_method != "certificate"
-            {
-                service::keychain::get_db_password(&profile_id)?
+            if profile_config.is_server_backend() {
+                // ======== Server 后端路径 ========
+                let server_config = profile_config
+                    .server
+                    .as_ref()
+                    .ok_or_else(|| crate::error::AppError::code("SERVER_CONFIG_MISSING"))?;
+
+                let secrets = service::enote_server::auth::ServerSecrets {
+                    token: service::keychain::get_server_token(&profile_id).unwrap_or(None),
+                    refresh_token: service::keychain::get_server_refresh_token(&profile_id)
+                        .unwrap_or(None),
+                    password: service::keychain::get_server_password(&profile_id).unwrap_or(None),
+                    client_secret: service::keychain::get_server_client_secret(&profile_id)
+                        .unwrap_or(None),
+                    header_value: service::keychain::get_server_header_value(&profile_id)
+                        .unwrap_or(None),
+                };
+
+                let client = match service::enote_server::EnoteServerClient::new(
+                    server_config,
+                    secrets,
+                ) {
+                    Ok(client) => client,
+                    Err(e) => {
+                        error!("Server connection failed: {:#}", e);
+                        let error_msg = format!("{}", e);
+                        handle
+                            .dialog()
+                            .message(t("server.connection.failed.message", &[&error_msg]))
+                            .kind(MessageDialogKind::Error)
+                            .title(t_simple("server.connection.failed.title"))
+                            .blocking_show();
+                        // 进入向导模式让用户重新配置
+                        setup_wizard_mode_state(app).await?;
+                        return Ok(());
+                    }
+                };
+
+                (
+                    config::Configuration::default(),
+                    None,
+                    profile_id,
+                    None,
+                    config::ProfileBackend::Server(client.clone()),
+                    Some(std::sync::Arc::new(crate::store::ServerStore::new(client.clone()))
+                        as std::sync::Arc<dyn crate::store::NoteStore>),
+                    Some(std::sync::Arc::new(crate::store::ServerStore::new(client))
+                        as std::sync::Arc<dyn crate::store::TodoStore>),
+                )
             } else {
-                None
-            };
-            #[cfg(not(any(feature = "desktop", feature = "db-full")))]
-            let db_password: Option<String> = None;
+                // ======== Database 后端路径（原有逻辑不变） ========
 
-            let database_connection = match config::database_connection_from_profile(
-                &profile_config,
-                db_password.as_deref(),
-            )
-            .await
-            {
-                Ok(conn) => conn,
-                Err(e) => {
-                    error!("Database connection failed: {:#}", e);
-                    let error_msg = format!("{}", e);
-                    handle
-                        .dialog()
-                        .message(t("database.connection.failed.message", &[&error_msg]))
-                        .kind(MessageDialogKind::Error)
-                        .title(t_simple("database.connection.failed.title"))
-                        .blocking_show();
-                    // 进入向导模式让用户重新配置
-                    setup_wizard_mode_state(app).await?;
-                    return Ok(());
-                }
-            };
+                // 从 Keychain 获取数据库密码（桌面端/db-full 模式 MySQL/PG 需要）
+                #[cfg(any(feature = "desktop", feature = "db-full"))]
+                let db_password = if profile_config.datasource.db_type != "sqlite"
+                    && profile_config.datasource.auth_method != "certificate"
+                {
+                    service::keychain::get_db_password(&profile_id)?
+                } else {
+                    None
+                };
+                #[cfg(not(any(feature = "desktop", feature = "db-full")))]
+                let db_password: Option<String> = None;
 
-            // 从 Keychain 获取加密密钥（桌面端/db-full 模式）
-            #[cfg(any(feature = "desktop", feature = "db-full"))]
-            let encryption_key = if profile_config.security.content_encryption {
-                service::keychain::get_encryption_key(&profile_id)?
-            } else {
-                None
-            };
-            #[cfg(not(any(feature = "desktop", feature = "db-full")))]
-            let encryption_key: Option<String> = None;
+                let database_connection = match config::database_connection_from_profile(
+                    &profile_config,
+                    db_password.as_deref(),
+                )
+                .await
+                {
+                    Ok(conn) => conn,
+                    Err(e) => {
+                        error!("Database connection failed: {:#}", e);
+                        let error_msg = format!("{}", e);
+                        handle
+                            .dialog()
+                            .message(t("database.connection.failed.message", &[&error_msg]))
+                            .kind(MessageDialogKind::Error)
+                            .title(t_simple("database.connection.failed.title"))
+                            .blocking_show();
+                        // 进入向导模式让用户重新配置
+                        setup_wizard_mode_state(app).await?;
+                        return Ok(());
+                    }
+                };
 
-            let configuration = config::Configuration::default();
-            (
-                configuration,
-                Some(database_connection),
-                profile_id,
-                encryption_key,
-            )
+                // 从 Keychain 获取加密密钥（桌面端/db-full 模式）
+                #[cfg(any(feature = "desktop", feature = "db-full"))]
+                let encryption_key = if profile_config.security.content_encryption {
+                    service::keychain::get_encryption_key(&profile_id)?
+                } else {
+                    None
+                };
+                #[cfg(not(any(feature = "desktop", feature = "db-full")))]
+                let encryption_key: Option<String> = None;
+
+                (
+                    config::Configuration::default(),
+                    Some(database_connection.clone()),
+                    profile_id,
+                    encryption_key.clone(),
+                    config::ProfileBackend::Database,
+                    Some(std::sync::Arc::new(crate::store::DatabaseStore::new(
+                        database_connection.clone(),
+                        encryption_key.clone(),
+                        app_data_dir.clone(),
+                    )) as std::sync::Arc<dyn crate::store::NoteStore>),
+                    Some(std::sync::Arc::new(crate::store::DatabaseStore::new(
+                        database_connection,
+                        encryption_key,
+                        app_data_dir.clone(),
+                    )) as std::sync::Arc<dyn crate::store::TodoStore>),
+                )
+            }
         }
     };
 
@@ -491,7 +577,9 @@ async fn setup_normal_mode(
     let app_state = Arc::new(AppState {
         configuration,
         database_connection: tokio::sync::RwLock::new(database_connection),
-        backend: tokio::sync::RwLock::new(config::ProfileBackend::Database),
+        backend: tokio::sync::RwLock::new(backend),
+        note_store: tokio::sync::RwLock::new(note_store),
+        todo_store: tokio::sync::RwLock::new(todo_store),
         app_data_dir,
         active_profile_id: tokio::sync::RwLock::new(active_profile_id),
         encryption_key: tokio::sync::RwLock::new(encryption_key),
@@ -578,6 +666,9 @@ async fn setup_wizard_mode_state(app: &mut tauri::App) -> Result<(), Box<dyn std
         configuration: config::Configuration::default(),
         database_connection: tokio::sync::RwLock::new(None),
         backend: tokio::sync::RwLock::new(config::ProfileBackend::Database),
+        // 向导/选择模式：未连接任何后端，待用户选择后由 reconnect_profile 填充
+        note_store: tokio::sync::RwLock::new(None),
+        todo_store: tokio::sync::RwLock::new(None),
         app_data_dir,
         active_profile_id: tokio::sync::RwLock::new(String::new()),
         encryption_key: tokio::sync::RwLock::new(None),

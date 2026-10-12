@@ -386,3 +386,116 @@ impl EnoteServerClient {
             .await
     }
 }
+
+// ============================================================================
+// Todo
+// ============================================================================
+
+impl EnoteServerClient {
+    pub async fn search_todos(&self, param: &TodoSearchParam) -> Result<Vec<Todo>, AppError> {
+        self.post("/api/todos/search", param).await
+    }
+
+    pub async fn find_todo(&self, id: i64) -> Result<Option<Todo>, AppError> {
+        self.get(&format!("/api/todos/{}", id)).await
+    }
+
+    pub async fn create_todo(&self, todo: &Todo) -> Result<Todo, AppError> {
+        self.post("/api/todos", todo).await
+    }
+
+    pub async fn update_todo(&self, todo: &Todo) -> Result<Option<Todo>, AppError> {
+        self.put(&format!("/api/todos/{}", todo.id), todo).await
+    }
+
+    pub async fn toggle_todo(&self, id: i64) -> Result<Option<Todo>, AppError> {
+        self.put(&format!("/api/todos/{}/toggle", id), &serde_json::json!({}))
+            .await
+    }
+
+    pub async fn delete_todo(&self, id: i64) -> Result<(), AppError> {
+        self.delete(&format!("/api/todos/{}", id)).await
+    }
+
+    pub async fn restore_todo(&self, id: i64) -> Result<(), AppError> {
+        self.put_void(&format!("/api/todos/{}/restore", id), &serde_json::json!({}))
+            .await
+    }
+
+    pub async fn permanent_delete_todo(&self, id: i64) -> Result<(), AppError> {
+        self.delete(&format!("/api/todos/{}/permanent", id)).await
+    }
+
+    pub async fn empty_todo_trash(&self) -> Result<u64, AppError> {
+        self.delete_with_response("/api/todos/trash").await
+    }
+
+    pub async fn find_all_todo_lists(&self) -> Result<Vec<TodoList>, AppError> {
+        self.get("/api/todo-lists").await
+    }
+
+    pub async fn create_todo_list(&self, list: &TodoList) -> Result<TodoList, AppError> {
+        self.post("/api/todo-lists", list).await
+    }
+
+    pub async fn update_todo_list(&self, list: &TodoList) -> Result<Option<TodoList>, AppError> {
+        self.put(&format!("/api/todo-lists/{}", list.id), list)
+            .await
+    }
+
+    pub async fn delete_todo_list(&self, id: i64) -> Result<(), AppError> {
+        self.delete(&format!("/api/todo-lists/{}", id)).await
+    }
+
+    pub async fn reorder_todos(&self, orders: &[(i64, i32)]) -> Result<(), AppError> {
+        self.put_void("/api/todos/reorder", &orders).await
+    }
+
+    pub async fn find_todo_tags(&self, todo_id: i64) -> Result<Vec<i64>, AppError> {
+        self.get(&format!("/api/todos/{}/tags", todo_id)).await
+    }
+
+    pub async fn set_todo_tags(
+        &self,
+        todo_id: i64,
+        tag_ids: &[i64],
+    ) -> Result<(), AppError> {
+        self.put_void(
+            &format!("/api/todos/{}/tags", todo_id),
+            &serde_json::json!({ "tagIds": tag_ids }),
+        )
+        .await
+    }
+
+    pub async fn batch_toggle_todos(&self, ids: &[i64]) -> Result<u64, AppError> {
+        self.post(
+            "/api/todos/batch-toggle",
+            &serde_json::json!({ "ids": ids }),
+        )
+        .await
+    }
+
+    pub async fn batch_delete_todos(&self, ids: &[i64]) -> Result<u64, AppError> {
+        self.post(
+            "/api/todos/batch-delete",
+            &serde_json::json!({ "ids": ids }),
+        )
+        .await
+    }
+
+    pub async fn batch_move_todos(
+        &self,
+        ids: &[i64],
+        list_id: Option<i64>,
+    ) -> Result<u64, AppError> {
+        self.post(
+            "/api/todos/batch-move",
+            &serde_json::json!({ "ids": ids, "listId": list_id }),
+        )
+        .await
+    }
+
+    pub async fn todo_stats(&self) -> Result<TodoStats, AppError> {
+        self.get("/api/todos/stats").await
+    }
+}

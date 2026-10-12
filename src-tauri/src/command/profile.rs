@@ -224,7 +224,21 @@ pub async fn reconnect_profile(
         }
         {
             let mut backend_guard = app_state.backend.write().await;
-            *backend_guard = ProfileBackend::Server(client);
+            *backend_guard = ProfileBackend::Server(client.clone());
+        }
+        {
+            // 笔记域存储后端切换为远程服务器实现
+            let mut store_guard = app_state.note_store.write().await;
+            *store_guard = Some(std::sync::Arc::new(
+                crate::store::ServerStore::new(client.clone()),
+            ));
+        }
+        {
+            // 待办域存储后端切换为远程服务器实现
+            let mut todo_guard = app_state.todo_store.write().await;
+            *todo_guard = Some(std::sync::Arc::new(
+                crate::store::ServerStore::new(client.clone()),
+            ));
         }
         {
             let mut key_guard = app_state.encryption_key.write().await;
@@ -272,11 +286,29 @@ pub async fn reconnect_profile(
         // 7. 替换 AppState 中的连接和相关状态
         {
             let mut db_guard = app_state.database_connection.write().await;
-            *db_guard = Some(new_db);
+            *db_guard = Some(new_db.clone());
         }
         {
             let mut backend_guard = app_state.backend.write().await;
             *backend_guard = ProfileBackend::Database;
+        }
+        {
+            // 笔记域存储后端切换为数据库实现
+            let mut store_guard = app_state.note_store.write().await;
+            *store_guard = Some(std::sync::Arc::new(crate::store::DatabaseStore::new(
+                new_db.clone(),
+                new_encryption_key.clone(),
+                app_state.app_data_dir.clone(),
+            )));
+        }
+        {
+            // 待办域存储后端切换为数据库实现
+            let mut todo_guard = app_state.todo_store.write().await;
+            *todo_guard = Some(std::sync::Arc::new(crate::store::DatabaseStore::new(
+                new_db.clone(),
+                new_encryption_key.clone(),
+                app_state.app_data_dir.clone(),
+            )));
         }
         {
             let mut key_guard = app_state.encryption_key.write().await;
