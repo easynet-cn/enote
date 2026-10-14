@@ -418,8 +418,11 @@ impl EnoteServerClient {
     }
 
     pub async fn restore_todo(&self, id: i64) -> Result<(), AppError> {
-        self.put_void(&format!("/api/todos/{}/restore", id), &serde_json::json!({}))
-            .await
+        self.put_void(
+            &format!("/api/todos/{}/restore", id),
+            &serde_json::json!({}),
+        )
+        .await
     }
 
     pub async fn permanent_delete_todo(&self, id: i64) -> Result<(), AppError> {
@@ -455,11 +458,7 @@ impl EnoteServerClient {
         self.get(&format!("/api/todos/{}/tags", todo_id)).await
     }
 
-    pub async fn set_todo_tags(
-        &self,
-        todo_id: i64,
-        tag_ids: &[i64],
-    ) -> Result<(), AppError> {
+    pub async fn set_todo_tags(&self, todo_id: i64, tag_ids: &[i64]) -> Result<(), AppError> {
         self.put_void(
             &format!("/api/todos/{}/tags", todo_id),
             &serde_json::json!({ "tagIds": tag_ids }),

@@ -6,7 +6,7 @@ use rmcp::{
     ErrorData as McpError, RoleServer, ServerHandler,
     handler::server::tool::{ToolCallContext, ToolRouter},
     model::{
-        CallToolRequestParams, CallToolResult, CallToolResponse, ContentBlock, Implementation,
+        CallToolRequestParams, CallToolResponse, CallToolResult, ContentBlock, Implementation,
         InitializeRequestParams, InitializeResult, ListToolsResult, PaginatedRequestParams,
         ProtocolVersion, ServerCapabilities, ServerInfo, Tool,
     },
@@ -947,9 +947,15 @@ impl ENoteMcpServer {
             Some(t) => Ok(CallToolResult::success(vec![ContentBlock::text(format!(
                 "待办 ID {} 当前状态：{}",
                 t.id,
-                if t.is_completed == 1 { "已完成" } else { "未完成" }
+                if t.is_completed == 1 {
+                    "已完成"
+                } else {
+                    "未完成"
+                }
             ))])),
-            None => Ok(CallToolResult::success(vec![ContentBlock::text("待办不存在")])),
+            None => Ok(CallToolResult::success(vec![ContentBlock::text(
+                "待办不存在",
+            )])),
         }
     }
 

@@ -4,10 +4,12 @@
 
 mod csv_format;
 mod excel;
+mod git_zip;
 mod sql;
 
 pub use csv_format::*;
 pub use excel::*;
+pub use git_zip::*;
 pub use sql::*;
 
 use std::path::Path;

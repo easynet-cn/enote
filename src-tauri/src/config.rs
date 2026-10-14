@@ -310,12 +310,14 @@ impl Configuration {
     }
 }
 
-/// 当前活���的 Profile 后端类型
+/// 当前活跃的 Profile 后端类型
 pub enum ProfileBackend {
     /// 数据库后端（使用 AppState.database_connection）
     Database,
     /// 远程 ENote Server 后端
     Server(EnoteServerClient),
+    /// Git 仓库后端（使用文件系统 + git CLI）
+    Git,
 }
 
 impl Default for ProfileBackend {

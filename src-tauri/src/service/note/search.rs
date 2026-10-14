@@ -75,7 +75,9 @@ pub(super) fn apply_search_filters<E: EntityTrait>(
         let sub_query = Query::select()
             .column(entity::note_tags::Column::NoteId)
             .distinct()
-            .and_where(Expr::col(entity::note_tags::Column::TagId).eq(Expr::val(search_param.tag_id)))
+            .and_where(
+                Expr::col(entity::note_tags::Column::TagId).eq(Expr::val(search_param.tag_id)),
+            )
             .from(entity::note_tags::Entity)
             .to_owned();
         b = b.filter(Condition::any().add(entity::note::Column::Id.in_subquery(sub_query)));

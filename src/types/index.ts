@@ -385,31 +385,38 @@ export interface SecurityConfig {
   contentEncryption: boolean
 }
 
-/** 服务器认证方式 */
+/** 服务器认证方式（IPC 使用 camelCase，YAML 存储为 kebab-case） */
 export type ServerAuthMethod =
   | { type: 'none' }
   | { type: 'bearer' }
   | { type: 'basic'; username: string }
-  | { type: 'jwt'; 'refresh-url': string; username: string }
-  | { type: 'custom-header'; 'header-name': string }
-  | { type: 'oauth2'; 'token-url': string; 'client-id': string; scopes: string }
+  | { type: 'jwt'; refreshUrl: string; username: string }
+  | { type: 'custom-header'; headerName: string }
+  | { type: 'oauth2'; tokenUrl: string; clientId: string; scopes: string }
 
 /** 服务器配置 */
 export interface ServerConfig {
   url: string
-  'auth-method': ServerAuthMethod
+  authMethod: ServerAuthMethod
   timeout: number
+}
+
+/** Git 仓库存储配置（backend = "git" 时使用，IPC 使用 camelCase） */
+export interface GitStoreConfig {
+  repoPath: string
 }
 
 /** Profile 配置 */
 export interface ProfileConfig {
   name: string
   icon: string
-  /** 后端类型："database"（默认）或 "server" */
+  /** 后端类型："database"（默认）、"server" 或 "git" */
   backend?: string
   datasource: DatasourceConfig
   /** 远程服务器配置（backend = "server" 时使用） */
   server?: ServerConfig
+  /** Git 仓库配置（backend = "git" 时使用） */
+  git?: GitStoreConfig
   security: SecurityConfig
 }
 
@@ -418,7 +425,7 @@ export interface ProfileSummary {
   id: string
   name: string
   icon: string
-  /** 后端类型："database" 或 "server" */
+  /** 后端类型："database"、"server" 或 "git" */
   backendType: string
   dbType: string
   connectionInfo: string

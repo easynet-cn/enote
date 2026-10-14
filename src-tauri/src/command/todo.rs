@@ -90,9 +90,7 @@ pub async fn permanent_delete_todo(
 
 /// 清空待办回收站
 #[tauri::command]
-pub async fn empty_todo_trash(
-    app_state: tauri::State<'_, Arc<AppState>>,
-) -> Result<u64, AppError> {
+pub async fn empty_todo_trash(app_state: tauri::State<'_, Arc<AppState>>) -> Result<u64, AppError> {
     let store = require_todo_store(&app_state).await?;
     store.empty_todo_trash().await
 }

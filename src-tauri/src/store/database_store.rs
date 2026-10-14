@@ -83,8 +83,14 @@ impl NoteStore for DatabaseStore {
             } else {
                 format!("Created note: {}", n.title)
             };
-            self.log_action("note", "create", Some(&n.id.to_string()), Some(&n.title), &msg)
-                .await;
+            self.log_action(
+                "note",
+                "create",
+                Some(&n.id.to_string()),
+                Some(&n.title),
+                &msg,
+            )
+            .await;
         }
         Ok(result)
     }
@@ -581,19 +587,13 @@ impl TodoStore for DatabaseStore {
             .map_err(AppError::from)
     }
 
-    async fn batch_move_todos(
-        &self,
-        ids: &[i64],
-        list_id: Option<i64>,
-    ) -> Result<u64, AppError> {
+    async fn batch_move_todos(&self, ids: &[i64], list_id: Option<i64>) -> Result<u64, AppError> {
         service::todo::batch_move(&self.db, ids.to_vec(), list_id)
             .await
             .map_err(AppError::from)
     }
 
     async fn todo_stats(&self) -> Result<TodoStats, AppError> {
-        service::todo::stats(&self.db)
-            .await
-            .map_err(AppError::from)
+        service::todo::stats(&self.db).await.map_err(AppError::from)
     }
 }

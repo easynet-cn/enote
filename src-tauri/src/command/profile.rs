@@ -3,6 +3,87 @@ use super::*;
 use crate::config::ProfileBackend;
 use crate::service::enote_server::auth::{ServerConfig, ServerSecrets};
 
+// ============================================================================
+// IPC 键名约定转换
+//
+// YAML 存储使用 kebab-case（如 auth-method），TypeScript/JSON 使用 camelCase
+// （如 authMethod）。以下函数在 IPC 边界做双向转换，使每种语言保持各自惯例。
+// ============================================================================
+
+/// 将 kebab-case 字符串转为 camelCase（如 `auth-method` → `authMethod`）
+fn kebab_to_camel(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut upper = false;
+    for c in s.chars() {
+        if c == '-' || c == '_' {
+            upper = true;
+        } else if upper {
+            out.push(c.to_ascii_uppercase());
+            upper = false;
+        } else {
+            out.push(c);
+        }
+    }
+    out
+}
+
+/// 将 camelCase 字符串转为 kebab-case（如 `authMethod` → `auth-method`）
+///
+/// 已经是 kebab-case 的输入（如 `auth-method`）保持不变，因此前端混用两种
+/// 风格时也能正确落到 YAML 的 kebab-case。
+fn camel_to_kebab(s: &str) -> String {
+    let mut out = String::with_capacity(s.len() + 4);
+    for c in s.chars() {
+        if c.is_ascii_uppercase() {
+            out.push('-');
+            out.push(c.to_ascii_lowercase());
+        } else {
+            out.push(c);
+        }
+    }
+    out
+}
+
+/// 递归将 JSON Value 的所有键名从 kebab-case 转为 camelCase（响应方向）
+fn keys_to_camel(value: &mut serde_json::Value) {
+    match value {
+        serde_json::Value::Object(map) => {
+            let mut new_map = serde_json::Map::new();
+            for (k, v) in map.iter_mut() {
+                keys_to_camel(v);
+                new_map.insert(kebab_to_camel(k), v.take());
+            }
+            *map = new_map;
+        }
+        serde_json::Value::Array(arr) => {
+            for v in arr.iter_mut() {
+                keys_to_camel(v);
+            }
+        }
+        _ => {}
+    }
+}
+
+/// 递归将 JSON Value 的所有键名从 camelCase 转为 kebab-case（请求方向）
+fn keys_to_kebab(value: &mut serde_json::Value) {
+    match value {
+        serde_json::Value::Object(map) => {
+            let mut new_map = serde_json::Map::new();
+            for (k, v) in map.iter_mut() {
+                keys_to_kebab(v);
+                new_map.insert(camel_to_kebab(k), v.take());
+            }
+            *map = new_map;
+        }
+        serde_json::Value::Array(arr) => {
+            for v in arr.iter_mut() {
+                keys_to_kebab(v);
+            }
+        }
+        _ => {}
+    }
+}
+
 /// 检查是否需要初始化设置
 #[tauri::command]
 pub async fn check_setup_needed(
@@ -28,28 +109,40 @@ pub async fn list_profiles(
 }
 
 /// 获取单个 Profile 配置
+///
+/// YAML 中使用 kebab-case 存储，返回前端时统一转为 camelCase。
 #[tauri::command]
 pub async fn get_profile(
     app_state: tauri::State<'_, Arc<AppState>>,
     profile_id: String,
-) -> Result<service::profile::ProfileConfig, AppError> {
-    service::profile::read_profile(&app_state.app_data_dir, &profile_id).map_err(AppError::from)
+) -> Result<serde_json::Value, AppError> {
+    let config = service::profile::read_profile(&app_state.app_data_dir, &profile_id)
+        .map_err(AppError::from)?;
+    let mut value = serde_json::to_value(config)
+        .map_err(|e| AppError::code_with_args("JSON_SERIALIZE_FAILED", vec![e.to_string()]))?;
+    keys_to_camel(&mut value);
+    Ok(value)
 }
 
 /// 保存 Profile 配置
 ///
-/// 同时处理 Keychain 中的密码、加密密钥和服务器认证信息存储
+/// 前端传入 camelCase，转为 kebab-case 后反序列化为 ProfileConfig 并写入 YAML。
+/// 同时处理 Keychain 中的密码、加密密钥和服务器认证信息存储。
 #[tauri::command]
 pub async fn save_profile_config(
     app_state: tauri::State<'_, Arc<AppState>>,
     profile_id: String,
-    config: service::profile::ProfileConfig,
+    mut config: serde_json::Value,
     db_password: Option<String>,
     encryption_key: Option<String>,
     server_token: Option<String>,
     server_password: Option<String>,
     server_client_secret: Option<String>,
 ) -> Result<(), AppError> {
+    keys_to_kebab(&mut config);
+    let config: service::profile::ProfileConfig = serde_json::from_value(config)
+        .map_err(|e| AppError::code_with_args("JSON_DESERIALIZE_FAILED", vec![e.to_string()]))?;
+
     // 保存 profile 文件
     service::profile::save_profile(&app_state.app_data_dir, &profile_id, &config)
         .map_err(AppError::from)?;
@@ -124,9 +217,12 @@ pub async fn set_auto_connect(
 /// 测试数据库连接
 #[tauri::command]
 pub async fn test_db_connection(
-    config: service::profile::ProfileConfig,
+    mut config: serde_json::Value,
     db_password: Option<String>,
 ) -> Result<bool, AppError> {
+    keys_to_kebab(&mut config);
+    let config: service::profile::ProfileConfig = serde_json::from_value(config)
+        .map_err(|e| AppError::code_with_args("JSON_DESERIALIZE_FAILED", vec![e.to_string()]))?;
     match crate::config::database_connection_from_profile(&config, db_password.as_deref()).await {
         Ok(_) => Ok(true),
         Err(e) => Err(AppError::code_with_args(
@@ -139,11 +235,14 @@ pub async fn test_db_connection(
 /// 测试服务器连接
 #[tauri::command]
 pub async fn test_server_connection(
-    config: ServerConfig,
+    mut config: serde_json::Value,
     server_token: Option<String>,
     server_password: Option<String>,
     server_header_value: Option<String>,
 ) -> Result<bool, AppError> {
+    keys_to_kebab(&mut config);
+    let config: ServerConfig = serde_json::from_value(config)
+        .map_err(|e| AppError::code_with_args("JSON_DESERIALIZE_FAILED", vec![e.to_string()]))?;
     let secrets = ServerSecrets {
         token: server_token,
         password: server_password,
@@ -229,20 +328,64 @@ pub async fn reconnect_profile(
         {
             // 笔记域存储后端切换为远程服务器实现
             let mut store_guard = app_state.note_store.write().await;
-            *store_guard = Some(std::sync::Arc::new(
-                crate::store::ServerStore::new(client.clone()),
-            ));
+            *store_guard = Some(std::sync::Arc::new(crate::store::ServerStore::new(
+                client.clone(),
+            )));
         }
         {
             // 待办域存储后端切换为远程服务器实现
             let mut todo_guard = app_state.todo_store.write().await;
-            *todo_guard = Some(std::sync::Arc::new(
-                crate::store::ServerStore::new(client.clone()),
-            ));
+            *todo_guard = Some(std::sync::Arc::new(crate::store::ServerStore::new(
+                client.clone(),
+            )));
         }
         {
             let mut key_guard = app_state.encryption_key.write().await;
             *key_guard = None; // Server 后端的加密由服务端处理
+        }
+    } else if profile_config.is_git_backend() {
+        // ======== Git 后端路径 ========
+        let git_config = profile_config
+            .git
+            .as_ref()
+            .ok_or_else(|| AppError::code("GIT_CONFIG_MISSING"))?;
+
+        // 从 Keychain 获取加密密钥（如果启用加密）
+        #[cfg(any(feature = "desktop", feature = "db-full"))]
+        let enc_key = if profile_config.security.content_encryption {
+            service::keychain::get_encryption_key(&profile_id).map_err(AppError::from)?
+        } else {
+            None
+        };
+        #[cfg(not(any(feature = "desktop", feature = "db-full")))]
+        let enc_key: Option<String> = None;
+
+        let repo_path = std::path::PathBuf::from(&git_config.repo_path);
+        let git_store =
+            std::sync::Arc::new(crate::store::GitStore::new(repo_path, enc_key.clone()));
+
+        // 替换 AppState
+        {
+            let mut db_guard = app_state.database_connection.write().await;
+            *db_guard = None;
+        }
+        {
+            let mut backend_guard = app_state.backend.write().await;
+            *backend_guard = ProfileBackend::Git;
+        }
+        {
+            // 笔记域存储后端切换为 Git 仓库实现
+            let mut store_guard = app_state.note_store.write().await;
+            *store_guard = Some(git_store.clone());
+        }
+        {
+            // 待办域存储后端切换为 Git 仓库实现
+            let mut todo_guard = app_state.todo_store.write().await;
+            *todo_guard = Some(git_store.clone());
+        }
+        {
+            let mut key_guard = app_state.encryption_key.write().await;
+            *key_guard = enc_key;
         }
     } else {
         // ======== Database 后端路径（原有逻辑不变） ========

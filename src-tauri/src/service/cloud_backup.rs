@@ -118,7 +118,8 @@ pub async fn list_cloud_backups(config: &CloudStorageConfig) -> Result<Vec<Cloud
 
     for entry in entries {
         let name = entry.name().to_string();
-        if name.starts_with("enote_backup_") && name.ends_with(".sql") {
+        // .sql：数据库备份；.zip：Git 仓库备份
+        if name.starts_with("enote_backup_") && (name.ends_with(".sql") || name.ends_with(".zip")) {
             let meta = entry.metadata();
             backups.push(CloudBackupEntry {
                 name,

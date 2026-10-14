@@ -12,16 +12,18 @@
 //! - 通过 `Arc<dyn NoteStore>` 持有，可在 Profile 热切换时整体替换
 
 mod database_store;
+mod git_store;
 mod server_store;
 
 pub use database_store::DatabaseStore;
+pub use git_store::GitStore;
 pub use server_store::ServerStore;
 
 use crate::error::AppError;
 use crate::model::{
     AttachmentStats, Note, NoteAttachment, NoteHistory, NoteHistorySearchPageParam, NoteLink,
-    NoteSearchPageParam, NoteStatsResult, NoteTemplate, Notebook, PageParam, PageResult, Tag,
-    Todo, TodoList, TodoSearchParam, TodoStats,
+    NoteSearchPageParam, NoteStatsResult, NoteTemplate, Notebook, PageParam, PageResult, Tag, Todo,
+    TodoList, TodoSearchParam, TodoStats,
 };
 
 /// 笔记域存储接口（抽象层）
@@ -244,11 +246,7 @@ pub trait TodoStore: Send + Sync {
     async fn batch_delete_todos(&self, ids: &[i64]) -> Result<u64, AppError>;
 
     /// 批量移动待办到指定清单
-    async fn batch_move_todos(
-        &self,
-        ids: &[i64],
-        list_id: Option<i64>,
-    ) -> Result<u64, AppError>;
+    async fn batch_move_todos(&self, ids: &[i64], list_id: Option<i64>) -> Result<u64, AppError>;
 
     /// 获取待办统计信息
     async fn todo_stats(&self) -> Result<TodoStats, AppError>;

@@ -19,6 +19,7 @@
 ///
 /// 提供操作审计日志的记录、搜索、脱敏、文件日志管理功能
 pub mod app_log;
+pub mod app_log_file;
 
 /// 笔记附件服务模块
 ///
@@ -69,6 +70,7 @@ pub mod cloud_backup;
 ///
 /// 提供键值对形式的设置存取功能
 pub mod settings;
+pub mod settings_file;
 
 /// 图片存储服务模块
 ///

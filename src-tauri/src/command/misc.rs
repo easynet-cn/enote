@@ -143,14 +143,28 @@ pub async fn set_lock_password(
     app_state: tauri::State<'_, Arc<AppState>>,
     password: String,
 ) -> Result<(), AppError> {
-    if is_server_backend(&app_state).await {
-        let client = require_server(&app_state).await?;
-        return client.set_lock_password(&password).await;
+    match &*app_state.backend.read().await {
+        ProfileBackend::Server(_) => {
+            let client = require_server(&app_state).await?;
+            client.set_lock_password(&password).await
+        }
+        ProfileBackend::Git => {
+            let dir = app_state.app_data_dir.clone();
+            let pid = app_state.active_profile_id.read().await.clone();
+            tokio::task::spawn_blocking(move || {
+                service::auth::set_password_file(&dir, &pid, &password)
+            })
+            .await
+            .map_err(|e| AppError::Internal(anyhow::anyhow!("{}", e)))?
+            .map_err(AppError::from)
+        }
+        ProfileBackend::Database => {
+            let db = require_db(&app_state).await?;
+            service::auth::set_password(&db, &password)
+                .await
+                .map_err(AppError::from)
+        }
     }
-    let db = require_db(&app_state).await?;
-    service::auth::set_password(&db, &password)
-        .await
-        .map_err(AppError::from)
 }
 
 /// 验证锁屏密码
@@ -159,14 +173,28 @@ pub async fn verify_lock_password(
     app_state: tauri::State<'_, Arc<AppState>>,
     password: String,
 ) -> Result<bool, AppError> {
-    if is_server_backend(&app_state).await {
-        let client = require_server(&app_state).await?;
-        return client.verify_lock_password(&password).await;
+    match &*app_state.backend.read().await {
+        ProfileBackend::Server(_) => {
+            let client = require_server(&app_state).await?;
+            client.verify_lock_password(&password).await
+        }
+        ProfileBackend::Git => {
+            let dir = app_state.app_data_dir.clone();
+            let pid = app_state.active_profile_id.read().await.clone();
+            tokio::task::spawn_blocking(move || {
+                service::auth::verify_password_file(&dir, &pid, &password)
+            })
+            .await
+            .map_err(|e| AppError::Internal(anyhow::anyhow!("{}", e)))?
+            .map_err(AppError::from)
+        }
+        ProfileBackend::Database => {
+            let db = require_db(&app_state).await?;
+            service::auth::verify_password(&db, &password)
+                .await
+                .map_err(AppError::from)
+        }
     }
-    let db = require_db(&app_state).await?;
-    service::auth::verify_password(&db, &password)
-        .await
-        .map_err(AppError::from)
 }
 
 /// 清除锁屏密码
@@ -174,14 +202,26 @@ pub async fn verify_lock_password(
 pub async fn clear_lock_password(
     app_state: tauri::State<'_, Arc<AppState>>,
 ) -> Result<(), AppError> {
-    if is_server_backend(&app_state).await {
-        let client = require_server(&app_state).await?;
-        return client.clear_lock_password().await;
+    match &*app_state.backend.read().await {
+        ProfileBackend::Server(_) => {
+            let client = require_server(&app_state).await?;
+            client.clear_lock_password().await
+        }
+        ProfileBackend::Git => {
+            let dir = app_state.app_data_dir.clone();
+            let pid = app_state.active_profile_id.read().await.clone();
+            tokio::task::spawn_blocking(move || service::auth::clear_password_file(&dir, &pid))
+                .await
+                .map_err(|e| AppError::Internal(anyhow::anyhow!("{}", e)))?
+                .map_err(AppError::from)
+        }
+        ProfileBackend::Database => {
+            let db = require_db(&app_state).await?;
+            service::auth::clear_password(&db)
+                .await
+                .map_err(AppError::from)
+        }
     }
-    let db = require_db(&app_state).await?;
-    service::auth::clear_password(&db)
-        .await
-        .map_err(AppError::from)
 }
 
 // ============================================================================

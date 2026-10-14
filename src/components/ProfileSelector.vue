@@ -138,6 +138,7 @@ import {
   Database,
   Server,
   Globe,
+  GitBranch,
   Languages,
   X,
 } from '@lucide/vue'
@@ -183,6 +184,8 @@ const getDbIcon = (dbType: string) => {
       return Server
     case 'server':
       return Globe
+    case 'git':
+      return GitBranch
     default:
       return HardDrive
   }

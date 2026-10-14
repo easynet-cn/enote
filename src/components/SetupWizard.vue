@@ -157,6 +157,32 @@
             </div>
           </template>
 
+          <!-- Git 仓库配置 -->
+          <template v-if="form.datasource.type === 'git'">
+            <div>
+              <label class="block text-sm font-medium text-content-secondary mb-1">
+                {{ t('setup.repoPath') }}
+              </label>
+              <div class="flex gap-2">
+                <input
+                  v-model="form.git!.repoPath"
+                  type="text"
+                  :placeholder="t('setup.repoPathPlaceholder')"
+                  class="flex-1 px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  @input="userEdited.repoPath = true"
+                />
+                <button
+                  @click="selectRepoDir"
+                  class="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm"
+                  :title="t('setup.selectRepoDir')"
+                >
+                  {{ t('setup.selectRepoDir') }}
+                </button>
+              </div>
+              <p class="text-xs text-content-tertiary mt-1">{{ t('setup.repoPathHint') }}</p>
+            </div>
+          </template>
+
           <!-- MySQL / PostgreSQL 配置 -->
           <template v-if="form.datasource.type === 'mysql' || form.datasource.type === 'postgres'">
             <div class="grid grid-cols-3 gap-3">
@@ -310,7 +336,7 @@
                 {{ t('setup.serverAuthMethod') }}
               </label>
               <select
-                v-model="form.server!['auth-method'].type"
+                v-model="form.server!.authMethod.type"
                 class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 <option value="none">{{ t('setup.serverAuthNone') }}</option>
@@ -323,7 +349,7 @@
             </div>
 
             <!-- Bearer Token -->
-            <div v-if="form.server!['auth-method'].type === 'bearer'">
+            <div v-if="form.server!.authMethod.type === 'bearer'">
               <label class="block text-sm font-medium text-content-secondary mb-1">
                 {{ t('setup.serverToken') }}
               </label>
@@ -336,13 +362,13 @@
             </div>
 
             <!-- Basic Auth -->
-            <template v-if="form.server!['auth-method'].type === 'basic'">
+            <template v-if="form.server!.authMethod.type === 'basic'">
               <div>
                 <label class="block text-sm font-medium text-content-secondary mb-1">
                   {{ t('setup.username') }}
                 </label>
                 <input
-                  v-model="(form.server!['auth-method'] as any).username"
+                  v-model="(form.server!.authMethod as any).username"
                   type="text"
                   :placeholder="t('setup.usernamePlaceholder')"
                   class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -362,13 +388,13 @@
             </template>
 
             <!-- JWT -->
-            <template v-if="form.server!['auth-method'].type === 'jwt'">
+            <template v-if="form.server!.authMethod.type === 'jwt'">
               <div>
                 <label class="block text-sm font-medium text-content-secondary mb-1">
                   {{ t('setup.username') }}
                 </label>
                 <input
-                  v-model="(form.server!['auth-method'] as any).username"
+                  v-model="(form.server!.authMethod as any).username"
                   type="text"
                   :placeholder="t('setup.usernamePlaceholder')"
                   class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -390,7 +416,7 @@
                   {{ t('setup.serverRefreshUrl') }}
                 </label>
                 <input
-                  v-model="(form.server!['auth-method'] as any)['refresh-url']"
+                  v-model="(form.server!.authMethod as any).refreshUrl"
                   type="text"
                   :placeholder="t('setup.serverRefreshUrlPlaceholder')"
                   class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -399,13 +425,13 @@
             </template>
 
             <!-- Custom Header -->
-            <template v-if="form.server!['auth-method'].type === 'custom-header'">
+            <template v-if="form.server!.authMethod.type === 'custom-header'">
               <div>
                 <label class="block text-sm font-medium text-content-secondary mb-1">
                   {{ t('setup.serverHeaderName') }}
                 </label>
                 <input
-                  v-model="(form.server!['auth-method'] as any)['header-name']"
+                  v-model="(form.server!.authMethod as any).headerName"
                   type="text"
                   :placeholder="t('setup.serverHeaderNamePlaceholder')"
                   class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -424,14 +450,14 @@
             </template>
 
             <!-- OAuth 2.0 -->
-            <template v-if="form.server!['auth-method'].type === 'oauth2'">
+            <template v-if="form.server!.authMethod.type === 'oauth2'">
               <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label class="block text-sm font-medium text-content-secondary mb-1">
                     {{ t('setup.serverOAuthTokenUrl') }}
                   </label>
                   <input
-                    v-model="(form.server!['auth-method'] as any)['token-url']"
+                    v-model="(form.server!.authMethod as any).tokenUrl"
                     type="text"
                     class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
@@ -441,7 +467,7 @@
                     {{ t('setup.serverOAuthClientId') }}
                   </label>
                   <input
-                    v-model="(form.server!['auth-method'] as any)['client-id']"
+                    v-model="(form.server!.authMethod as any).clientId"
                     type="text"
                     class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
@@ -462,7 +488,7 @@
                   {{ t('setup.serverOAuthScopes') }}
                 </label>
                 <input
-                  v-model="(form.server!['auth-method'] as any).scopes"
+                  v-model="(form.server!.authMethod as any).scopes"
                   type="text"
                   placeholder="notes.read notes.write"
                   class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -588,7 +614,7 @@
 
         <div class="flex gap-2">
           <button
-            v-if="currentStep === 1 && form.datasource.type !== 'sqlite'"
+            v-if="currentStep === 1 && form.datasource.type !== 'sqlite' && !isGitBackend"
             @click="testConn"
             :disabled="testing"
             class="px-4 py-2 border border-edge text-content-secondary rounded-lg hover:bg-surface-dim transition-colors disabled:opacity-50"
@@ -641,6 +667,7 @@ import {
   Database,
   Server,
   Globe,
+  GitBranch,
   Languages,
   RotateCcw,
 } from '@lucide/vue'
@@ -693,6 +720,7 @@ const steps = computed(() => [
 ])
 
 const isServerBackend = computed(() => form.datasource.type === 'enote-server')
+const isGitBackend = computed(() => form.datasource.type === 'git')
 
 const form = reactive<ProfileConfig>({
   name: props.editProfile?.name || '',
@@ -715,9 +743,10 @@ const form = reactive<ProfileConfig>({
   },
   server: props.editProfile?.server || {
     url: '',
-    'auth-method': { type: 'none' },
+    authMethod: { type: 'none' },
     timeout: 30,
   },
+  git: props.editProfile?.git || { repoPath: '' },
   security: {
     contentEncryption: props.editProfile?.security?.contentEncryption || false,
   },
@@ -729,6 +758,12 @@ const dbTypeOptions = computed(() => [
     label: t('setup.dbType.sqlite'),
     desc: t('setup.dbType.sqliteDesc'),
     icon: HardDrive,
+  },
+  {
+    value: 'git',
+    label: t('setup.dbType.git'),
+    desc: t('setup.dbType.gitDesc'),
+    icon: GitBranch,
   },
   {
     value: 'mysql',
@@ -772,6 +807,7 @@ const canNext = computed(() => {
   if (currentStep.value === 1) {
     if (!form.name.trim()) return false
     if (isServerBackend.value) return !!form.server?.url?.trim()
+    if (isGitBackend.value) return !!form.git?.repoPath?.trim()
     if (form.datasource.type === 'sqlite') return true
     return !!(form.datasource.host && form.datasource.port && form.datasource.database)
   }
@@ -791,6 +827,13 @@ const dbTypeDefaults: Record<
 > = {
   sqlite: {
     name: t('setup.defaultName.sqlite'),
+    host: '',
+    port: 0,
+    database: '',
+    username: '',
+  },
+  git: {
+    name: t('setup.defaultName.git'),
     host: '',
     port: 0,
     database: '',
@@ -823,6 +866,7 @@ const dbTypeDefaults: Record<
 const userEdited = reactive<Record<string, boolean>>({
   name: !!props.editProfile?.name,
   path: !!props.editProfile?.datasource?.path,
+  repoPath: !!props.editProfile?.git?.repoPath,
   host: !!props.editProfile?.datasource?.host,
   database: !!props.editProfile?.datasource?.database,
   username: !!props.editProfile?.datasource?.username,
@@ -831,7 +875,7 @@ const userEdited = reactive<Record<string, boolean>>({
 const nextStep = async () => {
   if (currentStep.value === 0) {
     // 设置 backend 字段
-    form.backend = isServerBackend.value ? 'server' : 'database'
+    form.backend = isServerBackend.value ? 'server' : isGitBackend.value ? 'git' : 'database'
 
     const defaults = dbTypeDefaults[form.datasource.type]
     if (defaults) {
@@ -846,6 +890,16 @@ const nextStep = async () => {
           try {
             const dataDir = await appDataDir()
             form.datasource.path = await join(dataDir, 'enote.db')
+          } catch {
+            // 获取失败时不填充，用户手动选择
+          }
+        }
+      } else if (isGitBackend.value) {
+        // Git 默认仓库路径：应用数据目录/notes-repo
+        if ((!userEdited.repoPath || !form.git?.repoPath) && form.git) {
+          try {
+            const dataDir = await appDataDir()
+            form.git.repoPath = await join(dataDir, 'notes-repo')
           } catch {
             // 获取失败时不填充，用户手动选择
           }
@@ -880,6 +934,13 @@ const resetToDefaults = async () => {
     } catch {
       form.datasource.path = ''
     }
+  } else if (isGitBackend.value) {
+    try {
+      const dataDir = await appDataDir()
+      if (form.git) form.git.repoPath = await join(dataDir, 'notes-repo')
+    } catch {
+      if (form.git) form.git.repoPath = ''
+    }
   } else {
     form.datasource.host = defaults.host
     form.datasource.port = defaults.port
@@ -896,6 +957,7 @@ const resetToDefaults = async () => {
   // 重置编辑标记
   userEdited.name = false
   userEdited.path = false
+  userEdited.repoPath = false
   userEdited.host = false
   userEdited.database = false
   userEdited.username = false
@@ -923,6 +985,18 @@ const selectDbPathExisting = async () => {
   if (path) {
     form.datasource.path = path as string
     userEdited.path = true
+  }
+}
+
+/** 选择 Git 仓库目录（open 对话框，目录模式） */
+const selectRepoDir = async () => {
+  const path = await open({
+    title: t('setup.selectRepoDir'),
+    directory: true,
+  })
+  if (path && form.git) {
+    form.git.repoPath = path as string
+    userEdited.repoPath = true
   }
 }
 

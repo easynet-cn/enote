@@ -195,6 +195,7 @@ pub fn run_with_config(config_path: Option<String>) {
             command::auto_backup,
             command::cleanup_old_backups,
             command::list_auto_backups,
+            command::restore_git_backup,
             // 云备份相关命令
             command::test_cloud_connection,
             command::save_cloud_backup_config,
@@ -322,6 +323,7 @@ fn auto_create_mobile_profile(
             ..Default::default()
         },
         server: None,
+        git: None,
         security: SecurityConfig::default(),
     };
 
@@ -347,7 +349,15 @@ async fn setup_normal_mode(
     let handle = app.handle().clone();
     let app_data_dir = handle.path().app_data_dir()?;
 
-    let (configuration, database_connection, active_profile_id, encryption_key, backend, note_store, todo_store): (
+    let (
+        configuration,
+        database_connection,
+        active_profile_id,
+        encryption_key,
+        backend,
+        note_store,
+        todo_store,
+    ): (
         config::Configuration,
         Option<sea_orm::DatabaseConnection>,
         String,
@@ -397,12 +407,14 @@ async fn setup_normal_mode(
                 database_connection.clone(),
                 None,
                 app_data_dir.clone(),
-            )) as std::sync::Arc<dyn crate::store::NoteStore>),
+            ))
+                as std::sync::Arc<dyn crate::store::NoteStore>),
             Some(std::sync::Arc::new(crate::store::DatabaseStore::new(
                 database_connection,
                 None,
                 app_data_dir.clone(),
-            )) as std::sync::Arc<dyn crate::store::TodoStore>),
+            ))
+                as std::sync::Arc<dyn crate::store::TodoStore>),
         )
     } else {
         // Profile 模式
@@ -459,25 +471,23 @@ async fn setup_normal_mode(
                         .unwrap_or(None),
                 };
 
-                let client = match service::enote_server::EnoteServerClient::new(
-                    server_config,
-                    secrets,
-                ) {
-                    Ok(client) => client,
-                    Err(e) => {
-                        error!("Server connection failed: {:#}", e);
-                        let error_msg = format!("{}", e);
-                        handle
-                            .dialog()
-                            .message(t("server.connection.failed.message", &[&error_msg]))
-                            .kind(MessageDialogKind::Error)
-                            .title(t_simple("server.connection.failed.title"))
-                            .blocking_show();
-                        // 进入向导模式让用户重新配置
-                        setup_wizard_mode_state(app).await?;
-                        return Ok(());
-                    }
-                };
+                let client =
+                    match service::enote_server::EnoteServerClient::new(server_config, secrets) {
+                        Ok(client) => client,
+                        Err(e) => {
+                            error!("Server connection failed: {:#}", e);
+                            let error_msg = format!("{}", e);
+                            handle
+                                .dialog()
+                                .message(t("server.connection.failed.message", &[&error_msg]))
+                                .kind(MessageDialogKind::Error)
+                                .title(t_simple("server.connection.failed.title"))
+                                .blocking_show();
+                            // 进入向导模式让用户重新配置
+                            setup_wizard_mode_state(app).await?;
+                            return Ok(());
+                        }
+                    };
 
                 (
                     config::Configuration::default(),
@@ -485,10 +495,43 @@ async fn setup_normal_mode(
                     profile_id,
                     None,
                     config::ProfileBackend::Server(client.clone()),
-                    Some(std::sync::Arc::new(crate::store::ServerStore::new(client.clone()))
-                        as std::sync::Arc<dyn crate::store::NoteStore>),
+                    Some(
+                        std::sync::Arc::new(crate::store::ServerStore::new(client.clone()))
+                            as std::sync::Arc<dyn crate::store::NoteStore>,
+                    ),
                     Some(std::sync::Arc::new(crate::store::ServerStore::new(client))
                         as std::sync::Arc<dyn crate::store::TodoStore>),
+                )
+            } else if profile_config.is_git_backend() {
+                // ======== Git 后端路径 ========
+                let git_config = profile_config
+                    .git
+                    .as_ref()
+                    .ok_or_else(|| crate::error::AppError::code("GIT_CONFIG_MISSING"))?;
+
+                #[cfg(any(feature = "desktop", feature = "db-full"))]
+                let encryption_key = if profile_config.security.content_encryption {
+                    service::keychain::get_encryption_key(&profile_id)?
+                } else {
+                    None
+                };
+                #[cfg(not(any(feature = "desktop", feature = "db-full")))]
+                let encryption_key: Option<String> = None;
+
+                let repo_path = std::path::PathBuf::from(&git_config.repo_path);
+                let git_store = std::sync::Arc::new(crate::store::GitStore::new(
+                    repo_path,
+                    encryption_key.clone(),
+                ));
+
+                (
+                    config::Configuration::default(),
+                    None,
+                    profile_id,
+                    encryption_key.clone(),
+                    config::ProfileBackend::Git,
+                    Some(git_store.clone() as std::sync::Arc<dyn crate::store::NoteStore>),
+                    Some(git_store.clone() as std::sync::Arc<dyn crate::store::TodoStore>),
                 )
             } else {
                 // ======== Database 后端路径（原有逻辑不变） ========
@@ -547,12 +590,14 @@ async fn setup_normal_mode(
                         database_connection.clone(),
                         encryption_key.clone(),
                         app_data_dir.clone(),
-                    )) as std::sync::Arc<dyn crate::store::NoteStore>),
+                    ))
+                        as std::sync::Arc<dyn crate::store::NoteStore>),
                     Some(std::sync::Arc::new(crate::store::DatabaseStore::new(
                         database_connection,
                         encryption_key,
                         app_data_dir.clone(),
-                    )) as std::sync::Arc<dyn crate::store::TodoStore>),
+                    ))
+                        as std::sync::Arc<dyn crate::store::TodoStore>),
                 )
             }
         }
@@ -768,8 +813,7 @@ fn setup_tray(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         MenuItemBuilder::with_id("ss-pause", t_simple("tray.ssPause")).build(app)?;
     let ss_reset_item =
         MenuItemBuilder::with_id("ss-reset", t_simple("tray.ssReset")).build(app)?;
-    let ss_stop_item =
-        MenuItemBuilder::with_id("ss-stop", t_simple("tray.ssStop")).build(app)?;
+    let ss_stop_item = MenuItemBuilder::with_id("ss-stop", t_simple("tray.ssStop")).build(app)?;
 
     let show_item = MenuItemBuilder::with_id("show", t_simple("tray.show")).build(app)?;
     let quit_item = MenuItemBuilder::with_id("quit", t_simple("tray.quit")).build(app)?;
@@ -799,7 +843,8 @@ fn setup_tray(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
                 // 暂停/继续切换
                 let handle = app_handle.clone();
                 tauri::async_runtime::spawn(async move {
-                    let screen_saver = handle.state::<Arc<service::screen_saver::ScreenSaverService>>();
+                    let screen_saver =
+                        handle.state::<Arc<service::screen_saver::ScreenSaverService>>();
                     let state = screen_saver.get_state().await;
                     use service::screen_saver::TimerState;
                     match state.timer_state {
@@ -816,14 +861,16 @@ fn setup_tray(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
             "ss-reset" => {
                 let handle = app_handle.clone();
                 tauri::async_runtime::spawn(async move {
-                    let screen_saver = handle.state::<Arc<service::screen_saver::ScreenSaverService>>();
+                    let screen_saver =
+                        handle.state::<Arc<service::screen_saver::ScreenSaverService>>();
                     screen_saver.reset().await;
                 });
             }
             "ss-stop" => {
                 let handle = app_handle.clone();
                 tauri::async_runtime::spawn(async move {
-                    let screen_saver = handle.state::<Arc<service::screen_saver::ScreenSaverService>>();
+                    let screen_saver =
+                        handle.state::<Arc<service::screen_saver::ScreenSaverService>>();
                     screen_saver.stop().await;
                     // 通知前端同步禁用
                     let _ = handle.emit("ss-disabled", ());

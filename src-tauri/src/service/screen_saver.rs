@@ -17,9 +17,7 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
-use tauri::{
-    AppHandle, Emitter, Manager, Monitor, WebviewUrl, WebviewWindowBuilder, WindowEvent,
-};
+use tauri::{AppHandle, Emitter, Manager, Monitor, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 use tokio::sync::RwLock;
 use tracing::{info, warn};
 
@@ -256,12 +254,17 @@ impl ScreenSaverService {
                     let has_monitors = match app_handle.available_monitors() {
                         Ok(m) => {
                             if m.is_empty() {
-                                warn!("Screen saver activated but no monitors detected, skipping window creation");
+                                warn!(
+                                    "Screen saver activated but no monitors detected, skipping window creation"
+                                );
                             }
                             !m.is_empty()
                         }
                         Err(e) => {
-                            warn!("Screen saver activated but failed to list monitors: {}, skipping", e);
+                            warn!(
+                                "Screen saver activated but failed to list monitors: {}, skipping",
+                                e
+                            );
                             false
                         }
                     };
@@ -289,14 +292,38 @@ impl ScreenSaverService {
                     info!("Screen saver auto-deactivated");
                 }
 
-                // 屏保激活期间显示器拓扑变化（新增显示器等）：重建窗口
+                // 屏保激活期间显示器拓扑变化（新增显示器等）：为缺失的显示器补建窗口。
+                // 只增量补建，不关闭/重建现有窗口——全量重建会把自己刚创建的
+                // 活跃窗口误当孤儿 close 后立即重建同名窗口，而 close()/destroy()
+                // 在 macOS 上异步完成，导致 label 冲突、窗口创建失败（屏保窗口丢失）
                 if tick_state.timer_state == TimerState::ScreenSaver
                     && needs_rebuild.load(Ordering::SeqCst)
                 {
                     needs_rebuild.store(false, Ordering::SeqCst);
                     info!("Rebuilding screen saver windows after monitor topology change");
-                    show_screen_saver_window(&app_handle, &cached_windows, &exiting, &needs_rebuild)
-                        .await;
+                    if let Ok(monitors) = app_handle.available_monitors() {
+                        for (i, monitor) in monitors.iter().enumerate() {
+                            let fp = monitor_fingerprint(monitor);
+                            let owned = {
+                                let c = cached_windows.lock().unwrap();
+                                c.iter().any(|cw| cw.fingerprint == fp)
+                            };
+                            let label = format!("{}{}", SS_WINDOW_PREFIX, i);
+                            if owned || app_handle.get_webview_window(&label).is_some() {
+                                continue;
+                            }
+                            info!("Creating screen saver window for new monitor index {}", i);
+                            create_and_cache_window(
+                                &app_handle,
+                                i,
+                                monitor,
+                                &cached_windows,
+                                &exiting,
+                                &needs_rebuild,
+                            )
+                            .await;
+                        }
+                    }
                 }
 
                 // 发送 tick 事件给前端
@@ -366,10 +393,7 @@ fn update_tray(app_handle: &AppHandle, state: &ScreenSaverState, tick: u64) {
     let (tooltip, title) = match state.timer_state {
         TimerState::Running => {
             let time_str = format_time(state.idle_remaining);
-            (
-                format!("ENote - {}", time_str),
-                time_str,
-            )
+            (format!("ENote - {}", time_str), time_str)
         }
         TimerState::Paused => {
             let label = t_simple("tray.ssPaused");
@@ -379,10 +403,7 @@ fn update_tray(app_handle: &AppHandle, state: &ScreenSaverState, tick: u64) {
             if state.duration > 0 {
                 let time_str = format_time(state.duration_remaining);
                 let label = t_simple("tray.ssResting");
-                (
-                    format!("ENote - {} {}", label, time_str),
-                    time_str,
-                )
+                (format!("ENote - {} {}", label, time_str), time_str)
             } else {
                 let label = t_simple("tray.ssResting");
                 (format!("ENote - {}", label), label)
@@ -472,7 +493,10 @@ async fn show_screen_saver_window(
             for label in &orphaned {
                 if let Some(window) = app_handle.get_webview_window(label) {
                     let _ = window.close();
-                    info!("Orphaned screen saver window '{}' closed before activation", label);
+                    info!(
+                        "Orphaned screen saver window '{}' closed before activation",
+                        label
+                    );
                 }
             }
             // 清理缓存中对应的条目
@@ -495,8 +519,15 @@ async fn show_screen_saver_window(
 
     // 对每个显示器创建新窗口（顺序创建，避免 monitor 引用生命周期问题）
     for (i, monitor) in monitors.iter().enumerate() {
-        create_and_cache_window(app_handle, i, monitor, cached_windows, exiting, needs_rebuild)
-            .await;
+        create_and_cache_window(
+            app_handle,
+            i,
+            monitor,
+            cached_windows,
+            exiting,
+            needs_rebuild,
+        )
+        .await;
     }
 }
 
@@ -515,13 +546,29 @@ async fn create_and_cache_window(
 ) {
     let label = format!("{}{}", SS_WINDOW_PREFIX, monitor_index);
 
-    // 如果窗口已存在（理论上不应该），先销毁
+    // 如果窗口已存在（理论上不应该），先销毁并等待 label 释放。
+    // destroy()/close() 在 macOS 上是异步的（WebKit 延迟释放），
+    // 立即重建同名窗口会报 "a webview with label already exists"
     if let Some(existing) = app_handle.get_webview_window(&label) {
         let _ = existing.destroy();
         info!(
-            "Screen saver window '{}' destroyed before recreation",
+            "Screen saver window '{}' destroyed before recreation, waiting for label release",
             label
         );
+        // 轮询等待窗口真正从 Tauri 窗口管理器中移除（最多 500ms）
+        for _ in 0..10 {
+            if app_handle.get_webview_window(&label).is_none() {
+                break;
+            }
+            tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
+        }
+        if app_handle.get_webview_window(&label).is_some() {
+            warn!(
+                "Screen saver window '{}' label still occupied after 500ms wait, skipping creation",
+                label
+            );
+            return;
+        }
     }
 
     let url = if monitor_index == 0 {
@@ -529,9 +576,7 @@ async fn create_and_cache_window(
         WebviewUrl::App("index.html?mode=screensaver".into())
     } else {
         // 其他显示器：纯色背景（通过 URL 参数区分）
-        WebviewUrl::App(
-            format!("index.html?mode=screensaver&monitor={}", monitor_index).into(),
-        )
+        WebviewUrl::App(format!("index.html?mode=screensaver&monitor={}", monitor_index).into())
     };
 
     // 显示器几何（物理像素）与指纹
@@ -725,7 +770,15 @@ async fn create_and_cache_window(
 
             info!(
                 "Screen saver window '{}' created (hidden) on monitor {} (physical {}x{} at {},{} scale={:.1}, fp={}), waiting {}ms before show",
-                label, monitor_index, size.width, size.height, pos.x, pos.y, scale, fingerprint, SS_SHOW_DELAY_MS
+                label,
+                monitor_index,
+                size.width,
+                size.height,
+                pos.x,
+                pos.y,
+                scale,
+                fingerprint,
+                SS_SHOW_DELAY_MS
             );
 
             // 等待 WebView 加载 index.html（内联脚本同步设置 #1a1a2e 深色背景）
@@ -766,7 +819,10 @@ fn monitor_fingerprint(monitor: &Monitor) -> String {
     let name = monitor.name().map(|s| s.as_str()).unwrap_or("unknown");
     let pos = monitor.position();
     let size = monitor.size();
-    format!("{}|{}x{}@{},{}", name, size.width, size.height, pos.x, pos.y)
+    format!(
+        "{}|{}x{}@{},{}",
+        name, size.width, size.height, pos.x, pos.y
+    )
 }
 
 /// 关闭所有屏保窗口（退出屏保时调用）
@@ -812,9 +868,7 @@ fn close_screen_saver_windows(
     let orphaned: Vec<String> = app_handle
         .webview_windows()
         .keys()
-        .filter(|label| {
-            label.starts_with(SS_WINDOW_PREFIX) && !closed_labels.contains(label)
-        })
+        .filter(|label| label.starts_with(SS_WINDOW_PREFIX) && !closed_labels.contains(label))
         .cloned()
         .collect();
     for label in orphaned {

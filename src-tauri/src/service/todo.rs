@@ -13,8 +13,8 @@
 use anyhow::{Context, Result};
 use chrono::{Duration, Local, Months, NaiveDateTime};
 use sea_orm::{
-    sea_query::Expr, ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, EntityTrait,
-    IntoActiveModel, Order, PaginatorTrait, QueryFilter, QueryOrder,
+    ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel,
+    Order, PaginatorTrait, QueryFilter, QueryOrder, sea_query::Expr,
 };
 use tracing::info;
 
@@ -73,10 +73,9 @@ fn build_todo_query(
         "today" => {
             let now = Local::now().naive_local();
             let today = now.date();
-            if let (Some(start), Some(end)) = (
-                today.and_hms_opt(0, 0, 0),
-                today.and_hms_opt(23, 59, 59),
-            ) {
+            if let (Some(start), Some(end)) =
+                (today.and_hms_opt(0, 0, 0), today.and_hms_opt(23, 59, 59))
+            {
                 query = query.filter(entity::todo::Column::DueDate.between(start, end));
             }
         }
@@ -156,7 +155,9 @@ async fn resolve_tag_todo_ids(
                 .filter(entity::todo_tags::Column::TagId.eq(tag_id))
                 .all(db)
                 .await?;
-            Ok(Some(rows.into_iter().map(|r| r.todo_id).collect::<Vec<i64>>()))
+            Ok(Some(
+                rows.into_iter().map(|r| r.todo_id).collect::<Vec<i64>>(),
+            ))
         }
         None => Ok(None),
     }
@@ -260,10 +261,7 @@ pub async fn create(db: &DatabaseConnection, dto: &Todo) -> Result<Todo> {
         mcp_access: ActiveValue::Set(dto.mcp_access),
     };
 
-    let entity = model
-        .insert(db)
-        .await
-        .context("Failed to create todo")?;
+    let entity = model.insert(db).await.context("Failed to create todo")?;
     info!("Todo created: id={}, title={}", entity.id, entity.title);
     Ok(Todo::from(entity))
 }
@@ -602,7 +600,10 @@ pub async fn create_list(db: &DatabaseConnection, dto: &TodoList) -> Result<Todo
 
 /// 更新待办清单
 pub async fn update_list(db: &DatabaseConnection, dto: &TodoList) -> Result<Option<TodoList>> {
-    let Some(existing) = entity::todo_list::Entity::find_by_id(dto.id).one(db).await? else {
+    let Some(existing) = entity::todo_list::Entity::find_by_id(dto.id)
+        .one(db)
+        .await?
+    else {
         return Ok(None);
     };
 
@@ -618,10 +619,7 @@ pub async fn update_list(db: &DatabaseConnection, dto: &TodoList) -> Result<Opti
     am.mcp_access = ActiveValue::Set(dto.mcp_access);
     am.update_time = ActiveValue::Set(Local::now().naive_local());
 
-    let updated = am
-        .update(db)
-        .await
-        .context("Failed to update todo list")?;
+    let updated = am.update(db).await.context("Failed to update todo list")?;
     info!("Todo list updated: id={}", dto.id);
     Ok(Some(TodoList::from(updated)))
 }
@@ -671,9 +669,7 @@ pub async fn batch_toggle(db: &DatabaseConnection, ids: Vec<i64>) -> Result<u64>
         am.is_completed = ActiveValue::Set(new_completed);
         am.completed_at = ActiveValue::Set(if new_completed == 1 { Some(now) } else { None });
         am.update_time = ActiveValue::Set(now);
-        am.update(db)
-            .await
-            .context("Failed to batch toggle todo")?;
+        am.update(db).await.context("Failed to batch toggle todo")?;
         count += 1;
     }
 
@@ -694,9 +690,7 @@ pub async fn batch_delete(db: &DatabaseConnection, ids: Vec<i64>) -> Result<u64>
         let mut am: entity::todo::ActiveModel = existing.into_active_model();
         am.deleted_at = ActiveValue::Set(Some(now));
         am.update_time = ActiveValue::Set(now);
-        am.update(db)
-            .await
-            .context("Failed to batch delete todo")?;
+        am.update(db).await.context("Failed to batch delete todo")?;
         count += 1;
     }
 
@@ -724,9 +718,7 @@ pub async fn batch_move(
         let mut am: entity::todo::ActiveModel = existing.into_active_model();
         am.list_id = ActiveValue::Set(list_id);
         am.update_time = ActiveValue::Set(now);
-        am.update(db)
-            .await
-            .context("Failed to batch move todo")?;
+        am.update(db).await.context("Failed to batch move todo")?;
         count += 1;
     }
 

@@ -253,9 +253,7 @@ pub async fn sync_to_profile(
         if options.scope.todos {
             // 先删待办（引用清单），再删清单
             entity::todo::Entity::delete_many().exec(&txn).await?;
-            entity::todo_list::Entity::delete_many()
-                .exec(&txn)
-                .await?;
+            entity::todo_list::Entity::delete_many().exec(&txn).await?;
         }
         if options.scope.settings {
             entity::settings::Entity::delete_many().exec(&txn).await?;
@@ -782,16 +780,46 @@ pub async fn sync_to_profile(
             match crate::service::todo::create_list(&target_db, &dto).await {
                 Ok(created) => {
                     id_maps.todo_list.insert(source_id, created.id);
-                    sync_log::add_detail(source_db, log_id, "todo_list", source_id, Some(created.id), &l.name, "success", None, synced_at).await?;
+                    sync_log::add_detail(
+                        source_db,
+                        log_id,
+                        "todo_list",
+                        source_id,
+                        Some(created.id),
+                        &l.name,
+                        "success",
+                        None,
+                        synced_at,
+                    )
+                    .await?;
                     success += 1;
                 }
                 Err(e) => {
-                    sync_log::add_detail(source_db, log_id, "todo_list", source_id, None, &l.name, "failed", Some(&e.to_string()), synced_at).await?;
+                    sync_log::add_detail(
+                        source_db,
+                        log_id,
+                        "todo_list",
+                        source_id,
+                        None,
+                        &l.name,
+                        "failed",
+                        Some(&e.to_string()),
+                        synced_at,
+                    )
+                    .await?;
                     failed += 1;
                 }
             }
             total += 1;
-            emit_progress(app_handle, log_id, "sync", "todo_list", i as u32 + 1, source_lists.len() as u32, &l.name);
+            emit_progress(
+                app_handle,
+                log_id,
+                "sync",
+                "todo_list",
+                i as u32 + 1,
+                source_lists.len() as u32,
+                &l.name,
+            );
         }
 
         // 再同步待办：先顶级（parent_id = 0）后子任务，便于重映射 parent_id
@@ -802,7 +830,9 @@ pub async fn sync_to_profile(
             let synced_at = Local::now().naive_local();
             let mut dto = crate::model::Todo::from(t.clone());
             dto.id = 0;
-            dto.list_id = dto.list_id.and_then(|id| id_maps.todo_list.get(&id).copied());
+            dto.list_id = dto
+                .list_id
+                .and_then(|id| id_maps.todo_list.get(&id).copied());
             dto.note_id = dto.note_id.and_then(|id| id_maps.note.get(&id).copied());
             dto.parent_id = if t.parent_id == 0 {
                 0
@@ -812,16 +842,46 @@ pub async fn sync_to_profile(
             match crate::service::todo::create(&target_db, &dto).await {
                 Ok(created) => {
                     id_maps.todo.insert(source_id, created.id);
-                    sync_log::add_detail(source_db, log_id, "todo", source_id, Some(created.id), &t.title, "success", None, synced_at).await?;
+                    sync_log::add_detail(
+                        source_db,
+                        log_id,
+                        "todo",
+                        source_id,
+                        Some(created.id),
+                        &t.title,
+                        "success",
+                        None,
+                        synced_at,
+                    )
+                    .await?;
                     success += 1;
                 }
                 Err(e) => {
-                    sync_log::add_detail(source_db, log_id, "todo", source_id, None, &t.title, "failed", Some(&e.to_string()), synced_at).await?;
+                    sync_log::add_detail(
+                        source_db,
+                        log_id,
+                        "todo",
+                        source_id,
+                        None,
+                        &t.title,
+                        "failed",
+                        Some(&e.to_string()),
+                        synced_at,
+                    )
+                    .await?;
                     failed += 1;
                 }
             }
             total += 1;
-            emit_progress(app_handle, log_id, "sync", "todo", i as u32 + 1, source_todos.len() as u32, &t.title);
+            emit_progress(
+                app_handle,
+                log_id,
+                "sync",
+                "todo",
+                i as u32 + 1,
+                source_todos.len() as u32,
+                &t.title,
+            );
         }
     }
 

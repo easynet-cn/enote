@@ -117,6 +117,14 @@ pub struct SecurityConfig {
     pub content_encryption: bool,
 }
 
+/// Git 仓库存储配置（backend = "git" 时使用）
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct GitStoreConfig {
+    /// Git 仓库路径
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub repo_path: String,
+}
+
 /// 单个 Profile 配置
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ProfileConfig {
@@ -125,7 +133,7 @@ pub struct ProfileConfig {
     /// 图标标识（用于 UI 区分）
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub icon: String,
-    /// 后端类型："database"（默认）或 "server"
+    /// 后端类型："database"（默认）、"server" 或 "git"
     #[serde(
         default = "default_backend_type",
         skip_serializing_if = "is_database_backend"
@@ -137,6 +145,9 @@ pub struct ProfileConfig {
     /// 远程服务器配置（backend = "server" 时使用）
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub server: Option<ServerConfig>,
+    /// Git 仓库配置（backend = "git" 时使用）
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub git: Option<GitStoreConfig>,
     /// 安全配置
     #[serde(default)]
     pub security: SecurityConfig,
@@ -154,6 +165,11 @@ impl ProfileConfig {
     /// 是否是服务器后端
     pub fn is_server_backend(&self) -> bool {
         self.backend == "server"
+    }
+
+    /// 是否是 Git 仓库后端
+    pub fn is_git_backend(&self) -> bool {
+        self.backend == "git"
     }
 }
 
@@ -287,6 +303,13 @@ pub fn list_profiles(app_data_dir: &Path) -> Result<Vec<ProfileSummary>> {
                     .map(|s| s.url.clone())
                     .unwrap_or_default();
                 ("server".to_string(), "server".to_string(), url)
+            } else if config.is_git_backend() {
+                let path = config
+                    .git
+                    .as_ref()
+                    .map(|g| g.repo_path.clone())
+                    .unwrap_or_default();
+                ("git".to_string(), "git".to_string(), path)
             } else {
                 let conn = match config.datasource.db_type.as_str() {
                     "sqlite" => config.datasource.path.clone(),

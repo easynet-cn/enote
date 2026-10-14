@@ -530,6 +530,13 @@ export default {
     PASSWORD_HASH_INVALID: '密码哈希格式无效：{0}',
     // Server 后端错误
     SERVER_FEATURE_NOT_SUPPORTED: '此功能在服务器后端模式下不可用',
+    // Git 后端错误
+    GIT_FEATURE_NOT_SUPPORTED: '此功能在 Git 仓库后端模式下不可用',
+    GIT_CONFIG_MISSING: 'Git 仓库路径未配置，请先选择配置',
+    SYNC_FEATURE_NOT_SUPPORTED: '跨 Profile 同步仅在使用数据库后端时可用',
+    // 备份相关错误
+    BACKUP_FILE_NOT_FOUND: '备份文件不存在：{0}',
+    CLOUD_BACKUP_NOT_CONFIGURED: '云备份尚未配置，请先完成云存储设置',
     SERVER_AUTH_FAILED: '服务器认证失败，请检查凭据',
     SERVER_FORBIDDEN: '服务器拒绝访问',
     SERVER_NOT_FOUND: '服务器上未找到该资源',
@@ -1117,6 +1124,8 @@ export default {
       postgresDesc: '功能丰富的企业级数据库',
       enoteServer: 'ENote Server',
       enoteServerDesc: '连接远程 ENote 兼容 API 服务器',
+      git: 'Git 仓库',
+      gitDesc: '笔记以 Markdown 文件存储，自动进行 Git 版本管理',
     },
     // SQLite
     dbPath: '数据库路径',
@@ -1125,6 +1134,11 @@ export default {
     createNewDb: '新建',
     openExistingDb: '打开已有',
     defaultPath: '默认位置（应用数据目录）',
+    // Git
+    repoPath: '仓库路径',
+    repoPathPlaceholder: '选择 Git 仓库目录',
+    selectRepoDir: '选择目录',
+    repoPathHint: '目录不存在时将自动创建并初始化为 Git 仓库',
     // MySQL / PostgreSQL
     host: '主机地址',
     hostPlaceholder: '如 localhost 或 192.168.1.100',
@@ -1163,6 +1177,7 @@ export default {
       sqlite: '本地笔记',
       mysql: 'MySQL 数据库',
       postgres: 'PostgreSQL 数据库',
+      git: 'Git 笔记',
     },
     profileIcon: '图标',
     // Server

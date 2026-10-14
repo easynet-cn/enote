@@ -548,7 +548,10 @@ pub async fn check_todo_list_write(
         return Ok(());
     };
 
-    if let Some(list) = entity::todo_list::Entity::find_by_id(list_id).one(db).await? {
+    if let Some(list) = entity::todo_list::Entity::find_by_id(list_id)
+        .one(db)
+        .await?
+    {
         let access = McpAccess::from(list.mcp_access);
         match access {
             McpAccess::Deny => {

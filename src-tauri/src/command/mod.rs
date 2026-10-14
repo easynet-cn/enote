@@ -25,8 +25,8 @@ use crate::{
     model::{
         AppLog, AppLogSearchParam, AttachmentStats, LogFileInfo, Note, NoteAttachment, NoteHistory,
         NoteHistorySearchPageParam, NoteLink, NoteSearchPageParam, NoteStatsResult, NoteTemplate,
-        Notebook, PageParam, PageResult, SyncLog, SyncLogDetail, SyncOptions,
-        SyncPreview, Tag, Todo, TodoList, TodoSearchParam, TodoStats,
+        Notebook, PageParam, PageResult, SyncLog, SyncLogDetail, SyncOptions, SyncPreview, Tag,
+        Todo, TodoList, TodoSearchParam, TodoStats,
     },
     service,
     service::enote_server::EnoteServerClient,
@@ -44,16 +44,11 @@ pub(crate) async fn require_db(app_state: &AppState) -> Result<DatabaseConnectio
         .ok_or_else(|| AppError::code("DB_NOT_CONNECTED"))
 }
 
-/// 检查当前是否是 Server 后端
-pub(crate) async fn is_server_backend(app_state: &AppState) -> bool {
-    matches!(*app_state.backend.read().await, ProfileBackend::Server(_))
-}
-
 /// 获取 EnoteServerClient，仅 Server 后端可用
 pub(crate) async fn require_server(app_state: &AppState) -> Result<EnoteServerClient, AppError> {
     match &*app_state.backend.read().await {
         ProfileBackend::Server(client) => Ok(client.clone()),
-        ProfileBackend::Database => Err(AppError::code("NOT_SERVER_BACKEND")),
+        ProfileBackend::Database | ProfileBackend::Git => Err(AppError::code("NOT_SERVER_BACKEND")),
     }
 }
 

@@ -396,6 +396,9 @@ pub struct Note {
     /// 笔记 ID
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub id: i64,
+    /// UUID（GitStore 用作文件名，DB 后端为 None）
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub uuid: Option<String>,
     /// 所属笔记本 ID
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub notebook_id: i64,
@@ -849,6 +852,9 @@ pub struct NoteLink {
 pub struct NoteTemplate {
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub id: i64,
+    /// UUID（GitStore 用作文件名，DB 后端为 None）
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub uuid: Option<String>,
     #[serde_as(deserialize_as = "DefaultOnNull")]
     pub name: String,
     #[serde_as(deserialize_as = "DefaultOnNull")]
@@ -883,6 +889,7 @@ impl From<entity::note_template::Model> for NoteTemplate {
     fn from(value: entity::note_template::Model) -> Self {
         Self {
             id: value.id,
+            uuid: None,
             name: value.name,
             content: value.content,
             content_type: value.content_type,
@@ -956,6 +963,9 @@ pub struct AttachmentStats {
 #[serde(rename_all = "camelCase", default)]
 pub struct Todo {
     pub id: i64,
+    /// UUID（GitStore 用作文件名，DB 后端为 None）
+    #[serde_as(deserialize_as = "DefaultOnNull")]
+    pub uuid: Option<String>,
     pub title: String,
     /// 备注（text 列，MySQL 下无 DEFAULT，业务层保证赋值）
     pub description: String,
@@ -1032,6 +1042,7 @@ impl From<entity::todo::Model> for Todo {
     fn from(value: entity::todo::Model) -> Self {
         Self {
             id: value.id,
+            uuid: None,
             title: value.title,
             description: value.description,
             is_completed: value.is_completed,

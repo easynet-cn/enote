@@ -7,8 +7,8 @@
 use crate::error::AppError;
 use crate::model::{
     AttachmentStats, Note, NoteAttachment, NoteHistory, NoteHistorySearchPageParam, NoteLink,
-    NoteSearchPageParam, NoteStatsResult, NoteTemplate, Notebook, PageParam, PageResult, Tag,
-    Todo, TodoList, TodoSearchParam, TodoStats,
+    NoteSearchPageParam, NoteStatsResult, NoteTemplate, Notebook, PageParam, PageResult, Tag, Todo,
+    TodoList, TodoSearchParam, TodoStats,
 };
 use crate::service::enote_server::EnoteServerClient;
 
@@ -296,11 +296,7 @@ impl TodoStore for ServerStore {
         self.client.batch_delete_todos(ids).await
     }
 
-    async fn batch_move_todos(
-        &self,
-        ids: &[i64],
-        list_id: Option<i64>,
-    ) -> Result<u64, AppError> {
+    async fn batch_move_todos(&self, ids: &[i64], list_id: Option<i64>) -> Result<u64, AppError> {
         self.client.batch_move_todos(ids, list_id).await
     }
 

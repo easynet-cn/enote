@@ -534,6 +534,14 @@ export default {
     PASSWORD_HASH_INVALID: 'Invalid password hash format: {0}',
     // Server backend errors
     SERVER_FEATURE_NOT_SUPPORTED: 'This feature is not available when using a server backend',
+    // Git backend errors
+    GIT_FEATURE_NOT_SUPPORTED: 'This feature is not available when using a git backend',
+    GIT_CONFIG_MISSING: 'Git repository path is not configured, please select a profile first',
+    SYNC_FEATURE_NOT_SUPPORTED: 'Cross-profile sync is only available with a database backend',
+    // Backup errors
+    BACKUP_FILE_NOT_FOUND: 'Backup file not found: {0}',
+    CLOUD_BACKUP_NOT_CONFIGURED:
+      'Cloud backup is not configured, please complete cloud storage settings first',
     SERVER_AUTH_FAILED: 'Server authentication failed, please check your credentials',
     SERVER_FORBIDDEN: 'Access denied by server',
     SERVER_NOT_FOUND: 'Resource not found on server',
@@ -1125,6 +1133,8 @@ export default {
       postgresDesc: 'Feature-rich enterprise database',
       enoteServer: 'ENote Server',
       enoteServerDesc: 'Connect to a remote ENote-compatible API server',
+      git: 'Git Repository',
+      gitDesc: 'Notes stored as Markdown files with automatic Git version control',
     },
     dbPath: 'Database Path',
     dbPathPlaceholder: 'Select database storage location',
@@ -1132,6 +1142,12 @@ export default {
     createNewDb: 'New',
     openExistingDb: 'Open Existing',
     defaultPath: 'Default location (app data directory)',
+    // Git
+    repoPath: 'Repository Path',
+    repoPathPlaceholder: 'Select Git repository directory',
+    selectRepoDir: 'Browse',
+    repoPathHint:
+      'The directory will be created and initialized as a Git repository if it does not exist',
     host: 'Host',
     hostPlaceholder: 'e.g. localhost or 192.168.1.100',
     port: 'Port',
@@ -1168,6 +1184,7 @@ export default {
       sqlite: 'Local Notes',
       mysql: 'MySQL Database',
       postgres: 'PostgreSQL Database',
+      git: 'Git Notes',
     },
     profileIcon: 'Icon',
     // Server
