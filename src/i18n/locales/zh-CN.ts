@@ -533,6 +533,7 @@ export default {
     // Git 后端错误
     GIT_FEATURE_NOT_SUPPORTED: '此功能在 Git 仓库后端模式下不可用',
     GIT_CONFIG_MISSING: 'Git 仓库路径未配置，请先选择配置',
+    GIT_NOT_AVAILABLE: '未检测到系统中安装 Git，请先安装 Git 后重试',
     SYNC_FEATURE_NOT_SUPPORTED: '跨 Profile 同步仅在使用数据库后端时可用',
     // 备份相关错误
     BACKUP_FILE_NOT_FOUND: '备份文件不存在：{0}',
@@ -550,6 +551,7 @@ export default {
     SERVER_PARSE_ERROR: '服务器响应解析失败：{0}',
     SERVER_VALIDATION_ERROR: '服务器验证失败',
     NOT_SERVER_BACKEND: '当前 Profile 不是服务器后端',
+    PROFILE_SWITCH_IN_PROGRESS: '正在切换配置，请稍候',
   },
 
   // Composable 通知字符串
@@ -1102,16 +1104,17 @@ export default {
     manageProfiles: '管理配置',
     currentProfile: '当前配置',
     noProfiles: '暂无配置，请创建新配置',
+    gitUnavailable: '未安装 Git，不可用',
   },
 
   setup: {
     title: '初始化设置',
-    editTitle: '编辑数据库配置',
-    subtitle: '配置您的笔记数据库连接',
-    editSubtitle: '修改现有配置的数据库连接设置',
+    editTitle: '编辑后端配置',
+    subtitle: '配置您的笔记存储后端',
+    editSubtitle: '修改现有配置的后端设置',
     step: {
-      dbType: '数据库类型',
-      connection: '连接配置',
+      dbType: '后端类型',
+      connection: '后端配置',
       security: '安全设置',
       finish: '完成',
     },

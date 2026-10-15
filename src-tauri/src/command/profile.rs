@@ -261,6 +261,12 @@ pub async fn generate_encryption_key() -> Result<String, AppError> {
     Ok(service::keychain::generate_encryption_key())
 }
 
+/// 检测系统是否安装 git（git 后端 Profile 的可用性前置条件）
+#[tauri::command]
+pub async fn git_available() -> bool {
+    crate::store::git_sync::is_available()
+}
+
 /// 使用指定 profile 重启应用（仅 release 构建使用）
 ///
 /// 设置活跃 profile 后通过前端触发 app restart
@@ -288,11 +294,13 @@ pub async fn reconnect_profile(
 ) -> Result<(), AppError> {
     info!("Hot-switching profile: {}", profile_id);
 
-    // 1. 设置活跃 profile
-    service::profile::set_active_profile(&app_state.app_data_dir, &profile_id)
-        .map_err(AppError::from)?;
+    // 防止并发切换：切换进行中收到新请求直接失败，避免交替写状态
+    let _switch_guard = app_state
+        .profile_switch_lock
+        .try_lock()
+        .map_err(|_| AppError::code("PROFILE_SWITCH_IN_PROGRESS"))?;
 
-    // 2. 读取新 profile 配置
+    // 1. 读取新 profile 配置
     let profile_config = service::profile::read_profile(&app_state.app_data_dir, &profile_id)
         .map_err(AppError::from)?;
 
@@ -345,6 +353,11 @@ pub async fn reconnect_profile(
         }
     } else if profile_config.is_git_backend() {
         // ======== Git 后端路径 ========
+        // git 后端依赖系统 git CLI，缺失时明确拒绝连接
+        if !crate::store::git_sync::is_available() {
+            return Err(AppError::code("GIT_NOT_AVAILABLE"));
+        }
+
         let git_config = profile_config
             .git
             .as_ref()
@@ -390,7 +403,7 @@ pub async fn reconnect_profile(
     } else {
         // ======== Database 后端路径（原有逻辑不变） ========
 
-        // 3. 从 Keychain 获取数据库密码
+        // 2. 从 Keychain 获取数据库密码
         #[cfg(any(feature = "desktop", feature = "db-full"))]
         let db_password = if profile_config.datasource.db_type != "sqlite"
             && profile_config.datasource.auth_method != "certificate"
@@ -402,7 +415,7 @@ pub async fn reconnect_profile(
         #[cfg(not(any(feature = "desktop", feature = "db-full")))]
         let db_password: Option<String> = None;
 
-        // 4. 创建新数据库连接
+        // 3. 创建新数据库连接
         let new_db = crate::config::database_connection_from_profile(
             &profile_config,
             db_password.as_deref(),
@@ -410,13 +423,13 @@ pub async fn reconnect_profile(
         .await
         .map_err(|e| AppError::code_with_args("DB_CONNECTION_FAILED", vec![e.to_string()]))?;
 
-        // 5. 运行数据库迁移
+        // 4. 运行数据库迁移
         use sea_orm_migration::MigratorTrait;
         crate::migration::Migrator::up(&new_db, None)
             .await
             .map_err(|e| AppError::code_with_args("DB_MIGRATION_FAILED", vec![e.to_string()]))?;
 
-        // 6. 从 Keychain 获取加密密钥
+        // 5. 从 Keychain 获取加密密钥
         #[cfg(any(feature = "desktop", feature = "db-full"))]
         let new_encryption_key = if profile_config.security.content_encryption {
             service::keychain::get_encryption_key(&profile_id).map_err(AppError::from)?
@@ -426,7 +439,7 @@ pub async fn reconnect_profile(
         #[cfg(not(any(feature = "desktop", feature = "db-full")))]
         let new_encryption_key: Option<String> = None;
 
-        // 7. 替换 AppState 中的连接和相关状态
+        // 6. 替换 AppState 中的连接和相关状态
         {
             let mut db_guard = app_state.database_connection.write().await;
             *db_guard = Some(new_db.clone());
@@ -460,6 +473,10 @@ pub async fn reconnect_profile(
     }
 
     // 公共状态更新
+    // 新后端全部就绪后才写入活跃 profile：切换失败时 active 保持原值，
+    // 避免指向一个连接失败的配置（下次启动 auto-connect 会失败）
+    service::profile::set_active_profile(&app_state.app_data_dir, &profile_id)
+        .map_err(AppError::from)?;
     {
         let mut profile_guard = app_state.active_profile_id.write().await;
         *profile_guard = profile_id.clone();

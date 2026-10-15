@@ -351,4 +351,6 @@ pub struct AppState {
     pub encryption_key: tokio::sync::RwLock<Option<String>>,
     /// 设置缓存（避免频繁查询数据库）
     pub settings_cache: tokio::sync::RwLock<Option<std::collections::HashMap<String, String>>>,
+    /// Profile 切换互斥锁（防止并发热切换交替写状态）
+    pub profile_switch_lock: tokio::sync::Mutex<()>,
 }

@@ -44,6 +44,10 @@ export const profileApi = {
     return await invoke('list_profiles')
   },
 
+  async gitAvailable(): Promise<boolean> {
+    return await invoke('git_available')
+  },
+
   async getProfile(profileId: string): Promise<ProfileConfig> {
     return await invoke('get_profile', { profileId })
   },

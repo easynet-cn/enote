@@ -57,15 +57,16 @@ A cross-platform desktop note-taking application built with Tauri, supporting ri
 
 ### Data Management
 - **Multi-Profile Management** - Multiple database profiles with startup selection or auto-connect
-- **Setup Wizard** - First-launch guided configuration for SQLite/MySQL/PostgreSQL/ENote Server
+- **Setup Wizard** - First-launch guided configuration for SQLite/MySQL/PostgreSQL/Git Repository/ENote Server
+- **Git Repository Backend** - Notes and todos stored as Markdown+YAML files in a Git repository with automatic commits for version history; notes are plain-text files openable in any editor
 - **ENote Server Backend** - Connect to remote ENote-compatible API servers with multiple auth methods (Bearer/Basic/JWT/Custom Header/OAuth 2.0)
 - **SSL/TLS Authentication** - MySQL/PostgreSQL support certificate-based login
-- **Data Backup** - SQL/Excel/CSV export/import with scheduled auto-backup
-- **Cloud Backup** - Upload backups to cloud storage (Alibaba Cloud OSS, AWS S3, Tencent Cloud COS, MinIO, WebDAV) with automatic sync and retention management
+- **Data Backup** - SQL/Excel/CSV export/import (database backend) with scheduled auto-backup; Git repository backend supports full-repo zip backup and restore
+- **Cloud Backup** - Upload backups to cloud storage (Alibaba Cloud OSS, AWS S3, Tencent Cloud COS, MinIO, WebDAV) with automatic sync and retention management; available for both database and Git backends
 - **Import/Export** - Import from Evernote, Youdao Notes, Notion; Export to PDF/HTML/Word/Markdown/JSON/XML
 - **PDF Export** - Export notes as PDF via print dialog
 - **HTML Export** - Export as standalone HTML files with embedded styles and dark mode support
-- **Data Sync** - Synchronization infrastructure with sync logs and detailed tracking
+- **Data Sync** - Cross-profile data synchronization with sync logs and detailed tracking (database backend)
 - **Local Image Storage** - Images saved locally, served via Tauri asset protocol
 
 ### AI Integration
@@ -100,6 +101,7 @@ A cross-platform desktop note-taking application built with Tauri, supporting ri
 - **SeaORM** - Async ORM framework
 - **SQLite/MySQL/PostgreSQL** - Multiple database support
 - **reqwest** - HTTP client for ENote Server backend
+- **System Git CLI** - Version control for the Git repository backend (requires git installed)
 - **aes-gcm** - AES-256-GCM encryption
 - **argon2** - Password hashing
 - **keyring** - OS keychain integration
@@ -226,13 +228,14 @@ pnpm test
 
 ## Database Configuration
 
-Supports SQLite (default), MySQL, PostgreSQL, and ENote Server.
+Supports SQLite (default), MySQL, PostgreSQL, Git Repository, and ENote Server.
 
 On **first launch**, the Setup Wizard guides you through backend configuration:
 
 - **SQLite** - Local file database, ready to use out of the box
 - **MySQL** - Supports password login and SSL certificate authentication
 - **PostgreSQL** - Supports password login and SSL certificate authentication
+- **Git Repository** - Notes stored as Markdown files in a Git repository with automatic version control. The directory is created and initialized automatically if it does not exist (requires git installed)
 - **ENote Server** - Connect to a remote ENote-compatible API server with multiple authentication methods:
   - Bearer Token, Basic Auth, JWT (auto-refresh), Custom Header, OAuth 2.0
 

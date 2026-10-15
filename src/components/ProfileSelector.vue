@@ -16,7 +16,8 @@
           <button
             v-if="props.showClose"
             @click="emit('close')"
-            class="p-1.5 text-content-tertiary hover:text-content hover:bg-surface-dim rounded-lg transition-colors"
+            :disabled="connecting"
+            class="p-1.5 text-content-tertiary hover:text-content hover:bg-surface-dim rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             :title="t('common.close')"
           >
             <X class="w-5 h-5" />
@@ -32,11 +33,12 @@
           @click="selectedId = profile.id"
           @dblclick="connectProfile(profile.id)"
           class="flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all group"
-          :class="
+          :class="[
             selectedId === profile.id
               ? 'border-indigo-600 bg-indigo-50/50'
-              : 'border-edge hover:border-slate-300'
-          "
+              : 'border-edge hover:border-slate-300',
+            !isProfileUsable(profile) && 'opacity-50',
+          ]"
         >
           <!-- 图标 -->
           <div
@@ -59,6 +61,12 @@
                 class="text-xs px-1.5 py-0.5 bg-indigo-100 text-indigo-600 rounded"
               >
                 {{ t('profile.lastUsed') }}
+              </span>
+              <span
+                v-if="!isProfileUsable(profile)"
+                class="text-xs px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded"
+              >
+                {{ t('profile.gitUnavailable') }}
               </span>
               <Shield v-if="profile.contentEncryption" class="w-3.5 h-3.5 text-green-600" />
             </div>
@@ -110,7 +118,9 @@
 
         <button
           @click="connectProfile(selectedId)"
-          :disabled="!selectedId || connecting"
+          :disabled="
+            !selectedId || connecting || (selectedProfile && !isProfileUsable(selectedProfile))
+          "
           class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
         >
           {{ connecting ? t('profile.connecting') : t('profile.connect') }}
@@ -175,6 +185,13 @@ const profiles = ref<ProfileSummary[]>([])
 const selectedId = ref('')
 const connecting = ref(false)
 const autoConnect = ref(true)
+/** 系统是否安装 git（git 后端 profile 的可用性前提，默认 true 避免闪烁） */
+const gitAvailable = ref(true)
+
+/** git 类型 profile 在系统未安装 git 时不可用 */
+const isProfileUsable = (profile: ProfileSummary) => profile.dbType !== 'git' || gitAvailable.value
+
+const selectedProfile = computed(() => profiles.value.find((p) => p.id === selectedId.value))
 
 const getDbIcon = (dbType: string) => {
   switch (dbType) {
@@ -196,6 +213,7 @@ const loadProfiles = async () => {
     profiles.value = await profileApi.listProfiles()
     const index = await profileApi.getProfileIndex()
     autoConnect.value = index.autoConnect
+    gitAvailable.value = await profileApi.gitAvailable()
 
     // 默认选中活跃的 profile
     const active = profiles.value.find((p) => p.isActive)
@@ -211,6 +229,8 @@ const loadProfiles = async () => {
 
 const connectProfile = async (profileId: string) => {
   if (!profileId) return
+  const profile = profiles.value.find((p) => p.id === profileId)
+  if (profile && !isProfileUsable(profile)) return
   connecting.value = true
   try {
     // 使用热重连代替进程重启，避免 dev 模式下白屏

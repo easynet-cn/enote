@@ -59,6 +59,16 @@ fn zh_cn_messages() -> HashMap<String, String> {
         "无法连接到远程服务器，请检查服务器地址和网络连接。\n\n错误详情：{}".to_string(),
     );
 
+    // Git 后端相关错误
+    messages.insert(
+        "git.unavailable.title".to_string(),
+        "Git 不可用".to_string(),
+    );
+    messages.insert(
+        "git.unavailable.message".to_string(),
+        "未检测到系统中安装 Git，Git 仓库后端无法使用。\n\n请先安装 Git，然后重新连接该配置。".to_string(),
+    );
+
     // 配置相关错误
     messages.insert(
         "config.load.failed.title".to_string(),
@@ -222,6 +232,16 @@ fn en_us_messages() -> HashMap<String, String> {
             .to_string(),
     );
 
+    // Git backend related errors
+    messages.insert(
+        "git.unavailable.title".to_string(),
+        "Git Unavailable".to_string(),
+    );
+    messages.insert(
+        "git.unavailable.message".to_string(),
+        "Git is not installed on this system. The Git repository backend cannot be used.\n\nPlease install Git and reconnect this profile.".to_string(),
+    );
+
     // Configuration related errors
     messages.insert(
         "config.load.failed.title".to_string(),
@@ -370,6 +390,8 @@ fn get_language_pack(locale: &str) -> HashMap<String, String> {
 ///
 /// # Examples
 /// ```
+/// use enote_lib::i18n::t;
+///
 /// let text = t("database.connection.failed.title", &[]);
 /// let text_with_args = t("database.connection.failed.message", &["Connection timeout"]);
 /// ```

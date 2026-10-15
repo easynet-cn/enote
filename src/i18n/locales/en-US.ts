@@ -537,6 +537,7 @@ export default {
     // Git backend errors
     GIT_FEATURE_NOT_SUPPORTED: 'This feature is not available when using a git backend',
     GIT_CONFIG_MISSING: 'Git repository path is not configured, please select a profile first',
+    GIT_NOT_AVAILABLE: 'Git is not installed on this system. Please install Git and try again',
     SYNC_FEATURE_NOT_SUPPORTED: 'Cross-profile sync is only available with a database backend',
     // Backup errors
     BACKUP_FILE_NOT_FOUND: 'Backup file not found: {0}',
@@ -555,6 +556,7 @@ export default {
     SERVER_PARSE_ERROR: 'Failed to parse server response: {0}',
     SERVER_VALIDATION_ERROR: 'Server validation error',
     NOT_SERVER_BACKEND: 'Current profile is not a server backend',
+    PROFILE_SWITCH_IN_PROGRESS: 'Profile switch in progress, please wait',
   },
 
   // Composable notification strings
@@ -1111,16 +1113,17 @@ export default {
     manageProfiles: 'Manage Profiles',
     currentProfile: 'Current Profile',
     noProfiles: 'No profiles yet, please create one',
+    gitUnavailable: 'Git not installed, unavailable',
   },
 
   setup: {
     title: 'Initial Setup',
-    editTitle: 'Edit Database Configuration',
-    subtitle: 'Configure your note database connection',
-    editSubtitle: 'Modify database connection settings for an existing profile',
+    editTitle: 'Edit Backend Configuration',
+    subtitle: 'Configure your note storage backend',
+    editSubtitle: 'Modify backend settings for an existing profile',
     step: {
-      dbType: 'Database Type',
-      connection: 'Connection',
+      dbType: 'Backend Type',
+      connection: 'Backend Config',
       security: 'Security',
       finish: 'Finish',
     },

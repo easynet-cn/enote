@@ -38,7 +38,6 @@
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use std::sync::RwLock as StdRwLock;
 
 use chrono::{Local, NaiveDateTime, Utc};
@@ -420,38 +419,14 @@ impl GitStore {
 
     // ========= Git 操作 =========
 
-    /// 初始化 git 仓库
+    /// 初始化 git 仓库（失败静默忽略）
     fn git_init(&self) {
-        let git_dir = self.repo_path.join(".git");
-        if !git_dir.exists() {
-            let _ = Command::new("git")
-                .arg("init")
-                .current_dir(&self.repo_path)
-                .output();
-
-            // 配置默认用户
-            let _ = Command::new("git")
-                .args(["config", "user.name", "ENote"])
-                .current_dir(&self.repo_path)
-                .output();
-            let _ = Command::new("git")
-                .args(["config", "user.email", "enote@local"])
-                .current_dir(&self.repo_path)
-                .output();
-        }
+        let _ = super::git_sync::init_repo(&self.repo_path);
     }
 
     /// git add + commit（失败静默忽略）
     fn git_commit(&self, message: &str) {
-        let _ = Command::new("git")
-            .args(["add", "-A"])
-            .current_dir(&self.repo_path)
-            .output();
-
-        let _ = Command::new("git")
-            .args(["commit", "-m", message])
-            .current_dir(&self.repo_path)
-            .output();
+        let _ = super::git_sync::commit_all(&self.repo_path, message);
     }
 
     // ========= ID 生成 =========

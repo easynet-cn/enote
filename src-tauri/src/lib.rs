@@ -145,6 +145,7 @@ pub fn run_with_config(config_path: Option<String>) {
             command::test_db_connection,
             command::test_server_connection,
             command::generate_encryption_key,
+            command::git_available,
             command::get_profile_index,
             command::set_auto_connect,
             command::restart_with_profile,
@@ -504,6 +505,19 @@ async fn setup_normal_mode(
                 )
             } else if profile_config.is_git_backend() {
                 // ======== Git 后端路径 ========
+                // git 后端依赖系统 git CLI，缺失时提示并回退向导模式（与 Server 连接失败处理一致）
+                if !crate::store::git_sync::is_available() {
+                    error!("Git backend unavailable: git CLI not found");
+                    handle
+                        .dialog()
+                        .message(t_simple("git.unavailable.message"))
+                        .kind(MessageDialogKind::Error)
+                        .title(t_simple("git.unavailable.title"))
+                        .blocking_show();
+                    setup_wizard_mode_state(app).await?;
+                    return Ok(());
+                }
+
                 let git_config = profile_config
                     .git
                     .as_ref()
@@ -629,6 +643,7 @@ async fn setup_normal_mode(
         active_profile_id: tokio::sync::RwLock::new(active_profile_id),
         encryption_key: tokio::sync::RwLock::new(encryption_key),
         settings_cache: tokio::sync::RwLock::new(None),
+        profile_switch_lock: tokio::sync::Mutex::new(()),
     });
 
     app.manage(app_state.clone());
@@ -718,6 +733,7 @@ async fn setup_wizard_mode_state(app: &mut tauri::App) -> Result<(), Box<dyn std
         active_profile_id: tokio::sync::RwLock::new(String::new()),
         encryption_key: tokio::sync::RwLock::new(None),
         settings_cache: tokio::sync::RwLock::new(None),
+        profile_switch_lock: tokio::sync::Mutex::new(()),
     });
 
     app.manage(app_state);

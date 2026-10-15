@@ -57,15 +57,16 @@
 
 ### 数据管理
 - **多配置管理** - 支持多个数据库配置（Profile），启动时选择或自动连接
-- **设置向导** - 首次启动引导配置后端，支持 SQLite/MySQL/PostgreSQL/ENote Server
+- **设置向导** - 首次启动引导配置后端，支持 SQLite/MySQL/PostgreSQL/Git 仓库/ENote Server
+- **Git 仓库后端** - 笔记与待办以 Markdown+YAML 文件存储于 Git 仓库，自动提交形成版本历史，笔记即纯文本文件、可被任何编辑器直接打开
 - **ENote Server 后端** - 连接远程 ENote 兼容 API 服务器，支持多种认证方式（Bearer/Basic/JWT/自定义 Header/OAuth 2.0）
 - **SSL/TLS 认证** - MySQL/PostgreSQL 支持证书登录
-- **数据备份** - SQL/Excel/CSV 导出导入，自动定时备份
-- **云备份** - 备份文件上传到云存储（阿里云 OSS、AWS S3、腾讯云 COS、MinIO、WebDAV），自动同步与保留管理
+- **数据备份** - SQL/Excel/CSV 导出导入（数据库后端），自动定时备份；Git 仓库后端支持整个仓库 zip 打包备份与恢复
+- **云备份** - 备份文件上传到云存储（阿里云 OSS、AWS S3、腾讯云 COS、MinIO、WebDAV），自动同步与保留管理，数据库与 Git 后端均可用
 - **导入导出** - 支持印象笔记、有道笔记、Notion 导入，PDF/HTML/Word/Markdown/JSON/XML 导出
 - **PDF 导出** - 通过打印对话框导出为 PDF
 - **HTML 导出** - 导出为独立 HTML 文件，内置样式，支持暗色模式
-- **数据同步** - 同步基础设施，支持同步日志和详细追踪
+- **数据同步** - 跨 Profile 数据同步，支持同步日志和详细追踪（数据库后端）
 - **图片本地存储** - 图片保存到本地，通过 Tauri asset 协议访问
 
 ### AI 集成
@@ -100,6 +101,7 @@
 - **SeaORM** - 异步 ORM 框架
 - **SQLite/MySQL/PostgreSQL** - 多数据库支持
 - **reqwest** - HTTP 客户端，用于 ENote Server 后端
+- **系统 Git CLI** - Git 仓库后端的版本管理（需系统安装 git 命令）
 - **aes-gcm** - AES-256-GCM 加密
 - **argon2** - 密码哈希
 - **keyring** - 系统钥匙串集成
@@ -226,13 +228,14 @@ pnpm test
 
 ## 数据库配置
 
-支持 SQLite（默认）、MySQL、PostgreSQL 和 ENote Server。
+支持 SQLite（默认）、MySQL、PostgreSQL、Git 仓库和 ENote Server。
 
 **首次启动**时，设置向导将引导您完成后端配置：
 
 - **SQLite** - 本地文件数据库，开箱即用，无需安装额外服务
 - **MySQL** - 支持密码登录和 SSL 证书认证
 - **PostgreSQL** - 支持密码登录和 SSL 证书认证
+- **Git 仓库** - 笔记以 Markdown 文件存储在 Git 仓库中，自动版本管理。目录不存在时自动创建并初始化，需系统已安装 git 命令
 - **ENote Server** - 连接远程 ENote 兼容 API 服务器，支持多种认证方式：
   - Bearer Token、Basic Auth、JWT（自动刷新）、自定义 Header、OAuth 2.0
 
