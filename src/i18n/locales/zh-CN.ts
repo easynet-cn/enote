@@ -1119,6 +1119,8 @@ export default {
       finish: '完成',
     },
     dbType: {
+      database: '数据库',
+      databaseDesc: 'SQLite、MySQL 或 PostgreSQL 数据库',
       sqlite: 'SQLite',
       sqliteDesc: '本地文件数据库，无需安装，开箱即用',
       mysql: 'MySQL',
@@ -1130,6 +1132,7 @@ export default {
       git: 'Git 仓库',
       gitDesc: '笔记以 Markdown 文件存储，自动进行 Git 版本管理',
     },
+    dbEngine: '数据库引擎',
     // SQLite
     dbPath: '数据库路径',
     dbPathPlaceholder: '选择数据库存储位置',

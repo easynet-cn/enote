@@ -1128,6 +1128,8 @@ export default {
       finish: 'Finish',
     },
     dbType: {
+      database: 'Database',
+      databaseDesc: 'SQLite, MySQL, or PostgreSQL database',
       sqlite: 'SQLite',
       sqliteDesc: 'Local file database, no installation required',
       mysql: 'MySQL',
@@ -1139,6 +1141,7 @@ export default {
       git: 'Git Repository',
       gitDesc: 'Notes stored as Markdown files with automatic Git version control',
     },
+    dbEngine: 'Database Engine',
     dbPath: 'Database Path',
     dbPathPlaceholder: 'Select database storage location',
     selectPath: 'Browse',

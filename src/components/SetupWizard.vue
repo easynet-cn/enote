@@ -67,15 +67,15 @@
 
       <!-- 步骤内容 -->
       <div class="px-8 py-4 min-h-[340px]">
-        <!-- Step 0: 数据库类型 -->
+        <!-- Step 0: 后端大类 -->
         <div v-if="currentStep === 0" class="space-y-3">
           <div
-            v-for="dbOpt in dbTypeOptions"
-            :key="dbOpt.value"
-            @click="form.datasource.type = dbOpt.value"
+            v-for="opt in backendOptions"
+            :key="opt.value"
+            @click="selectBackend(opt.value)"
             class="flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all"
             :class="
-              form.datasource.type === dbOpt.value
+              backendKind === opt.value
                 ? 'border-indigo-600 bg-indigo-50/50'
                 : 'border-edge hover:border-slate-300'
             "
@@ -83,25 +83,23 @@
             <div
               class="w-10 h-10 rounded-lg flex items-center justify-center"
               :class="
-                form.datasource.type === dbOpt.value
+                backendKind === opt.value
                   ? 'bg-indigo-100 text-indigo-600'
                   : 'bg-surface-dim text-content-secondary'
               "
             >
-              <component :is="dbOpt.icon" class="w-5 h-5" />
+              <component :is="opt.icon" class="w-5 h-5" />
             </div>
             <div class="flex-1">
-              <div class="font-medium text-content">{{ dbOpt.label }}</div>
-              <div class="text-sm text-content-secondary">{{ dbOpt.desc }}</div>
+              <div class="font-medium text-content">{{ opt.label }}</div>
+              <div class="text-sm text-content-secondary">{{ opt.desc }}</div>
             </div>
             <div
               class="w-5 h-5 rounded-full border-2 flex items-center justify-center"
-              :class="
-                form.datasource.type === dbOpt.value ? 'border-indigo-600' : 'border-slate-300'
-              "
+              :class="backendKind === opt.value ? 'border-indigo-600' : 'border-slate-300'"
             >
               <div
-                v-if="form.datasource.type === dbOpt.value"
+                v-if="backendKind === opt.value"
                 class="w-2.5 h-2.5 rounded-full bg-indigo-600"
               />
             </div>
@@ -122,6 +120,28 @@
               class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               @input="userEdited.name = true"
             />
+          </div>
+
+          <!-- 数据库引擎切换（仅数据库后端） -->
+          <div v-if="!isServerBackend && !isGitBackend">
+            <label class="block text-sm font-medium text-content-secondary mb-1">
+              {{ t('setup.dbEngine') }}
+            </label>
+            <div class="flex gap-1 bg-surface-dim rounded-lg p-1">
+              <button
+                v-for="db in databaseTypeOptions"
+                :key="db.value"
+                @click="selectDatabaseType(db.value)"
+                class="flex-1 px-3 py-1.5 text-sm rounded-md transition-colors"
+                :class="
+                  form.datasource.type === db.value
+                    ? 'bg-surface text-indigo-600 shadow-sm'
+                    : 'text-content-secondary hover:text-content'
+                "
+              >
+                {{ db.label }}
+              </button>
+            </div>
           </div>
 
           <!-- SQLite 配置 -->
@@ -722,10 +742,25 @@ const steps = computed(() => [
 const isServerBackend = computed(() => form.datasource.type === 'enote-server')
 const isGitBackend = computed(() => form.datasource.type === 'git')
 
+/** 后端大类（与后端 backend 字段对应：database / git / server） */
+type BackendKind = 'database' | 'git' | 'server'
+
+/** 从编辑配置推断初始后端大类（兼容缺少 backend 字段的旧配置，按 datasource.type 兜底） */
+const inferBackendKind = (): BackendKind => {
+  const dbType = props.editProfile?.datasource?.type || 'sqlite'
+  if (props.editProfile?.backend === 'server' || dbType === 'enote-server') return 'server'
+  if (props.editProfile?.backend === 'git' || dbType === 'git') return 'git'
+  return 'database'
+}
+
+/** 当前选中的后端大类（Step 0 卡片） */
+const backendKind = ref<BackendKind>(inferBackendKind())
+
 const form = reactive<ProfileConfig>({
   name: props.editProfile?.name || '',
   icon: props.editProfile?.icon || '',
-  backend: props.editProfile?.backend || 'database',
+  // 兼容缺少 backend 字段的旧配置：按 datasource.type 推断兜底
+  backend: props.editProfile?.backend || inferBackendKind(),
   datasource: {
     type: props.editProfile?.datasource?.type || 'sqlite',
     path: props.editProfile?.datasource?.path || '',
@@ -752,37 +787,33 @@ const form = reactive<ProfileConfig>({
   },
 })
 
-const dbTypeOptions = computed(() => [
+/** Step 0：后端大类选项（与后端 backend 字段一一对应） */
+const backendOptions = computed(() => [
   {
-    value: 'sqlite',
-    label: t('setup.dbType.sqlite'),
-    desc: t('setup.dbType.sqliteDesc'),
-    icon: HardDrive,
+    value: 'database' as BackendKind,
+    label: t('setup.dbType.database'),
+    desc: t('setup.dbType.databaseDesc'),
+    icon: Database,
   },
   {
-    value: 'git',
+    value: 'git' as BackendKind,
     label: t('setup.dbType.git'),
     desc: t('setup.dbType.gitDesc'),
     icon: GitBranch,
   },
   {
-    value: 'mysql',
-    label: t('setup.dbType.mysql'),
-    desc: t('setup.dbType.mysqlDesc'),
-    icon: Database,
-  },
-  {
-    value: 'postgres',
-    label: t('setup.dbType.postgres'),
-    desc: t('setup.dbType.postgresDesc'),
-    icon: Server,
-  },
-  {
-    value: 'enote-server',
+    value: 'server' as BackendKind,
     label: t('setup.dbType.enoteServer'),
     desc: t('setup.dbType.enoteServerDesc'),
     icon: Globe,
   },
+])
+
+/** Step 1：数据库引擎分段选项（仅数据库后端显示） */
+const databaseTypeOptions = computed(() => [
+  { value: 'sqlite', label: t('setup.dbType.sqlite'), icon: HardDrive },
+  { value: 'mysql', label: t('setup.dbType.mysql'), icon: Database },
+  { value: 'postgres', label: t('setup.dbType.postgres'), icon: Server },
 ])
 
 const sslModeOptions = computed(() => {
@@ -872,51 +903,75 @@ const userEdited = reactive<Record<string, boolean>>({
   username: !!props.editProfile?.datasource?.username,
 })
 
-const nextStep = async () => {
-  if (currentStep.value === 0) {
-    // 设置 backend 字段
-    form.backend = isServerBackend.value ? 'server' : isGitBackend.value ? 'git' : 'database'
+/** 按当前 datasource.type 填充推荐默认值（用户手动修改过的字段不覆盖） */
+const applyTypeDefaults = async () => {
+  const defaults = dbTypeDefaults[form.datasource.type]
+  if (!defaults) return
 
-    const defaults = dbTypeDefaults[form.datasource.type]
-    if (defaults) {
-      // 仅在用户未手动修改时填充默认值
-      if (!userEdited.name || !form.name.trim()) {
-        form.name = defaults.name
-        userEdited.name = false
-      }
-      if (form.datasource.type === 'sqlite') {
-        // SQLite 默认路径：应用数据目录/enote.db
-        if (!userEdited.path || !form.datasource.path) {
-          try {
-            const dataDir = await appDataDir()
-            form.datasource.path = await join(dataDir, 'enote.db')
-          } catch {
-            // 获取失败时不填充，用户手动选择
-          }
-        }
-      } else if (isGitBackend.value) {
-        // Git 默认仓库路径：应用数据目录/notes-repo
-        if ((!userEdited.repoPath || !form.git?.repoPath) && form.git) {
-          try {
-            const dataDir = await appDataDir()
-            form.git.repoPath = await join(dataDir, 'notes-repo')
-          } catch {
-            // 获取失败时不填充，用户手动选择
-          }
-        }
-      } else {
-        if (!userEdited.host || !form.datasource.host) {
-          form.datasource.host = defaults.host
-        }
-        form.datasource.port = defaults.port
-        if (!userEdited.database || !form.datasource.database) {
-          form.datasource.database = defaults.database
-        }
-        if (!userEdited.username || !form.datasource.username) {
-          form.datasource.username = defaults.username
-        }
+  // 仅在用户未手动修改时填充默认名称
+  if (!userEdited.name || !form.name.trim()) {
+    form.name = defaults.name
+    userEdited.name = false
+  }
+  if (form.datasource.type === 'sqlite') {
+    // SQLite 默认路径：应用数据目录/enote.db
+    if (!userEdited.path || !form.datasource.path) {
+      try {
+        const dataDir = await appDataDir()
+        form.datasource.path = await join(dataDir, 'enote.db')
+      } catch {
+        // 获取失败时不填充，用户手动选择
       }
     }
+  } else if (isGitBackend.value) {
+    // Git 默认仓库路径：应用数据目录/notes-repo
+    if ((!userEdited.repoPath || !form.git?.repoPath) && form.git) {
+      try {
+        const dataDir = await appDataDir()
+        form.git.repoPath = await join(dataDir, 'notes-repo')
+      } catch {
+        // 获取失败时不填充，用户手动选择
+      }
+    }
+  } else {
+    if (!userEdited.host || !form.datasource.host) {
+      form.datasource.host = defaults.host
+    }
+    form.datasource.port = defaults.port
+    if (!userEdited.database || !form.datasource.database) {
+      form.datasource.database = defaults.database
+    }
+    if (!userEdited.username || !form.datasource.username) {
+      form.datasource.username = defaults.username
+    }
+  }
+}
+
+/** Step 0 选择后端大类，同步 backend 字段与 datasource.type */
+const selectBackend = (kind: BackendKind) => {
+  backendKind.value = kind
+  form.backend = kind
+  if (kind === 'database') {
+    if (!['sqlite', 'mysql', 'postgres'].includes(form.datasource.type)) {
+      form.datasource.type = 'sqlite'
+    }
+  } else if (kind === 'git') {
+    form.datasource.type = 'git'
+  } else {
+    form.datasource.type = 'enote-server'
+  }
+}
+
+/** Step 1 切换数据库引擎，并立即套用该引擎的推荐默认值 */
+const selectDatabaseType = async (type: string) => {
+  if (form.datasource.type === type) return
+  form.datasource.type = type
+  await applyTypeDefaults()
+}
+
+const nextStep = async () => {
+  if (currentStep.value === 0) {
+    await applyTypeDefaults()
   }
   currentStep.value++
 }
