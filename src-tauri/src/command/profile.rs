@@ -138,6 +138,7 @@ pub async fn save_profile_config(
     server_token: Option<String>,
     server_password: Option<String>,
     server_client_secret: Option<String>,
+    git_password: Option<String>,
 ) -> Result<(), AppError> {
     keys_to_kebab(&mut config);
     let config: service::profile::ProfileConfig = serde_json::from_value(config)
@@ -175,8 +176,14 @@ pub async fn save_profile_config(
     if let Some(secret) = server_client_secret
         && !secret.is_empty()
     {
-        service::keychain::set_server_client_secret(&profile_id, &secret)
-            .map_err(AppError::from)?;
+        service::keychain::set_server_client_secret(&profile_id, &secret).map_err(AppError::from)?;
+    }
+
+    // 保存 Git HTTPS 密码/访问令牌到 Keychain
+    if let Some(password) = git_password
+        && !password.is_empty()
+    {
+        service::keychain::set_git_password(&profile_id, &password).map_err(AppError::from)?;
     }
 
     Ok(())
@@ -267,6 +274,63 @@ pub async fn git_available() -> bool {
     crate::store::git_sync::is_available()
 }
 
+/// 根据 Profile 配置与 Keychain 凭据构造 Git 远程运行时配置
+pub(crate) fn build_git_remote(
+    profile_id: &str,
+    git_config: &service::profile::GitStoreConfig,
+) -> crate::store::git_remote::GitRemoteConfig {
+    use crate::store::git_sync::GitCredentials;
+
+    let credentials = match git_config.remote_auth.as_str() {
+        "https" => GitCredentials::Https {
+            username: git_config.remote_username.clone(),
+            // 密码/PAT 从 Keychain 读取，缺失时给空串（认证失败会明确报错）
+            password: service::keychain::get_git_password(profile_id)
+                .ok()
+                .flatten()
+                .unwrap_or_default(),
+        },
+        "ssh" => GitCredentials::Ssh,
+        _ => GitCredentials::None,
+    };
+    crate::store::git_remote::GitRemoteConfig {
+        url: git_config.remote_url.clone(),
+        credentials,
+    }
+}
+
+/// 测试 Git 远程仓库连接（向导「测试连接」使用，不读写本地仓库配置）
+#[tauri::command(rename_all = "camelCase")]
+pub async fn test_git_connection(
+    url: String,
+    auth: String,
+    username: Option<String>,
+    password: Option<String>,
+) -> Result<bool, AppError> {
+    use crate::store::git_remote;
+    use crate::store::git_sync::GitCredentials;
+
+    if !crate::store::git_sync::is_available() {
+        return Err(AppError::code("GIT_NOT_AVAILABLE"));
+    }
+
+    let credentials = match auth.as_str() {
+        "https" => GitCredentials::Https {
+            username: username.unwrap_or_default(),
+            password: password.unwrap_or_default(),
+        },
+        "ssh" => GitCredentials::Ssh,
+        _ => GitCredentials::None,
+    };
+
+    // git 命令为阻塞调用，放到阻塞线程池执行，避免卡住 async 运行时
+    tauri::async_runtime::spawn_blocking(move || git_remote::test_remote(&url, &credentials))
+        .await
+        .map_err(|e| AppError::code_with_args("GIT_SYNC_FAILED", vec![e.to_string()]))?
+        .map_err(|e| AppError::code_with_args(e.code.as_str(), vec![e.message]))?;
+    Ok(true)
+}
+
 /// 使用指定 profile 重启应用（仅 release 构建使用）
 ///
 /// 设置活跃 profile 后通过前端触发 app restart
@@ -289,6 +353,7 @@ pub async fn restart_with_profile(
 /// 前端调用后需刷新所有数据。
 #[tauri::command]
 pub async fn reconnect_profile(
+    app_handle: tauri::AppHandle,
     app_state: tauri::State<'_, Arc<AppState>>,
     profile_id: String,
 ) -> Result<(), AppError> {
@@ -374,8 +439,16 @@ pub async fn reconnect_profile(
         let enc_key: Option<String> = None;
 
         let repo_path = std::path::PathBuf::from(&git_config.repo_path);
-        let git_store =
-            std::sync::Arc::new(crate::store::GitStore::new(repo_path, enc_key.clone()));
+
+        // 构造远程配置（URL + Keychain 凭据）
+        let remote = build_git_remote(&profile_id, git_config);
+
+        // GitStore 在锁内创建（目录初始化 + git init + 索引构建）。
+        // 即使远程同步尚未完成，GitStore 也能处理——空仓库 + fetch 远程后 pull 即可。
+        let git_store = std::sync::Arc::new(
+            crate::store::GitStore::new(repo_path.clone(), enc_key.clone())
+                .with_remote(Some(remote.clone()), Some(app_handle.clone())),
+        );
 
         // 替换 AppState
         {
@@ -399,6 +472,22 @@ pub async fn reconnect_profile(
         {
             let mut key_guard = app_state.encryption_key.write().await;
             *key_guard = enc_key;
+        }
+
+        // ← profile_switch_lock 在这里释放（_switch_guard drop）
+        // 下面的 Git 同步在锁外 fire-and-forget，不阻塞 UI。
+        // 成功/失败都会通过 git-sync-result 事件推给前端。
+        if !remote.url.is_empty() {
+            let sync_remote = remote.clone();
+            let sync_path = repo_path.clone();
+            let sync_handle = app_handle.clone();
+            tauri::async_runtime::spawn_blocking(move || {
+                crate::store::git_remote::ensure_and_sync(
+                    &sync_path,
+                    &sync_remote,
+                    Some(&sync_handle),
+                )
+            });
         }
     } else {
         // ======== Database 后端路径（原有逻辑不变） ========

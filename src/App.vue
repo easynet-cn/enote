@@ -257,7 +257,7 @@ const UpdateChecker = defineAsyncComponent(() => import('./components/UpdateChec
 const TodoPanel = defineAsyncComponent(() => import('./components/TodoPanel.vue'))
 const TodoDetail = defineAsyncComponent(() => import('./components/TodoDetail.vue'))
 
-const { t } = useI18n()
+const { t, te } = useI18n()
 const appStore = useAppStore()
 const {
   isMobileLayout,
@@ -968,6 +968,26 @@ const enterMainMode = async () => {
   // 监听菜单栏事件
   listen('menu-help-manual', () => openHelp())
   listen('menu-check-update', () => updateCheckerRef.value?.checkForUpdates())
+
+  // Git 远程同步结果（连接时同步 / 提交后自动推送）
+  listen<{ ok: boolean; operation: string; code?: string; message: string }>(
+    'git-sync-result',
+    (event) => {
+      const p = event.payload
+      if (p.ok) {
+        showNotification({
+          type: 'success',
+          message: p.operation === 'push' ? t('setup.gitPushSuccess') : t('setup.gitSyncSuccess'),
+        })
+      } else if (p.code) {
+        const key = `errorCodes.${p.code}`
+        showNotification({
+          type: 'error',
+          message: te(key) ? t(key, [p.message]) : t('errorCodes.GIT_SYNC_FAILED', [p.message]),
+        })
+      }
+    },
+  )
 
   // 启动自动备份
   startAutoBackup()

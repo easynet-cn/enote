@@ -38,18 +38,32 @@
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::RwLock as StdRwLock;
+use std::sync::{Arc, Condvar, Mutex, RwLock as StdRwLock};
+use std::time::Duration;
 
 use chrono::{Local, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use tauri::AppHandle;
 use uuid::Uuid;
 
 use crate::error::AppError;
 use crate::model::*;
 use crate::service::crypto;
 
+use super::git_remote::{self, GitRemoteConfig};
 use super::{NoteStore, TodoStore};
+
+/// 去抖推送线程的等待时长（窗口内的多次提交合并为一次推送）
+const PUSH_DEBOUNCE_SECS: u64 = 2;
+
+/// 推送线程共享状态
+struct PushState {
+    /// 本地已有待推送提交
+    dirty: bool,
+    /// Store 已释放，线程应退出
+    shutdown: bool,
+}
 
 // ============================================================================
 // Frontmatter 辅助结构
@@ -295,6 +309,46 @@ pub struct GitStore {
     next_link_id: StdRwLock<i64>,
     /// 附件 ID 计数器
     next_attachment_id: StdRwLock<i64>,
+    /// 远程仓库配置（None 或 url 为空表示纯本地模式）
+    remote: Option<GitRemoteConfig>,
+    /// Tauri 句柄，用于向前端推送同步结果事件
+    app_handle: Option<AppHandle>,
+    /// 去抖推送线程的共享状态（仅远程模式下存在）
+    push_channel: Option<Arc<(Mutex<PushState>, Condvar)>>,
+}
+
+/// 后台去抖推送线程：被唤醒后等待一个去抖窗口，合并窗口内的多次提交
+fn push_loop(
+    repo_path: PathBuf,
+    remote: GitRemoteConfig,
+    app_handle: Option<AppHandle>,
+    channel: Arc<(Mutex<PushState>, Condvar)>,
+) {
+    let (lock, cvar) = &*channel;
+    loop {
+        let mut state = lock
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        // 等待脏标记或超时唤醒
+        let (guard, _) = cvar
+            .wait_timeout(
+                state,
+                Duration::from_secs(PUSH_DEBOUNCE_SECS),
+            )
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        state = guard;
+        if state.shutdown {
+            return;
+        }
+        if !state.dirty {
+            continue;
+        }
+        state.dirty = false;
+        drop(state);
+
+        // 实际同步在锁外执行（sync_after_commit 内部自行获取 git 操作锁）
+        git_remote::sync_after_commit(&repo_path, &remote, app_handle.as_ref());
+    }
 }
 
 impl GitStore {
@@ -312,6 +366,9 @@ impl GitStore {
             next_id: StdRwLock::new(0),
             next_link_id: StdRwLock::new(0),
             next_attachment_id: StdRwLock::new(0),
+            remote: None,
+            app_handle: None,
+            push_channel: None,
         };
 
         // 创建目录结构
@@ -324,6 +381,39 @@ impl GitStore {
         store.rebuild_indexes();
 
         store
+    }
+
+    /// 注入远程仓库配置并启动后台去抖推送线程（builder 模式）。
+    ///
+    /// `remote.url` 为空时等价于纯本地模式，不启动线程。
+    pub fn with_remote(
+        mut self,
+        remote: Option<GitRemoteConfig>,
+        app_handle: Option<AppHandle>,
+    ) -> Self {
+        self.app_handle = app_handle.clone();
+        if let Some(config) = remote.filter(|c| !c.url.is_empty()) {
+            let channel = Arc::new((
+                Mutex::new(PushState {
+                    dirty: false,
+                    shutdown: false,
+                }),
+                Condvar::new(),
+            ));
+            let thread_channel = channel.clone();
+            let repo_path = self.repo_path.clone();
+            let thread_handle = app_handle;
+            let thread_config = config.clone();
+            std::thread::Builder::new()
+                .name("git-push".to_string())
+            .spawn(move || {
+                push_loop(repo_path, thread_config, thread_handle, thread_channel)
+            })
+            .ok();
+            self.remote = Some(config);
+            self.push_channel = Some(channel);
+        }
+        self
     }
 
     // ========= 目录与路径 =========
@@ -424,9 +514,32 @@ impl GitStore {
         let _ = super::git_sync::init_repo(&self.repo_path);
     }
 
-    /// git add + commit（失败静默忽略）
+    /// git add + commit（失败静默忽略；远程模式下提交成功后调度去抖推送）
     fn git_commit(&self, message: &str) {
-        let _ = super::git_sync::commit_all(&self.repo_path, message);
+        let remote_active = self
+            .remote
+            .as_ref()
+            .is_some_and(|r| !r.url.is_empty());
+        // 远程模式下本地提交与网络同步共用 git 操作锁，避免 index.lock 竞争
+        let _guard = if remote_active {
+            Some(git_remote::lock_git_ops())
+        } else {
+            None
+        };
+        if super::git_sync::commit_all(&self.repo_path, message).is_ok() && remote_active {
+            drop(_guard);
+            self.schedule_push();
+        }
+    }
+
+    /// 标记存在待推送提交并唤醒后台去抖线程
+    fn schedule_push(&self) {
+        if let Some(channel) = &self.push_channel {
+            if let Ok(mut state) = channel.0.lock() {
+                state.dirty = true;
+                channel.1.notify_one();
+            }
+        }
     }
 
     // ========= ID 生成 =========
@@ -3149,6 +3262,18 @@ impl TodoStore for GitStore {
             overdue_count,
             completion_rate,
         })
+    }
+}
+
+/// Store 释放时通知后台推送线程退出，避免旧配置的悬挂线程
+impl Drop for GitStore {
+    fn drop(&mut self) {
+        if let Some(channel) = &self.push_channel
+            && let Ok(mut state) = channel.0.lock()
+        {
+            state.shutdown = true;
+            channel.1.notify_one();
+        }
     }
 }
 

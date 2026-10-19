@@ -60,6 +60,7 @@ export const profileApi = {
     serverToken?: string,
     serverPassword?: string,
     serverClientSecret?: string,
+    gitPassword?: string,
   ): Promise<void> {
     return await invoke('save_profile_config', {
       profileId,
@@ -69,6 +70,7 @@ export const profileApi = {
       serverToken: serverToken || null,
       serverPassword: serverPassword || null,
       serverClientSecret: serverClientSecret || null,
+      gitPassword: gitPassword || null,
     })
   },
 
@@ -107,6 +109,21 @@ export const profileApi = {
 
   async generateEncryptionKey(): Promise<string> {
     return await invoke('generate_encryption_key')
+  },
+
+  /** 测试 Git 远程仓库连接（ls-remote，不读写本地仓库） */
+  async testGitConnection(
+    url: string,
+    auth: string,
+    username?: string,
+    password?: string,
+  ): Promise<boolean> {
+    return await invoke('test_git_connection', {
+      url,
+      auth,
+      username: username || null,
+      password: password || null,
+    })
   },
 
   async restartWithProfile(profileId: string): Promise<void> {

@@ -201,6 +201,80 @@
               </div>
               <p class="text-xs text-content-tertiary mt-1">{{ t('setup.repoPathHint') }}</p>
             </div>
+
+            <!-- 远程仓库（可选） -->
+            <div>
+              <label class="block text-sm font-medium text-content-secondary mb-1">
+                {{ t('setup.gitRemoteUrl') }}
+              </label>
+              <input
+                v-model="form.git!.remoteUrl"
+                type="text"
+                :placeholder="t('setup.gitRemoteUrlPlaceholder')"
+                class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+              <p class="text-xs text-content-tertiary mt-1">{{ t('setup.gitRemoteUrlHint') }}</p>
+            </div>
+
+            <!-- 远程认证方式（配置了远程地址时显示） -->
+            <div v-if="form.git!.remoteUrl?.trim()">
+              <label class="block text-sm font-medium text-content-secondary mb-1">
+                {{ t('setup.gitRemoteAuth') }}
+              </label>
+              <div class="flex gap-1 bg-surface-dim rounded-lg p-1">
+                <button
+                  v-for="auth in gitAuthOptions"
+                  :key="auth.value"
+                  @click="form.git!.remoteAuth = auth.value"
+                  class="flex-1 px-3 py-1.5 text-sm rounded-md transition-colors"
+                  :class="
+                    (form.git!.remoteAuth || 'none') === auth.value
+                      ? 'bg-surface text-indigo-600 shadow-sm'
+                      : 'text-content-secondary hover:text-content'
+                  "
+                >
+                  {{ auth.label }}
+                </button>
+              </div>
+            </div>
+
+            <!-- HTTPS 用户名 + 密码/PAT -->
+            <template v-if="form.git!.remoteUrl?.trim() && form.git!.remoteAuth === 'https'">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-sm font-medium text-content-secondary mb-1">
+                    {{ t('setup.gitRemoteUsername') }}
+                  </label>
+                  <input
+                    v-model="form.git!.remoteUsername"
+                    :placeholder="t('setup.gitRemoteUsernamePlaceholder')"
+                    class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-content-secondary mb-1">
+                    {{ t('setup.gitRemotePassword') }}
+                  </label>
+                  <input
+                    v-model="gitPassword"
+                    type="password"
+                    :placeholder="t('setup.gitRemotePasswordPlaceholder')"
+                    class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+              <p class="text-xs text-content-tertiary mt-1">
+                {{ t('setup.gitRemotePasswordHint') }}
+              </p>
+            </template>
+
+            <!-- SSH 说明 -->
+            <div
+              v-if="form.git!.remoteUrl?.trim() && form.git!.remoteAuth === 'ssh'"
+              class="p-3 bg-surface-dim rounded-lg text-xs text-content-secondary"
+            >
+              {{ t('setup.gitRemoteSshHint') }}
+            </div>
           </template>
 
           <!-- MySQL / PostgreSQL 配置 -->
@@ -634,7 +708,11 @@
 
         <div class="flex gap-2">
           <button
-            v-if="currentStep === 1 && form.datasource.type !== 'sqlite' && !isGitBackend"
+            v-if="
+              currentStep === 1 &&
+              ((form.datasource.type !== 'sqlite' && !isGitBackend) ||
+                (isGitBackend && !!form.git?.remoteUrl?.trim()))
+            "
             @click="testConn"
             :disabled="testing"
             class="px-4 py-2 border border-edge text-content-secondary rounded-lg hover:bg-surface-dim transition-colors disabled:opacity-50"
@@ -675,7 +753,7 @@ import type { AppSelectOption } from './ui'
 import { parseError, parseErrorToAppError } from '../utils/errorHandler'
 import { availableLocales, setLocale, getCurrentLocale } from '../i18n'
 import type { LocaleType } from '../i18n'
-import type { ProfileConfig } from '../types'
+import type { GitRemoteAuth, ProfileConfig } from '../types'
 import {
   ArrowLeft,
   Check,
@@ -726,6 +804,8 @@ const saveError = ref('')
 const encryptionKeyGenerated = ref(false)
 const encryptionKey = ref('')
 const dbPassword = ref('')
+// Git HTTPS 认证表单（密码/PAT 独立持有，随保存写入 Keychain，不进配置文件）
+const gitPassword = ref('')
 // Server 认证表单
 const serverToken = ref('')
 const serverPassword = ref('')
@@ -781,7 +861,12 @@ const form = reactive<ProfileConfig>({
     authMethod: { type: 'none' },
     timeout: 30,
   },
-  git: props.editProfile?.git || { repoPath: '' },
+  git: {
+    repoPath: props.editProfile?.git?.repoPath || '',
+    remoteUrl: props.editProfile?.git?.remoteUrl || '',
+    remoteAuth: props.editProfile?.git?.remoteAuth || 'none',
+    remoteUsername: props.editProfile?.git?.remoteUsername || '',
+  },
   security: {
     contentEncryption: props.editProfile?.security?.contentEncryption || false,
   },
@@ -814,6 +899,13 @@ const databaseTypeOptions = computed(() => [
   { value: 'sqlite', label: t('setup.dbType.sqlite'), icon: HardDrive },
   { value: 'mysql', label: t('setup.dbType.mysql'), icon: Database },
   { value: 'postgres', label: t('setup.dbType.postgres'), icon: Server },
+])
+
+/** Git 远程认证分段选项 */
+const gitAuthOptions = computed<{ value: GitRemoteAuth; label: string }[]>(() => [
+  { value: 'none', label: t('setup.gitAuthNone') },
+  { value: 'https', label: t('setup.gitAuthHttps') },
+  { value: 'ssh', label: t('setup.gitAuthSsh') },
 ])
 
 const sslModeOptions = computed(() => {
@@ -1077,6 +1169,16 @@ const testConn = async () => {
         serverPassword.value || undefined,
         serverHeaderValue.value || undefined,
       )
+    } else if (isGitBackend.value) {
+      if (!form.git?.remoteUrl?.trim()) {
+        throw new Error(t('setup.gitRemoteUrlRequired'))
+      }
+      await profileApi.testGitConnection(
+        form.git.remoteUrl.trim(),
+        form.git.remoteAuth || 'none',
+        form.git.remoteUsername || undefined,
+        gitPassword.value || undefined,
+      )
     } else {
       await profileApi.testConnection(form, dbPassword.value || undefined)
     }
@@ -1101,6 +1203,7 @@ const saveAndConnect = async () => {
   try {
     const profileId = props.editProfile?.id || nameToId(form.name) || `profile-${Date.now()}`
 
+    // 先保存 profile 配置到磁盘
     await profileApi.saveProfile(
       profileId,
       form,
@@ -1110,10 +1213,17 @@ const saveAndConnect = async () => {
       serverToken.value || undefined,
       serverPassword.value || undefined,
       serverClientSecret.value || undefined,
+      // Git HTTPS 密码/访问令牌（写入 Keychain）
+      gitPassword.value || undefined,
     )
 
-    // 热连接新 profile（不重启进程）
-    await profileApi.reconnectProfile(profileId)
+    // 热连接新 profile——后端已改为锁外 fire-and-forget 做远程同步，
+    // 连接返回即表示状态切换完成（同步在后台跑，事件通知）。
+    // 即使连接阶段有问题也不阻塞进入主界面，用户可手动重试。
+    profileApi.reconnectProfile(profileId).catch((e) => {
+      saveError.value = parseError(e)
+      saving.value = false
+    })
 
     emit('complete')
   } catch (e: unknown) {

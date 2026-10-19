@@ -401,9 +401,18 @@ export interface ServerConfig {
   timeout: number
 }
 
+/** Git 远程认证方式："none" 公开仓库 / "https" 用户名+密码(PAT) / "ssh" 系统 ssh 密钥 */
+export type GitRemoteAuth = 'none' | 'https' | 'ssh'
+
 /** Git 仓库存储配置（backend = "git" 时使用，IPC 使用 camelCase） */
 export interface GitStoreConfig {
   repoPath: string
+  /** 远程仓库地址（留空表示纯本地仓库） */
+  remoteUrl?: string
+  /** 远程认证方式 */
+  remoteAuth?: GitRemoteAuth
+  /** HTTPS 认证用户名（密码/PAT 存 Keychain，不落配置） */
+  remoteUsername?: string
 }
 
 /** Profile 配置 */

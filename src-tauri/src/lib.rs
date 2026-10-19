@@ -18,7 +18,7 @@ use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem, SubmenuBuild
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder};
 use tauri::{Emitter, Manager, RunEvent};
 use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
-use tracing::{error, info};
+use tracing::{error, info, warn};
 use tracing_subscriber::Layer;
 use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -146,6 +146,7 @@ pub fn run_with_config(config_path: Option<String>) {
             command::test_server_connection,
             command::generate_encryption_key,
             command::git_available,
+            command::test_git_connection,
             command::get_profile_index,
             command::set_auto_connect,
             command::restart_with_profile,
@@ -533,10 +534,30 @@ async fn setup_normal_mode(
                 let encryption_key: Option<String> = None;
 
                 let repo_path = std::path::PathBuf::from(&git_config.repo_path);
-                let git_store = std::sync::Arc::new(crate::store::GitStore::new(
-                    repo_path,
-                    encryption_key.clone(),
-                ));
+
+                // 构造远程配置并在连接前做一次双向同步；失败仅告警，不阻塞启动
+                let remote = crate::command::build_git_remote(&profile_id, git_config);
+                if !remote.url.is_empty() {
+                    let sync_remote = remote.clone();
+                    let sync_path = repo_path.clone();
+                    let sync_handle = handle.clone();
+                    let sync_result = tauri::async_runtime::spawn_blocking(move || {
+                        crate::store::git_remote::ensure_and_sync(
+                            &sync_path,
+                            &sync_remote,
+                            Some(&sync_handle),
+                        )
+                    })
+                    .await;
+                    if let Ok(Err(e)) = sync_result {
+                        warn!("Git 启动同步失败（{}）：{}", e.code, e.message);
+                    }
+                }
+
+                let git_store = std::sync::Arc::new(
+                    crate::store::GitStore::new(repo_path, encryption_key.clone())
+                        .with_remote(Some(remote), Some(handle.clone())),
+                );
 
                 (
                     config::Configuration::default(),

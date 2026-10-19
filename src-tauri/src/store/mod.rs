@@ -13,6 +13,7 @@
 
 mod database_store;
 mod git_store;
+pub(crate) mod git_remote;
 pub(crate) mod git_sync;
 mod server_store;
 

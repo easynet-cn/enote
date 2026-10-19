@@ -538,6 +538,17 @@ export default {
     GIT_FEATURE_NOT_SUPPORTED: 'This feature is not available when using a git backend',
     GIT_CONFIG_MISSING: 'Git repository path is not configured, please select a profile first',
     GIT_NOT_AVAILABLE: 'Git is not installed on this system. Please install Git and try again',
+    GIT_AUTH_FAILED:
+      'Git remote authentication failed. Check username, password/token, or SSH key: {0}',
+    GIT_REPO_NOT_FOUND: 'Git remote repository not found or access denied: {0}',
+    GIT_NETWORK_FAILED: 'Git network error, please check your connection and retry: {0}',
+    GIT_PUSH_REJECTED:
+      'Push rejected (remote has new commits). The app tried to integrate automatically; resolve manually if it persists: {0}',
+    GIT_CONFLICT:
+      'Conflicts with remote content; this integration was aborted automatically. Local commits are unaffected: {0}',
+    GIT_DIRECTORY_NOT_EMPTY:
+      'The directory exists, is non-empty, but is not a Git repository. Choose another local path: {0}',
+    GIT_SYNC_FAILED: 'Git remote operation failed: {0}',
     SYNC_FEATURE_NOT_SUPPORTED: 'Cross-profile sync is only available with a database backend',
     // Backup errors
     BACKUP_FILE_NOT_FOUND: 'Backup file not found: {0}',
@@ -1154,6 +1165,26 @@ export default {
     selectRepoDir: 'Browse',
     repoPathHint:
       'The directory will be created and initialized as a Git repository if it does not exist',
+    // Git remote config
+    gitRemoteUrl: 'Remote URL (optional)',
+    gitRemoteUrlPlaceholder: 'https://github.com/user/notes.git or git@github.com:user/notes.git',
+    gitRemoteUrlHint:
+      'Leave empty for local-only use. When set, it clones/syncs on connect and pushes changes automatically',
+    gitRemoteUrlRequired: 'Please enter the remote URL first',
+    gitRemoteAuth: 'Authentication',
+    gitAuthNone: 'None (public)',
+    gitAuthHttps: 'HTTPS',
+    gitAuthSsh: 'SSH',
+    gitRemoteUsername: 'Username',
+    gitRemoteUsernamePlaceholder: 'Git service username',
+    gitRemotePassword: 'Password / access token',
+    gitRemotePasswordPlaceholder: 'A personal access token (PAT) is recommended for GitHub/Gitee',
+    gitRemotePasswordHint:
+      'Credentials are stored encrypted in the system Keychain; leave empty when editing to keep the current one',
+    gitRemoteSshHint:
+      'Uses system SSH: keys and config under ~/.ssh are read automatically. Make sure your key is configured',
+    gitSyncSuccess: 'Remote repository synced successfully',
+    gitPushSuccess: 'Local changes pushed to remote',
     host: 'Host',
     hostPlaceholder: 'e.g. localhost or 192.168.1.100',
     port: 'Port',

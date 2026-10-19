@@ -16,8 +16,7 @@
           <button
             v-if="props.showClose"
             @click="emit('close')"
-            :disabled="connecting"
-            class="p-1.5 text-content-tertiary hover:text-content hover:bg-surface-dim rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            class="p-1.5 text-content-tertiary hover:text-content hover:bg-surface-dim rounded-lg transition-colors"
             :title="t('common.close')"
           >
             <X class="w-5 h-5" />

@@ -121,8 +121,37 @@ pub struct SecurityConfig {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct GitStoreConfig {
     /// Git 仓库路径
-    #[serde(default, skip_serializing_if = "String::is_empty")]
+    #[serde(
+        default,
+        rename = "repo-path",
+        alias = "repo_path",
+        skip_serializing_if = "String::is_empty"
+    )]
     pub repo_path: String,
+    /// 远程仓库地址（留空表示纯本地仓库）
+    #[serde(
+        default,
+        rename = "remote-url",
+        alias = "remote_url",
+        skip_serializing_if = "String::is_empty"
+    )]
+    pub remote_url: String,
+    /// 远程认证方式："none"（公开仓库）、"https"（用户名+密码/PAT）、"ssh"（系统 ssh 密钥）
+    #[serde(
+        default,
+        rename = "remote-auth",
+        alias = "remote_auth",
+        skip_serializing_if = "String::is_empty"
+    )]
+    pub remote_auth: String,
+    /// HTTPS 认证用户名（密码/PAT 存 Keychain，不落 YAML）
+    #[serde(
+        default,
+        rename = "remote-username",
+        alias = "remote_username",
+        skip_serializing_if = "String::is_empty"
+    )]
+    pub remote_username: String,
 }
 
 /// 单个 Profile 配置

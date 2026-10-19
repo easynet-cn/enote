@@ -116,6 +116,22 @@ pub fn get_db_password(profile_name: &str) -> Result<Option<String>> {
 }
 
 // ============================================================================
+// Git 远程认证相关
+// ============================================================================
+
+fn git_password_key(profile_name: &str) -> String {
+    format!("{}.git_password", profile_name)
+}
+
+pub fn set_git_password(profile_name: &str, password: &str) -> Result<()> {
+    set_secret(&git_password_key(profile_name), password)
+}
+
+pub fn get_git_password(profile_name: &str) -> Result<Option<String>> {
+    get_secret(&git_password_key(profile_name))
+}
+
+// ============================================================================
 // Server 认证相关
 // ============================================================================
 
@@ -210,6 +226,8 @@ pub fn get_cloud_backup_password(profile_name: &str) -> Result<Option<String>> {
 pub fn delete_profile_secrets(profile_name: &str) -> Result<()> {
     delete_secret(&encryption_key_name(profile_name))?;
     delete_secret(&db_password_key_name(profile_name))?;
+    // Git 远程认证
+    delete_secret(&git_password_key(profile_name))?;
     // Server 相关 secrets
     delete_secret(&server_token_key(profile_name))?;
     delete_secret(&server_refresh_token_key(profile_name))?;
