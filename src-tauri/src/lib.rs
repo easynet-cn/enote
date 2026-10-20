@@ -783,8 +783,13 @@ fn setup_app_menu(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
         MenuItemBuilder::with_id("help-manual", t_simple("help.menuItem")).build(app)?;
     let check_update_item =
         MenuItemBuilder::with_id("check-update", t_simple("help.checkUpdate")).build(app)?;
+    // 切换笔记库入口（点击后 emit 前端事件，由前端打开 Profile 选择器）
+    let switch_profile_item =
+        MenuItemBuilder::with_id("switch-profile", t_simple("profile.menuItem")).build(app)?;
 
     let help_menu = SubmenuBuilder::new(app, t_simple("help.menuTitle"))
+        .item(&switch_profile_item)
+        .separator()
         .item(&help_item)
         .separator()
         .item(&check_update_item)
@@ -829,6 +834,11 @@ fn setup_app_menu(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>
         "help-manual" => {
             if let Some(window) = handle.get_webview_window("main") {
                 let _ = window.emit("menu-help-manual", ());
+            }
+        }
+        "switch-profile" => {
+            if let Some(window) = handle.get_webview_window("main") {
+                let _ = window.emit("menu-switch-profile", ());
             }
         }
         "check-update" => {

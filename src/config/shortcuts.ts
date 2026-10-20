@@ -76,6 +76,12 @@ export const SHORTCUT_DEFS: ShortcutDef[] = [
     descriptionKey: 'shortcuts.helpManual',
     system: false,
   },
+  {
+    id: 'switch-profile',
+    defaultBinding: { key: 'p', ctrl: true, shift: true },
+    descriptionKey: 'shortcuts.switchProfile',
+    system: false,
+  },
 ]
 
 /** 按 id 查找快捷键定义 */

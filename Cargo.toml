@@ -31,7 +31,7 @@ sea-orm = { version = "2.0", features = ["sqlx-sqlite", "runtime-tokio"] }
 sea-orm-migration = { version = "2.0", features = ["runtime-tokio", "sqlx-sqlite"] }
 
 # Async
-tokio = { version = "1.53", features = ["rt", "rt-multi-thread", "macros", "sync", "time", "io-util", "fs"] }
+tokio = { version = "1.54", features = ["rt", "rt-multi-thread", "macros", "sync", "time", "io-util", "fs"] }
 async-trait = "0.1"
 
 # Error handling

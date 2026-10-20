@@ -129,6 +129,7 @@ fn zh_cn_messages() -> HashMap<String, String> {
     // 帮助菜单
     messages.insert("help.menuTitle".to_string(), "帮助".to_string());
     messages.insert("help.menuItem".to_string(), "帮助手册".to_string());
+    messages.insert("profile.menuItem".to_string(), "切换笔记库".to_string());
     messages.insert("help.checkUpdate".to_string(), "检查更新".to_string());
 
     // 同步进度
@@ -302,6 +303,7 @@ fn en_us_messages() -> HashMap<String, String> {
     // Help menu
     messages.insert("help.menuTitle".to_string(), "Help".to_string());
     messages.insert("help.menuItem".to_string(), "Help Manual".to_string());
+    messages.insert("profile.menuItem".to_string(), "Switch Note Library".to_string());
     messages.insert(
         "help.checkUpdate".to_string(),
         "Check for Updates".to_string(),

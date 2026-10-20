@@ -433,6 +433,7 @@ export default {
     lockApp: '锁定应用',
     switchLayout: '切换布局模式',
     helpManual: '帮助手册',
+    switchProfile: '切换笔记库',
   },
 
   // 命令面板

@@ -657,6 +657,10 @@ const shortcutHandlerMap: Record<string, () => void> = {
   },
   'switch-layout': switchLayoutHandler,
   'help-manual': () => openHelp(),
+  'switch-profile': () => {
+    // 仅主界面模式响应（首次启动/向导/选择模式下忽略，避免中断流程）
+    if (appMode.value === 'main') switchToProfileSelector()
+  },
 }
 
 // 响应式快捷键（当用户修改绑定后自动更新）
@@ -968,6 +972,9 @@ const enterMainMode = async () => {
   // 监听菜单栏事件
   listen('menu-help-manual', () => openHelp())
   listen('menu-check-update', () => updateCheckerRef.value?.checkForUpdates())
+  listen('menu-switch-profile', () => {
+    if (appMode.value === 'main') switchToProfileSelector()
+  })
 
   // Git 远程同步结果（连接时同步 / 提交后自动推送）
   listen<{ ok: boolean; operation: string; code?: string; message: string }>(

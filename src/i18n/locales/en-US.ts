@@ -437,6 +437,7 @@ export default {
     lockApp: 'Lock App',
     switchLayout: 'Switch Layout Mode',
     helpManual: 'Help Manual',
+    switchProfile: 'Switch Note Library',
   },
 
   // Command Palette
