@@ -56,9 +56,10 @@ A cross-platform desktop note-taking application built with Tauri, supporting ri
 - **Keychain Integration** - Passwords and keys stored in OS keychain (macOS Keychain / Windows Credential Store / Linux Secret Service)
 
 ### Data Management
-- **Multi-Profile Management** - Multiple database profiles with startup selection or auto-connect
+- **Multi-Profile Management** - Multiple backend profiles with startup selection or auto-connect; switch libraries anytime via Help menu or Ctrl/Cmd+Shift+P
 - **Setup Wizard** - First-launch guided configuration for SQLite/MySQL/PostgreSQL/Git Repository/ENote Server
-- **Git Repository Backend** - Notes and todos stored as Markdown+YAML files in a Git repository with automatic commits for version history; notes are plain-text files openable in any editor
+- **Git Repository Backend** - Notes and todos stored as plain Markdown+YAML files in a Git repository — readable by any editor, with automatic commits forming a complete version history you can inspect with any Git tool
+- **Git Remote Sync** - Optionally attach a remote (GitHub/GitLab/Gitee/self-hosted): clones on first connect, pulls (rebase) and pushes automatically on every save; HTTPS personal access token and SSH key auth supported; offline-first — sync failures never block local work and retry on the next commit
 - **ENote Server Backend** - Connect to remote ENote-compatible API servers with multiple auth methods (Bearer/Basic/JWT/Custom Header/OAuth 2.0)
 - **SSL/TLS Authentication** - MySQL/PostgreSQL support certificate-based login
 - **Data Backup** - SQL/Excel/CSV export/import (database backend) with scheduled auto-backup; Git repository backend supports full-repo zip backup and restore
@@ -235,7 +236,7 @@ On **first launch**, the Setup Wizard guides you through backend configuration:
 - **SQLite** - Local file database, ready to use out of the box
 - **MySQL** - Supports password login and SSL certificate authentication
 - **PostgreSQL** - Supports password login and SSL certificate authentication
-- **Git Repository** - Notes stored as Markdown files in a Git repository with automatic version control. The directory is created and initialized automatically if it does not exist (requires git installed)
+- **Git Repository** - Notes stored as Markdown files in a Git repository with automatic version control. The directory is created and initialized automatically if it does not exist (requires git installed). Optionally configure a remote URL to sync with GitHub/GitLab/Gitee or a self-hosted server — the app clones on first connect, then pulls (rebase) and pushes automatically on every save. Supports HTTPS (personal access token) and SSH (system keys) authentication, with credentials stored in the OS keychain
 - **ENote Server** - Connect to a remote ENote-compatible API server with multiple authentication methods:
   - Bearer Token, Basic Auth, JWT (auto-refresh), Custom Header, OAuth 2.0
 

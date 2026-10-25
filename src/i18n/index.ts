@@ -12,6 +12,15 @@ const messages = {
 
 const supportedLocales: LocaleType[] = ['zh-CN', 'en-US']
 
+// 远程仓库地址示例。
+// 注意：含有 `@` 的字符串【不能】直接写进 i18n 消息文本 —— vue-i18n / @intlify
+// 会把 `@` 当作「链接消息」(linked message, 形如 `@:key`) 的起始标记，导致消息编译
+// 抛出 `Invalid linked format` 错误，进而在渲染 SetupWizard 的 Git 配置步骤时
+// 触发未捕获的渲染异常 → 整个应用白屏（见 issue: 初始化选择 GitStore 后点「下一步」白屏）。
+// 因此示例中的字面量 `@` 通过插值参数在运行时注入，编译器不会解析它们。
+export const GIT_REMOTE_HTTPS_EXAMPLE = 'https://github.com/user/notes.git'
+export const GIT_REMOTE_SSH_EXAMPLE = 'git@github.com:user/notes.git'
+
 function matchLocale(lang: string): LocaleType {
   // 精确匹配
   if (supportedLocales.includes(lang as LocaleType)) {

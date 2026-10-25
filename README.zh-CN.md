@@ -56,9 +56,10 @@
 - **钥匙串集成** - 密码和密钥存储在 OS 钥匙串（macOS Keychain / Windows Credential Store / Linux Secret Service）
 
 ### 数据管理
-- **多配置管理** - 支持多个数据库配置（Profile），启动时选择或自动连接
+- **多配置管理** - 支持多个后端配置（Profile），启动时选择或自动连接；也可通过帮助菜单或 Ctrl/Cmd+Shift+P 随时切换笔记库
 - **设置向导** - 首次启动引导配置后端，支持 SQLite/MySQL/PostgreSQL/Git 仓库/ENote Server
-- **Git 仓库后端** - 笔记与待办以 Markdown+YAML 文件存储于 Git 仓库，自动提交形成版本历史，笔记即纯文本文件、可被任何编辑器直接打开
+- **Git 仓库后端** - 笔记与待办以纯文本 Markdown+YAML 文件存储于 Git 仓库，可被任何编辑器直接打开；自动提交形成完整版本历史，可用任意 Git 工具查看追溯
+- **Git 远程同步** - 可选对接远程仓库（GitHub/GitLab/Gitee/自建服务）：首次连接自动克隆，之后每次保存自动拉取（rebase）并推送；支持 HTTPS 访问令牌与 SSH 密钥认证；离线优先——同步失败不影响本地使用，下次提交自动重试
 - **ENote Server 后端** - 连接远程 ENote 兼容 API 服务器，支持多种认证方式（Bearer/Basic/JWT/自定义 Header/OAuth 2.0）
 - **SSL/TLS 认证** - MySQL/PostgreSQL 支持证书登录
 - **数据备份** - SQL/Excel/CSV 导出导入（数据库后端），自动定时备份；Git 仓库后端支持整个仓库 zip 打包备份与恢复
@@ -235,7 +236,7 @@ pnpm test
 - **SQLite** - 本地文件数据库，开箱即用，无需安装额外服务
 - **MySQL** - 支持密码登录和 SSL 证书认证
 - **PostgreSQL** - 支持密码登录和 SSL 证书认证
-- **Git 仓库** - 笔记以 Markdown 文件存储在 Git 仓库中，自动版本管理。目录不存在时自动创建并初始化，需系统已安装 git 命令
+- **Git 仓库** - 笔记以 Markdown 文件存储在 Git 仓库中，自动版本管理。目录不存在时自动创建并初始化，需系统已安装 git 命令。可选配置远程仓库 URL 与 GitHub/GitLab/Gitee 或自建服务同步——首次连接自动克隆，之后每次保存自动拉取（rebase）并推送；支持 HTTPS（访问令牌）与 SSH（系统密钥）认证，凭据安全存储在系统钥匙串
 - **ENote Server** - 连接远程 ENote 兼容 API 服务器，支持多种认证方式：
   - Bearer Token、Basic Auth、JWT（自动刷新）、自定义 Header、OAuth 2.0
 

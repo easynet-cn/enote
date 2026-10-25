@@ -210,8 +210,14 @@
               <input
                 v-model="form.git!.remoteUrl"
                 type="text"
-                :placeholder="t('setup.gitRemoteUrlPlaceholder')"
+                :placeholder="
+                  t('setup.gitRemoteUrlPlaceholder', {
+                    httpsExample: GIT_REMOTE_HTTPS_EXAMPLE,
+                    sshExample: GIT_REMOTE_SSH_EXAMPLE,
+                  })
+                "
                 class="w-full px-3 py-2 border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                @blur="onGitRemoteUrlBlur"
               />
               <p class="text-xs text-content-tertiary mt-1">{{ t('setup.gitRemoteUrlHint') }}</p>
             </div>
@@ -737,12 +743,24 @@
           </button>
         </div>
       </div>
+
+      <!-- 连接测试结果（常驻内联，避免被右上角 toast 忽略） -->
+      <div v-if="currentStep === 1 && testResult" class="px-8 pb-3 -mt-2">
+        <div
+          class="flex items-center gap-2 text-sm font-medium"
+          :class="testResult.ok ? 'text-green-600' : 'text-red-600'"
+        >
+          <Check v-if="testResult.ok" class="w-4 h-4 flex-shrink-0" />
+          <X v-else class="w-4 h-4 flex-shrink-0" />
+          <span>{{ testResult.message }}</span>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { open, save } from '@tauri-apps/plugin-dialog'
 import { appDataDir, join } from '@tauri-apps/api/path'
@@ -751,7 +769,13 @@ import { showNotification } from './ui/notification'
 import { AppSelect } from './ui'
 import type { AppSelectOption } from './ui'
 import { parseError, parseErrorToAppError } from '../utils/errorHandler'
-import { availableLocales, setLocale, getCurrentLocale } from '../i18n'
+import {
+  availableLocales,
+  setLocale,
+  getCurrentLocale,
+  GIT_REMOTE_HTTPS_EXAMPLE,
+  GIT_REMOTE_SSH_EXAMPLE,
+} from '../i18n'
 import type { LocaleType } from '../i18n'
 import type { GitRemoteAuth, ProfileConfig } from '../types'
 import {
@@ -799,6 +823,8 @@ const toggleLang = () => {
 
 const currentStep = ref(0)
 const testing = ref(false)
+// 测试连接结果（常驻内联展示，避免被右上角 toast 忽略）
+const testResult = ref<{ ok: boolean; message: string } | null>(null)
 const saving = ref(false)
 const saveError = ref('')
 const encryptionKeyGenerated = ref(false)
@@ -907,6 +933,29 @@ const gitAuthOptions = computed<{ value: GitRemoteAuth; label: string }[]>(() =>
   { value: 'https', label: t('setup.gitAuthHttps') },
   { value: 'ssh', label: t('setup.gitAuthSsh') },
 ])
+
+/**
+ * 根据远程地址推断认证方式：
+ * - https:// 或 http:// → 'https'
+ * - ssh:// 或 git@ → 'ssh'
+ * - 其他（空/本地路径等）→ 'none'
+ */
+const inferGitAuthFromUrl = (url: string): GitRemoteAuth => {
+  const u = url.trim().toLowerCase()
+  if (u.startsWith('https://') || u.startsWith('http://')) return 'https'
+  if (u.startsWith('ssh://') || u.startsWith('git@')) return 'ssh'
+  return 'none'
+}
+
+/** 远程地址失焦时，自动把认证方式切到与协议匹配的选项 */
+const onGitRemoteUrlBlur = () => {
+  const inferred = inferGitAuthFromUrl(form.git?.remoteUrl || '')
+  if (inferred !== 'none') {
+    form.git!.remoteAuth = inferred
+  }
+  // 地址变化后，旧的连接测试结果不再可信
+  testResult.value = null
+}
 
 const sslModeOptions = computed(() => {
   const base = [
@@ -1161,6 +1210,7 @@ const toggleEncryption = async () => {
 
 const testConn = async () => {
   testing.value = true
+  testResult.value = null
   try {
     if (isServerBackend.value && form.server) {
       await profileApi.testServerConnection(
@@ -1182,18 +1232,43 @@ const testConn = async () => {
     } else {
       await profileApi.testConnection(form, dbPassword.value || undefined)
     }
-    showNotification({ type: 'success', message: t('setup.testSuccess') })
+    const okMsg = t('setup.testSuccess')
+    showNotification({ type: 'success', message: okMsg })
+    testResult.value = { ok: true, message: okMsg }
   } catch (e: unknown) {
     const appError = parseErrorToAppError(e)
+    const errMsg = `${t('setup.testFailed')}: ${appError.message}`
     showNotification({
       type: 'error',
-      message: `${t('setup.testFailed')}: ${appError.message}`,
+      message: errMsg,
       detail: appError.details,
     })
+    testResult.value = { ok: false, message: errMsg }
   } finally {
     testing.value = false
   }
 }
+
+// 连接相关配置被修改后，清除上一轮测试结果的常驻提示，避免误导
+watch(
+  () => [
+    form.git?.remoteUrl,
+    form.git?.remoteAuth,
+    form.git?.remoteUsername,
+    gitPassword.value,
+    form.datasource.host,
+    form.datasource.port,
+    form.datasource.database,
+    form.datasource.username,
+    dbPassword.value,
+    form.server?.url,
+    serverToken.value,
+    serverPassword.value,
+  ],
+  () => {
+    testResult.value = null
+  },
+)
 
 const saveAndConnect = async () => {
   saving.value = true
@@ -1217,13 +1292,18 @@ const saveAndConnect = async () => {
       gitPassword.value || undefined,
     )
 
-    // 热连接新 profile——后端已改为锁外 fire-and-forget 做远程同步，
-    // 连接返回即表示状态切换完成（同步在后台跑，事件通知）。
-    // 即使连接阶段有问题也不阻塞进入主界面，用户可手动重试。
-    profileApi.reconnectProfile(profileId).catch((e) => {
+    // 必须等待 reconnectProfile 完成（后端已把 note_store 就绪）再进入主界面，
+    // 否则 initialize 的并行数据加载会因 note_store 尚为 None 而全部报 DB_NOT_CONNECTED，
+    // 表现为「加载笔记 / 笔记本 / 标签失败」的一堆前端错误提示。
+    // 注意：reconnect 内部的远程同步是后端 fire-and-forget（spawn 后不阻塞），
+    // 此处 await 不会卡在 Git 同步上，仅等状态切换（note_store 就绪）即返回。
+    try {
+      await profileApi.reconnectProfile(profileId)
+    } catch (e: unknown) {
       saveError.value = parseError(e)
       saving.value = false
-    })
+      return
+    }
 
     emit('complete')
   } catch (e: unknown) {

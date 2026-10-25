@@ -236,10 +236,28 @@ security:
   content-encryption: false
 ```
 
+**Git Repository Profile example (`profiles/team-git.yml`):**
+
+```yaml
+name: Team Wiki
+icon: ''
+backend: git
+git:
+  repo-path: /Users/alice/notes/team-wiki
+  remote-url: https://github.com/alice/team-wiki.git
+  remote-auth: https
+  remote-username: alice
+datasource:
+  type: sqlite
+security:
+  content-encryption: false
+```
+
 > **Note:**
 > - Database passwords, encryption keys, and server authentication credentials (tokens, passwords, client secrets, etc.) are never stored in configuration files; they are securely stored in the operating system keychain.
-> - When the `backend` field is `"server"`, a remote server backend is used. When omitted or set to `"database"`, a database backend is used.
+> - When the `backend` field is `"server"`, a remote server backend is used. When omitted or set to `"database"`, a database backend is used. When set to `"git"`, the Git repository backend is used.
 > - For Server backend profiles, the `datasource` field retains default values and is not used.
+> - For the Git backend, the HTTPS access token is also stored in the keychain (entry `{profile_id}.git_password`), never in the configuration file. `remote-auth` accepts `none` / `https` / `ssh`; leaving `remote-url` empty means local-only use without remote sync.
 
 ### 21.5.1 Server Backend Feature Notes
 
@@ -254,6 +272,24 @@ When using the ENote Server backend, the following features behave differently c
 | Cross-Profile Sync | Supported | Not supported |
 | Auto Backup | Supported | Not supported |
 | Operation Logs | Recorded locally | Recorded on server via API |
+
+### 21.5.2 Git Backend Remote Sync
+
+When a remote URL is configured for the Git repository backend, the app automatically keeps the local repository in sync with the remote:
+
+| Trigger | Behavior |
+|---------|----------|
+| First connect (empty local directory) | Automatically clones the remote repository |
+| Existing local repository | Pulls remote updates (`pull --rebase`), then pushes local commits |
+| Every note/todo save | After the automatic commit, pushes to the remote in the background after ~2 seconds (continuous edits are coalesced into a single push) |
+
+**Key behaviors:**
+
+- **Offline-first:** When the remote is unreachable (offline, auth failure, etc.), local features are fully unaffected. Pushing retries on the next commit, and a notification explains the failure.
+- **Conflict protection:** If a pull hits a content conflict, the rebase is automatically aborted, local data stays unchanged, and the user is prompted to resolve it manually with git commands in the repository directory.
+- **Never force-push:** A rejected push (non-fast-forward) is never retried with force, so remote data is never overwritten.
+- **Credential security:** HTTPS access tokens are stored in the operating system keychain; SSH uses system keys and ssh-agent — the app never stores private keys.
+- Sync results (success/failure) are surfaced as real-time notifications.
 
 ### 21.6 Content Encryption and Key Management
 

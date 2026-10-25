@@ -2,7 +2,7 @@
   "name": "enote",
   "private": true,
   "version": "1.4.0",
-  "packageManager": "pnpm@12.14.0",
+  "packageManager": "pnpm@12.15.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -21,7 +21,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@lucide/vue": "^1.59.0",
+    "@lucide/vue": "^1.61.0",
     "@tauri-apps/api": "^2.12.4",
     "@tauri-apps/plugin-dialog": "^2.8.3",
     "@tauri-apps/plugin-fs": "^2.7.1",
@@ -59,7 +59,7 @@
     "dompurify": "^3.4.17",
     "htmldiff-js": "^1.0.5",
     "jszip": "^3.10.2",
-    "katex": "^0.19.0",
+    "katex": "^0.19.1",
     "lowlight": "^3.3.0",
     "marked": "^18.1.1",
     "pinia": "^4.1.0",
@@ -79,11 +79,11 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
-    "@tauri-apps/cli": "^2.12.3",
+    "@tauri-apps/cli": "^2.12.4",
     "@types/diff-match-patch": "^1.0.36",
     "@types/sortablejs": "^1.15.9",
     "@vitejs/plugin-vue": "^6.0.10",
-    "@vitest/eslint-plugin": "^1.6.27",
+    "@vitest/eslint-plugin": "^1.6.28",
     "@vue/eslint-config-prettier": "^10.2.0",
     "@vue/eslint-config-typescript": "^14.9.0",
     "@vue/test-utils": "^2.5.1",
@@ -96,7 +96,7 @@
     "prettier": "^3.9.10",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.3",
-    "vite": "^8.3.4",
+    "vite": "^8.3.5",
     "vitest": "^5.0.5",
     "vue-tsc": "^3.3.13"
   }

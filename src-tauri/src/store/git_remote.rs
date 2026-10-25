@@ -251,8 +251,12 @@ pub fn sync_after_commit(
                 let err = GitSyncError::from_git(&e);
                 if err.code == "GIT_CONFLICT" {
                     let _ = git_sync::rebase_abort(repo_path);
+                    return Err(err);
                 }
-                return Err(err);
+                if err.code != "GIT_REMOTE_EMPTY" {
+                    return Err(err);
+                }
+                // 空远程无可拉取内容，跳过 rebase 直接推送首个提交
             }
             push_local(repo_path, remote)?;
         }

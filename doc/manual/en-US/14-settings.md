@@ -162,7 +162,7 @@ After enabling the master switch, expand the individual tool switch list to prec
 In the Settings dialog, the **Profile Management** section provides the following:
 
 - **Current Profile Info:** Displays the name and database type of the currently active profile.
-- **Switch Profile:** Click the "Switch Profile" button to return to the profile selection page. From there you can:
+- **Switch Profile:** Click the "Switch Profile" button to return to the profile selection page. You can also open it anytime via **Help menu → Switch Note Library** or the shortcut **Ctrl/Cmd + Shift + P** (rebindable in Shortcut Settings). From there you can:
   - Select an existing database configuration and connect
   - Click "New Profile" to enter the Setup Wizard and create a new database configuration
   - Edit or delete existing configurations

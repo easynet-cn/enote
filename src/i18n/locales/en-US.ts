@@ -1168,7 +1168,7 @@ export default {
       'The directory will be created and initialized as a Git repository if it does not exist',
     // Git remote config
     gitRemoteUrl: 'Remote URL (optional)',
-    gitRemoteUrlPlaceholder: 'https://github.com/user/notes.git or git@github.com:user/notes.git',
+    gitRemoteUrlPlaceholder: '{httpsExample} or {sshExample}',
     gitRemoteUrlHint:
       'Leave empty for local-only use. When set, it clones/syncs on connect and pushes changes automatically',
     gitRemoteUrlRequired: 'Please enter the remote URL first',

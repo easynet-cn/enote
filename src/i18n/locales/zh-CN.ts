@@ -1155,7 +1155,7 @@ export default {
     repoPathHint: '目录不存在时将自动创建并初始化为 Git 仓库',
     // Git 远程配置
     gitRemoteUrl: '远程仓库地址（可选）',
-    gitRemoteUrlPlaceholder: 'https://github.com/user/notes.git 或 git@github.com:user/notes.git',
+    gitRemoteUrlPlaceholder: '{httpsExample} 或 {sshExample}',
     gitRemoteUrlHint: '留空则仅在本地使用；填写后连接时自动克隆/同步，每次更改自动推送',
     gitRemoteUrlRequired: '请先填写远程仓库地址',
     gitRemoteAuth: '远程认证方式',

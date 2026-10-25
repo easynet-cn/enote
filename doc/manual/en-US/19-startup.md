@@ -25,6 +25,7 @@ The Setup Wizard includes the following steps:
 - **SQLite (Recommended):** Local file database, no additional service installation required, ready to use out of the box. Suitable for personal use.
 - **MySQL:** Network database, suitable for team collaboration or remote access. Requires pre-installation of MySQL 5.7+.
 - **PostgreSQL:** Feature-rich enterprise database. Requires pre-installation of PostgreSQL 12+.
+- **Git Repository:** Notes and todos are stored as plain-text Markdown+YAML files in a Git repository, with automatic commits forming a complete version history. Files can be opened in any editor and inspected with any Git tool. Ideal for users who want full ownership of their data. Requires git installed on the system.
 - **ENote Server:** Connect to a remote ENote-compatible API server. Suitable for self-hosted services or enterprise deployments.
 
 **Step 2: Configure Connection**
@@ -33,6 +34,12 @@ Fill in the corresponding connection parameters based on the selected backend ty
 
 - **Profile Name:** Give this configuration an identifiable name (e.g., "Local Notes", "Work Database").
 - **SQLite:** Select the database file storage path. Supports "New" (choose a save location to create a new database) and "Open Existing" (select an existing .db file). Leave empty to use the default location (application data directory).
+- **Git Repository:** Choose a local repository directory (automatically created and initialized with git init if it does not exist). Optionally provide a remote repository URL to sync with GitHub/GitLab/Gitee or a self-hosted Git server:
+  - **Leave empty:** Local-only use, no remote connection.
+  - **HTTPS auth:** Enter a username and a Personal Access Token (a token is recommended over your account password). The token is securely stored in the operating system keychain, never written to the configuration file.
+  - **SSH auth:** Uses your system SSH keys (e.g., `~/.ssh/id_ed25519`) and ssh-agent; the app never stores private keys.
+  - **Sync behavior:** If the local directory is empty, the remote repository is cloned automatically. With an existing local repository, remote updates are pulled (rebase) and local commits pushed automatically. Every subsequent note save is pushed to the remote. When the remote is unreachable (offline, auth failure), local features are fully unaffected and pushing retries on the next commit.
+  - Click "Test Connection" to verify the remote URL and credentials.
 - **MySQL / PostgreSQL:** Enter host address, port, and database name, then select the authentication method:
   - **Password Login:** Enter username and password. The password is securely stored in the operating system keychain, not saved in the configuration file.
   - **Certificate Login:** Enter username, select the SSL mode (Preferred/Required/Verify CA/Verify Identity), and specify the CA certificate, client certificate, and client key file paths.
@@ -77,6 +84,8 @@ When multiple Profile configurations exist, a **Profile Selection Page** is disp
 When only one configuration exists, or when auto-connect is enabled, the selection page is skipped and the application starts directly.
 
 > **Close Behavior:** The profile selection page on first launch does not have a close button (a configuration must be selected). The profile selection page accessed from the main interface via Settings provides a close button to return to the main interface and continue using the current configuration.
+
+> **Switch Anytime:** Besides startup, you can open the profile selection page at any time from the main interface via **Help menu → Switch Note Library**, the shortcut **Ctrl/Cmd + Shift + P**, or **Settings → Profile Management → Switch Profile**.
 
 ### 19.4 Startup Error Handling
 

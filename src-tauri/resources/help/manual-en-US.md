@@ -185,7 +185,7 @@ This manual provides a detailed introduction to the features and operations of t
 
 ENote Intelligent Note Management System is a cross-platform desktop note-taking application that provides users with efficient and convenient note creation, editing, management, and retrieval capabilities. The software supports both rich text and Markdown editing modes, and features notebook categorization, tag system, full-text search, history version tracking, multi-format import/export, note encryption, bidirectional links, template system, automatic backup, and other core functions to meet all personal knowledge management and information recording needs.
 
-The software adopts a front-end/back-end separation architecture. The front end is built with the Vue 3 framework and TypeScript, while the back end uses Rust and the Tauri 2.x framework. The data storage layer uses the SeaORM object-relational mapping framework, with default support for SQLite and compatibility with MySQL and PostgreSQL databases. This architecture ensures high performance, low resource usage, and cross-platform compatibility.
+The software adopts a front-end/back-end separation architecture. The front end is built with the Vue 3 framework and TypeScript, while the back end uses Rust and the Tauri 2.x framework. The data storage layer uses the SeaORM object-relational mapping framework, with default support for SQLite and compatibility with MySQL and PostgreSQL databases. A Git repository backend is also available: notes are saved as plain-text Markdown files with automatic Git version control, and can sync with remote repositories such as GitHub/GitLab for cross-device use — your data stays entirely under your own control. This architecture ensures high performance, low resource usage, and cross-platform compatibility.
 
 ### 1.3 System Requirements
 
@@ -1251,7 +1251,7 @@ After enabling the master switch, expand the individual tool switch list to prec
 In the Settings dialog, the **Profile Management** section provides the following:
 
 - **Current Profile Info:** Displays the name and database type of the currently active profile.
-- **Switch Profile:** Click the "Switch Profile" button to return to the profile selection page. From there you can:
+- **Switch Profile:** Click the "Switch Profile" button to return to the profile selection page. You can also open it anytime via **Help menu → Switch Note Library** or the shortcut **Ctrl/Cmd + Shift + P** (rebindable in Shortcut Settings). From there you can:
   - Select an existing database configuration and connect
   - Click "New Profile" to enter the Setup Wizard and create a new database configuration
   - Edit or delete existing configurations
@@ -1464,6 +1464,7 @@ ENote provides the following keyboard shortcuts to improve operational efficienc
 | Ctrl/Cmd + E | Enter editing mode | Yes |
 | Ctrl/Cmd + B | Expand/Collapse sidebar | Yes |
 | Ctrl/Cmd + P | Open command palette | Yes |
+| Ctrl/Cmd + Shift + P | Switch note library (open profile selection page) | Yes |
 | Ctrl/Cmd + L | Lock the application (requires lock screen to be enabled) | Yes |
 | Ctrl/Cmd + Shift + M | Cycle through layout modes | Yes |
 | Tab | Increase indent (in editor) | -- |
@@ -1513,6 +1514,7 @@ The Setup Wizard includes the following steps:
 - **SQLite (Recommended):** Local file database, no additional service installation required, ready to use out of the box. Suitable for personal use.
 - **MySQL:** Network database, suitable for team collaboration or remote access. Requires pre-installation of MySQL 5.7+.
 - **PostgreSQL:** Feature-rich enterprise database. Requires pre-installation of PostgreSQL 12+.
+- **Git Repository:** Notes and todos are stored as plain-text Markdown+YAML files in a Git repository, with automatic commits forming a complete version history. Files can be opened in any editor and inspected with any Git tool. Ideal for users who want full ownership of their data. Requires git installed on the system.
 - **ENote Server:** Connect to a remote ENote-compatible API server. Suitable for self-hosted services or enterprise deployments.
 
 **Step 2: Configure Connection**
@@ -1521,6 +1523,12 @@ Fill in the corresponding connection parameters based on the selected backend ty
 
 - **Profile Name:** Give this configuration an identifiable name (e.g., "Local Notes", "Work Database").
 - **SQLite:** Select the database file storage path. Supports "New" (choose a save location to create a new database) and "Open Existing" (select an existing .db file). Leave empty to use the default location (application data directory).
+- **Git Repository:** Choose a local repository directory (automatically created and initialized with git init if it does not exist). Optionally provide a remote repository URL to sync with GitHub/GitLab/Gitee or a self-hosted Git server:
+  - **Leave empty:** Local-only use, no remote connection.
+  - **HTTPS auth:** Enter a username and a Personal Access Token (a token is recommended over your account password). The token is securely stored in the operating system keychain, never written to the configuration file.
+  - **SSH auth:** Uses your system SSH keys (e.g., `~/.ssh/id_ed25519`) and ssh-agent; the app never stores private keys.
+  - **Sync behavior:** If the local directory is empty, the remote repository is cloned automatically. With an existing local repository, remote updates are pulled (rebase) and local commits pushed automatically. Every subsequent note save is pushed to the remote. When the remote is unreachable (offline, auth failure), local features are fully unaffected and pushing retries on the next commit.
+  - Click "Test Connection" to verify the remote URL and credentials.
 - **MySQL / PostgreSQL:** Enter host address, port, and database name, then select the authentication method:
   - **Password Login:** Enter username and password. The password is securely stored in the operating system keychain, not saved in the configuration file.
   - **Certificate Login:** Enter username, select the SSL mode (Preferred/Required/Verify CA/Verify Identity), and specify the CA certificate, client certificate, and client key file paths.
@@ -1565,6 +1573,8 @@ When multiple Profile configurations exist, a **Profile Selection Page** is disp
 When only one configuration exists, or when auto-connect is enabled, the selection page is skipped and the application starts directly.
 
 > **Close Behavior:** The profile selection page on first launch does not have a close button (a configuration must be selected). The profile selection page accessed from the main interface via Settings provides a close button to return to the main interface and continue using the current configuration.
+
+> **Switch Anytime:** Besides startup, you can open the profile selection page at any time from the main interface via **Help menu → Switch Note Library**, the shortcut **Ctrl/Cmd + Shift + P**, or **Settings → Profile Management → Switch Profile**.
 
 ### 19.4 Startup Error Handling
 
@@ -2055,10 +2065,28 @@ security:
   content-encryption: false
 ```
 
+**Git Repository Profile example (`profiles/team-git.yml`):**
+
+```yaml
+name: Team Wiki
+icon: ''
+backend: git
+git:
+  repo-path: /Users/alice/notes/team-wiki
+  remote-url: https://github.com/alice/team-wiki.git
+  remote-auth: https
+  remote-username: alice
+datasource:
+  type: sqlite
+security:
+  content-encryption: false
+```
+
 > **Note:**
 > - Database passwords, encryption keys, and server authentication credentials (tokens, passwords, client secrets, etc.) are never stored in configuration files; they are securely stored in the operating system keychain.
-> - When the `backend` field is `"server"`, a remote server backend is used. When omitted or set to `"database"`, a database backend is used.
+> - When the `backend` field is `"server"`, a remote server backend is used. When omitted or set to `"database"`, a database backend is used. When set to `"git"`, the Git repository backend is used.
 > - For Server backend profiles, the `datasource` field retains default values and is not used.
+> - For the Git backend, the HTTPS access token is also stored in the keychain (entry `{profile_id}.git_password`), never in the configuration file. `remote-auth` accepts `none` / `https` / `ssh`; leaving `remote-url` empty means local-only use without remote sync.
 
 ### 21.5.1 Server Backend Feature Notes
 
@@ -2073,6 +2101,24 @@ When using the ENote Server backend, the following features behave differently c
 | Cross-Profile Sync | Supported | Not supported |
 | Auto Backup | Supported | Not supported |
 | Operation Logs | Recorded locally | Recorded on server via API |
+
+### 21.5.2 Git Backend Remote Sync
+
+When a remote URL is configured for the Git repository backend, the app automatically keeps the local repository in sync with the remote:
+
+| Trigger | Behavior |
+|---------|----------|
+| First connect (empty local directory) | Automatically clones the remote repository |
+| Existing local repository | Pulls remote updates (`pull --rebase`), then pushes local commits |
+| Every note/todo save | After the automatic commit, pushes to the remote in the background after ~2 seconds (continuous edits are coalesced into a single push) |
+
+**Key behaviors:**
+
+- **Offline-first:** When the remote is unreachable (offline, auth failure, etc.), local features are fully unaffected. Pushing retries on the next commit, and a notification explains the failure.
+- **Conflict protection:** If a pull hits a content conflict, the rebase is automatically aborted, local data stays unchanged, and the user is prompted to resolve it manually with git commands in the repository directory.
+- **Never force-push:** A rejected push (non-fast-forward) is never retried with force, so remote data is never overwritten.
+- **Credential security:** HTTPS access tokens are stored in the operating system keychain; SSH uses system keys and ssh-agent — the app never stores private keys.
+- Sync results (success/failure) are surfaced as real-time notifications.
 
 ### 21.6 Content Encryption and Key Management
 

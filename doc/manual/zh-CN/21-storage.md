@@ -236,10 +236,28 @@ security:
   content-encryption: false
 ```
 
+**Git 仓库 Profile 示例（`profiles/team-git.yml`）：**
+
+```yaml
+name: 团队知识库
+icon: ''
+backend: git
+git:
+  repo-path: /Users/alice/notes/team-wiki
+  remote-url: https://github.com/alice/team-wiki.git
+  remote-auth: https
+  remote-username: alice
+datasource:
+  type: sqlite
+security:
+  content-encryption: false
+```
+
 > **注意：**
 > - 数据库密码、加密密钥和服务器认证信息（Token、密码、Client Secret 等）均不保存在配置文件中，而是安全存储在操作系统钥匙串中。
-> - `backend` 字段为 `"server"` 时表示使用远程服务器后端，省略或为 `"database"` 时使用数据库后端。
+> - `backend` 字段为 `"server"` 时表示使用远程服务器后端，省略或为 `"database"` 时使用数据库后端，为 `"git"` 时使用 Git 仓库后端。
 > - Server 后端的 `datasource` 字段保留默认值即可，不会被使用。
+> - Git 后端的 HTTPS 访问令牌同样存储在钥匙串中（条目名 `{profile_id}.git_password`），不写入配置文件；`remote-auth` 取值 `none`（无认证）/ `https` / `ssh`；`remote-url` 留空表示仅本地使用，不同步远程。
 
 ### 21.5.1 Server 后端功能说明
 
@@ -254,6 +272,24 @@ security:
 | 跨 Profile 同步 | 支持 | 不支持 |
 | 自动备份 | 支持 | 不支持 |
 | 操作日志 | 本地记录 | 通过 API 记录到服务端 |
+
+### 21.5.2 Git 后端远程同步
+
+Git 仓库后端配置远程 URL 后，应用自动与远程仓库保持同步：
+
+| 时机 | 行为 |
+|------|------|
+| 首次连接（本地目录为空） | 自动克隆（clone）远程仓库到本地 |
+| 已有本地仓库 | 拉取远程更新（`pull --rebase`），再将本地提交推送（push）到远程 |
+| 每次保存笔记/待办 | 自动提交后，后台延迟约 2 秒推送到远程（连续编辑自动合并为一次推送） |
+
+**关键行为：**
+
+- **离线优先：** 远程不可用（断网、认证失败等）时，本地功能完全不受影响；推送在下次提交时自动重试，并通过界面通知提示失败原因。
+- **冲突保护：** 拉取发生内容冲突时自动回滚 rebase，本地数据保持不变，并提示用户在仓库目录中用 git 命令手动解决。
+- **绝不强制推送：** 推送被拒绝（non-fast-forward）时不会自动 force push，避免覆盖远程数据。
+- **凭据安全：** HTTPS 访问令牌存储在操作系统钥匙串；SSH 使用系统密钥与 ssh-agent，应用不保存私钥。
+- 同步结果（成功/失败）通过界面通知实时反馈。
 
 ### 21.6 内容加密与密钥管理
 

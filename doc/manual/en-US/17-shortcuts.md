@@ -10,6 +10,7 @@ ENote provides the following keyboard shortcuts to improve operational efficienc
 | Ctrl/Cmd + E | Enter editing mode | Yes |
 | Ctrl/Cmd + B | Expand/Collapse sidebar | Yes |
 | Ctrl/Cmd + P | Open command palette | Yes |
+| Ctrl/Cmd + Shift + P | Switch note library (open profile selection page) | Yes |
 | Ctrl/Cmd + L | Lock the application (requires lock screen to be enabled) | Yes |
 | Ctrl/Cmd + Shift + M | Cycle through layout modes | Yes |
 | Tab | Increase indent (in editor) | -- |

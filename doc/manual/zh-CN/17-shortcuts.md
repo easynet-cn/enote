@@ -10,6 +10,7 @@ ENote 提供以下键盘快捷键，提升操作效率：
 | Ctrl/Cmd + E | 进入编辑模式 | 是 |
 | Ctrl/Cmd + B | 展开/折叠侧边栏 | 是 |
 | Ctrl/Cmd + P | 打开命令面板 | 是 |
+| Ctrl/Cmd + Shift + P | 切换笔记库（打开配置选择页面） | 是 |
 | Ctrl/Cmd + L | 锁定应用（需已开启锁屏功能） | 是 |
 | Ctrl/Cmd + Shift + M | 循环切换布局模式 | 是 |
 | Tab | 增加缩进（编辑器内） | — |
