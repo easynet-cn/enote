@@ -13,12 +13,12 @@ tauri = { version = "2.12", features = ["protocol-asset"] }
 tauri-build = { version = "2.7", features = [] }
 tauri-plugin-fs = "2.7"
 tauri-plugin-opener = "2.7"
-tauri-plugin-shell = "2.5"
+tauri-plugin-shell = "2.6"
 tauri-plugin-dialog = "2.8"
 tauri-plugin-updater = "2.14"
 tauri-plugin-process = "2.4"
 tauri-plugin-os = "2.4"
-tauri-plugin-notification = "2.7"
+tauri-plugin-notification = "2.8"
 
 # Serde
 serde = { version = "1.0", features = ["derive"] }
@@ -57,7 +57,7 @@ base64 = "0.23"
 rust_xlsxwriter = "0.99"
 calamine = "0.36"
 csv = "1.4"
-zip = "9.1"
+zip = "9"
 
 # Utilities
 chrono = "0.4"
@@ -73,7 +73,7 @@ reqwest = { version = "0.13", default-features = false, features = ["json", "mul
 opendal = { version = "0.59", features = ["services-s3", "services-oss", "services-cos", "services-webdav"] }
 
 # MCP
-rmcp = { version = "3.7", features = ["server", "transport-io"] }
+rmcp = { version = "3.8", features = ["server", "transport-io"] }
 schemars = "1.2"
 
 [profile.dev]
