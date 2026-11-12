@@ -73,7 +73,7 @@ reqwest = { version = "0.13", default-features = false, features = ["json", "mul
 opendal = { version = "0.59", features = ["services-s3", "services-oss", "services-cos", "services-webdav"] }
 
 # MCP
-rmcp = { version = "3.8", features = ["server", "transport-io"] }
+rmcp = { version = "3.9", features = ["server", "transport-io"] }
 schemars = "1.2"
 
 [profile.dev]
