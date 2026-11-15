@@ -2,9 +2,9 @@
 
 **Software Name:** ENote Intelligent Note Management System
 
-**Version:** V1.3.1
+**Version:** V1.4.0
 
-**Date:** August 2026
+**Date:** November 2026
 
 ---
 
@@ -141,6 +141,7 @@
   - [21.4 Database Configuration Examples](21-storage.md#214-database-configuration-examples)
   - [21.5 Profile Configuration Management](21-storage.md#215-profile-configuration-management)
     - [21.5.1 Server Backend Feature Notes](21-storage.md#2151-server-backend-feature-notes)
+    - [21.5.2 Git Backend Remote Sync](21-storage.md#2152-git-backend-remote-sync)
   - [21.6 Content Encryption and Key Management](21-storage.md#216-content-encryption-and-key-management)
   - [21.7 SSL/TLS Certificate Authentication](21-storage.md#217-ssltls-certificate-authentication)
   - [21.8 History Version Protection](21-storage.md#218-history-version-protection)
@@ -171,4 +172,4 @@
 
 ---
 
-*This manual is based on ENote Intelligent Note Management System V1.3.1. Please refer to the actual software for any feature updates.*
+*This manual is based on ENote Intelligent Note Management System V1.4.0. Please refer to the actual software for any feature updates.*

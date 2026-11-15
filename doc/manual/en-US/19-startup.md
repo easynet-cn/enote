@@ -22,24 +22,28 @@ The Setup Wizard includes the following steps:
 
 **Step 1: Select Backend Type**
 
-- **SQLite (Recommended):** Local file database, no additional service installation required, ready to use out of the box. Suitable for personal use.
-- **MySQL:** Network database, suitable for team collaboration or remote access. Requires pre-installation of MySQL 5.7+.
-- **PostgreSQL:** Feature-rich enterprise database. Requires pre-installation of PostgreSQL 12+.
-- **Git Repository:** Notes and todos are stored as plain-text Markdown+YAML files in a Git repository, with automatic commits forming a complete version history. Files can be opened in any editor and inspected with any Git tool. Ideal for users who want full ownership of their data. Requires git installed on the system.
-- **ENote Server:** Connect to a remote ENote-compatible API server. Suitable for self-hosted services or enterprise deployments.
+The wizard offers three backend categories: **Database**, **Git Repository**, and **ENote Server**. SQLite, MySQL, and PostgreSQL are engines within the Database category, not separate options on this step — after selecting Database, switch between them on Step 2 using the "Database Engine" segmented control, which also applies that engine's recommended defaults. The options are:
+
+- **SQLite (Recommended, database engine):** Local file database, no additional service installation required, ready to use out of the box. Suitable for personal use.
+- **MySQL (database engine):** Network database, suitable for team collaboration or remote access. Requires pre-installation of MySQL 5.7+.
+- **PostgreSQL (database engine):** Feature-rich enterprise database. Requires pre-installation of PostgreSQL 12+.
+- **Git Repository (backend category):** Notes and todos are stored as plain-text Markdown+YAML files in a Git repository, with automatic commits forming a complete version history. Files can be opened in any editor and inspected with any Git tool. Ideal for users who want full ownership of their data. Requires git installed on the system.
+- **ENote Server (backend category):** Connect to a remote ENote-compatible API server. Suitable for self-hosted services or enterprise deployments.
 
 **Step 2: Configure Connection**
 
 Fill in the corresponding connection parameters based on the selected backend type:
 
 - **Profile Name:** Give this configuration an identifiable name (e.g., "Local Notes", "Work Database").
+- **Database Engine (database backends only):** Switch between SQLite / MySQL / PostgreSQL; the recommended defaults are applied immediately.
 - **SQLite:** Select the database file storage path. Supports "New" (choose a save location to create a new database) and "Open Existing" (select an existing .db file). Leave empty to use the default location (application data directory).
 - **Git Repository:** Choose a local repository directory (automatically created and initialized with git init if it does not exist). Optionally provide a remote repository URL to sync with GitHub/GitLab/Gitee or a self-hosted Git server:
   - **Leave empty:** Local-only use, no remote connection.
+  - **Automatic auth matching:** When you enter a remote URL and leave the field, the authentication method below switches automatically based on the scheme — `https://` or `http://` selects "HTTPS", while `ssh://` or `git@` selects "SSH". For a public repository using "None", click it back manually; it will not be overridden afterwards. Clicking "Next" directly also triggers the matching first.
   - **HTTPS auth:** Enter a username and a Personal Access Token (a token is recommended over your account password). The token is securely stored in the operating system keychain, never written to the configuration file.
   - **SSH auth:** Uses your system SSH keys (e.g., `~/.ssh/id_ed25519`) and ssh-agent; the app never stores private keys.
   - **Sync behavior:** If the local directory is empty, the remote repository is cloned automatically. With an existing local repository, remote updates are pulled (rebase) and local commits pushed automatically. Every subsequent note save is pushed to the remote. When the remote is unreachable (offline, auth failure), local features are fully unaffected and pushing retries on the next commit.
-  - Click "Test Connection" to verify the remote URL and credentials.
+  - **Test Connection:** Once a remote URL is entered, click "Test Connection" to verify the URL and credentials. The result **persists below the button**: green "Connection successful" on success, or red "Connection failed" with the specific reason on failure. Changing any connection field clears the stale result automatically.
 - **MySQL / PostgreSQL:** Enter host address, port, and database name, then select the authentication method:
   - **Password Login:** Enter username and password. The password is securely stored in the operating system keychain, not saved in the configuration file.
   - **Certificate Login:** Enter username, select the SSL mode (Preferred/Required/Verify CA/Verify Identity), and specify the CA certificate, client certificate, and client key file paths.
@@ -51,20 +55,20 @@ Fill in the corresponding connection parameters based on the selected backend ty
   - **Custom Header:** Authenticate using a custom HTTP header (e.g., X-API-Key), suitable for enterprise API gateways. The header value is stored in the keychain.
   - **OAuth 2.0:** Authenticate using the OAuth 2.0 protocol. Requires Token URL, Client ID, Client Secret, and scopes.
 
-You can click the "Test Connection" button to verify the configuration.
+You can click the "Test Connection" button to verify the configuration (available for MySQL / PostgreSQL, Git Repository with a remote URL entered, and ENote Server; a local-only SQLite setup does not need it). The result persists below the button — green on success, red with the specific reason on failure — and is cleared automatically when connection fields change. A general notification also appears in the upper right corner.
 
 **Step 3: Security Settings**
 
-- **Database backends:** Toggle to enable note content encryption. When enabled:
+- **Database / Git Repository backends:** Toggle to enable note content encryption; key management is identical for both. When enabled:
   - The system automatically generates an AES-256 encryption key, securely stored in the operating system keychain (macOS Keychain / Windows Credential Store / Linux Secret Service).
-  - All note content is automatically encrypted before writing to the database and automatically decrypted when reading, completely transparent to the user.
-  - Even if the database file is accessed directly, note content cannot be read.
+  - All note content is automatically encrypted before being written to storage and automatically decrypted when reading, completely transparent to the user.
+  - Even if the database file or the note files in the repository are accessed directly, note content cannot be read.
   - **Note:** With encryption enabled, note titles remain searchable, but content cannot be retrieved through full-text search.
 - **ENote Server backend:** Content encryption is handled by the server; no client-side configuration is needed.
 
 **Step 4: Save and Connect**
 
-After confirming the configuration, the system automatically saves the configuration file and keys, connects to the database, performs initialization, then restarts the application to enter the main interface.
+After confirming the configuration, the system automatically saves the configuration file and keys, completes the backend connection and initialization, then **switches to the main interface directly via hot-reconnect, without restarting the application**. For a Git Repository backend with a remote URL configured, remote synchronization runs asynchronously in the background; success or failure is reported through an in-app notification and does not block entering the main interface.
 
 > **Language Switching:** The Setup Wizard provides a language switch button in the upper right corner. Click to toggle between Chinese and English, convenient for non-Chinese users on first use.
 
@@ -94,6 +98,8 @@ If an error occurs during the startup process, the system displays a native oper
 - **Configuration File Loading Failed:** Indicates a configuration file reading error. Please check whether the configuration file format is correct.
 - **Database Connection Failed:** Indicates a database connection error. Please check the database configuration or whether the database service is available. On connection failure, the system automatically falls back to the Setup Wizard, allowing the user to reconfigure.
 - **Database Migration Failed:** Indicates a table structure update error.
+- **Git Environment or Configuration Error:** If git is not installed on the system, or the Git repository configuration is missing, the connection is rejected with a corresponding message. Install git or complete the repository directory configuration and try again.
+- **Git Remote Sync Failed:** When the remote repository is unreachable (offline, authentication failure, rejected push, etc.), an in-app notification reports the reason. Local note features remain unaffected and syncing retries on the next save; see [21.5.2 Git Backend Remote Sync](21-storage.md#2152-git-backend-remote-sync).
 
 Error messages support internationalization in Chinese and English, automatically displaying in the corresponding language based on the system locale.
 
