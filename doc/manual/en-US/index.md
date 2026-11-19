@@ -2,7 +2,7 @@
 
 **Software Name:** ENote Intelligent Note Management System
 
-**Version:** V1.4.0
+**Version:** V1.4.1
 
 **Date:** November 2026
 
@@ -172,4 +172,4 @@
 
 ---
 
-*This manual is based on ENote Intelligent Note Management System V1.4.0. Please refer to the actual software for any feature updates.*
+*This manual is based on ENote Intelligent Note Management System V1.4.1. Please refer to the actual software for any feature updates.*

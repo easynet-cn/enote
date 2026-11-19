@@ -1,2 +1,2 @@
-minimumReleaseAgeExclude: [ '@vue/test-utils@2.6.0', lint-staged@17.6.1 ]
+minimumReleaseAgeExclude: []
 minimumReleaseAgeExcludePrune: true
