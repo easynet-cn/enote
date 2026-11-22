@@ -23,7 +23,7 @@ tauri-plugin-notification = "2.8"
 # Serde
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-serde_with = "3.24"
+serde_with = "3.25"
 yaml_serde = "0.10"
 
 # Database（基础仅 SQLite，MySQL/PG 由 desktop feature 启用）
@@ -54,8 +54,8 @@ rand = "0.10"
 base64 = "0.23"
 
 # Data formats
-rust_xlsxwriter = "0.99"
-calamine = "0.36"
+rust_xlsxwriter = "0.103"
+calamine = "0.38"
 csv = "1.4"
 zip = "9"
 

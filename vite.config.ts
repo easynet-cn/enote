@@ -97,8 +97,7 @@ export default defineConfig(async () => ({
             if (
               id.includes('vue') ||
               id.includes('pinia') ||
-              id.includes('vue-i18n') ||
-              id.includes('@vueuse')
+              id.includes('vue-i18n')
             ) {
               return 'vendor-vue'
             }
