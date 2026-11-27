@@ -1487,6 +1487,13 @@ impl GitStore {
 impl NoteStore for GitStore {
     // ======== 笔记 ========
 
+    async fn find_note_by_id(&self, id: i64) -> Result<Option<Note>, AppError> {
+        let Some(path) = self.get_note_path(id) else {
+            return Ok(None);
+        };
+        self.read_note_file(&path).await.map(Some)
+    }
+
     async fn create_note(&self, note: &Note) -> Result<Option<Note>, AppError> {
         let mut note = note.clone();
         if note.id == 0 {

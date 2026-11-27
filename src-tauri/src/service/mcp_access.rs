@@ -13,9 +13,361 @@ use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 
 use crate::{
     entity,
-    model::{McpAccess, McpPermission, Note, Todo},
+    model::{McpAccess, McpPermission, Note, Notebook, Todo, TodoList},
     service::crypto,
 };
+
+// ============================================================================
+// 后端无关的权限计算
+//
+// 以下函数只依赖已加载的数据模型，不持有任何数据库连接。
+// store trait 的默认实现用它们在内存中解析权限，使 Database / Git / Server
+// 三种后端共享同一套规则，避免权限逻辑出现三份实现而逐渐漂移。
+// ============================================================================
+
+/// 取一组访问控制值中最严格的非 Inherit 权限
+fn strictest_access<I>(accesses: I) -> Option<McpPermission>
+where
+    I: IntoIterator<Item = i32>,
+{
+    let mut strictest: Option<McpPermission> = None;
+    for access in accesses {
+        let a = McpAccess::from(access);
+        if a != McpAccess::Inherit {
+            let perm = mcp_access_to_permission(a);
+            strictest = Some(match strictest {
+                Some(s) => s.stricter(perm),
+                None => perm,
+            });
+        }
+    }
+    strictest
+}
+
+/// 基于已加载的 Note（含 tags）与笔记本列表计算单条笔记权限
+///
+/// 优先级与 [`resolve_note_access`] 完全一致：
+/// 加密 → 笔记自身 → 标签 → 笔记本 → 默认 ReadWrite
+pub fn note_permission(note: &Note, notebooks: &[Notebook]) -> McpPermission {
+    // 1. 加密笔记 → 强制 Deny
+    if crypto::is_encrypted(&note.content) {
+        return McpPermission::Deny;
+    }
+
+    // 2. 笔记自身设置
+    let note_access = McpAccess::from(note.mcp_access);
+    if note_access != McpAccess::Inherit {
+        return mcp_access_to_permission(note_access);
+    }
+
+    // 3. 标签权限（Note.tags 由各 Store 在查询时填充，已带 mcp_access）
+    let tag_perm = strictest_access(note.tags.iter().map(|t| t.mcp_access));
+
+    // 4. 笔记本设置
+    let notebook_perm = notebooks
+        .iter()
+        .find(|nb| nb.id == note.notebook_id)
+        .map(|nb| McpAccess::from(nb.mcp_access))
+        .filter(|a| *a != McpAccess::Inherit)
+        .map(mcp_access_to_permission);
+
+    // 5. 合并并回退到默认 ReadWrite
+    match (tag_perm, notebook_perm) {
+        (Some(tp), Some(np)) => tp.stricter(np),
+        (Some(tp), None) => tp,
+        (None, Some(np)) => np,
+        (None, None) => McpPermission::ReadWrite,
+    }
+}
+
+/// 批量计算笔记权限
+pub fn notes_permissions(notes: &[Note], notebooks: &[Notebook]) -> HashMap<i64, McpPermission> {
+    notes
+        .iter()
+        .map(|n| (n.id, note_permission(n, notebooks)))
+        .collect()
+}
+
+/// 基于已加载的 Todo 计算单条待办权限
+///
+/// `tag_accesses` 为该待办关联标签的 mcp_access 值；`linked_note_perm` 为关联笔记的
+/// 有效权限（None 表示无关联笔记或未解析）。
+pub fn todo_permission(
+    todo: &Todo,
+    lists: &[TodoList],
+    tag_accesses: &[i32],
+    linked_note_perm: Option<McpPermission>,
+) -> McpPermission {
+    // 1. 关联笔记被 Deny → 连带 Deny（安全优先，不可被自身设置覆盖）
+    if linked_note_perm == Some(McpPermission::Deny) {
+        return McpPermission::Deny;
+    }
+
+    // 2. 待办自身设置
+    let todo_access = McpAccess::from(todo.mcp_access);
+    if todo_access != McpAccess::Inherit {
+        return mcp_access_to_permission(todo_access);
+    }
+
+    // 3. 标签权限
+    let tag_perm = strictest_access(tag_accesses.iter().copied());
+
+    // 4. 清单设置
+    let list_perm = lists
+        .iter()
+        .find(|l| Some(l.id) == todo.list_id)
+        .map(|l| McpAccess::from(l.mcp_access))
+        .filter(|a| *a != McpAccess::Inherit)
+        .map(mcp_access_to_permission);
+
+    // 5. 合并并回退到默认 ReadWrite
+    match (tag_perm, list_perm) {
+        (Some(tp), Some(lp)) => tp.stricter(lp),
+        (Some(tp), None) => tp,
+        (None, Some(lp)) => lp,
+        (None, None) => McpPermission::ReadWrite,
+    }
+}
+
+/// 批量计算待办权限
+///
+/// `tag_accesses_by_todo` 的 key 为待办 ID，value 为其关联标签的 mcp_access 列表。
+pub fn todos_permissions(
+    todos: &[Todo],
+    lists: &[TodoList],
+    tag_accesses_by_todo: &HashMap<i64, Vec<i32>>,
+    note_perms: &HashMap<i64, McpPermission>,
+) -> HashMap<i64, McpPermission> {
+    todos
+        .iter()
+        .map(|t| {
+            let linked_perm = t.note_id.and_then(|id| note_perms.get(&id).copied());
+            let tag_accesses = tag_accesses_by_todo
+                .get(&t.id)
+                .map(Vec::as_slice)
+                .unwrap_or(&[]);
+            (t.id, todo_permission(t, lists, tag_accesses, linked_perm))
+        })
+        .collect()
+}
+
+/// 校验权限是否满足读取/写入要求，错误信息与原有 MCP 工具保持一致
+pub fn ensure_permission(
+    perm: McpPermission,
+    entity_kind: &str,
+    write: bool,
+) -> anyhow::Result<()> {
+    if !perm.can_read() {
+        anyhow::bail!("AI access denied for this {} (mcp_access=Deny)", entity_kind);
+    }
+    if write && !perm.can_write() {
+        anyhow::bail!("This {} is read-only for AI (mcp_access=ReadOnly)", entity_kind);
+    }
+    Ok(())
+}
+
+/// 检查目标笔记本是否允许 AI 写入
+pub fn ensure_notebook_write(notebook: Option<&Notebook>) -> anyhow::Result<()> {
+    let Some(nb) = notebook else {
+        return Ok(()); // 不归属笔记本，允许
+    };
+    match McpAccess::from(nb.mcp_access) {
+        McpAccess::Deny => {
+            anyhow::bail!("AI access denied for target notebook (mcp_access=Deny)");
+        }
+        McpAccess::ReadOnly => {
+            anyhow::bail!(
+                "Target notebook is read-only, AI cannot create notes here (mcp_access=ReadOnly)"
+            );
+        }
+        _ => Ok(()),
+    }
+}
+
+/// 检查目标待办清单是否允许 AI 写入
+pub fn ensure_todo_list_write(list: Option<&TodoList>) -> anyhow::Result<()> {
+    let Some(list) = list else {
+        return Ok(()); // 未归类，放行
+    };
+    match McpAccess::from(list.mcp_access) {
+        McpAccess::Deny => {
+            anyhow::bail!("AI access denied for target todo list (mcp_access=Deny)");
+        }
+        McpAccess::ReadOnly => {
+            anyhow::bail!(
+                "Target todo list is read-only, AI cannot create todos here (mcp_access=ReadOnly)"
+            );
+        }
+        _ => Ok(()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::Tag;
+
+    fn tag(id: i64, access: i32) -> Tag {
+        Tag {
+            id,
+            mcp_access: access,
+            ..Default::default()
+        }
+    }
+
+    fn notebook(id: i64, access: i32) -> Notebook {
+        Notebook {
+            id,
+            mcp_access: access,
+            ..Default::default()
+        }
+    }
+
+    fn note(id: i64, access: i32, tags: Vec<Tag>) -> Note {
+        Note {
+            id,
+            mcp_access: access,
+            tags,
+            ..Default::default()
+        }
+    }
+
+    fn todo(id: i64, access: i32, list_id: Option<i64>, note_id: Option<i64>) -> Todo {
+        Todo {
+            id,
+            mcp_access: access,
+            list_id,
+            note_id,
+            ..Default::default()
+        }
+    }
+
+    fn list(id: i64, access: i32) -> TodoList {
+        TodoList {
+            id,
+            mcp_access: access,
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn note_permission_priority() {
+        // 全 Inherit → 默认 ReadWrite
+        assert_eq!(note_permission(&note(1, 0, vec![]), &[]), McpPermission::ReadWrite);
+
+        // 笔记自身设置优先于标签和笔记本
+        let n = note(1, 2, vec![tag(1, 1)]);
+        assert_eq!(note_permission(&n, &[notebook(9, 1)]), McpPermission::ReadOnly);
+
+        // 标签与笔记本取更严格者
+        let mut n = note(1, 0, vec![tag(1, 1), tag(2, 2)]);
+        n.notebook_id = 9;
+        assert_eq!(note_permission(&n, &[notebook(9, 1)]), McpPermission::ReadOnly);
+
+        // 标签 Deny 压过笔记本 ReadWrite
+        let n = note(1, 0, vec![tag(1, 3)]);
+        assert_eq!(note_permission(&n, &[notebook(9, 1)]), McpPermission::Deny);
+
+        // 笔记本 ReadOnly 生效
+        let mut n = note(1, 0, vec![]);
+        n.notebook_id = 9;
+        assert_eq!(note_permission(&n, &[notebook(9, 2)]), McpPermission::ReadOnly);
+    }
+
+    #[test]
+    fn note_permission_denies_encrypted_content() {
+        let mut n = note(1, 1, vec![]);
+        n.content = crypto::encrypt("secret", "key").unwrap();
+        assert_eq!(note_permission(&n, &[]), McpPermission::Deny);
+    }
+
+    #[test]
+    fn todo_permission_priority() {
+        // 关联笔记 Deny 连带禁止，且不可被待办自身 ReadWrite 覆盖
+        let t = todo(1, 1, Some(1), Some(9));
+        assert_eq!(
+            todo_permission(&t, &[list(1, 1)], &[], Some(McpPermission::Deny)),
+            McpPermission::Deny
+        );
+
+        // 待办自身 ReadOnly 优先于标签与清单
+        let t = todo(1, 2, Some(1), None);
+        assert_eq!(
+            todo_permission(&t, &[list(1, 1)], &[1], None),
+            McpPermission::ReadOnly
+        );
+
+        // 标签 Deny 压过清单 ReadWrite
+        let t = todo(1, 0, Some(1), None);
+        assert_eq!(
+            todo_permission(&t, &[list(1, 1)], &[1, 3], None),
+            McpPermission::Deny
+        );
+
+        // 全 Inherit → 默认 ReadWrite
+        let t = todo(1, 0, Some(1), None);
+        assert_eq!(todo_permission(&t, &[list(1, 0)], &[0], None), McpPermission::ReadWrite);
+    }
+
+    #[test]
+    fn batch_permissions_match_single() {
+        let n1 = note(1, 0, vec![tag(1, 2)]);
+        let n2 = note(2, 3, vec![]);
+        let notebooks = [notebook(9, 1)];
+        let perms = notes_permissions(&[n1.clone(), n2.clone()], &notebooks);
+        assert_eq!(perms[&1], note_permission(&n1, &notebooks));
+        assert_eq!(perms[&2], note_permission(&n2, &notebooks));
+
+        let lists = [list(1, 2)];
+        let t1 = todo(1, 0, Some(1), Some(1));
+        let mut tag_map = HashMap::new();
+        tag_map.insert(1, vec![0]);
+        let note_perms = HashMap::from([(1, McpPermission::ReadWrite)]);
+        let todo_perms = todos_permissions(&[t1.clone()], &lists, &tag_map, &note_perms);
+        assert_eq!(
+            todo_perms[&1],
+            todo_permission(&t1, &lists, &[0], Some(McpPermission::ReadWrite))
+        );
+    }
+
+    #[test]
+    fn ensure_permission_messages() {
+        assert!(ensure_permission(McpPermission::ReadWrite, "note", true).is_ok());
+        assert!(ensure_permission(McpPermission::ReadOnly, "note", false).is_ok());
+        assert_eq!(
+            ensure_permission(McpPermission::ReadOnly, "note", true)
+                .unwrap_err()
+                .to_string(),
+            "This note is read-only for AI (mcp_access=ReadOnly)"
+        );
+        assert_eq!(
+            ensure_permission(McpPermission::Deny, "todo", false)
+                .unwrap_err()
+                .to_string(),
+            "AI access denied for this todo (mcp_access=Deny)"
+        );
+    }
+
+    #[test]
+    fn write_guard_messages() {
+        assert!(ensure_notebook_write(None).is_ok());
+        assert!(ensure_notebook_write(Some(&notebook(1, 1))).is_ok());
+        assert_eq!(
+            ensure_notebook_write(Some(&notebook(1, 3)))
+                .unwrap_err()
+                .to_string(),
+            "AI access denied for target notebook (mcp_access=Deny)"
+        );
+        assert!(ensure_todo_list_write(None).is_ok());
+        assert!(ensure_todo_list_write(Some(&list(1, 1))).is_ok());
+        assert_eq!(
+            ensure_todo_list_write(Some(&list(1, 2)))
+                .unwrap_err()
+                .to_string(),
+            "Target todo list is read-only, AI cannot create todos here (mcp_access=ReadOnly)"
+        );
+    }
+}
 
 /// 解析单条笔记的有效 MCP 权限
 pub async fn resolve_note_access(

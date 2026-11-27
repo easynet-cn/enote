@@ -3,8 +3,7 @@
 //! 提供待办和待办清单的 CRUD、查询、软删除/恢复能力。
 //!
 //! # 说明
-//! 通过 TodoStore 抽象层操作，Server 后端暂不支持待办功能
-//!（todo_store 为 None 时返回 TODO_NOT_SUPPORTED）。
+//! 通过 TodoStore 抽象层操作，Database / Git / Server 三种后端均完整支持待办。
 
 use super::*;
 

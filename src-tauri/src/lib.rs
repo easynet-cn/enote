@@ -455,91 +455,53 @@ async fn setup_normal_mode(
 
             let profile_config = service::profile::read_profile(&app_data_dir, &profile_id)?;
 
-            if profile_config.is_server_backend() {
-                // ======== Server 后端路径 ========
-                let server_config = profile_config
-                    .server
-                    .as_ref()
-                    .ok_or_else(|| crate::error::AppError::code("SERVER_CONFIG_MISSING"))?;
-
-                let secrets = service::enote_server::auth::ServerSecrets {
-                    token: service::keychain::get_server_token(&profile_id).unwrap_or(None),
-                    refresh_token: service::keychain::get_server_refresh_token(&profile_id)
-                        .unwrap_or(None),
-                    password: service::keychain::get_server_password(&profile_id).unwrap_or(None),
-                    client_secret: service::keychain::get_server_client_secret(&profile_id)
-                        .unwrap_or(None),
-                    header_value: service::keychain::get_server_header_value(&profile_id)
-                        .unwrap_or(None),
-                };
-
-                let client =
-                    match service::enote_server::EnoteServerClient::new(server_config, secrets) {
-                        Ok(client) => client,
-                        Err(e) => {
-                            error!("Server connection failed: {:#}", e);
-                            let error_msg = format!("{}", e);
-                            handle
-                                .dialog()
-                                .message(t("server.connection.failed.message", &[&error_msg]))
-                                .kind(MessageDialogKind::Error)
-                                .title(t_simple("server.connection.failed.title"))
-                                .blocking_show();
-                            // 进入向导模式让用户重新配置
-                            setup_wizard_mode_state(app).await?;
-                            return Ok(());
-                        }
+            // 统一走公共 store 工厂（Tauri 与独立 MCP 进程共用同一构造逻辑）
+            let bundle = match crate::store::factory::build_profile_stores(
+                &app_data_dir,
+                &profile_id,
+                &profile_config,
+                Some(handle.clone()),
+                crate::store::factory::CredentialPolicy::Keychain,
+            )
+            .await
+            {
+                Ok(bundle) => bundle,
+                Err(e) => {
+                    error!("Profile store setup failed: {:#}", e);
+                    let error_msg = format!("{}", e);
+                    // 按后端类型保留原有弹窗文案
+                    let (message, title) = if profile_config.is_server_backend() {
+                        (
+                            t("server.connection.failed.message", &[&error_msg]),
+                            t_simple("server.connection.failed.title"),
+                        )
+                    } else if profile_config.is_git_backend() {
+                        // 既有 i18n 只有 git.unavailable 词条（Git CLI 缺失场景），
+                        // 其他 Git 错误也复用它，保持与重构前一致。
+                        (t_simple("git.unavailable.message"), t_simple("git.unavailable.title"))
+                    } else {
+                        (
+                            t("database.connection.failed.message", &[&error_msg]),
+                            t_simple("database.connection.failed.title"),
+                        )
                     };
-
-                (
-                    config::Configuration::default(),
-                    None,
-                    profile_id,
-                    None,
-                    config::ProfileBackend::Server(client.clone()),
-                    Some(
-                        std::sync::Arc::new(crate::store::ServerStore::new(client.clone()))
-                            as std::sync::Arc<dyn crate::store::NoteStore>,
-                    ),
-                    Some(std::sync::Arc::new(crate::store::ServerStore::new(client))
-                        as std::sync::Arc<dyn crate::store::TodoStore>),
-                )
-            } else if profile_config.is_git_backend() {
-                // ======== Git 后端路径 ========
-                // git 后端依赖系统 git CLI，缺失时提示并回退向导模式（与 Server 连接失败处理一致）
-                if !crate::store::git_sync::is_available() {
-                    error!("Git backend unavailable: git CLI not found");
                     handle
                         .dialog()
-                        .message(t_simple("git.unavailable.message"))
+                        .message(message)
                         .kind(MessageDialogKind::Error)
-                        .title(t_simple("git.unavailable.title"))
+                        .title(title)
                         .blocking_show();
+                    // 进入向导模式让用户重新配置
                     setup_wizard_mode_state(app).await?;
                     return Ok(());
                 }
+            };
 
-                let git_config = profile_config
-                    .git
-                    .as_ref()
-                    .ok_or_else(|| crate::error::AppError::code("GIT_CONFIG_MISSING"))?;
-
-                #[cfg(any(feature = "desktop", feature = "db-full"))]
-                let encryption_key = if profile_config.security.content_encryption {
-                    service::keychain::get_encryption_key(&profile_id)?
-                } else {
-                    None
-                };
-                #[cfg(not(any(feature = "desktop", feature = "db-full")))]
-                let encryption_key: Option<String> = None;
-
-                let repo_path = std::path::PathBuf::from(&git_config.repo_path);
-
-                // 构造远程配置并在连接前做一次双向同步；失败仅告警，不阻塞启动
-                let remote = crate::command::build_git_remote(&profile_id, git_config);
-                if !remote.url.is_empty() {
-                    let sync_remote = remote.clone();
-                    let sync_path = repo_path.clone();
+            // Git 启动同步：失败仅告警，不阻塞启动（保留原有行为）
+            if let Some((sync_path, sync_remote)) = &bundle.git_sync {
+                if !sync_remote.url.is_empty() {
+                    let sync_remote = sync_remote.clone();
+                    let sync_path = sync_path.clone();
                     let sync_handle = handle.clone();
                     let sync_result = tauri::async_runtime::spawn_blocking(move || {
                         crate::store::git_remote::ensure_and_sync(
@@ -553,88 +515,17 @@ async fn setup_normal_mode(
                         warn!("Git 启动同步失败（{}）：{}", e.code, e.message);
                     }
                 }
-
-                let git_store = std::sync::Arc::new(
-                    crate::store::GitStore::new(repo_path, encryption_key.clone())
-                        .with_remote(Some(remote), Some(handle.clone())),
-                );
-
-                (
-                    config::Configuration::default(),
-                    None,
-                    profile_id,
-                    encryption_key.clone(),
-                    config::ProfileBackend::Git,
-                    Some(git_store.clone() as std::sync::Arc<dyn crate::store::NoteStore>),
-                    Some(git_store.clone() as std::sync::Arc<dyn crate::store::TodoStore>),
-                )
-            } else {
-                // ======== Database 后端路径（原有逻辑不变） ========
-
-                // 从 Keychain 获取数据库密码（桌面端/db-full 模式 MySQL/PG 需要）
-                #[cfg(any(feature = "desktop", feature = "db-full"))]
-                let db_password = if profile_config.datasource.db_type != "sqlite"
-                    && profile_config.datasource.auth_method != "certificate"
-                {
-                    service::keychain::get_db_password(&profile_id)?
-                } else {
-                    None
-                };
-                #[cfg(not(any(feature = "desktop", feature = "db-full")))]
-                let db_password: Option<String> = None;
-
-                let database_connection = match config::database_connection_from_profile(
-                    &profile_config,
-                    db_password.as_deref(),
-                )
-                .await
-                {
-                    Ok(conn) => conn,
-                    Err(e) => {
-                        error!("Database connection failed: {:#}", e);
-                        let error_msg = format!("{}", e);
-                        handle
-                            .dialog()
-                            .message(t("database.connection.failed.message", &[&error_msg]))
-                            .kind(MessageDialogKind::Error)
-                            .title(t_simple("database.connection.failed.title"))
-                            .blocking_show();
-                        // 进入向导模式让用户重新配置
-                        setup_wizard_mode_state(app).await?;
-                        return Ok(());
-                    }
-                };
-
-                // 从 Keychain 获取加密密钥（桌面端/db-full 模式）
-                #[cfg(any(feature = "desktop", feature = "db-full"))]
-                let encryption_key = if profile_config.security.content_encryption {
-                    service::keychain::get_encryption_key(&profile_id)?
-                } else {
-                    None
-                };
-                #[cfg(not(any(feature = "desktop", feature = "db-full")))]
-                let encryption_key: Option<String> = None;
-
-                (
-                    config::Configuration::default(),
-                    Some(database_connection.clone()),
-                    profile_id,
-                    encryption_key.clone(),
-                    config::ProfileBackend::Database,
-                    Some(std::sync::Arc::new(crate::store::DatabaseStore::new(
-                        database_connection.clone(),
-                        encryption_key.clone(),
-                        app_data_dir.clone(),
-                    ))
-                        as std::sync::Arc<dyn crate::store::NoteStore>),
-                    Some(std::sync::Arc::new(crate::store::DatabaseStore::new(
-                        database_connection,
-                        encryption_key,
-                        app_data_dir.clone(),
-                    ))
-                        as std::sync::Arc<dyn crate::store::TodoStore>),
-                )
             }
+
+            (
+                config::Configuration::default(),
+                bundle.database_connection.clone(),
+                bundle.profile_id,
+                bundle.encryption_key,
+                bundle.backend,
+                Some(bundle.note_store),
+                Some(bundle.todo_store),
+            )
         }
     };
 

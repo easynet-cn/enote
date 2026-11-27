@@ -1,6 +1,11 @@
 //! ENote MCP Server 实现
 //!
-//! 通过 rmcp 提供笔记操作工具给 AI 客户端
+//! 通过 rmcp 提供笔记操作工具给 AI 客户端。
+//! 所有数据操作统一走 [`AccessStore`] trait，因此 Database / Git / Server
+//! 三种后端对 AI 工具呈现完全相同的行为。
+
+use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 
 use rmcp::{
     ErrorData as McpError, RoleServer, ServerHandler,
@@ -13,7 +18,6 @@ use rmcp::{
     service::RequestContext,
     tool, tool_router,
 };
-use sea_orm::DatabaseConnection;
 use serde::Serialize;
 
 use enote_lib::{
@@ -21,7 +25,7 @@ use enote_lib::{
         McpPermission, Note, NoteSearchPageParam, Notebook, OperateSource, PageParam, Tag, Todo,
         TodoList, TodoSearchParam,
     },
-    service,
+    store::AccessStore,
 };
 
 /// 全部内置工具名称
@@ -53,37 +57,30 @@ const DEFAULT_TOOLS: &[&str] = &[
 
 /// 获取已启用的工具名称集合
 ///
-/// 兼容升级场景：用户可能已保存过 `mcpEnabledTools`，其中不含本次新增的工具。
-/// 通过 `mcpKnownTools`（前端保存时写入的"当时已知工具全集"）识别出新增工具并自动启用，
-/// 避免升级后新工具默认不可见。
-async fn get_enabled_tools(
-    db: &DatabaseConnection,
-) -> Result<std::collections::HashSet<String>, McpError> {
-    let settings = service::settings::get_all(db)
-        .await
-        .map_err(|e| McpError::internal_error(format!("Failed to load settings: {}", e), None))?;
-
+/// 升级兼容：用户可能保存过不含新工具的 `mcpEnabledTools`。
+/// 通过 `mcpKnownTools`（前端保存时写入的"当时已知工具全集"）识别新增工具并自动启用，
+/// 避免升级后新工具默认不可见。此逻辑与 settings 存储位置无关，原样保留。
+fn get_enabled_tools(settings: &HashMap<String, String>) -> HashSet<String> {
     // MCP 总开关关闭 → 无可用工具
-    if settings.get("mcpEnabled").map(|v| v.as_str()) != Some("1") {
-        return Ok(std::collections::HashSet::new());
+    if settings.get("mcpEnabled").map(String::as_str) != Some("1") {
+        return HashSet::new();
     }
 
-    let default_tools: std::collections::HashSet<String> =
-        DEFAULT_TOOLS.iter().map(|s| s.to_string()).collect();
+    let default_tools: HashSet<String> = DEFAULT_TOOLS.iter().map(|s| s.to_string()).collect();
 
     let Some(enabled_tools) = settings.get("mcpEnabledTools") else {
         // 没有配置 → 默认全部启用
-        return Ok(default_tools);
+        return default_tools;
     };
 
-    let enabled: std::collections::HashSet<String> = enabled_tools
+    let enabled: HashSet<String> = enabled_tools
         .split(',')
         .filter(|s| !s.is_empty())
         .map(String::from)
         .collect();
 
     // 新增工具 = 默认全集 - 上次保存时已知的工具
-    let known: std::collections::HashSet<String> = settings
+    let known: HashSet<String> = settings
         .get("mcpKnownTools")
         .map(|v| {
             v.split(',')
@@ -93,15 +90,17 @@ async fn get_enabled_tools(
         })
         .unwrap_or_default();
 
-    let new_tools: std::collections::HashSet<String> =
-        default_tools.difference(&known).cloned().collect();
+    let new_tools: HashSet<String> = default_tools.difference(&known).cloned().collect();
 
-    Ok(enabled.union(&new_tools).cloned().collect())
+    enabled.union(&new_tools).cloned().collect()
 }
 
 /// 检查指定 MCP 工具是否已启用
-async fn check_tool_enabled(db: &DatabaseConnection, tool_name: &str) -> Result<(), McpError> {
-    let enabled = get_enabled_tools(db).await?;
+async fn check_tool_enabled(
+    settings: &HashMap<String, String>,
+    tool_name: &str,
+) -> Result<(), McpError> {
+    let enabled = get_enabled_tools(settings);
     if !enabled.contains(tool_name) {
         return Err(McpError::invalid_request(
             format!("Tool '{}' is disabled. Enable it in Settings.", tool_name),
@@ -119,7 +118,8 @@ fn parse_dt_opt(value: &str) -> Option<chrono::NaiveDateTime> {
 /// ENote MCP Server
 #[derive(Clone)]
 pub struct ENoteMcpServer {
-    db: DatabaseConnection,
+    store: Arc<dyn AccessStore>,
+    settings: Arc<HashMap<String, String>>,
     tool_router: ToolRouter<Self>,
 }
 
@@ -405,9 +405,10 @@ impl From<Note> for NoteDetail {
 
 #[tool_router]
 impl ENoteMcpServer {
-    pub fn new(db: DatabaseConnection) -> Self {
+    pub fn new(store: Arc<dyn AccessStore>, settings: HashMap<String, String>) -> Self {
         Self {
-            db: db.clone(),
+            store,
+            settings: Arc::new(settings),
             tool_router: Self::tool_router(),
         }
     }
@@ -421,7 +422,7 @@ impl ENoteMcpServer {
         &self,
         rmcp::handler::server::wrapper::Parameters(params): rmcp::handler::server::wrapper::Parameters<SearchNotesParams>,
     ) -> Result<CallToolResult, McpError> {
-        check_tool_enabled(&self.db, "search_notes").await?;
+        check_tool_enabled(&self.settings, "search_notes").await?;
         let mut search_param = NoteSearchPageParam {
             page_param: PageParam {
                 page_index: params.page.unwrap_or(1),
@@ -436,12 +437,16 @@ impl ENoteMcpServer {
         };
         search_param.normalize();
 
-        let result = service::note::search_page(&self.db, &search_param)
+        let result = self
+            .store
+            .search_page_notes(&search_param)
             .await
             .map_err(|e| McpError::internal_error(format!("搜索失败: {}", e), None))?;
 
         // 后置过滤：根据 MCP 访问控制过滤掉 Deny 的笔记
-        let access_map = service::mcp_access::resolve_notes_access(&self.db, &result.data)
+        let access_map = self
+            .store
+            .resolve_notes_access(&result.data)
             .await
             .map_err(|e| McpError::internal_error(format!("权限解析失败: {}", e), None))?;
 
@@ -473,14 +478,17 @@ impl ENoteMcpServer {
         &self,
         rmcp::handler::server::wrapper::Parameters(params): rmcp::handler::server::wrapper::Parameters<GetNoteParams>,
     ) -> Result<CallToolResult, McpError> {
-        check_tool_enabled(&self.db, "get_note").await?;
+        check_tool_enabled(&self.settings, "get_note").await?;
 
         // 检查读取权限
-        service::mcp_access::check_read(&self.db, params.note_id)
+        self.store
+            .check_note_read(params.note_id)
             .await
             .map_err(|e| McpError::invalid_request(format!("{}", e), None))?;
 
-        let note = service::note::find_by_id(&self.db, params.note_id)
+        let note = self
+            .store
+            .find_note_by_id(params.note_id)
             .await
             .map_err(|e| McpError::internal_error(format!("查询失败: {}", e), None))?;
 
@@ -504,11 +512,12 @@ impl ENoteMcpServer {
         &self,
         rmcp::handler::server::wrapper::Parameters(params): rmcp::handler::server::wrapper::Parameters<CreateNoteParams>,
     ) -> Result<CallToolResult, McpError> {
-        check_tool_enabled(&self.db, "create_note").await?;
+        check_tool_enabled(&self.settings, "create_note").await?;
 
         // 检查目标笔记本写入权限
         let notebook_id = params.notebook_id.unwrap_or(0);
-        service::mcp_access::check_notebook_write(&self.db, notebook_id)
+        self.store
+            .check_notebook_write(notebook_id)
             .await
             .map_err(|e| McpError::invalid_request(format!("{}", e), None))?;
 
@@ -530,7 +539,10 @@ impl ENoteMcpServer {
             ..Default::default()
         };
 
-        let result = service::note::create(&self.db, &note, OperateSource::Mcp)
+        // 通过带 source 的写方法记录 AI 操作来源（Database 后端写入历史）
+        let result = self
+            .store
+            .create_note_with_source(&note, OperateSource::Mcp)
             .await
             .map_err(|e| McpError::internal_error(format!("创建失败: {}", e), None))?;
 
@@ -550,15 +562,18 @@ impl ENoteMcpServer {
         &self,
         rmcp::handler::server::wrapper::Parameters(params): rmcp::handler::server::wrapper::Parameters<UpdateNoteParams>,
     ) -> Result<CallToolResult, McpError> {
-        check_tool_enabled(&self.db, "update_note").await?;
+        check_tool_enabled(&self.settings, "update_note").await?;
 
         // 检查写入权限
-        service::mcp_access::check_write(&self.db, params.note_id)
+        self.store
+            .check_note_write(params.note_id)
             .await
             .map_err(|e| McpError::invalid_request(format!("{}", e), None))?;
 
         // 先获取现有笔记
-        let existing = service::note::find_by_id(&self.db, params.note_id)
+        let existing = self
+            .store
+            .find_note_by_id(params.note_id)
             .await
             .map_err(|e| McpError::internal_error(format!("查询失败: {}", e), None))?;
 
@@ -592,7 +607,9 @@ impl ENoteMcpServer {
             ..Default::default()
         };
 
-        let result = service::note::update(&self.db, &note, OperateSource::Mcp)
+        let result = self
+            .store
+            .update_note_with_source(&note, OperateSource::Mcp)
             .await
             .map_err(|e| McpError::internal_error(format!("更新失败: {}", e), None))?;
 
@@ -612,14 +629,16 @@ impl ENoteMcpServer {
         &self,
         rmcp::handler::server::wrapper::Parameters(params): rmcp::handler::server::wrapper::Parameters<DeleteNoteParams>,
     ) -> Result<CallToolResult, McpError> {
-        check_tool_enabled(&self.db, "delete_note").await?;
+        check_tool_enabled(&self.settings, "delete_note").await?;
 
         // 检查写入权限
-        service::mcp_access::check_write(&self.db, params.note_id)
+        self.store
+            .check_note_write(params.note_id)
             .await
             .map_err(|e| McpError::invalid_request(format!("{}", e), None))?;
 
-        service::note::delete_by_id(&self.db, params.note_id)
+        self.store
+            .delete_note_by_id(params.note_id)
             .await
             .map_err(|e| McpError::internal_error(format!("删除失败: {}", e), None))?;
 
@@ -633,8 +652,10 @@ impl ENoteMcpServer {
 
     #[tool(description = "列出所有笔记本（包含 AI 访问权限设置）")]
     async fn list_notebooks(&self) -> Result<CallToolResult, McpError> {
-        check_tool_enabled(&self.db, "list_notebooks").await?;
-        let notebooks = service::notebook::find_all(&self.db)
+        check_tool_enabled(&self.settings, "list_notebooks").await?;
+        let notebooks = self
+            .store
+            .find_all_notebooks()
             .await
             .map_err(|e| McpError::internal_error(format!("查询失败: {}", e), None))?;
 
@@ -667,14 +688,16 @@ impl ENoteMcpServer {
         &self,
         rmcp::handler::server::wrapper::Parameters(params): rmcp::handler::server::wrapper::Parameters<CreateNotebookParams>,
     ) -> Result<CallToolResult, McpError> {
-        check_tool_enabled(&self.db, "create_notebook").await?;
+        check_tool_enabled(&self.settings, "create_notebook").await?;
         let notebook = Notebook {
             name: params.name,
             description: params.description.unwrap_or_default(),
             ..Default::default()
         };
 
-        let result = service::notebook::create(&self.db, &notebook)
+        let result = self
+            .store
+            .create_notebook(&notebook)
             .await
             .map_err(|e| McpError::internal_error(format!("创建失败: {}", e), None))?;
 
@@ -693,22 +716,24 @@ impl ENoteMcpServer {
 
     #[tool(description = "列出所有标签（包含 AI 访问权限设置）")]
     async fn list_tags(&self) -> Result<CallToolResult, McpError> {
-        check_tool_enabled(&self.db, "list_tags").await?;
-        let tags = service::tag::find_all(&self.db)
+        check_tool_enabled(&self.settings, "list_tags").await?;
+        let tags = self
+            .store
+            .find_all_tags()
             .await
             .map_err(|e| McpError::internal_error(format!("查询失败: {}", e), None))?;
 
         #[derive(Serialize)]
         #[serde(rename_all = "camelCase")]
-        struct TagInfo {
+        struct TagAccessInfo {
             id: i64,
             name: String,
             mcp_access: i32,
         }
 
-        let list: Vec<TagInfo> = tags
+        let list: Vec<TagAccessInfo> = tags
             .into_iter()
-            .map(|t| TagInfo {
+            .map(|t| TagAccessInfo {
                 id: t.id,
                 name: t.name,
                 mcp_access: t.mcp_access,
@@ -725,13 +750,15 @@ impl ENoteMcpServer {
         &self,
         rmcp::handler::server::wrapper::Parameters(params): rmcp::handler::server::wrapper::Parameters<CreateTagParams>,
     ) -> Result<CallToolResult, McpError> {
-        check_tool_enabled(&self.db, "create_tag").await?;
+        check_tool_enabled(&self.settings, "create_tag").await?;
         let tag = Tag {
             name: params.name,
             ..Default::default()
         };
 
-        let result = service::tag::create(&self.db, &tag)
+        let result = self
+            .store
+            .create_tag(&tag)
             .await
             .map_err(|e| McpError::internal_error(format!("创建失败: {}", e), None))?;
 
@@ -750,9 +777,11 @@ impl ENoteMcpServer {
 
     #[tool(description = "获取笔记统计信息（总数和各笔记本的笔记数量）")]
     async fn note_stats(&self) -> Result<CallToolResult, McpError> {
-        check_tool_enabled(&self.db, "note_stats").await?;
+        check_tool_enabled(&self.settings, "note_stats").await?;
         let search_param = NoteSearchPageParam::default();
-        let stats = service::note::stats(&self.db, &search_param)
+        let stats = self
+            .store
+            .note_stats(&search_param)
             .await
             .map_err(|e| McpError::internal_error(format!("统计失败: {}", e), None))?;
 
@@ -772,7 +801,7 @@ impl ENoteMcpServer {
         &self,
         rmcp::handler::server::wrapper::Parameters(params): rmcp::handler::server::wrapper::Parameters<SearchTodosParams>,
     ) -> Result<CallToolResult, McpError> {
-        check_tool_enabled(&self.db, "search_todos").await?;
+        check_tool_enabled(&self.settings, "search_todos").await?;
 
         let search_param = TodoSearchParam {
             keyword: params.keyword.unwrap_or_default(),
@@ -788,17 +817,20 @@ impl ENoteMcpServer {
             page_size: params.page_size.unwrap_or(20).min(50) as i32,
         };
 
-        let result = service::todo::search_page(&self.db, &search_param)
+        let todos = self
+            .store
+            .search_todos(&search_param)
             .await
             .map_err(|e| McpError::internal_error(format!("搜索待办失败: {}", e), None))?;
 
         // 后置过滤：剔除 AI 禁止访问的待办
-        let access_map = service::mcp_access::resolve_todos_access(&self.db, &result.data)
+        let access_map = self
+            .store
+            .resolve_todos_access(&todos)
             .await
             .map_err(|e| McpError::internal_error(format!("权限解析失败: {}", e), None))?;
 
-        let filtered: Vec<Todo> = result
-            .data
+        let filtered: Vec<Todo> = todos
             .into_iter()
             .filter(|todo| {
                 access_map
@@ -818,12 +850,15 @@ impl ENoteMcpServer {
         &self,
         rmcp::handler::server::wrapper::Parameters(params): rmcp::handler::server::wrapper::Parameters<GetTodoParams>,
     ) -> Result<CallToolResult, McpError> {
-        check_tool_enabled(&self.db, "get_todo").await?;
-        service::mcp_access::check_todo_read(&self.db, params.todo_id)
+        check_tool_enabled(&self.settings, "get_todo").await?;
+        self.store
+            .check_todo_read(params.todo_id)
             .await
             .map_err(|e| McpError::internal_error(e.to_string(), None))?;
 
-        let todo = service::todo::find_by_id(&self.db, params.todo_id)
+        let todo = self
+            .store
+            .find_todo(params.todo_id)
             .await
             .map_err(|e| McpError::internal_error(format!("查询失败: {}", e), None))?
             .ok_or_else(|| McpError::invalid_request("待办不存在", None))?;
@@ -832,16 +867,18 @@ impl ENoteMcpServer {
             .map_err(|e| McpError::internal_error(format!("JSON 序列化失败: {}", e), None))?;
         Ok(CallToolResult::success(vec![content]))
     }
+
     #[tool(description = "创建待办。可指定优先级、截止日期、清单、标签与关联笔记")]
     async fn create_todo(
         &self,
         rmcp::handler::server::wrapper::Parameters(params): rmcp::handler::server::wrapper::Parameters<CreateTodoParams>,
     ) -> Result<CallToolResult, McpError> {
-        check_tool_enabled(&self.db, "create_todo").await?;
+        check_tool_enabled(&self.settings, "create_todo").await?;
 
         // 检查目标清单是否可写
         if let Some(list_id) = params.list_id {
-            service::mcp_access::check_todo_list_write(&self.db, Some(list_id))
+            self.store
+                .check_todo_list_write(Some(list_id))
                 .await
                 .map_err(|e| McpError::internal_error(e.to_string(), None))?;
         }
@@ -856,14 +893,17 @@ impl ENoteMcpServer {
             ..Default::default()
         };
 
-        let created = service::todo::create(&self.db, &todo)
+        let created = self
+            .store
+            .create_todo(&todo)
             .await
             .map_err(|e| McpError::internal_error(format!("创建失败: {}", e), None))?;
 
         // 关联标签
         if let Some(tag_ids) = params.tag_ids {
             if !tag_ids.is_empty() {
-                service::todo::set_todo_tags(&self.db, created.id, tag_ids)
+                self.store
+                    .set_todo_tags(created.id, tag_ids)
                     .await
                     .map_err(|e| McpError::internal_error(format!("设置标签失败: {}", e), None))?;
             }
@@ -880,12 +920,15 @@ impl ENoteMcpServer {
         &self,
         rmcp::handler::server::wrapper::Parameters(params): rmcp::handler::server::wrapper::Parameters<UpdateTodoParams>,
     ) -> Result<CallToolResult, McpError> {
-        check_tool_enabled(&self.db, "update_todo").await?;
-        service::mcp_access::check_todo_write(&self.db, params.todo_id)
+        check_tool_enabled(&self.settings, "update_todo").await?;
+        self.store
+            .check_todo_write(params.todo_id)
             .await
             .map_err(|e| McpError::internal_error(e.to_string(), None))?;
 
-        let mut todo = service::todo::find_by_id(&self.db, params.todo_id)
+        let mut todo = self
+            .store
+            .find_todo(params.todo_id)
             .await
             .map_err(|e| McpError::internal_error(format!("查询失败: {}", e), None))?
             .ok_or_else(|| McpError::invalid_request("待办不存在", None))?;
@@ -906,13 +949,16 @@ impl ENoteMcpServer {
             todo.list_id = Some(list_id);
         }
 
-        let updated = service::todo::update(&self.db, &todo)
+        let updated = self
+            .store
+            .update_todo(&todo)
             .await
             .map_err(|e| McpError::internal_error(format!("更新失败: {}", e), None))?;
 
         // 关联标签（传入则全量替换）
         if let Some(tag_ids) = params.tag_ids {
-            service::todo::set_todo_tags(&self.db, params.todo_id, tag_ids)
+            self.store
+                .set_todo_tags(params.todo_id, tag_ids)
                 .await
                 .map_err(|e| McpError::internal_error(format!("设置标签失败: {}", e), None))?;
         }
@@ -927,6 +973,7 @@ impl ENoteMcpServer {
             )])),
         }
     }
+
     #[tool(
         description = "切换待办完成状态。若待办设置了重复规则，完成时会顺延到下一个周期而非真正完成"
     )]
@@ -934,12 +981,15 @@ impl ENoteMcpServer {
         &self,
         rmcp::handler::server::wrapper::Parameters(params): rmcp::handler::server::wrapper::Parameters<CompleteTodoParams>,
     ) -> Result<CallToolResult, McpError> {
-        check_tool_enabled(&self.db, "complete_todo").await?;
-        service::mcp_access::check_todo_write(&self.db, params.todo_id)
+        check_tool_enabled(&self.settings, "complete_todo").await?;
+        self.store
+            .check_todo_write(params.todo_id)
             .await
             .map_err(|e| McpError::internal_error(e.to_string(), None))?;
 
-        let updated = service::todo::toggle_complete(&self.db, params.todo_id)
+        let updated = self
+            .store
+            .toggle_todo(params.todo_id)
             .await
             .map_err(|e| McpError::internal_error(format!("切换失败: {}", e), None))?;
 
@@ -964,12 +1014,14 @@ impl ENoteMcpServer {
         &self,
         rmcp::handler::server::wrapper::Parameters(params): rmcp::handler::server::wrapper::Parameters<DeleteTodoParams>,
     ) -> Result<CallToolResult, McpError> {
-        check_tool_enabled(&self.db, "delete_todo").await?;
-        service::mcp_access::check_todo_write(&self.db, params.todo_id)
+        check_tool_enabled(&self.settings, "delete_todo").await?;
+        self.store
+            .check_todo_write(params.todo_id)
             .await
             .map_err(|e| McpError::internal_error(e.to_string(), None))?;
 
-        service::todo::delete_by_id(&self.db, params.todo_id)
+        self.store
+            .delete_todo(params.todo_id)
             .await
             .map_err(|e| McpError::internal_error(format!("删除失败: {}", e), None))?;
 
@@ -981,9 +1033,11 @@ impl ENoteMcpServer {
 
     #[tool(description = "列出所有待办清单")]
     async fn list_todo_lists(&self) -> Result<CallToolResult, McpError> {
-        check_tool_enabled(&self.db, "list_todo_lists").await?;
+        check_tool_enabled(&self.settings, "list_todo_lists").await?;
 
-        let lists = service::todo::find_all_lists(&self.db)
+        let lists = self
+            .store
+            .find_all_todo_lists()
             .await
             .map_err(|e| McpError::internal_error(format!("查询失败: {}", e), None))?;
 
@@ -997,7 +1051,7 @@ impl ENoteMcpServer {
         &self,
         rmcp::handler::server::wrapper::Parameters(params): rmcp::handler::server::wrapper::Parameters<CreateTodoListParams>,
     ) -> Result<CallToolResult, McpError> {
-        check_tool_enabled(&self.db, "create_todo_list").await?;
+        check_tool_enabled(&self.settings, "create_todo_list").await?;
 
         let list = TodoList {
             name: params.name,
@@ -1006,7 +1060,9 @@ impl ENoteMcpServer {
             ..Default::default()
         };
 
-        let created = service::todo::create_list(&self.db, &list)
+        let created = self
+            .store
+            .create_todo_list(&list)
             .await
             .map_err(|e| McpError::internal_error(format!("创建失败: {}", e), None))?;
 
@@ -1018,9 +1074,11 @@ impl ENoteMcpServer {
 
     #[tool(description = "待办统计（总数、已完成、未完成、今日到期、已过期、完成率）")]
     async fn todo_stats(&self) -> Result<CallToolResult, McpError> {
-        check_tool_enabled(&self.db, "todo_stats").await?;
+        check_tool_enabled(&self.settings, "todo_stats").await?;
 
-        let stats = service::todo::stats(&self.db)
+        let stats = self
+            .store
+            .todo_stats()
             .await
             .map_err(|e| McpError::internal_error(format!("统计失败: {}", e), None))?;
 
@@ -1092,7 +1150,7 @@ impl ServerHandler for ENoteMcpServer {
         _request: Option<PaginatedRequestParams>,
         _context: RequestContext<RoleServer>,
     ) -> Result<ListToolsResult, McpError> {
-        let enabled = get_enabled_tools(&self.db).await?;
+        let enabled = get_enabled_tools(&self.settings);
         let tools: Vec<Tool> = self
             .tool_router
             .list_all()
@@ -1114,5 +1172,71 @@ impl ServerHandler for ENoteMcpServer {
     ) -> Result<CallToolResponse, McpError> {
         let ctx = ToolCallContext::new(self, request, context);
         self.tool_router.call(ctx).await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn settings(enabled: &str, tools: Option<&str>, known: Option<&str>) -> HashMap<String, String> {
+        let mut s = HashMap::new();
+        s.insert("mcpEnabled".to_string(), enabled.to_string());
+        if let Some(v) = tools {
+            s.insert("mcpEnabledTools".to_string(), v.to_string());
+        }
+        if let Some(v) = known {
+            s.insert("mcpKnownTools".to_string(), v.to_string());
+        }
+        s
+    }
+
+    #[test]
+    fn disabled_by_switch_returns_no_tools() {
+        assert!(get_enabled_tools(&settings("0", None, None)).is_empty());
+        assert!(get_enabled_tools(&settings("", Some("search_notes"), None)).is_empty());
+    }
+
+    #[test]
+    fn no_saved_selection_enables_all_defaults() {
+        let enabled = get_enabled_tools(&settings("1", None, None));
+        assert_eq!(enabled.len(), DEFAULT_TOOLS.len());
+        assert!(DEFAULT_TOOLS.iter().all(|t| enabled.contains(*t)));
+    }
+
+    #[test]
+    fn upgrade_enables_new_tools_automatically() {
+        // 模拟旧版本保存的设置：当时只有 5 个工具，且 known 也是那 5 个
+        let old = "search_notes,get_note,create_note,update_note,delete_note";
+        let enabled = get_enabled_tools(&settings("1", Some(old), Some(old)));
+        // 旧工具保留，其余 14 个新增工具自动启用
+        assert_eq!(enabled.len(), DEFAULT_TOOLS.len());
+        assert!(DEFAULT_TOOLS.iter().all(|t| enabled.contains(*t)));
+    }
+
+    #[test]
+    fn explicit_disable_survives_upgrade() {
+        // known 含全部工具 → 没有"新增工具"，用户显式关闭的应保持关闭
+        let all = DEFAULT_TOOLS.join(",");
+        let selected = DEFAULT_TOOLS
+            .iter()
+            .filter(|t| **t != "create_note")
+            .copied()
+            .collect::<Vec<_>>()
+            .join(",");
+        let enabled = get_enabled_tools(&settings("1", Some(&selected), Some(&all)));
+        assert!(!enabled.contains("create_note"));
+        assert_eq!(enabled.len(), DEFAULT_TOOLS.len() - 1);
+    }
+
+    #[test]
+    fn missing_known_tools_defaults_to_all_new() {
+        // 老版本没写 mcpKnownTools → 全部视为新增，不能让老用户升级后无工具可用
+        let enabled = get_enabled_tools(&settings(
+            "1",
+            Some("search_notes"),
+            None,
+        ));
+        assert_eq!(enabled.len(), DEFAULT_TOOLS.len());
     }
 }

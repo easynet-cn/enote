@@ -4,19 +4,21 @@
 //! 复用 `service` 层既有函数（事务、加解密、历史记录生成均保持原行为），
 //! 并保留原有的操作日志（app_log）写入习惯。
 
+use std::collections::HashMap;
 use std::path::PathBuf;
 
-use sea_orm::DatabaseConnection;
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 
+use crate::entity;
 use crate::error::AppError;
 use crate::model::{
-    AttachmentStats, Note, NoteAttachment, NoteHistory, NoteHistorySearchPageParam, NoteLink,
-    NoteSearchPageParam, NoteStatsResult, NoteTemplate, Notebook, OperateSource, PageParam,
-    PageResult, Tag, Todo, TodoList, TodoSearchParam, TodoStats,
+    AttachmentStats, McpPermission, Note, NoteAttachment, NoteHistory, NoteHistorySearchPageParam,
+    NoteLink, NoteSearchPageParam, NoteStatsResult, NoteTemplate, Notebook, OperateSource,
+    PageParam, PageResult, Tag, Todo, TodoList, TodoSearchParam, TodoStats,
 };
 use crate::service;
 
-use super::{NoteStore, TodoStore};
+use super::{AccessStore, NoteStore, TodoStore};
 
 /// 数据库后端
 pub struct DatabaseStore {
@@ -67,60 +69,18 @@ impl DatabaseStore {
 impl NoteStore for DatabaseStore {
     // ======== 笔记 ========
 
+    async fn find_note_by_id(&self, id: i64) -> Result<Option<Note>, AppError> {
+        service::note::find_by_id_with_key(&self.db, id, self.encryption_key.as_deref())
+            .await
+            .map_err(AppError::from)
+    }
+
     async fn create_note(&self, note: &Note) -> Result<Option<Note>, AppError> {
-        let is_encrypted = service::app_log::should_skip_content(&note.content);
-        let result = service::note::create_with_key(
-            &self.db,
-            note,
-            OperateSource::User,
-            self.encryption_key.as_deref(),
-        )
-        .await
-        .map_err(AppError::from)?;
-        if let Some(ref n) = result {
-            let msg = if is_encrypted {
-                format!("Created note: {} [encrypted content]", n.title)
-            } else {
-                format!("Created note: {}", n.title)
-            };
-            self.log_action(
-                "note",
-                "create",
-                Some(&n.id.to_string()),
-                Some(&n.title),
-                &msg,
-            )
-            .await;
-        }
-        Ok(result)
+        self.create_note_with_source(note, OperateSource::User).await
     }
 
     async fn update_note(&self, note: &Note) -> Result<Option<Note>, AppError> {
-        let is_encrypted = service::app_log::should_skip_content(&note.content);
-        let result = service::note::update_with_key(
-            &self.db,
-            note,
-            OperateSource::User,
-            self.encryption_key.as_deref(),
-        )
-        .await
-        .map_err(AppError::from)?;
-        if result.is_some() {
-            let msg = if is_encrypted {
-                format!("Updated note: {} [encrypted content]", note.title)
-            } else {
-                format!("Updated note: {}", note.title)
-            };
-            self.log_action(
-                "note",
-                "update",
-                Some(&note.id.to_string()),
-                Some(&note.title),
-                &msg,
-            )
-            .await;
-        }
-        Ok(result)
+        self.update_note_with_source(note, OperateSource::User).await
     }
 
     async fn delete_note_by_id(&self, id: i64) -> Result<(), AppError> {
@@ -595,5 +555,109 @@ impl TodoStore for DatabaseStore {
 
     async fn todo_stats(&self) -> Result<TodoStats, AppError> {
         service::todo::stats(&self.db).await.map_err(AppError::from)
+    }
+}
+
+#[async_trait::async_trait]
+impl AccessStore for DatabaseStore {
+    async fn resolve_notes_access(
+        &self,
+        notes: &[Note],
+    ) -> Result<HashMap<i64, McpPermission>, AppError> {
+        let notebooks = self.find_all_notebooks().await?;
+
+        // 查询接口会按 encryption_key 解密内容，而「加密笔记强制 Deny」必须依据
+        // 原始内容判断，因此这里额外批量读取原始 content（一次查询，不是 N 次）。
+        let ids: Vec<i64> = notes.iter().map(|n| n.id).collect();
+        let raw_content: HashMap<i64, String> = if ids.is_empty() {
+            HashMap::new()
+        } else {
+            entity::note::Entity::find()
+                .filter(entity::note::Column::Id.is_in(ids))
+                .all(&self.db)
+                .await
+                .map_err(AppError::from)?
+                .into_iter()
+                .map(|m| (m.id, m.content))
+                .collect()
+        };
+
+        let mut result = HashMap::with_capacity(notes.len());
+        for note in notes {
+            let encrypted = raw_content
+                .get(&note.id)
+                .is_some_and(|content| crate::service::crypto::is_encrypted(content));
+            let perm = if encrypted {
+                McpPermission::Deny
+            } else {
+                crate::service::mcp_access::note_permission(note, &notebooks)
+            };
+            result.insert(note.id, perm);
+        }
+        Ok(result)
+    }
+
+    async fn create_note_with_source(
+        &self,
+        note: &Note,
+        source: OperateSource,
+    ) -> Result<Option<Note>, AppError> {
+        let is_encrypted = service::app_log::should_skip_content(&note.content);
+        let result = service::note::create_with_key(
+            &self.db,
+            note,
+            source,
+            self.encryption_key.as_deref(),
+        )
+        .await
+        .map_err(AppError::from)?;
+        if let Some(ref n) = result {
+            let msg = if is_encrypted {
+                format!("Created note: {} [encrypted content]", n.title)
+            } else {
+                format!("Created note: {}", n.title)
+            };
+            self.log_action(
+                "note",
+                "create",
+                Some(&n.id.to_string()),
+                Some(&n.title),
+                &msg,
+            )
+            .await;
+        }
+        Ok(result)
+    }
+
+    async fn update_note_with_source(
+        &self,
+        note: &Note,
+        source: OperateSource,
+    ) -> Result<Option<Note>, AppError> {
+        let is_encrypted = service::app_log::should_skip_content(&note.content);
+        let result = service::note::update_with_key(
+            &self.db,
+            note,
+            source,
+            self.encryption_key.as_deref(),
+        )
+        .await
+        .map_err(AppError::from)?;
+        if result.is_some() {
+            let msg = if is_encrypted {
+                format!("Updated note: {} [encrypted content]", note.title)
+            } else {
+                format!("Updated note: {}", note.title)
+            };
+            self.log_action(
+                "note",
+                "update",
+                Some(&note.id.to_string()),
+                Some(&note.title),
+                &msg,
+            )
+            .await;
+        }
+        Ok(result)
     }
 }

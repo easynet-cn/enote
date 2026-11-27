@@ -30,6 +30,30 @@ impl ServerStore {
 impl NoteStore for ServerStore {
     // ======== 笔记 ========
 
+    async fn find_note_by_id(&self, id: i64) -> Result<Option<Note>, AppError> {
+        // 服务端目前没有单条笔记查询端点，分页遍历定位。
+        // TODO: 服务端提供 GET /api/notes/{id} 后改为单次请求。
+        let mut page_index = 1;
+        loop {
+            let param = NoteSearchPageParam {
+                page_param: PageParam {
+                    page_index,
+                    page_size: 200,
+                    ..Default::default()
+                },
+                ..Default::default()
+            };
+            let page = self.client.search_page_notes(&param).await?;
+            if let Some(note) = page.data.iter().find(|n| n.id == id) {
+                return Ok(Some(note.clone()));
+            }
+            if page.data.is_empty() || page_index >= page.total_pages {
+                return Ok(None);
+            }
+            page_index += 1;
+        }
+    }
+
     async fn create_note(&self, note: &Note) -> Result<Option<Note>, AppError> {
         self.client.create_note(note).await
     }

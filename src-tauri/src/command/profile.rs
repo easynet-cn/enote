@@ -1,6 +1,5 @@
 use super::*;
 
-use crate::config::ProfileBackend;
 use crate::service::enote_server::auth::{ServerConfig, ServerSecrets};
 
 // ============================================================================
@@ -274,31 +273,6 @@ pub async fn git_available() -> bool {
     crate::store::git_sync::is_available()
 }
 
-/// 根据 Profile 配置与 Keychain 凭据构造 Git 远程运行时配置
-pub(crate) fn build_git_remote(
-    profile_id: &str,
-    git_config: &service::profile::GitStoreConfig,
-) -> crate::store::git_remote::GitRemoteConfig {
-    use crate::store::git_sync::GitCredentials;
-
-    let credentials = match git_config.remote_auth.as_str() {
-        "https" => GitCredentials::Https {
-            username: git_config.remote_username.clone(),
-            // 密码/PAT 从 Keychain 读取，缺失时给空串（认证失败会明确报错）
-            password: service::keychain::get_git_password(profile_id)
-                .ok()
-                .flatten()
-                .unwrap_or_default(),
-        },
-        "ssh" => GitCredentials::Ssh,
-        _ => GitCredentials::None,
-    };
-    crate::store::git_remote::GitRemoteConfig {
-        url: git_config.remote_url.clone(),
-        credentials,
-    }
-}
-
 /// 测试 Git 远程仓库连接（向导「测试连接」使用，不读写本地仓库配置）
 #[tauri::command(rename_all = "camelCase")]
 pub async fn test_git_connection(
@@ -369,195 +343,56 @@ pub async fn reconnect_profile(
     let profile_config = service::profile::read_profile(&app_state.app_data_dir, &profile_id)
         .map_err(AppError::from)?;
 
-    if profile_config.is_server_backend() {
-        // ======== Server 后端路径 ========
-        let server_config = profile_config
-            .server
-            .as_ref()
-            .ok_or_else(|| AppError::code("SERVER_CONFIG_MISSING"))?;
+    // 统一走公共 store 工厂（Tauri 与独立 MCP 进程共用同一构造逻辑）
+    let bundle = crate::store::factory::build_profile_stores(
+        &app_state.app_data_dir,
+        &profile_id,
+        &profile_config,
+        Some(app_handle.clone()),
+        crate::store::factory::CredentialPolicy::Keychain,
+    )
+    .await?;
 
-        // 从 Keychain 加载服务器认证信息
-        let secrets = ServerSecrets {
-            token: service::keychain::get_server_token(&profile_id).unwrap_or(None),
-            refresh_token: service::keychain::get_server_refresh_token(&profile_id).unwrap_or(None),
-            password: service::keychain::get_server_password(&profile_id).unwrap_or(None),
-            client_secret: service::keychain::get_server_client_secret(&profile_id).unwrap_or(None),
-            header_value: service::keychain::get_server_header_value(&profile_id).unwrap_or(None),
-        };
+    // Database 后端迁移（工厂只负责连接与 store 构造，迁移由调用方执行）
+    if let Some(ref new_db) = bundle.database_connection {
+        use sea_orm_migration::MigratorTrait;
+        crate::migration::Migrator::up(new_db, None)
+            .await
+            .map_err(|e| AppError::code_with_args("DB_MIGRATION_FAILED", vec![e.to_string()]))?;
+    }
 
-        let client = EnoteServerClient::new(server_config, secrets).map_err(|e| {
-            AppError::code_with_args("SERVER_CONNECTION_FAILED", vec![e.to_string()])
-        })?;
+    // 替换 AppState：新后端全部就绪后才写入，避免切换失败留下半成品状态
+    {
+        let mut db_guard = app_state.database_connection.write().await;
+        *db_guard = bundle.database_connection.clone();
+    }
+    {
+        let mut backend_guard = app_state.backend.write().await;
+        *backend_guard = bundle.backend;
+    }
+    {
+        let mut store_guard = app_state.note_store.write().await;
+        *store_guard = Some(bundle.note_store.clone());
+    }
+    {
+        let mut todo_guard = app_state.todo_store.write().await;
+        *todo_guard = Some(bundle.todo_store.clone());
+    }
+    {
+        let mut key_guard = app_state.encryption_key.write().await;
+        *key_guard = bundle.encryption_key.clone();
+    }
 
-        // 替换 AppState
-        {
-            let mut db_guard = app_state.database_connection.write().await;
-            *db_guard = None; // Server 后端不使用数据库连接
-        }
-        {
-            let mut backend_guard = app_state.backend.write().await;
-            *backend_guard = ProfileBackend::Server(client.clone());
-        }
-        {
-            // 笔记域存储后端切换为远程服务器实现
-            let mut store_guard = app_state.note_store.write().await;
-            *store_guard = Some(std::sync::Arc::new(crate::store::ServerStore::new(
-                client.clone(),
-            )));
-        }
-        {
-            // 待办域存储后端切换为远程服务器实现
-            let mut todo_guard = app_state.todo_store.write().await;
-            *todo_guard = Some(std::sync::Arc::new(crate::store::ServerStore::new(
-                client.clone(),
-            )));
-        }
-        {
-            let mut key_guard = app_state.encryption_key.write().await;
-            *key_guard = None; // Server 后端的加密由服务端处理
-        }
-    } else if profile_config.is_git_backend() {
-        // ======== Git 后端路径 ========
-        // git 后端依赖系统 git CLI，缺失时明确拒绝连接
-        if !crate::store::git_sync::is_available() {
-            return Err(AppError::code("GIT_NOT_AVAILABLE"));
-        }
-
-        let git_config = profile_config
-            .git
-            .as_ref()
-            .ok_or_else(|| AppError::code("GIT_CONFIG_MISSING"))?;
-
-        // 从 Keychain 获取加密密钥（如果启用加密）
-        #[cfg(any(feature = "desktop", feature = "db-full"))]
-        let enc_key = if profile_config.security.content_encryption {
-            service::keychain::get_encryption_key(&profile_id).map_err(AppError::from)?
-        } else {
-            None
-        };
-        #[cfg(not(any(feature = "desktop", feature = "db-full")))]
-        let enc_key: Option<String> = None;
-
-        let repo_path = std::path::PathBuf::from(&git_config.repo_path);
-
-        // 构造远程配置（URL + Keychain 凭据）
-        let remote = build_git_remote(&profile_id, git_config);
-
-        // GitStore 在锁内创建（目录初始化 + git init + 索引构建）。
-        // 即使远程同步尚未完成，GitStore 也能处理——空仓库 + fetch 远程后 pull 即可。
-        let git_store = std::sync::Arc::new(
-            crate::store::GitStore::new(repo_path.clone(), enc_key.clone())
-                .with_remote(Some(remote.clone()), Some(app_handle.clone())),
-        );
-
-        // 替换 AppState
-        {
-            let mut db_guard = app_state.database_connection.write().await;
-            *db_guard = None;
-        }
-        {
-            let mut backend_guard = app_state.backend.write().await;
-            *backend_guard = ProfileBackend::Git;
-        }
-        {
-            // 笔记域存储后端切换为 Git 仓库实现
-            let mut store_guard = app_state.note_store.write().await;
-            *store_guard = Some(git_store.clone());
-        }
-        {
-            // 待办域存储后端切换为 Git 仓库实现
-            let mut todo_guard = app_state.todo_store.write().await;
-            *todo_guard = Some(git_store.clone());
-        }
-        {
-            let mut key_guard = app_state.encryption_key.write().await;
-            *key_guard = enc_key;
-        }
-
-        // ← profile_switch_lock 在这里释放（_switch_guard drop）
-        // 下面的 Git 同步在锁外 fire-and-forget，不阻塞 UI。
-        // 成功/失败都会通过 git-sync-result 事件推给前端。
-        if !remote.url.is_empty() {
-            let sync_remote = remote.clone();
-            let sync_path = repo_path.clone();
-            let sync_handle = app_handle.clone();
+    // Git 远程同步在 profile_switch_lock 释放后 fire-and-forget，不阻塞 UI
+    if let Some((sync_path, sync_remote)) = bundle.git_sync {
+        if !sync_remote.url.is_empty() {
             tauri::async_runtime::spawn_blocking(move || {
                 crate::store::git_remote::ensure_and_sync(
                     &sync_path,
                     &sync_remote,
-                    Some(&sync_handle),
+                    Some(&app_handle),
                 )
             });
-        }
-    } else {
-        // ======== Database 后端路径（原有逻辑不变） ========
-
-        // 2. 从 Keychain 获取数据库密码
-        #[cfg(any(feature = "desktop", feature = "db-full"))]
-        let db_password = if profile_config.datasource.db_type != "sqlite"
-            && profile_config.datasource.auth_method != "certificate"
-        {
-            service::keychain::get_db_password(&profile_id).map_err(AppError::from)?
-        } else {
-            None
-        };
-        #[cfg(not(any(feature = "desktop", feature = "db-full")))]
-        let db_password: Option<String> = None;
-
-        // 3. 创建新数据库连接
-        let new_db = crate::config::database_connection_from_profile(
-            &profile_config,
-            db_password.as_deref(),
-        )
-        .await
-        .map_err(|e| AppError::code_with_args("DB_CONNECTION_FAILED", vec![e.to_string()]))?;
-
-        // 4. 运行数据库迁移
-        use sea_orm_migration::MigratorTrait;
-        crate::migration::Migrator::up(&new_db, None)
-            .await
-            .map_err(|e| AppError::code_with_args("DB_MIGRATION_FAILED", vec![e.to_string()]))?;
-
-        // 5. 从 Keychain 获取加密密钥
-        #[cfg(any(feature = "desktop", feature = "db-full"))]
-        let new_encryption_key = if profile_config.security.content_encryption {
-            service::keychain::get_encryption_key(&profile_id).map_err(AppError::from)?
-        } else {
-            None
-        };
-        #[cfg(not(any(feature = "desktop", feature = "db-full")))]
-        let new_encryption_key: Option<String> = None;
-
-        // 6. 替换 AppState 中的连接和相关状态
-        {
-            let mut db_guard = app_state.database_connection.write().await;
-            *db_guard = Some(new_db.clone());
-        }
-        {
-            let mut backend_guard = app_state.backend.write().await;
-            *backend_guard = ProfileBackend::Database;
-        }
-        {
-            // 笔记域存储后端切换为数据库实现
-            let mut store_guard = app_state.note_store.write().await;
-            *store_guard = Some(std::sync::Arc::new(crate::store::DatabaseStore::new(
-                new_db.clone(),
-                new_encryption_key.clone(),
-                app_state.app_data_dir.clone(),
-            )));
-        }
-        {
-            // 待办域存储后端切换为数据库实现
-            let mut todo_guard = app_state.todo_store.write().await;
-            *todo_guard = Some(std::sync::Arc::new(crate::store::DatabaseStore::new(
-                new_db.clone(),
-                new_encryption_key.clone(),
-                app_state.app_data_dir.clone(),
-            )));
-        }
-        {
-            let mut key_guard = app_state.encryption_key.write().await;
-            *key_guard = new_encryption_key;
         }
     }
 
